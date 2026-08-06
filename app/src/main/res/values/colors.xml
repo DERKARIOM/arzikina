@@ -8,13 +8,13 @@
     -->
 
     <!-- Émeraude (couleur principale) -->
-    <color name="arzikina_primary">#FF006C4F</color>
+    <color name="arzikina_primary">#42B998</color>
     <color name="arzikina_on_primary">#FFFFFFFF</color>
-    <color name="arzikina_primary_container">#FF9AF6C9</color>
+    <color name="arzikina_primary_container">#42B998</color>
     <color name="arzikina_on_primary_container">#FF00201A</color>
 
     <!-- Vert clair (accent secondaire) -->
-    <color name="arzikina_secondary">#FF4C6B3F</color>
+    <color name="arzikina_secondary">#42B998</color>
     <color name="arzikina_on_secondary">#FFFFFFFF</color>
     <color name="arzikina_secondary_container">#FFCFF2BC</color>
     <color name="arzikina_on_secondary_container">#FF0A2100</color>
@@ -25,11 +25,11 @@
 
     <!-- Neutres -->
     <color name="arzikina_background">#FFFFFFFF</color>
-    <color name="arzikina_on_background">#FF191C19</color>
+    <color name="arzikina_on_background">#2B3940</color>
     <color name="arzikina_surface">#FFFFFFFF</color>
-    <color name="arzikina_on_surface">#FF191C19</color>
+    <color name="arzikina_on_surface">#2B3940</color>
     <color name="arzikina_surface_variant">#FFF5F7F6</color>
-    <color name="arzikina_on_surface_variant">#FF454944</color>
+    <color name="arzikina_on_surface_variant">#2B3940</color>
     <color name="arzikina_outline">#FF8E938F</color>
 
     <!-- Erreur -->
