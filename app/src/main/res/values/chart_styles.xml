@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Styles Vico (module `views`, voir app/build.gradle.kts) pour l'écran
+    Statistiques. Centralisés ici plutôt que dans themes.xml : ce sont des
+    styles spécifiques aux graphiques, pas des attributs de thème Material.
+
+    Les couleurs des colonnes (revenus/dépenses) sont fixes (income_green/
+    expense_red, cohérentes avec le reste de l'app). Le camembert de
+    répartition n'utilise pas Vico (voir CategoryPieView) : ses couleurs
+    dynamiques par catégorie sont assignées directement en Kotlin.
+-->
+<resources>
+
+    <style name="EvolutionColumnShape">
+        <item name="cornerSize">4dp</item>
+    </style>
+
+    <style name="EvolutionColumn1Style">
+        <item name="android:color">@color/income_green</item>
+        <item name="shapeStyle">@style/EvolutionColumnShape</item>
+    </style>
+
+    <style name="EvolutionColumn2Style">
+        <item name="android:color">@color/expense_red</item>
+        <item name="shapeStyle">@style/EvolutionColumnShape</item>
+    </style>
+
+    <style name="EvolutionColumnLayerStyle">
+        <item name="column1Style">@style/EvolutionColumn1Style</item>
+        <item name="column2Style">@style/EvolutionColumn2Style</item>
+        <item name="mergeMode">grouped</item>
+        <item name="groupedColumnSpacing">4dp</item>
+        <item name="columnCollectionSpacing">20dp</item>
+    </style>
+
+    <style name="EvolutionChartStyle">
+        <item name="layers">column</item>
+        <item name="columnLayerStyle">@style/EvolutionColumnLayerStyle</item>
+        <item name="showBottomAxis">true</item>
+        <item name="showStartAxis">true</item>
+    </style>
+
+</resources>

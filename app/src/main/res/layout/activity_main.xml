@@ -2,13 +2,20 @@
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:background="?attr/colorSurface">
 
     <!--
         Fragment unique qui héberge toute la navigation (voir navigation/nav_graph.xml).
-        Contrainte à la bordure supérieure de la BottomNavigationView : chaque
-        écran reste responsable de son propre insets/padding (barre de statut,
-        encoche...), la Bottom Navigation gère elle-même sa zone de sécurité.
+        Contrainte à la bordure supérieure de la BottomNavigationView. Les
+        barres système sont transparentes et gérées de façon centralisée
+        (voir util/SystemBars.kt, appelé depuis MainActivity) : ce conteneur
+        reçoit lui-même le padding de la barre de statut, ce qui pousse
+        automatiquement le contenu de CHAQUE écran sous la barre de statut
+        sans qu'aucun fragment n'ait besoin de gérer cet inset individuellement.
+        Le fond visible sous la barre de statut est celui de ce
+        ConstraintLayout racine (?attr/colorSurface), identique à celui de
+        chaque écran : aucune bande de couleur différente.
     -->
     <androidx.fragment.app.FragmentContainerView
         android:id="@+id/navHostFragment"
@@ -22,11 +29,34 @@
         app:layout_constraintTop_toTopOf="parent"
         app:navGraph="@navigation/nav_graph" />
 
+    <!--
+        Fond explicitement ?attr/colorSurface (même attribut que le fond de
+        chaque écran, voir fragment_*.xml) : garantit une couleur identique
+        au pixel près, y compris si le thème ou colorSurface changent. Reçoit
+        le padding de la barre de navigation système (voir SystemBars.kt) :
+        son fond continue de s'étendre sous cette barre, désormais
+        transparente, seuls les icônes/labels sont remontés au-dessus.
+
+        app:backgroundTint="?attr/colorSurface" : BottomNavigationView
+        (NavigationBarView) peint toujours son fond via setTintList() sur un
+        MaterialShapeDrawable (voir le code source de Material Components) ;
+        le fixer explicitement au même attribut que android:background évite
+        tout écart, quelle que soit la valeur par défaut du style.
+
+        app:elevation="0dp" : c'est la vraie cause de la bande visible malgré
+        une couleur de fond identique — le style Material3 par défaut donne à
+        la Bottom Navigation une élévation non nulle, qui fait dessiner une
+        ombre portée à sa bordure supérieure (MaterialShapeDrawable.initializeElevationOverlay).
+        Sans élévation, plus d'ombre : le fond est plat et continu avec le
+        contenu au-dessus, sans aucune bande.
+    -->
     <com.google.android.material.bottomnavigation.BottomNavigationView
         android:id="@+id/bottomNavigation"
         android:layout_width="0dp"
-        android:background="@color/arzikina_background"
         android:layout_height="wrap_content"
+        android:background="?attr/colorSurface"
+        app:backgroundTint="?attr/colorSurface"
+        app:elevation="0dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"

@@ -32,6 +32,18 @@
         <item name="colorOnBackground">@color/arzikina_on_background</item>
         <item name="colorSurface">@color/arzikina_surface</item>
         <item name="colorOnSurface">@color/arzikina_on_surface</item>
+        <!--
+            Alignée sur colorSurface plutôt que laissée à la valeur par défaut
+            de Theme.Material3.DayNight (un ton légèrement différent) : ce
+            rôle M3 est utilisé par défaut par plusieurs composants
+            "surfaces élevées" (BottomNavigationView, BottomSheet, Card...)
+            pour leur fond. La Bottom Navigation elle-même est en plus fixée
+            explicitement (voir activity_main.xml, android:background +
+            app:backgroundTint) : cet alignement de thème est une sécurité
+            pour les composants futurs qui s'appuieraient sur ce rôle sans
+            override explicite.
+        -->
+        <item name="colorSurfaceContainer">@color/arzikina_surface</item>
         <item name="colorSurfaceVariant">@color/arzikina_surface_variant</item>
         <item name="colorOnSurfaceVariant">@color/arzikina_on_surface_variant</item>
         <item name="colorOutline">@color/arzikina_outline</item>

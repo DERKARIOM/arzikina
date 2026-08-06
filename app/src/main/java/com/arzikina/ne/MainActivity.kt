@@ -8,6 +8,7 @@ import androidx.navigation.ui.setupWithNavController
 import com.arzikina.ne.databinding.ActivityMainBinding
 import com.arzikina.ne.domain.model.ThemeMode
 import com.arzikina.ne.domain.repository.UserPreferencesRepository
+import com.arzikina.ne.util.SystemBars
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
@@ -33,9 +34,11 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         applyStoredThemeMode()
+        SystemBars.configure(this)
 
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        SystemBars.applyInsets(topInsetView = binding.navHostFragment, bottomInsetView = binding.bottomNavigation)
 
         val navHostFragment = supportFragmentManager
             .findFragmentById(R.id.navHostFragment) as NavHostFragment

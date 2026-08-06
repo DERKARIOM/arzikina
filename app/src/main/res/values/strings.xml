@@ -126,6 +126,9 @@
     <string name="statistics_evolution_title">Évolution (6 derniers mois)</string>
     <string name="statistics_breakdown_title">Répartition des dépenses (ce mois)</string>
     <string name="statistics_breakdown_empty">Aucune dépense ce mois-ci.</string>
+    <string name="statistics_legend_income">Revenus</string>
+    <string name="statistics_legend_expense">Dépenses</string>
+    <string name="statistics_breakdown_item_subtitle">%1$s · %2$d %%</string>
 
     <!-- Objectifs d'épargne -->
     <string name="dashboard_savings_goals_action">Gérer mes objectifs d\'épargne</string>
