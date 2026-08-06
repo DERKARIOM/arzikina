@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ImageView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/iconImage"
+    android:layout_width="@dimen/icon_size_large"
+    android:layout_height="@dimen/icon_size_large"
+    android:layout_margin="@dimen/spacing_xs"
+    android:background="@drawable/bg_icon_picker_selector"
+    android:contentDescription="@null"
+    android:padding="@dimen/spacing_s"
+    android:tint="?attr/colorOnSurface" />

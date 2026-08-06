@@ -30,10 +30,32 @@
         tools:layout="@layout/fragment_transactions" />
 
     <fragment
+        android:id="@+id/transactionFormFragment"
+        android:name="com.arzikina.ne.presentation.transactions.TransactionFormFragment"
+        android:label="@string/transaction_form_title_add"
+        tools:layout="@layout/fragment_transaction_form">
+        <argument
+            android:name="transactionId"
+            android:defaultValue="0L"
+            app:argType="long" />
+    </fragment>
+
+    <fragment
         android:id="@+id/budgetFragment"
         android:name="com.arzikina.ne.presentation.budget.BudgetFragment"
         android:label="@string/nav_budget"
         tools:layout="@layout/fragment_budget" />
+
+    <fragment
+        android:id="@+id/budgetFormFragment"
+        android:name="com.arzikina.ne.presentation.budget.BudgetFormFragment"
+        android:label="@string/budget_form_title_add"
+        tools:layout="@layout/fragment_budget_form">
+        <argument
+            android:name="budgetId"
+            android:defaultValue="0L"
+            app:argType="long" />
+    </fragment>
 
     <fragment
         android:id="@+id/statisticsFragment"
@@ -46,5 +68,44 @@
         android:name="com.arzikina.ne.presentation.settings.SettingsFragment"
         android:label="@string/nav_settings"
         tools:layout="@layout/fragment_settings" />
+
+    <!--
+        Écrans secondaires, atteints depuis le Dashboard (pas dans la Bottom
+        Navigation) : mêmes routes que sous Compose, reconstruites une à une.
+    -->
+
+    <fragment
+        android:id="@+id/accountsFragment"
+        android:name="com.arzikina.ne.presentation.accounts.AccountsFragment"
+        android:label="@string/accounts_title"
+        tools:layout="@layout/fragment_accounts" />
+
+    <fragment
+        android:id="@+id/accountFormFragment"
+        android:name="com.arzikina.ne.presentation.accounts.AccountFormFragment"
+        android:label="@string/account_form_title_add"
+        tools:layout="@layout/fragment_account_form">
+        <argument
+            android:name="accountId"
+            android:defaultValue="0L"
+            app:argType="long" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/categoriesFragment"
+        android:name="com.arzikina.ne.presentation.categories.CategoriesFragment"
+        android:label="@string/categories_title"
+        tools:layout="@layout/fragment_categories" />
+
+    <fragment
+        android:id="@+id/categoryFormFragment"
+        android:name="com.arzikina.ne.presentation.categories.CategoryFormFragment"
+        android:label="@string/category_form_title_add"
+        tools:layout="@layout/fragment_category_form">
+        <argument
+            android:name="categoryId"
+            android:defaultValue="0L"
+            app:argType="long" />
+    </fragment>
 
 </navigation>

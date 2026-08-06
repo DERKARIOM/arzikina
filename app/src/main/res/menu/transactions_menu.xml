@@ -1,0 +1,8 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <item
+        android:id="@+id/action_toggle_filters"
+        android:icon="@drawable/ic_filter_24"
+        android:title="@string/transactions_filters_action"
+        app:showAsAction="always" />
+</menu>

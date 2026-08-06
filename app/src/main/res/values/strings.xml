@@ -52,6 +52,7 @@
     <string name="account_form_color_label">Couleur</string>
     <string name="account_form_currency_label">Devise</string>
     <string name="account_form_balance_label">Solde initial</string>
+    <string name="account_item_initial_balance">Solde initial : %1$s</string>
 
     <!-- Catégories -->
     <string name="dashboard_categories_action">Gérer mes catégories</string>
@@ -84,6 +85,8 @@
     <string name="transaction_form_date_label">Date</string>
     <string name="transaction_form_time_label">Heure</string>
     <string name="transaction_form_description_label">Description (optionnel)</string>
+    <string name="transaction_uncategorized">Sans catégorie</string>
+    <string name="transaction_unknown_account">Compte inconnu</string>
     <string name="transactions_filters_action">Filtres</string>
     <string name="transactions_search_placeholder">Rechercher une transaction</string>
     <string name="transactions_period_all">Toute période</string>
@@ -99,6 +102,7 @@
     <string name="dashboard_expense_label">Dépenses (ce mois)</string>
     <string name="dashboard_recent_transactions_title">Dernières transactions</string>
     <string name="dashboard_recent_transactions_empty">Aucune transaction pour l\'instant.</string>
+    <string name="dashboard_transaction_subtitle">%1$s • %2$s</string>
 
     <!-- Budgets -->
     <string name="budgets_add">Ajouter</string>
@@ -115,6 +119,8 @@
     <string name="budget_form_category_label">Catégorie</string>
     <string name="budget_form_period_label">Période</string>
     <string name="budget_form_limit_label">Plafond</string>
+    <string name="budget_item_subtitle">%1$s · %2$s</string>
+    <string name="budget_form_no_categories">Toutes les catégories de dépense ont déjà un budget.</string>
 
     <!-- Statistiques -->
     <string name="statistics_evolution_title">Évolution (6 derniers mois)</string>

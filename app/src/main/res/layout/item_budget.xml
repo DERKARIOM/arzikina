@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="?attr/selectableItemBackground"
+    android:clickable="true"
+    android:focusable="true"
+    android:paddingHorizontal="@dimen/spacing_m"
+    android:paddingVertical="@dimen/spacing_s">
+
+    <ImageView
+        android:id="@+id/categoryIcon"
+        android:layout_width="@dimen/icon_size_large"
+        android:layout_height="@dimen/icon_size_large"
+        android:background="@drawable/bg_icon_circle"
+        android:contentDescription="@null"
+        android:padding="@dimen/spacing_s"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:tint="@android:color/white" />
+
+    <TextView
+        android:id="@+id/categoryName"
+        style="@style/TextAppearance.Material3.TitleSmall"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/spacing_m"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:textColor="?attr/colorOnSurface"
+        app:layout_constraintEnd_toStartOf="@id/deleteButton"
+        app:layout_constraintStart_toEndOf="@id/categoryIcon"
+        app:layout_constraintTop_toTopOf="@id/categoryIcon"
+        tools:text="Nourriture" />
+
+    <TextView
+        android:id="@+id/periodLabel"
+        style="@style/TextAppearance.Material3.BodySmall"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/spacing_m"
+        android:layout_marginTop="2dp"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        app:layout_constraintEnd_toStartOf="@id/deleteButton"
+        app:layout_constraintStart_toEndOf="@id/categoryIcon"
+        app:layout_constraintTop_toBottomOf="@id/categoryName"
+        tools:text="Mensuel · 120 000 F CFA" />
+
+    <ImageButton
+        android:id="@+id/deleteButton"
+        android:layout_width="@dimen/icon_size_default"
+        android:layout_height="@dimen/icon_size_default"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="@string/action_delete"
+        android:src="@drawable/ic_delete_24"
+        app:layout_constraintBottom_toBottomOf="@id/categoryIcon"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="@id/categoryIcon" />
+
+    <com.google.android.material.progressindicator.LinearProgressIndicator
+        android:id="@+id/progressBar"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/spacing_s"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/categoryIcon"
+        app:trackCornerRadius="4dp"
+        app:trackThickness="8dp"
+        tools:progress="60" />
+
+    <TextView
+        android:id="@+id/remainingLabel"
+        style="@style/TextAppearance.Material3.BodySmall"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/spacing_xs"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/progressBar"
+        tools:text="Restant : 48 000 F CFA" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

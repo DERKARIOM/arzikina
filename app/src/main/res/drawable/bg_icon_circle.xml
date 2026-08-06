@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Pastille ronde utilisée comme fond derrière une icône de catégorie. La
+    couleur elle-même vient toujours de Category.colorArgb, appliquée par
+    code via l'attribut `backgroundTint` de la vue qui utilise ce drawable
+    (voir RecentTransactionsAdapter) : la couleur ici n'est qu'un espace
+    réservé neutre.
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="oval">
+    <solid android:color="#FFFFFFFF" />
+</shape>
