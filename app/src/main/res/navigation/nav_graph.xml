@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/nav_graph"
+    app:startDestination="@id/dashboardFragment">
+
+    <!--
+        Les 5 onglets de la Bottom Navigation. Les identifiants (@+id/...)
+        correspondent exactement à ceux de menu/bottom_nav_menu.xml : c'est ce
+        qui permet à NavigationUI.setupWithNavController de faire le lien
+        automatiquement entre un item de menu sélectionné et sa destination.
+
+        Les écrans secondaires (Comptes, Catégories, formulaires...) seront
+        ajoutés comme destinations supplémentaires au fur et à mesure de leur
+        reconversion en XML/Views, comme en Compose où ils étaient atteints
+        depuis le Dashboard sans faire partie de la Bottom Navigation.
+    -->
+
+    <fragment
+        android:id="@+id/dashboardFragment"
+        android:name="com.arzikina.ne.presentation.dashboard.DashboardFragment"
+        android:label="@string/nav_dashboard"
+        tools:layout="@layout/fragment_dashboard" />
+
+    <fragment
+        android:id="@+id/transactionsFragment"
+        android:name="com.arzikina.ne.presentation.transactions.TransactionsFragment"
+        android:label="@string/nav_transactions"
+        tools:layout="@layout/fragment_transactions" />
+
+    <fragment
+        android:id="@+id/budgetFragment"
+        android:name="com.arzikina.ne.presentation.budget.BudgetFragment"
+        android:label="@string/nav_budget"
+        tools:layout="@layout/fragment_budget" />
+
+    <fragment
+        android:id="@+id/statisticsFragment"
+        android:name="com.arzikina.ne.presentation.statistics.StatisticsFragment"
+        android:label="@string/nav_statistics"
+        tools:layout="@layout/fragment_statistics" />
+
+    <fragment
+        android:id="@+id/settingsFragment"
+        android:name="com.arzikina.ne.presentation.settings.SettingsFragment"
+        android:label="@string/nav_settings"
+        tools:layout="@layout/fragment_settings" />
+
+</navigation>

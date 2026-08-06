@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!--
+        Thème racine Arzikina — Material Components sur Views (pas de Jetpack
+        Compose, voir instructions projet), basé sur Theme.Material3.DayNight :
+        le parent bascule automatiquement entre les rôles clairs/sombres selon
+        le système, tandis que les valeurs elles-mêmes viennent de colors.xml /
+        values-night/colors.xml. Le réglage manuel (Système/Clair/Sombre) choisi
+        dans l'écran Paramètres est appliqué par-dessus via
+        AppCompatDelegate.setDefaultNightMode (voir MainActivity).
+    -->
+    <style name="Theme.Arzikina" parent="Theme.Material3.DayNight.NoActionBar">
+        <!-- Émeraude (couleur principale) -->
+        <item name="colorPrimary">@color/arzikina_primary</item>
+        <item name="colorOnPrimary">@color/arzikina_on_primary</item>
+        <item name="colorPrimaryContainer">@color/arzikina_primary_container</item>
+        <item name="colorOnPrimaryContainer">@color/arzikina_on_primary_container</item>
+
+        <!-- Vert clair (accent secondaire) -->
+        <item name="colorSecondary">@color/arzikina_secondary</item>
+        <item name="colorOnSecondary">@color/arzikina_on_secondary</item>
+        <item name="colorSecondaryContainer">@color/arzikina_secondary_container</item>
+        <item name="colorOnSecondaryContainer">@color/arzikina_on_secondary_container</item>
+
+        <!-- Tertiaire -->
+        <item name="colorTertiary">@color/arzikina_tertiary</item>
+        <item name="colorOnTertiary">@color/arzikina_on_tertiary</item>
+
+        <!-- Neutres -->
+        <item name="android:colorBackground">@color/arzikina_background</item>
+        <item name="colorOnBackground">@color/arzikina_on_background</item>
+        <item name="colorSurface">@color/arzikina_surface</item>
+        <item name="colorOnSurface">@color/arzikina_on_surface</item>
+        <item name="colorSurfaceVariant">@color/arzikina_surface_variant</item>
+        <item name="colorOnSurfaceVariant">@color/arzikina_on_surface_variant</item>
+        <item name="colorOutline">@color/arzikina_outline</item>
+
+        <!-- Erreur -->
+        <item name="colorError">@color/arzikina_error</item>
+        <item name="colorOnError">@color/arzikina_on_error</item>
+        <item name="colorErrorContainer">@color/arzikina_error_container</item>
+        <item name="colorOnErrorContainer">@color/arzikina_on_error_container</item>
+
+        <!-- Coins arrondis : échelle Arzikina (voir styles ShapeAppearance ci-dessous) -->
+        <item name="shapeAppearanceCornerExtraSmall">@style/ShapeAppearance.Arzikina.ExtraSmall</item>
+        <item name="shapeAppearanceCornerSmall">@style/ShapeAppearance.Arzikina.Small</item>
+        <item name="shapeAppearanceCornerMedium">@style/ShapeAppearance.Arzikina.Medium</item>
+        <item name="shapeAppearanceCornerLarge">@style/ShapeAppearance.Arzikina.Large</item>
+        <item name="shapeAppearanceCornerExtraLarge">@style/ShapeAppearance.Arzikina.ExtraLarge</item>
+    </style>
+
+    <!-- Échelle de coins arrondis Arzikina (miroir de l'échelle dimens.xml corner_radius_*). -->
+    <style name="ShapeAppearance.Arzikina.ExtraSmall" parent="ShapeAppearance.Material3.Corner.ExtraSmall">
+        <item name="cornerSize">@dimen/corner_radius_extra_small</item>
+    </style>
+
+    <style name="ShapeAppearance.Arzikina.Small" parent="ShapeAppearance.Material3.Corner.Small">
+        <item name="cornerSize">@dimen/corner_radius_small</item>
+    </style>
+
+    <style name="ShapeAppearance.Arzikina.Medium" parent="ShapeAppearance.Material3.Corner.Medium">
+        <item name="cornerSize">@dimen/corner_radius_medium</item>
+    </style>
+
+    <style name="ShapeAppearance.Arzikina.Large" parent="ShapeAppearance.Material3.Corner.Large">
+        <item name="cornerSize">@dimen/corner_radius_large</item>
+    </style>
+
+    <style name="ShapeAppearance.Arzikina.ExtraLarge" parent="ShapeAppearance.Material3.Corner.ExtraLarge">
+        <item name="cornerSize">@dimen/corner_radius_extra_large</item>
+    </style>
+</resources>

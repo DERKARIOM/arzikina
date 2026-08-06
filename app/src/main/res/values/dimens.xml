@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Échelle d'espacement, réutilisée dans tous les layouts pour éviter les
+         valeurs magiques dispersées (voir instructions projet). -->
+    <dimen name="spacing_xs">4dp</dimen>
+    <dimen name="spacing_s">8dp</dimen>
+    <dimen name="spacing_m">16dp</dimen>
+    <dimen name="spacing_l">24dp</dimen>
+    <dimen name="spacing_xl">32dp</dimen>
+
+    <!-- Échelle de coins arrondis (miroir des ShapeAppearance.Arzikina.* de themes.xml,
+         utile quand un composant a besoin d'un rayon en dur, ex. un CardView imbriqué). -->
+    <dimen name="corner_radius_extra_small">8dp</dimen>
+    <dimen name="corner_radius_small">12dp</dimen>
+    <dimen name="corner_radius_medium">16dp</dimen>
+    <dimen name="corner_radius_large">24dp</dimen>
+    <dimen name="corner_radius_extra_large">32dp</dimen>
+
+    <!-- Icônes -->
+    <dimen name="icon_size_bottom_nav">24dp</dimen>
+    <dimen name="icon_size_default">24dp</dimen>
+    <dimen name="icon_size_large">40dp</dimen>
+
+    <!-- Élévation -->
+    <dimen name="elevation_card">1dp</dimen>
+    <dimen name="elevation_raised">3dp</dimen>
+</resources>

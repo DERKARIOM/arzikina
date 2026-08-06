@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Variante sombre de la palette Arzikina — mêmes noms de ressources que
+         values/colors.xml, voir ce fichier pour le raisonnement. -->
+
+    <!-- Émeraude (couleur principale) -->
+    <color name="arzikina_primary">#FF5CE0AE</color>
+    <color name="arzikina_on_primary">#FF00201A</color>
+    <color name="arzikina_primary_container">#FF00513B</color>
+    <color name="arzikina_on_primary_container">#FF9AF6C9</color>
+
+    <!-- Vert clair (accent secondaire) -->
+    <color name="arzikina_secondary">#FFB3D6A2</color>
+    <color name="arzikina_on_secondary">#FF0A2100</color>
+    <color name="arzikina_secondary_container">#FF334E27</color>
+    <color name="arzikina_on_secondary_container">#FFCFF2BC</color>
+
+    <!-- Tertiaire -->
+    <color name="arzikina_tertiary">#FF5CE0AE</color>
+    <color name="arzikina_on_tertiary">#FF00201A</color>
+
+    <!-- Neutres -->
+    <color name="arzikina_background">#FF191C19</color>
+    <color name="arzikina_on_background">#FFF5F7F6</color>
+    <color name="arzikina_surface">#FF191C19</color>
+    <color name="arzikina_on_surface">#FFF5F7F6</color>
+    <color name="arzikina_surface_variant">#FF2C302B</color>
+    <color name="arzikina_on_surface_variant">#FFC4C9C6</color>
+    <color name="arzikina_outline">#FF8E938F</color>
+
+    <!-- Erreur -->
+    <color name="arzikina_error">#FFFFB4AB</color>
+    <color name="arzikina_on_error">#FF410002</color>
+    <color name="arzikina_error_container">#FFBA1A1A</color>
+    <color name="arzikina_on_error_container">#FFFFDAD6</color>
+
+    <!-- Couleurs sémantiques : identiques au mode clair (voir values/colors.xml) -->
+    <color name="income_green">#FF16A34A</color>
+    <color name="expense_red">#FFDC2626</color>
+    <color name="warning_amber">#FFF59E0B</color>
+</resources>

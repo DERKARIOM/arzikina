@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+        Palette de marque Arzikina — vert émeraude, déclinée en rôles Material 3
+        (thème clair). La variante sombre est dans values-night/colors.xml : les
+        noms de ressources sont identiques, seules les valeurs changent, ce qui
+        permet à themes.xml de rester unique pour les deux modes.
+    -->
+
+    <!-- Émeraude (couleur principale) -->
+    <color name="arzikina_primary">#FF006C4F</color>
+    <color name="arzikina_on_primary">#FFFFFFFF</color>
+    <color name="arzikina_primary_container">#FF9AF6C9</color>
+    <color name="arzikina_on_primary_container">#FF00201A</color>
+
+    <!-- Vert clair (accent secondaire) -->
+    <color name="arzikina_secondary">#FF4C6B3F</color>
+    <color name="arzikina_on_secondary">#FFFFFFFF</color>
+    <color name="arzikina_secondary_container">#FFCFF2BC</color>
+    <color name="arzikina_on_secondary_container">#FF0A2100</color>
+
+    <!-- Tertiaire -->
+    <color name="arzikina_tertiary">#FF00513B</color>
+    <color name="arzikina_on_tertiary">#FFFFFFFF</color>
+
+    <!-- Neutres -->
+    <color name="arzikina_background">#FFFFFFFF</color>
+    <color name="arzikina_on_background">#FF191C19</color>
+    <color name="arzikina_surface">#FFFFFFFF</color>
+    <color name="arzikina_on_surface">#FF191C19</color>
+    <color name="arzikina_surface_variant">#FFF5F7F6</color>
+    <color name="arzikina_on_surface_variant">#FF454944</color>
+    <color name="arzikina_outline">#FF8E938F</color>
+
+    <!-- Erreur -->
+    <color name="arzikina_error">#FFBA1A1A</color>
+    <color name="arzikina_on_error">#FFFFFFFF</color>
+    <color name="arzikina_error_container">#FFFFDAD6</color>
+    <color name="arzikina_on_error_container">#FF410002</color>
+
+    <!-- Couleurs sémantiques (revenus/dépenses/alertes), identiques dans les deux modes -->
+    <color name="income_green">#FF16A34A</color>
+    <color name="expense_red">#FFDC2626</color>
+    <color name="warning_amber">#FFF59E0B</color>
+</resources>

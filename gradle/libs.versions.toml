@@ -1,0 +1,108 @@
+[versions]
+agp = "9.2.1"
+# 1.19.0 exige compileSdk 37 (Android 17, encore en préversion) : on reste sur
+# 1.18.0, la dernière version compatible avec notre compileSdk 36.1 stable.
+coreKtx = "1.18.0"
+junit = "4.13.2"
+junitVersion = "1.1.5"
+espressoCore = "3.5.1"
+# 2.11.0 exige compileSdk 37 (Android 17, encore en préversion) à partir de sa
+# ligne alpha ; 2.10.0 est la dernière version stable compatible avec notre
+# compileSdk 36.1 — même raison que pour androidx.core (voir plus haut).
+lifecycleRuntimeKtx = "2.10.0"
+appcompat = "1.7.1"
+material = "1.13.0"
+constraintlayout = "2.2.1"
+fragmentKtx = "1.8.9"
+# Kotlin 2.4.0 (juin 2026) : requis car plusieurs dépendances récentes
+# (Vico, Coil3) embarquent kotlin-stdlib 2.4.0 en transitif. Rester sur 2.2.10
+# provoquait un conflit de version de métadonnées au moment de la compilation.
+kotlin = "2.4.0"
+
+# Dependency injection (Hilt)
+hilt = "2.60.1"
+hiltNavigationFragment = "1.3.0"
+hiltWork = "1.3.0"
+
+# Annotation processing
+ksp = "2.3.9"
+
+# Persistence
+room = "2.8.4"
+datastorePreferences = "1.2.1"
+
+# Navigation
+navigation = "2.9.7"
+
+# Background work (prépare les rappels et synchronisations futures)
+workManager = "2.11.2"
+
+# Asynchronous
+kotlinxCoroutines = "1.11.0"
+
+# Sauvegarde / export JSON
+kotlinxSerializationJson = "1.10.0"
+
+# Images (photo de reçu)
+coil = "3.5.0"
+
+# Graphiques (statistiques)
+vico = "3.2.2"
+
+# Listes (RecyclerView)
+recyclerview = "1.4.0"
+
+[libraries]
+androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
+junit = { group = "junit", name = "junit", version.ref = "junit" }
+androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
+androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
+androidx-lifecycle-runtime-ktx = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx", version.ref = "lifecycleRuntimeKtx" }
+
+# UI Views (Material Design 3 sur Views, sans Jetpack Compose — voir instructions projet)
+androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
+material = { group = "com.google.android.material", name = "material", version.ref = "material" }
+androidx-constraintlayout = { group = "androidx.constraintlayout", name = "constraintlayout", version.ref = "constraintlayout" }
+androidx-fragment-ktx = { group = "androidx.fragment", name = "fragment-ktx", version.ref = "fragmentKtx" }
+androidx-recyclerview = { group = "androidx.recyclerview", name = "recyclerview", version.ref = "recyclerview" }
+
+# Hilt
+hilt-android = { group = "com.google.dagger", name = "hilt-android", version.ref = "hilt" }
+hilt-android-compiler = { group = "com.google.dagger", name = "hilt-android-compiler", version.ref = "hilt" }
+androidx-hilt-navigation-fragment = { group = "androidx.hilt", name = "hilt-navigation-fragment", version.ref = "hiltNavigationFragment" }
+androidx-hilt-work = { group = "androidx.hilt", name = "hilt-work", version.ref = "hiltWork" }
+androidx-hilt-compiler = { group = "androidx.hilt", name = "hilt-compiler", version.ref = "hiltWork" }
+
+# Room
+androidx-room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "room" }
+androidx-room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
+androidx-room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
+
+# DataStore
+androidx-datastore-preferences = { group = "androidx.datastore", name = "datastore-preferences", version.ref = "datastorePreferences" }
+
+# Navigation (Views / Fragments)
+androidx-navigation-fragment-ktx = { group = "androidx.navigation", name = "navigation-fragment-ktx", version.ref = "navigation" }
+androidx-navigation-ui-ktx = { group = "androidx.navigation", name = "navigation-ui-ktx", version.ref = "navigation" }
+
+# WorkManager
+androidx-work-runtime-ktx = { group = "androidx.work", name = "work-runtime-ktx", version.ref = "workManager" }
+
+# Coroutines
+kotlinx-coroutines-android = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-android", version.ref = "kotlinxCoroutines" }
+
+# Sérialisation JSON (sauvegarde/restauration)
+kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinxSerializationJson" }
+
+# Coil (chargement d'images - photo de reçu), variante Views (ImageView.load).
+# Pas de module réseau : seules des URI locales (photos de reçu) sont chargées.
+coil = { group = "io.coil-kt.coil3", name = "coil", version.ref = "coil" }
+
+# Vico (graphiques statistiques), variante Views (pas de Compose)
+vico-views = { group = "com.patrykandpatrick.vico", name = "views", version.ref = "vico" }
+
+[plugins]
+android-application = { id = "com.android.application", version.ref = "agp" }
+kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
+hilt-android = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
