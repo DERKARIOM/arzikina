@@ -11,16 +11,16 @@
     <color name="arzikina_primary">#42B998</color>
     <color name="arzikina_on_primary">#FFFFFFFF</color>
     <color name="arzikina_primary_container">#42B998</color>
-    <color name="arzikina_on_primary_container">#FF00201A</color>
+    <color name="arzikina_on_primary_container">#42B998</color>
 
     <!-- Vert clair (accent secondaire) -->
     <color name="arzikina_secondary">#42B998</color>
     <color name="arzikina_on_secondary">#FFFFFFFF</color>
-    <color name="arzikina_secondary_container">#FFCFF2BC</color>
-    <color name="arzikina_on_secondary_container">#FF0A2100</color>
+    <color name="arzikina_secondary_container">#42B998</color>
+    <color name="arzikina_on_secondary_container">#42B998</color>
 
     <!-- Tertiaire -->
-    <color name="arzikina_tertiary">#FF00513B</color>
+    <color name="arzikina_tertiary">#42B998</color>
     <color name="arzikina_on_tertiary">#FFFFFFFF</color>
 
     <!-- Neutres -->
@@ -39,7 +39,7 @@
     <color name="arzikina_on_error_container">#FF410002</color>
 
     <!-- Couleurs sémantiques (revenus/dépenses/alertes), identiques dans les deux modes -->
-    <color name="income_green">#FF16A34A</color>
+    <color name="income_green">#42B998</color>
     <color name="expense_red">#FFDC2626</color>
     <color name="warning_amber">#FFF59E0B</color>
 </resources>

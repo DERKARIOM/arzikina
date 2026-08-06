@@ -43,6 +43,13 @@ class MainActivity : AppCompatActivity() {
         val navHostFragment = supportFragmentManager
             .findFragmentById(R.id.navHostFragment) as NavHostFragment
         binding.bottomNavigation.setupWithNavController(navHostFragment.navController)
+
+        // Désactive la pastille d'indicateur actif dessinée par défaut par Material
+        // (un aplat arrondi derrière l'icône) : la sélection ne doit se traduire que
+        // par un changement de couleur de l'icône et du texte (voir
+        // app:itemIconTint / app:itemTextColor dans activity_main.xml), sans aucune
+        // forme derrière.
+        binding.bottomNavigation.isItemActiveIndicatorEnabled = false
     }
 
     /**

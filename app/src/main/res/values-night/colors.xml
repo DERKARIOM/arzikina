@@ -5,19 +5,19 @@
 
     <!-- Émeraude (couleur principale) -->
     <color name="arzikina_primary">#42B998</color>
-    <color name="arzikina_on_primary">#FF00201A</color>
-    <color name="arzikina_primary_container">#FF00513B</color>
-    <color name="arzikina_on_primary_container">#FF9AF6C9</color>
+    <color name="arzikina_on_primary">#42B998</color>
+    <color name="arzikina_primary_container">#42B998</color>
+    <color name="arzikina_on_primary_container">#42B998</color>
 
     <!-- Vert clair (accent secondaire) -->
-    <color name="arzikina_secondary">#FFB3D6A2</color>
-    <color name="arzikina_on_secondary">#FF0A2100</color>
-    <color name="arzikina_secondary_container">#FF334E27</color>
-    <color name="arzikina_on_secondary_container">#FFCFF2BC</color>
+    <color name="arzikina_secondary">#42B998</color>
+    <color name="arzikina_on_secondary">#42B998</color>
+    <color name="arzikina_secondary_container">#42B998</color>
+    <color name="arzikina_on_secondary_container">#42B998</color>
 
     <!-- Tertiaire -->
     <color name="arzikina_tertiary">#FF5CE0AE</color>
-    <color name="arzikina_on_tertiary">#FF00201A</color>
+    <color name="arzikina_on_tertiary">#42B998</color>
 
     <!-- Neutres -->
     <color name="arzikina_background">#0D1318</color>
@@ -35,7 +35,7 @@
     <color name="arzikina_on_error_container">#FFFFDAD6</color>
 
     <!-- Couleurs sémantiques : identiques au mode clair (voir values/colors.xml) -->
-    <color name="income_green">#FF16A34A</color>
+    <color name="income_green">#42B998</color>
     <color name="expense_red">#FFDC2626</color>
     <color name="warning_amber">#FFF59E0B</color>
 </resources>

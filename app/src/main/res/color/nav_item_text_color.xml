@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Couleur du label texte de chaque item de la Bottom Navigation, appliquée via
+    app:itemTextColor sur la BottomNavigationView (activity_main.xml) : couleur
+    primaire (émeraude) quand l'item est sélectionné, couleur neutre discrète sinon.
+    Les deux attributs référencés s'adaptent déjà automatiquement au thème
+    clair/sombre.
+-->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:color="?attr/colorPrimary"
+        android:state_checked="true" />
+    <item android:color="?attr/colorOnSurfaceVariant" />
+</selector>
