@@ -37,7 +37,6 @@ class AccountsFragment : Fragment(R.layout.fragment_accounts) {
         val viewBinding = FragmentAccountsBinding.bind(view)
         binding = viewBinding
 
-        viewBinding.toolbar.setNavigationOnClickListener { findNavController().navigateUp() }
         viewBinding.accountsList.layoutManager = LinearLayoutManager(requireContext())
         viewBinding.accountsList.adapter = adapter
         viewBinding.addAccountButton.setOnClickListener { navigateToForm(accountId = 0L) }

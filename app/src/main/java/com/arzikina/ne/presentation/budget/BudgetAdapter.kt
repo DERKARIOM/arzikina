@@ -12,7 +12,12 @@ import com.arzikina.ne.databinding.ItemBudgetBinding
 import com.arzikina.ne.domain.model.BudgetPeriod
 import com.arzikina.ne.domain.model.CurrencyAmount
 import com.arzikina.ne.presentation.categories.CategoryIconMapper
+import com.arzikina.ne.util.DatePeriods
 import com.arzikina.ne.util.Money
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+import java.time.temporal.ChronoUnit
+import java.util.Locale
 import kotlin.math.roundToInt
 
 /**
@@ -71,6 +76,21 @@ class BudgetAdapter(
                 ContextCompat.getColor(context, if (isOverspent) R.color.expense_red else R.color.arzikina_on_surface_variant)
             )
 
+            val today = LocalDate.now()
+            val periodEnd = DatePeriods.currentPeriodEnd(item.budget.period, today)
+            val daysUntilExpiration = ChronoUnit.DAYS.between(today, periodEnd)
+            val isExpiringSoon = daysUntilExpiration <= EXPIRATION_WARNING_THRESHOLD_DAYS
+            binding.expirationLabel.text = context.getString(
+                R.string.budget_expires_prefix,
+                periodEnd.format(EXPIRATION_DATE_FORMATTER)
+            )
+            val expirationColor = ContextCompat.getColor(
+                context,
+                if (isExpiringSoon) R.color.expense_red else R.color.arzikina_on_surface_variant
+            )
+            binding.expirationLabel.setTextColor(expirationColor)
+            binding.expirationIcon.setColorFilter(expirationColor)
+
             binding.root.setOnClickListener { onClick(item) }
             binding.deleteButton.setOnClickListener { onDeleteClick(item) }
         }
@@ -84,5 +104,10 @@ class BudgetAdapter(
             override fun areContentsTheSame(oldItem: BudgetUiItem, newItem: BudgetUiItem): Boolean =
                 oldItem == newItem
         }
+
+        /** Nombre de jours restants à partir duquel la date d'expiration est mise en évidence en rouge. */
+        const val EXPIRATION_WARNING_THRESHOLD_DAYS = 3L
+
+        val EXPIRATION_DATE_FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPattern("d MMM", Locale.FRENCH)
     }
 }

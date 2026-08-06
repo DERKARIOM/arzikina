@@ -6,15 +6,16 @@
     app:startDestination="@id/dashboardFragment">
 
     <!--
-        Les 5 onglets de la Bottom Navigation. Les identifiants (@+id/...)
-        correspondent exactement à ceux de menu/bottom_nav_menu.xml : c'est ce
-        qui permet à NavigationUI.setupWithNavController de faire le lien
-        automatiquement entre un item de menu sélectionné et sa destination.
+        Les 5 onglets de la Bottom Navigation (Accueil, Compte, Transaction,
+        Rapports, Autre). Les identifiants (@+id/...) correspondent exactement
+        à ceux de menu/bottom_nav_menu.xml : c'est ce qui permet à
+        NavigationUI.setupWithNavController de faire le lien automatiquement
+        entre un item de menu sélectionné et sa destination.
 
-        Les écrans secondaires (Comptes, Catégories, formulaires...) seront
-        ajoutés comme destinations supplémentaires au fur et à mesure de leur
-        reconversion en XML/Views, comme en Compose où ils étaient atteints
-        depuis le Dashboard sans faire partie de la Bottom Navigation.
+        Budget, Catégories et Paramètres restent des destinations du graphe
+        (donc atteignables par navigate()) mais ne sont plus des onglets
+        directs : on y accède depuis l'onglet "Autre" (voir
+        presentation/more/MoreFragment.kt), pour ne garder que 5 onglets.
     -->
 
     <fragment
@@ -69,9 +70,19 @@
         android:label="@string/nav_settings"
         tools:layout="@layout/fragment_settings" />
 
+    <fragment
+        android:id="@+id/moreFragment"
+        android:name="com.arzikina.ne.presentation.more.MoreFragment"
+        android:label="@string/nav_more"
+        tools:layout="@layout/fragment_more" />
+
     <!--
-        Écrans secondaires, atteints depuis le Dashboard (pas dans la Bottom
-        Navigation) : mêmes routes que sous Compose, reconstruites une à une.
+        accountsFragment est l'onglet "Compte" (déclaré ici avec son propre
+        écran de formulaire, pas dans le bloc des 5 onglets ci-dessus pour ne
+        pas casser l'ordre historique du fichier, mais son id correspond bien
+        à l'item "Compte" de bottom_nav_menu.xml). categoriesFragment reste,
+        lui, un écran secondaire : atteint depuis l'onglet Autre (voir
+        MoreFragment) ou depuis le raccourci du Dashboard, jamais un onglet.
     -->
 
     <fragment

@@ -29,13 +29,13 @@
     <color name="arzikina_outline">#FF8E938F</color>
 
     <!-- Erreur -->
-    <color name="arzikina_error">#FFFFB4AB</color>
+    <color name="arzikina_error">#EE8578</color>
     <color name="arzikina_on_error">#FF410002</color>
-    <color name="arzikina_error_container">#FFBA1A1A</color>
+    <color name="arzikina_error_container">#EA706F</color>
     <color name="arzikina_on_error_container">#FFFFDAD6</color>
 
     <!-- Couleurs sémantiques : identiques au mode clair (voir values/colors.xml) -->
     <color name="income_green">#42B998</color>
-    <color name="expense_red">#FFDC2626</color>
+    <color name="expense_red">#EE8578</color>
     <color name="warning_amber">#FFF59E0B</color>
 </resources>

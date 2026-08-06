@@ -15,8 +15,11 @@
         android:padding="@dimen/spacing_m">
 
         <!--
-            Raccourcis vers les écrans secondaires (Comptes, Catégories pour
-            l'instant ; Objectifs suivra quand il sera reconstruit).
+            Raccourci vers Catégories (écran secondaire, atteint aussi depuis
+            l'onglet Autre). Comptes n'a plus de raccourci ici : c'est
+            désormais l'onglet "Compte" de la Bottom Navigation, déjà atteignable
+            directement — un raccourci en plus aurait été une redondance de
+            navigation. Objectifs suivra quand il sera reconstruit.
         -->
         <LinearLayout
             android:layout_width="match_parent"
@@ -34,125 +37,284 @@
                 android:src="@drawable/ic_category_other_24"
                 android:tint="?attr/colorOnSurface" />
 
-            <ImageButton
-                android:id="@+id/accountsShortcut"
-                android:layout_width="@dimen/icon_size_large"
-                android:layout_height="@dimen/icon_size_large"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:contentDescription="@string/dashboard_accounts_action"
-                android:padding="@dimen/spacing_s"
-                android:src="@drawable/ic_account_wallet_24"
-                android:tint="?attr/colorOnSurface" />
-
         </LinearLayout>
 
-        <!-- Solde total (une ligne par devise détenue, voir DashboardViewModel) -->
+        <!--
+            Solde total (une ligne par devise détenue, voir DashboardViewModel).
+            Carte entière cliquable vers l'onglet "Compte" (détail par compte) ;
+            l'œil masque/affiche le montant sans naviguer (voir DashboardFragment.kt,
+            android:clickable + le stopPropagation implicite d'un ImageButton dans
+            une zone cliquable — les deux zones ont chacune leur propre listener).
+        -->
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:cardBackgroundColor="?attr/colorPrimaryContainer"
+            app:cardBackgroundColor="@color/arzikina_balance_card"
+            app:cardCornerRadius="@dimen/corner_radius_large"
+            app:cardElevation="0dp">
+
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:id="@+id/balanceCard"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="?attr/selectableItemBackground"
+                android:clickable="true"
+                android:contentDescription="@string/dashboard_balance_details_action"
+                android:focusable="true"
+                android:padding="@dimen/spacing_l">
+
+                <TextView
+                    android:id="@+id/balanceLabel"
+                    style="@style/TextAppearance.Material3.LabelLarge"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/dashboard_balance_label"
+                    android:textColor="@color/arzikina_on_balance_card"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
+
+                <TextView
+                    android:id="@+id/balanceValue"
+                    style="@style/TextAppearance.Material3.HeadlineMedium"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/spacing_xs"
+                    android:textColor="@color/arzikina_on_balance_card"
+                    app:layout_constraintEnd_toStartOf="@id/toggleBalanceVisibility"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/balanceLabel"
+                    tools:text="150 000 F CFA" />
+
+                <ImageButton
+                    android:id="@+id/toggleBalanceVisibility"
+                    android:layout_width="@dimen/icon_size_default"
+                    android:layout_height="@dimen/icon_size_default"
+                    android:layout_marginStart="@dimen/spacing_s"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="@string/dashboard_balance_hide_action"
+                    android:src="@drawable/ic_visibility_24"
+                    app:layout_constraintBottom_toBottomOf="@id/balanceValue"
+                    app:layout_constraintEnd_toStartOf="@id/balanceChevron"
+                    app:layout_constraintTop_toTopOf="@id/balanceValue"
+                    app:tint="@color/arzikina_on_balance_card" />
+
+                <ImageView
+                    android:id="@+id/balanceChevron"
+                    android:layout_width="@dimen/icon_size_default"
+                    android:layout_height="@dimen/icon_size_default"
+                    android:contentDescription="@null"
+                    android:src="@drawable/ic_chevron_right_24"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:tint="@color/arzikina_on_balance_card" />
+
+            </androidx.constraintlayout.widget.ConstraintLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!--
+            Aperçu Budget : met en avant le budget le plus urgent (voir
+            DashboardViewModel.featuredBudget) avec sa barre de progression.
+            "Voir tout" mène à l'onglet Budget, qui liste tous les budgets.
+            La carte réutilise item_budget.xml et BudgetAdapter.ViewHolder tels
+            quels (voir DashboardFragment.kt) : même rendu que dans l'onglet
+            Budget, sans dupliquer la logique d'affichage — le bouton supprimer
+            de ce layout est masqué dans ce contexte (pas d'action de
+            suppression depuis l'aperçu).
+        -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/spacing_l"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <TextView
+                style="@style/TextAppearance.Material3.TitleMedium"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/dashboard_budget_title"
+                android:textColor="?attr/colorOnSurface" />
+
+            <TextView
+                android:id="@+id/budgetSeeAll"
+                style="@style/TextAppearance.Material3.LabelLarge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:clickable="true"
+                android:focusable="true"
+                android:padding="@dimen/spacing_xs"
+                android:text="@string/dashboard_budget_see_all"
+                android:textColor="?attr/colorPrimary" />
+
+        </LinearLayout>
+
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/budgetPreviewCard"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/spacing_s"
+            app:cardCornerRadius="@dimen/corner_radius_medium"
+            app:cardElevation="@dimen/elevation_card">
+
+            <include
+                android:id="@+id/budgetPreview"
+                layout="@layout/item_budget" />
+
+        </com.google.android.material.card.MaterialCardView>
+
+        <LinearLayout
+            android:id="@+id/budgetEmptyState"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/spacing_s"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:padding="@dimen/spacing_m"
+            android:visibility="gone"
+            tools:visibility="visible">
+
+            <TextView
+                style="@style/TextAppearance.Material3.BodyMedium"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/dashboard_budget_empty_title"
+                android:textColor="?attr/colorOnSurfaceVariant" />
+
+            <TextView
+                android:id="@+id/createBudgetAction"
+                style="@style/TextAppearance.Material3.LabelLarge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:clickable="true"
+                android:focusable="true"
+                android:layout_marginTop="@dimen/spacing_xs"
+                android:padding="@dimen/spacing_xs"
+                android:text="@string/dashboard_budget_empty_action"
+                android:textColor="?attr/colorPrimary" />
+
+        </LinearLayout>
+
+        <!--
+            Dépenses vs revenus du mois en cours : un seul widget (mini
+            graphique en barres + Revenu/Dépense/Différence) plutôt que deux
+            cartes séparées, sur le même fond sombre fixe que la carte Solde
+            (voir @color/arzikina_balance_card) — inspiré d'une image de
+            référence fournie par l'utilisateur. Devise : voir
+            DashboardFragment.renderIncomeExpense (limite documentée : prend
+            la première devise de chaque liste, comme le reste du tableau de
+            bord ne gère pas la conversion de change).
+        -->
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/spacing_m"
+            app:cardBackgroundColor="@color/arzikina_balance_card"
             app:cardCornerRadius="@dimen/corner_radius_large"
             app:cardElevation="0dp">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
                 android:padding="@dimen/spacing_l">
 
-                <TextView
-                    style="@style/TextAppearance.Material3.LabelLarge"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/dashboard_balance_label"
-                    android:textColor="?attr/colorOnPrimaryContainer" />
+                <com.arzikina.ne.presentation.dashboard.IncomeExpenseBarView
+                    android:id="@+id/incomeExpenseChart"
+                    android:layout_width="56dp"
+                    android:layout_height="110dp" />
 
-                <TextView
-                    android:id="@+id/balanceValue"
-                    style="@style/TextAppearance.Material3.HeadlineMedium"
-                    android:layout_width="wrap_content"
+                <LinearLayout
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="@dimen/spacing_xs"
-                    android:textColor="?attr/colorOnPrimaryContainer"
-                    tools:text="150 000 F CFA" />
+                    android:layout_marginStart="@dimen/spacing_l"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            style="@style/TextAppearance.Material3.BodyMedium"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="@string/dashboard_income_label_short"
+                            android:textColor="@color/arzikina_on_balance_card_variant" />
+
+                        <TextView
+                            android:id="@+id/incomeValue"
+                            style="@style/TextAppearance.Material3.TitleSmall"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textColor="@color/income_green"
+                            tools:text="0 F CFA" />
+
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/spacing_s"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            style="@style/TextAppearance.Material3.BodyMedium"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="@string/dashboard_expense_label_short"
+                            android:textColor="@color/arzikina_on_balance_card_variant" />
+
+                        <TextView
+                            android:id="@+id/expenseValue"
+                            style="@style/TextAppearance.Material3.TitleSmall"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textColor="@color/expense_red"
+                            tools:text="12 000 F CFA" />
+
+                    </LinearLayout>
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginVertical="@dimen/spacing_s"
+                        android:background="@color/arzikina_on_balance_card_variant" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            style="@style/TextAppearance.Material3.BodyMedium"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="@string/dashboard_difference_label"
+                            android:textColor="@color/arzikina_on_balance_card_variant" />
+
+                        <TextView
+                            android:id="@+id/differenceValue"
+                            style="@style/TextAppearance.Material3.TitleSmall"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textColor="@color/arzikina_on_balance_card"
+                            tools:text="-12 000 F CFA" />
+
+                    </LinearLayout>
+
+                </LinearLayout>
 
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
-
-        <!-- Revenus / dépenses du mois en cours -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/spacing_m"
-            android:orientation="horizontal">
-
-            <com.google.android.material.card.MaterialCardView
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginEnd="@dimen/spacing_s"
-                android:layout_weight="1"
-                app:cardCornerRadius="@dimen/corner_radius_medium"
-                app:cardElevation="@dimen/elevation_card">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="@dimen/spacing_m">
-
-                    <TextView
-                        style="@style/TextAppearance.Material3.LabelMedium"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/dashboard_income_label"
-                        android:textColor="?attr/colorOnSurfaceVariant" />
-
-                    <TextView
-                        android:id="@+id/incomeValue"
-                        style="@style/TextAppearance.Material3.TitleMedium"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="@dimen/spacing_xs"
-                        android:textColor="@color/income_green"
-                        tools:text="45 000 F CFA" />
-
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
-
-            <com.google.android.material.card.MaterialCardView
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="@dimen/spacing_s"
-                android:layout_weight="1"
-                app:cardCornerRadius="@dimen/corner_radius_medium"
-                app:cardElevation="@dimen/elevation_card">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="@dimen/spacing_m">
-
-                    <TextView
-                        style="@style/TextAppearance.Material3.LabelMedium"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/dashboard_expense_label"
-                        android:textColor="?attr/colorOnSurfaceVariant" />
-
-                    <TextView
-                        android:id="@+id/expenseValue"
-                        style="@style/TextAppearance.Material3.TitleMedium"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="@dimen/spacing_xs"
-                        android:textColor="@color/expense_red"
-                        tools:text="12 000 F CFA" />
-
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
-
-        </LinearLayout>
 
         <!-- Dernières transactions -->
         <TextView

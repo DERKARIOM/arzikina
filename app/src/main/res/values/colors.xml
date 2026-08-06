@@ -42,4 +42,19 @@
     <color name="income_green">#42B998</color>
     <color name="expense_red">#FFDC2626</color>
     <color name="warning_amber">#FFF59E0B</color>
+
+    <!--
+        Carte Solde du Dashboard (fragment_dashboard.xml) : couleur fixe,
+        volontairement identique en clair et en sombre (pas de valeur dans
+        values-night/colors.xml — Android retombe alors sur celle-ci dans les
+        deux modes), sur demande explicite pour correspondre à une image de
+        référence. Contrairement aux autres rôles de cette palette, ce n'est
+        pas un rôle Material 3 (colorPrimaryContainer etc.) : cette carte est
+        pensée comme un élément visuel "à part", pas comme une déclinaison du
+        thème.
+    -->
+    <color name="arzikina_balance_card">#1E293B</color>
+    <color name="arzikina_on_balance_card">#FFFFFFFF</color>
+    <!-- Libellés discrets sur ces cartes sombres fixes (ex. "Revenu", "Dépense"). -->
+    <color name="arzikina_on_balance_card_variant">#FF94A3B8</color>
 </resources>

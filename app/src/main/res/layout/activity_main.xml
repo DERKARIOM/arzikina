@@ -57,6 +57,10 @@
         sinon. L'indicateur actif par défaut de Material (une pastille arrondie
         derrière l'icône) reste désactivé (voir MainActivity.kt), pour n'avoir
         strictement qu'un changement de couleur, sans aucune forme.
+
+        app:labelVisibilityMode="labeled" : les 5 libellés restent toujours
+        visibles (pas seulement celui de l'item sélectionné, comportement par
+        défaut de Material au-delà de 3 items).
     -->
     <com.google.android.material.bottomnavigation.BottomNavigationView
         android:id="@+id/bottomNavigation"
@@ -67,6 +71,7 @@
         app:elevation="0dp"
         app:itemIconTint="@color/nav_item_icon_color"
         app:itemTextColor="@color/nav_item_text_color"
+        app:labelVisibilityMode="labeled"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"

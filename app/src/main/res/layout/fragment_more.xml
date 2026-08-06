@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="?attr/colorSurface">
+
+    <com.google.android.material.appbar.MaterialToolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:background="?attr/colorSurface"
+        app:layout_constraintTop_toTopOf="parent"
+        app:title="@string/nav_more"
+        app:titleTextColor="?attr/colorOnSurface" />
+
+    <!--
+        Liste (plutôt qu'un layout statique à 3 lignes) : ajouter une future
+        entrée (Objectifs d'épargne, Sauvegarde...) se fait en complétant la
+        liste dans MoreFragment.kt, sans toucher à ce layout — voir
+        instructions projet ("évolutivité sans refonte majeure").
+    -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/moreMenuList"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:clipToPadding="false"
+        android:paddingBottom="@dimen/spacing_m"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/toolbar"
+        tools:listitem="@layout/item_more_menu" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

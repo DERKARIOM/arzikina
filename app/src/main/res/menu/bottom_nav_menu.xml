@@ -1,23 +1,29 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+    5 onglets : Accueil, Compte, Transaction, Rapports, Autre. Budget,
+    Catégories et Paramètres restent des destinations du graphe de navigation
+    (voir navigation/nav_graph.xml) mais ne sont plus des onglets directs — on
+    y accède depuis "Autre" (voir presentation/more/MoreFragment.kt).
+-->
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
     <item
         android:id="@+id/dashboardFragment"
         android:icon="@drawable/ic_home_24"
         android:title="@string/nav_dashboard" />
     <item
+        android:id="@+id/accountsFragment"
+        android:icon="@drawable/ic_account_bank_24"
+        android:title="@string/nav_accounts" />
+    <item
         android:id="@+id/transactionsFragment"
         android:icon="@drawable/ic_swap_horiz_24"
         android:title="@string/nav_transactions" />
-    <item
-        android:id="@+id/budgetFragment"
-        android:icon="@drawable/ic_wallet_24"
-        android:title="@string/nav_budget" />
     <item
         android:id="@+id/statisticsFragment"
         android:icon="@drawable/ic_bar_chart_24"
         android:title="@string/nav_statistics" />
     <item
-        android:id="@+id/settingsFragment"
-        android:icon="@drawable/ic_settings_24"
-        android:title="@string/nav_settings" />
+        android:id="@+id/moreFragment"
+        android:icon="@drawable/ic_more_horiz_24"
+        android:title="@string/nav_more" />
 </menu>

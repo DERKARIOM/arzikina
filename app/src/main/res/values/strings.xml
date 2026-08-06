@@ -3,10 +3,16 @@
 
     <!-- Bottom Navigation -->
     <string name="nav_dashboard">Accueil</string>
-    <string name="nav_transactions">Transactions</string>
+    <string name="nav_accounts">Compte</string>
+    <string name="nav_transactions">Transaction</string>
     <string name="nav_budget">Budget</string>
-    <string name="nav_statistics">Statistiques</string>
+    <!-- Libellé de l'onglet ET titre d'écran de StatisticsFragment (voir fragment_statistics.xml, app:title). -->
+    <string name="nav_statistics">Rapports</string>
     <string name="nav_settings">Paramètres</string>
+    <!-- Libellé de l'onglet "Autre" (voir MoreFragment), qui regroupe Budget, Catégories et Paramètres. -->
+    <string name="nav_more">Autre</string>
+    <!-- Libellé court de la ligne "Catégories" dans l'écran "Autre" (distinct de categories_title = "Mes catégories", utilisé comme titre de l'écran Catégories lui-même). -->
+    <string name="more_menu_categories">Catégories</string>
 
     <!-- Paramètres -->
     <string name="settings_section_appearance">Apparence</string>
@@ -98,8 +104,22 @@
 
     <!-- Tableau de bord -->
     <string name="dashboard_balance_label">Solde total</string>
+    <!-- Texte affiché à la place du montant quand le solde est masqué (voir DashboardFragment.kt). -->
+    <string name="dashboard_balance_masked">•••••• CFA</string>
+    <string name="dashboard_balance_hide_action">Masquer le solde</string>
+    <string name="dashboard_balance_show_action">Afficher le solde</string>
+    <!-- Contenu accessible de la carte Solde, cliquable pour ouvrir le détail par compte. -->
+    <string name="dashboard_balance_details_action">Voir le détail par compte</string>
     <string name="dashboard_income_label">Revenus (ce mois)</string>
     <string name="dashboard_expense_label">Dépenses (ce mois)</string>
+    <!-- Libellés compacts pour le widget "Dépenses vs revenus" (voir IncomeExpenseBarView). -->
+    <string name="dashboard_income_label_short">Revenu</string>
+    <string name="dashboard_expense_label_short">Dépense</string>
+    <string name="dashboard_difference_label">Différence</string>
+    <string name="dashboard_budget_title">Budget</string>
+    <string name="dashboard_budget_see_all">Voir tout</string>
+    <string name="dashboard_budget_empty_title">Aucun budget pour l\'instant</string>
+    <string name="dashboard_budget_empty_action">Créer un budget</string>
     <string name="dashboard_recent_transactions_title">Dernières transactions</string>
     <string name="dashboard_recent_transactions_empty">Aucune transaction pour l\'instant.</string>
     <string name="dashboard_transaction_subtitle">%1$s • %2$s</string>
@@ -114,6 +134,8 @@
     <string name="budget_period_monthly">Mensuel</string>
     <string name="budget_remaining_prefix">Restant : %1$s</string>
     <string name="budget_overspent_prefix">Dépassement : %1$s</string>
+    <!-- %1$s = date de fin de la période en cours, ex. "31 juil." (voir DatePeriods.currentPeriodEnd). -->
+    <string name="budget_expires_prefix">Expire le %1$s</string>
     <string name="budget_form_title_add">Nouveau budget</string>
     <string name="budget_form_title_edit">Modifier le budget</string>
     <string name="budget_form_category_label">Catégorie</string>

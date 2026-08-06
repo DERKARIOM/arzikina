@@ -2,6 +2,7 @@ package com.arzikina.ne.presentation.dashboard
 
 import android.os.Bundle
 import android.view.View
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
@@ -12,7 +13,10 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.arzikina.ne.R
 import com.arzikina.ne.databinding.FragmentDashboardBinding
 import com.arzikina.ne.domain.model.CurrencyAmount
+import com.arzikina.ne.presentation.budget.BudgetAdapter
+import com.arzikina.ne.presentation.budget.BudgetUiItem
 import com.arzikina.ne.util.AppResult
+import com.arzikina.ne.util.Constants
 import com.arzikina.ne.util.Money
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
@@ -29,6 +33,15 @@ class DashboardFragment : Fragment(R.layout.fragment_dashboard) {
     private var binding: FragmentDashboardBinding? = null
     private val recentTransactionsAdapter = RecentTransactionsAdapter()
 
+    /**
+     * État de masquage du solde, purement local à l'écran (non persisté ni
+     * exposé par [DashboardViewModel]) : il s'agit d'une préférence d'affichage
+     * ponctuelle, pas d'une donnée métier — elle revient à "visible" à chaque
+     * ouverture de l'écran, comme dans la plupart des apps bancaires.
+     */
+    private var isBalanceHidden = false
+    private var latestBalances: List<CurrencyAmount> = emptyList()
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         val viewBinding = FragmentDashboardBinding.bind(view)
@@ -38,12 +51,25 @@ class DashboardFragment : Fragment(R.layout.fragment_dashboard) {
             layoutManager = LinearLayoutManager(requireContext())
             adapter = recentTransactionsAdapter
         }
-        viewBinding.accountsShortcut.setOnClickListener {
-            findNavController().navigate(R.id.accountsFragment)
-        }
         viewBinding.categoriesShortcut.setOnClickListener {
             findNavController().navigate(R.id.categoriesFragment)
         }
+        viewBinding.balanceCard.setOnClickListener {
+            findNavController().navigate(R.id.accountsFragment)
+        }
+        viewBinding.toggleBalanceVisibility.setOnClickListener {
+            isBalanceHidden = !isBalanceHidden
+            renderBalanceText()
+        }
+        viewBinding.budgetSeeAll.setOnClickListener {
+            findNavController().navigate(R.id.budgetFragment)
+        }
+        viewBinding.createBudgetAction.setOnClickListener {
+            findNavController().navigate(R.id.budgetFormFragment)
+        }
+        // Pas d'action de suppression depuis cet aperçu (voir item_budget.xml, réutilisé
+        // tel quel avec BudgetAdapter.ViewHolder pour ne pas dupliquer son rendu).
+        viewBinding.budgetPreview.deleteButton.visibility = View.GONE
 
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -62,14 +88,87 @@ class DashboardFragment : Fragment(R.layout.fragment_dashboard) {
         if (state !is AppResult.Success) return
         val uiState = state.data
 
-        binding.balanceValue.text = formatAmounts(uiState.balances)
-        binding.incomeValue.text = formatAmounts(uiState.monthlyIncome)
-        binding.expenseValue.text = formatAmounts(uiState.monthlyExpense)
+        latestBalances = uiState.balances
+        renderBalanceText()
+        renderIncomeExpense(uiState.monthlyIncome, uiState.monthlyExpense)
+        renderFeaturedBudget(uiState.featuredBudget)
 
         val hasTransactions = uiState.recentTransactions.isNotEmpty()
         binding.recentTransactionsList.setVisible(hasTransactions)
         binding.recentTransactionsEmpty.setVisible(!hasTransactions)
         recentTransactionsAdapter.submitList(uiState.recentTransactions)
+    }
+
+    /**
+     * [item] est `null` si aucun budget n'existe encore (voir
+     * [DashboardViewModel.featuredBudget]) : on affiche alors une invite de
+     * création plutôt qu'une carte vide.
+     */
+    private fun renderFeaturedBudget(item: BudgetUiItem?) {
+        val binding = binding ?: return
+        binding.budgetPreviewCard.setVisible(item != null)
+        binding.budgetEmptyState.setVisible(item == null)
+        if (item != null) {
+            BudgetAdapter.ViewHolder(binding.budgetPreview).bind(
+                item = item,
+                onClick = { findNavController().navigate(R.id.budgetFragment) },
+                onDeleteClick = {}
+            )
+        }
+    }
+
+    /**
+     * Alimente le mini graphique en barres et le texte Revenu/Dépense/Différence.
+     *
+     * Limite documentée : ne prend en compte que la première devise de chaque
+     * liste (comme le graphique n'affiche qu'une seule paire de barres) — si
+     * l'utilisateur détient des comptes en plusieurs devises, seule la
+     * première est représentée ici. Le texte [formatAmounts], lui, continue
+     * d'afficher toutes les devises (une par ligne) pour rester correct dans
+     * ce cas, au prix d'un léger désaccord visuel avec le graphique.
+     */
+    private fun renderIncomeExpense(income: List<CurrencyAmount>, expense: List<CurrencyAmount>) {
+        val binding = binding ?: return
+        binding.incomeValue.text = formatAmounts(income)
+        binding.expenseValue.text = formatAmounts(expense)
+
+        val incomeAmount = income.firstOrNull()?.amountMinor ?: 0L
+        val expenseAmount = expense.firstOrNull()?.amountMinor ?: 0L
+        binding.incomeExpenseChart.income = incomeAmount
+        binding.incomeExpenseChart.expense = expenseAmount
+
+        val currencyCode = income.firstOrNull()?.currencyCode
+            ?: expense.firstOrNull()?.currencyCode
+            ?: Constants.DEFAULT_CURRENCY_CODE
+        val difference = incomeAmount - expenseAmount
+        binding.differenceValue.text = Money.format(CurrencyAmount(currencyCode, difference))
+        binding.differenceValue.setTextColor(
+            ContextCompat.getColor(
+                requireContext(),
+                if (difference < 0L) R.color.expense_red else R.color.arzikina_on_balance_card
+            )
+        )
+    }
+
+    /**
+     * Affiche [latestBalances] ou un texte masqué selon [isBalanceHidden], et met
+     * à jour l'icône/le texte accessible du bouton en conséquence. Séparée de
+     * [render] pour pouvoir être rappelée seule depuis le clic sur l'œil, sans
+     * attendre une nouvelle émission de [DashboardViewModel.uiState].
+     */
+    private fun renderBalanceText() {
+        val binding = binding ?: return
+        binding.balanceValue.text = if (isBalanceHidden) {
+            getString(R.string.dashboard_balance_masked)
+        } else {
+            formatAmounts(latestBalances)
+        }
+        binding.toggleBalanceVisibility.setImageResource(
+            if (isBalanceHidden) R.drawable.ic_visibility_off_24 else R.drawable.ic_visibility_24
+        )
+        binding.toggleBalanceVisibility.contentDescription = getString(
+            if (isBalanceHidden) R.string.dashboard_balance_show_action else R.string.dashboard_balance_hide_action
+        )
     }
 
     /** Une ligne par devise détenue (voir [DashboardUiState]) ; "—" si aucun compte encore. */

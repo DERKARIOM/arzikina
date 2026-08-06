@@ -73,6 +73,33 @@
         app:trackThickness="8dp"
         tools:progress="60" />
 
+    <!--
+        Ligne "Expiration" : icône horloge + date de fin de la période en
+        cours (voir DatePeriods.currentPeriodEnd, BudgetAdapter.kt). Couleur
+        neutre par défaut, expense_red si la période se termine bientôt (voir
+        BudgetAdapter.EXPIRATION_WARNING_THRESHOLD_DAYS).
+    -->
+    <ImageView
+        android:id="@+id/expirationIcon"
+        android:layout_width="16dp"
+        android:layout_height="16dp"
+        android:layout_marginTop="@dimen/spacing_xs"
+        android:contentDescription="@null"
+        android:src="@drawable/ic_time_24"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/progressBar" />
+
+    <TextView
+        android:id="@+id/expirationLabel"
+        style="@style/TextAppearance.Material3.BodySmall"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/spacing_xs"
+        app:layout_constraintBottom_toBottomOf="@id/expirationIcon"
+        app:layout_constraintStart_toEndOf="@id/expirationIcon"
+        app:layout_constraintTop_toTopOf="@id/expirationIcon"
+        tools:text="Expire le 31 juil." />
+
     <TextView
         android:id="@+id/remainingLabel"
         style="@style/TextAppearance.Material3.BodySmall"
@@ -80,7 +107,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="@dimen/spacing_xs"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/progressBar"
+        app:layout_constraintTop_toBottomOf="@id/expirationIcon"
         tools:text="Restant : 48 000 F CFA" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

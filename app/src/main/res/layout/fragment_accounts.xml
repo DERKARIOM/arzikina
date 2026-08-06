@@ -6,13 +6,15 @@
     android:layout_height="match_parent"
     android:background="?attr/colorSurface">
 
+    <!-- Pas de app:navigationIcon (flèche retour) : Comptes est désormais l'onglet
+         "Compte" de la Bottom Navigation, un écran de premier niveau, pas un écran
+         secondaire atteint par navigation empilée. -->
     <com.google.android.material.appbar.MaterialToolbar
         android:id="@+id/toolbar"
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
         android:background="?attr/colorSurface"
         app:layout_constraintTop_toTopOf="parent"
-        app:navigationIcon="@drawable/ic_arrow_back_24"
         app:title="@string/accounts_title"
         app:titleTextColor="?attr/colorOnSurface" />
 
