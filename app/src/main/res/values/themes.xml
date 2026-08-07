@@ -95,6 +95,20 @@
         <item name="colorOnSurfaceVariant">@color/arzikina_on_balance_card_variant</item>
     </style>
 
+    <!--
+        Taille du libellé de la Bottom Navigation (voir activity_main.xml,
+        app:itemTextAppearanceActive/Inactive) : plus petite que la taille
+        Material3 par défaut, pour rester discrète sous l'icône avec 5 onglets
+        toujours libellés (app:labelVisibilityMode="labeled").
+    -->
+    <style name="TextAppearance.Arzikina.BottomNavigation.Active" parent="">
+        <item name="android:textSize">@dimen/text_size_bottom_nav_active</item>
+    </style>
+
+    <style name="TextAppearance.Arzikina.BottomNavigation.Inactive" parent="">
+        <item name="android:textSize">@dimen/text_size_bottom_nav_inactive</item>
+    </style>
+
     <!-- Échelle de coins arrondis Arzikina (miroir de l'échelle dimens.xml corner_radius_*). -->
     <style name="ShapeAppearance.Arzikina.ExtraSmall" parent="ShapeAppearance.Material3.Corner.ExtraSmall">
         <item name="cornerSize">@dimen/corner_radius_extra_small</item>

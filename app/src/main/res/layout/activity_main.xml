@@ -61,6 +61,10 @@
         app:labelVisibilityMode="labeled" : les 5 libellés restent toujours
         visibles (pas seulement celui de l'item sélectionné, comportement par
         défaut de Material au-delà de 3 items).
+
+        app:itemTextAppearanceActive/Inactive : libellés réduits
+        (TextAppearance.Arzikina.BottomNavigation.*, voir themes.xml) pour
+        rester discrets sous l'icône avec 5 onglets toujours libellés.
     -->
     <com.google.android.material.bottomnavigation.BottomNavigationView
         android:id="@+id/bottomNavigation"
@@ -70,6 +74,8 @@
         app:backgroundTint="?attr/colorSurface"
         app:elevation="0dp"
         app:itemIconTint="@color/nav_item_icon_color"
+        app:itemTextAppearanceActive="@style/TextAppearance.Arzikina.BottomNavigation.Active"
+        app:itemTextAppearanceInactive="@style/TextAppearance.Arzikina.BottomNavigation.Inactive"
         app:itemTextColor="@color/nav_item_text_color"
         app:labelVisibilityMode="labeled"
         app:layout_constraintBottom_toBottomOf="parent"

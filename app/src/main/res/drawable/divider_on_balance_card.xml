@@ -1,8 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Ligne fine séparant les transactions dans la carte "Dernières transactions"
-     du Dashboard (voir DashboardFragment.kt, DividerItemDecoration). -->
-<shape xmlns:android="http://schemas.android.com/apk/res/android"
-    android:shape="rectangle">
-    <solid android:color="@color/arzikina_on_balance_card_variant" />
-    <size android:height="1dp" />
-</shape>
+<!-- Ligne séparant les transactions dans la carte "Dernières transactions" du
+     Dashboard (voir DashboardFragment.kt, DividerItemDecoration) : très fine
+     (1dp) et quasi invisible (couleur à ~12% d'opacité, arzikina_divider_on_balance_card),
+     avec une marge start/end pour ne pas toucher les bords de la carte. -->
+<inset xmlns:android="http://schemas.android.com/apk/res/android"
+    android:insetLeft="@dimen/spacing_m"
+    android:insetRight="@dimen/spacing_m">
+    <shape android:shape="rectangle">
+        <solid android:color="@color/arzikina_divider_on_balance_card" />
+        <size android:height="1dp" />
+    </shape>
+</inset>

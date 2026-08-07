@@ -24,4 +24,10 @@
     <!-- Élévation -->
     <dimen name="elevation_card">1dp</dimen>
     <dimen name="elevation_raised">3dp</dimen>
+
+    <!-- Taille du libellé de la Bottom Navigation (voir TextAppearance.Arzikina.BottomNavigation.*,
+         themes.xml), plus petite que la taille par défaut de Material3 pour rester discrète
+         sous les icônes sur 5 onglets. -->
+    <dimen name="text_size_bottom_nav_active">11sp</dimen>
+    <dimen name="text_size_bottom_nav_inactive">10sp</dimen>
 </resources>

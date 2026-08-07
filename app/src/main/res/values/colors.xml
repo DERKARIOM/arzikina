@@ -58,4 +58,7 @@
     <color name="arzikina_on_balance_card">#FFFFFFFF</color>
     <!-- Libellés discrets sur ces cartes sombres fixes (ex. "Revenu", "Dépense"). -->
     <color name="arzikina_on_balance_card_variant">#FF94A3B8</color>
+    <!-- Ligne de séparation entre transactions (voir divider_on_balance_card.xml) : même
+         teinte que ci-dessus mais très transparente, pour rester à peine visible. -->
+    <color name="arzikina_divider_on_balance_card">#1F94A3B8</color>
 </resources>
