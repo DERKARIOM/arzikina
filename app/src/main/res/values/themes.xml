@@ -60,6 +60,39 @@
         <item name="shapeAppearanceCornerMedium">@style/ShapeAppearance.Arzikina.Medium</item>
         <item name="shapeAppearanceCornerLarge">@style/ShapeAppearance.Arzikina.Large</item>
         <item name="shapeAppearanceCornerExtraLarge">@style/ShapeAppearance.Arzikina.ExtraLarge</item>
+
+        <!--
+            Applique Widget.Arzikina.CardView (voir ci-dessous) à TOUTE
+            MaterialCardView du projet sans avoir à répéter app:strokeWidth="0dp"
+            dans chaque layout — une seule source de vérité, propagée
+            automatiquement (nouveaux écrans compris).
+        -->
+        <item name="materialCardViewStyle">@style/Widget.Arzikina.CardView</item>
+    </style>
+
+    <!--
+        Le style par défaut de MaterialCardView (Widget.Material3.CardView.Elevated)
+        dessine un contour de 1dp dans ?attr/colorOutlineVariant : sur les cartes à
+        fond sombre fixe du Dashboard (voir @color/arzikina_balance_card), ce
+        contour clair ressort comme une bordure blanche indésirable. Retiré ici
+        pour toutes les cartes de l'app plutôt que carte par carte.
+    -->
+    <style name="Widget.Arzikina.CardView" parent="Widget.Material3.CardView.Elevated">
+        <item name="strokeWidth">0dp</item>
+    </style>
+
+    <!--
+        À appliquer via android:theme sur une vue posée sur une carte à fond
+        sombre fixe (@color/arzikina_balance_card) : remappe localement
+        colorOnSurface/colorOnSurfaceVariant vers les couleurs fixes adaptées à
+        ce fond, sans toucher aux layouts partagés (ex. item_transaction_compact.xml,
+        aussi utilisé par l'écran Transactions sur un fond normal, sensible au
+        thème clair/sombre — voir fragment_dashboard.xml, section "Dernières
+        transactions").
+    -->
+    <style name="ThemeOverlay.Arzikina.OnBalanceCard" parent="">
+        <item name="colorOnSurface">@color/arzikina_on_balance_card</item>
+        <item name="colorOnSurfaceVariant">@color/arzikina_on_balance_card_variant</item>
     </style>
 
     <!-- Échelle de coins arrondis Arzikina (miroir de l'échelle dimens.xml corner_radius_*). -->

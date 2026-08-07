@@ -3,7 +3,7 @@
     <!-- Échelle d'espacement, réutilisée dans tous les layouts pour éviter les
          valeurs magiques dispersées (voir instructions projet). -->
     <dimen name="spacing_xs">4dp</dimen>
-    <dimen name="spacing_s">8dp</dimen>
+    <dimen name="spacing_s">10dp</dimen>
     <dimen name="spacing_m">16dp</dimen>
     <dimen name="spacing_l">24dp</dimen>
     <dimen name="spacing_xl">32dp</dimen>
@@ -13,7 +13,7 @@
     <dimen name="corner_radius_extra_small">8dp</dimen>
     <dimen name="corner_radius_small">12dp</dimen>
     <dimen name="corner_radius_medium">16dp</dimen>
-    <dimen name="corner_radius_large">24dp</dimen>
+    <dimen name="corner_radius_large">10dp</dimen>
     <dimen name="corner_radius_extra_large">32dp</dimen>
 
     <!-- Icônes -->

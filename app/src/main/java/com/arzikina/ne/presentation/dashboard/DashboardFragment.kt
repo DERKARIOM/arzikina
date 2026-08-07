@@ -9,6 +9,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
+import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.arzikina.ne.R
 import com.arzikina.ne.databinding.FragmentDashboardBinding
@@ -50,6 +51,13 @@ class DashboardFragment : Fragment(R.layout.fragment_dashboard) {
         viewBinding.recentTransactionsList.apply {
             layoutManager = LinearLayoutManager(requireContext())
             adapter = recentTransactionsAdapter
+            // Ligne fine entre chaque transaction (voir drawable/divider_on_balance_card.xml) ;
+            // pas de divider après le dernier élément (comportement par défaut de DividerItemDecoration).
+            addItemDecoration(
+                DividerItemDecoration(requireContext(), DividerItemDecoration.VERTICAL).apply {
+                    setDrawable(ContextCompat.getDrawable(requireContext(), R.drawable.divider_on_balance_card)!!)
+                }
+            )
         }
         viewBinding.categoriesShortcut.setOnClickListener {
             findNavController().navigate(R.id.categoriesFragment)

@@ -25,6 +25,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:gravity="end"
+            android:layout_marginBottom="10dp"
             android:orientation="horizontal">
 
             <ImageButton
@@ -57,7 +58,7 @@
                 android:id="@+id/balanceCard"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:background="?attr/selectableItemBackground"
+                android:background="@color/arzikina_postcart_background"
                 android:clickable="true"
                 android:contentDescription="@string/dashboard_balance_details_action"
                 android:focusable="true"
@@ -90,6 +91,7 @@
                     android:layout_width="@dimen/icon_size_default"
                     android:layout_height="@dimen/icon_size_default"
                     android:layout_marginStart="@dimen/spacing_s"
+                    android:padding="10dp"
                     android:background="?attr/selectableItemBackgroundBorderless"
                     android:contentDescription="@string/dashboard_balance_hide_action"
                     android:src="@drawable/ic_visibility_24"
@@ -103,6 +105,7 @@
                     android:layout_width="@dimen/icon_size_default"
                     android:layout_height="@dimen/icon_size_default"
                     android:contentDescription="@null"
+                    android:visibility="invisible"
                     android:src="@drawable/ic_chevron_right_24"
                     app:layout_constraintBottom_toBottomOf="parent"
                     app:layout_constraintEnd_toEndOf="parent"
@@ -111,92 +114,6 @@
 
             </androidx.constraintlayout.widget.ConstraintLayout>
         </com.google.android.material.card.MaterialCardView>
-
-        <!--
-            Aperçu Budget : met en avant le budget le plus urgent (voir
-            DashboardViewModel.featuredBudget) avec sa barre de progression.
-            "Voir tout" mène à l'onglet Budget, qui liste tous les budgets.
-            La carte réutilise item_budget.xml et BudgetAdapter.ViewHolder tels
-            quels (voir DashboardFragment.kt) : même rendu que dans l'onglet
-            Budget, sans dupliquer la logique d'affichage — le bouton supprimer
-            de ce layout est masqué dans ce contexte (pas d'action de
-            suppression depuis l'aperçu).
-        -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/spacing_l"
-            android:gravity="center_vertical"
-            android:orientation="horizontal">
-
-            <TextView
-                style="@style/TextAppearance.Material3.TitleMedium"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="@string/dashboard_budget_title"
-                android:textColor="?attr/colorOnSurface" />
-
-            <TextView
-                android:id="@+id/budgetSeeAll"
-                style="@style/TextAppearance.Material3.LabelLarge"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:clickable="true"
-                android:focusable="true"
-                android:padding="@dimen/spacing_xs"
-                android:text="@string/dashboard_budget_see_all"
-                android:textColor="?attr/colorPrimary" />
-
-        </LinearLayout>
-
-        <com.google.android.material.card.MaterialCardView
-            android:id="@+id/budgetPreviewCard"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/spacing_s"
-            app:cardCornerRadius="@dimen/corner_radius_medium"
-            app:cardElevation="@dimen/elevation_card">
-
-            <include
-                android:id="@+id/budgetPreview"
-                layout="@layout/item_budget" />
-
-        </com.google.android.material.card.MaterialCardView>
-
-        <LinearLayout
-            android:id="@+id/budgetEmptyState"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/spacing_s"
-            android:gravity="center"
-            android:orientation="vertical"
-            android:padding="@dimen/spacing_m"
-            android:visibility="gone"
-            tools:visibility="visible">
-
-            <TextView
-                style="@style/TextAppearance.Material3.BodyMedium"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/dashboard_budget_empty_title"
-                android:textColor="?attr/colorOnSurfaceVariant" />
-
-            <TextView
-                android:id="@+id/createBudgetAction"
-                style="@style/TextAppearance.Material3.LabelLarge"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:clickable="true"
-                android:focusable="true"
-                android:layout_marginTop="@dimen/spacing_xs"
-                android:padding="@dimen/spacing_xs"
-                android:text="@string/dashboard_budget_empty_action"
-                android:textColor="?attr/colorPrimary" />
-
-        </LinearLayout>
 
         <!--
             Dépenses vs revenus du mois en cours : un seul widget (mini
@@ -211,7 +128,7 @@
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/spacing_m"
+            android:layout_marginTop="@dimen/spacing_l"
             app:cardBackgroundColor="@color/arzikina_balance_card"
             app:cardCornerRadius="@dimen/corner_radius_large"
             app:cardElevation="0dp">
@@ -219,6 +136,7 @@
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:background="@color/arzikina_postcart_background"
                 android:gravity="center_vertical"
                 android:orientation="horizontal"
                 android:padding="@dimen/spacing_l">
@@ -238,6 +156,7 @@
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
+                        android:layout_marginBottom="10dp"
                         android:orientation="horizontal">
 
                         <TextView
@@ -316,7 +235,105 @@
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
-        <!-- Dernières transactions -->
+        <!--
+            Aperçu Budget : met en avant le budget le plus urgent (voir
+            DashboardViewModel.featuredBudget) avec sa barre de progression.
+            "Voir tout" mène à l'onglet Budget, qui liste tous les budgets.
+            La carte réutilise item_budget.xml et BudgetAdapter.ViewHolder tels
+            quels (voir DashboardFragment.kt) : même rendu que dans l'onglet
+            Budget, sans dupliquer la logique d'affichage — le bouton supprimer
+            de ce layout est masqué dans ce contexte (pas d'action de
+            suppression depuis l'aperçu). Placé après le widget Revenus/Dépenses
+            (demande explicite), plutôt qu'avant.
+        -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/spacing_l"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <TextView
+                style="@style/TextAppearance.Material3.TitleMedium"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="5dp"
+                android:layout_weight="1"
+                android:text="@string/dashboard_budget_title"
+                android:textColor="?attr/colorOnSurface" />
+
+            <TextView
+                android:id="@+id/budgetSeeAll"
+                style="@style/TextAppearance.Material3.LabelLarge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:clickable="true"
+                android:focusable="true"
+                android:padding="@dimen/spacing_xs"
+                android:text="@string/dashboard_budget_see_all"
+                android:textColor="?attr/colorPrimary" />
+
+        </LinearLayout>
+
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/budgetPreviewCard"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/spacing_s"
+            app:cardCornerRadius="@dimen/corner_radius_medium"
+            app:cardElevation="@dimen/elevation_card">
+
+            <include
+                android:id="@+id/budgetPreview"
+                layout="@layout/item_budget" />
+
+        </com.google.android.material.card.MaterialCardView>
+
+        <LinearLayout
+            android:id="@+id/budgetEmptyState"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/spacing_s"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:padding="@dimen/spacing_m"
+            android:visibility="gone"
+            tools:visibility="visible">
+
+            <TextView
+                style="@style/TextAppearance.Material3.BodyMedium"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/dashboard_budget_empty_title"
+                android:textColor="?attr/colorOnSurfaceVariant" />
+
+            <TextView
+                android:id="@+id/createBudgetAction"
+                style="@style/TextAppearance.Material3.LabelLarge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:clickable="true"
+                android:focusable="true"
+                android:layout_marginTop="@dimen/spacing_xs"
+                android:padding="@dimen/spacing_xs"
+                android:text="@string/dashboard_budget_empty_action"
+                android:textColor="?attr/colorPrimary" />
+
+        </LinearLayout>
+
+        <!--
+            Dernières transactions : même traitement "titre hors carte, contenu
+            dans une carte" que la section Budget ci-dessus, mais fond sombre
+            fixe comme les cartes Solde / Revenus-Dépenses (demande explicite
+            de cohérence de couleur). android:theme sur le conteneur remappe
+            colorOnSurface/colorOnSurfaceVariant vers les couleurs fixes
+            adaptées à ce fond (voir ThemeOverlay.Arzikina.OnBalanceCard,
+            themes.xml) : item_transaction_compact.xml n'a pas besoin d'être
+            modifié, il reste correct aussi sur l'écran Transactions (fond
+            normal, sensible au thème clair/sombre là-bas).
+        -->
         <TextView
             style="@style/TextAppearance.Material3.TitleMedium"
             android:layout_width="wrap_content"
@@ -326,24 +343,41 @@
             android:text="@string/dashboard_recent_transactions_title"
             android:textColor="?attr/colorOnSurface" />
 
-        <TextView
-            android:id="@+id/recentTransactionsEmpty"
-            style="@style/TextAppearance.Material3.BodyMedium"
+        <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginVertical="@dimen/spacing_m"
-            android:gravity="center"
-            android:text="@string/dashboard_recent_transactions_empty"
-            android:textColor="?attr/colorOnSurfaceVariant"
-            android:visibility="gone" />
+            app:cardBackgroundColor="@color/arzikina_postcart_background"
+            app:cardCornerRadius="@dimen/corner_radius_medium"
+            app:cardElevation="0dp">
 
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/recentTransactionsList"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:nestedScrollingEnabled="false"
-            android:overScrollMode="never"
-            tools:listitem="@layout/item_transaction_compact" />
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginVertical="@dimen/spacing_s"
+                android:orientation="vertical"
+                android:theme="@style/ThemeOverlay.Arzikina.OnBalanceCard">
+
+                <TextView
+                    android:id="@+id/recentTransactionsEmpty"
+                    style="@style/TextAppearance.Material3.BodyMedium"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginHorizontal="@dimen/spacing_m"
+                    android:gravity="center"
+                    android:text="@string/dashboard_recent_transactions_empty"
+                    android:textColor="?attr/colorOnSurfaceVariant"
+                    android:visibility="gone" />
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/recentTransactionsList"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:nestedScrollingEnabled="false"
+                    android:overScrollMode="never"
+                    tools:listitem="@layout/item_transaction_compact" />
+
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
 
     </LinearLayout>
 
