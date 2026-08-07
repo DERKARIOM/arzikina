@@ -3,6 +3,9 @@ package com.arzikina.ne.presentation.dashboard
 import android.os.Bundle
 import android.view.View
 import androidx.core.content.ContextCompat
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.updatePadding
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
@@ -60,6 +63,24 @@ class DashboardFragment : Fragment(R.layout.fragment_dashboard) {
                 }
             )
         }
+        // Le fond dégradé de l'en-tête (dashboardHeaderBackground) s'étend
+        // volontairement sous la barre de statut, désormais transparente
+        // (voir MainActivity.isTopInsetTransparent) : c'est ce Fragment, et
+        // non le conteneur de navigation partagé, qui absorbe cet inset —
+        // en padding interne sur headerRow, pour que seul le CONTENU
+        // (avatar/nom/icône) soit repoussé sous la barre, sans repousser le
+        // fond avec lui.
+        ViewCompat.setOnApplyWindowInsetsListener(viewBinding.headerRow) { row, insets ->
+            val statusBarInset = insets.getInsets(WindowInsetsCompat.Type.statusBars()).top
+            row.updatePadding(top = statusBarInset)
+            insets
+        }
+        // Ce Fragment est recréé à chaque navigation vers le Dashboard, bien
+        // après la première distribution d'insets de la fenêtre : sans cet
+        // appel, le listener ci-dessus ne serait jamais invoqué pour cette
+        // nouvelle vue.
+        ViewCompat.requestApplyInsets(viewBinding.headerRow)
+
         viewBinding.categoriesShortcut.setOnClickListener {
             findNavController().navigate(R.id.categoriesFragment)
         }

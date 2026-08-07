@@ -44,22 +44,29 @@ class MainActivity : AppCompatActivity() {
 
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        SystemBars.applyInsets(
-            topInsetView = binding.navHostFragment,
-            bottomInsetView = binding.bottomNavigation,
-            isBottomNavHidden = { binding.bottomNavigation.visibility != View.VISIBLE }
-        )
 
         val navHostFragment = supportFragmentManager
             .findFragmentById(R.id.navHostFragment) as NavHostFragment
         val navController = navHostFragment.navController
 
+        // navController doit exister AVANT cet appel : isTopInsetTransparent
+        // interroge navController.currentDestination à chaque distribution
+        // d'insets (voir SystemBars.applyInsets).
+        SystemBars.applyInsets(
+            topInsetView = binding.navHostFragment,
+            bottomInsetView = binding.bottomNavigation,
+            isBottomNavHidden = { binding.bottomNavigation.visibility != View.VISIBLE },
+            isTopInsetTransparent = { navController.currentDestination?.id == R.id.dashboardFragment }
+        )
+
         // Graphe inflaté ici (plutôt que via app:navGraph en XML, voir
         // activity_main.xml) : c'est ce qui permet de choisir le
         // startDestination au runtime, selon qu'une session existe déjà.
+        val startDestinationId = resolveStartDestination()
         navController.graph = navController.navInflater.inflate(R.navigation.nav_graph).apply {
-            setStartDestination(resolveStartDestination())
+            setStartDestination(startDestinationId)
         }
+        SystemBars.updateStatusBarIconAppearance(this, forceLightIcons = startDestinationId == R.id.dashboardFragment)
 
         binding.bottomNavigation.setupWithNavController(navController)
 
@@ -83,6 +90,14 @@ class MainActivity : AppCompatActivity() {
             binding.bottomNavigation.visibility =
                 if (destination.id in AUTH_DESTINATION_IDS) View.GONE else View.VISIBLE
             ViewCompat.requestApplyInsets(binding.root)
+            // Icônes de la status bar claires en permanence sur le Dashboard
+            // (fond brun/ambré fixe qui s'étend sous elle, voir
+            // SystemBars.updateStatusBarIconAppearance), thème-dépendantes
+            // partout ailleurs.
+            SystemBars.updateStatusBarIconAppearance(
+                this,
+                forceLightIcons = destination.id == R.id.dashboardFragment
+            )
         }
     }
 

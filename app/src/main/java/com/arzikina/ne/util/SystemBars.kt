@@ -44,15 +44,31 @@ object SystemBars {
         @Suppress("DEPRECATION")
         window.navigationBarColor = Color.TRANSPARENT
 
-        // Icônes foncées sur fond clair, claires sur fond sombre — recalculé à
-        // chaque appel à partir du mode nuit courant. Un changement de thème
-        // (voir Paramètres) déclenche un `recreate()` de l'Activity, qui
-        // rappelle `configure()` avec la configuration à jour.
-        val isLightTheme = activity.resources.configuration.uiMode and
-            Configuration.UI_MODE_NIGHT_MASK != Configuration.UI_MODE_NIGHT_YES
         val insetsController = WindowCompat.getInsetsController(window, window.decorView)
-        insetsController.isAppearanceLightStatusBars = isLightTheme
-        insetsController.isAppearanceLightNavigationBars = isLightTheme
+        insetsController.isAppearanceLightNavigationBars = isLightTheme(activity)
+        updateStatusBarIconAppearance(activity, forceLightIcons = false)
+    }
+
+    private fun isLightTheme(activity: Activity): Boolean =
+        activity.resources.configuration.uiMode and
+            Configuration.UI_MODE_NIGHT_MASK != Configuration.UI_MODE_NIGHT_YES
+
+    /**
+     * Icônes foncées sur fond clair, claires sur fond sombre — sauf si
+     * [forceLightIcons] est vrai, cas du Dashboard : son en-tête a un fond
+     * brun/ambré FIXE (voir colors.xml, `arzikina_dashboard_header_*`),
+     * volontairement identique en thème clair et sombre, et qui s'étend
+     * sous la barre de statut désormais transparente (voir
+     * `fragment_dashboard.xml`, `dashboardHeaderBackground`) — les icônes y
+     * restent donc TOUJOURS claires, quel que soit le thème de l'app.
+     * À rappeler à chaque changement de destination (voir MainActivity) et
+     * à chaque changement de thème (un `recreate()` de l'Activity rappelle
+     * `configure()`, qui repasse ici avec `forceLightIcons = false`).
+     */
+    fun updateStatusBarIconAppearance(activity: Activity, forceLightIcons: Boolean) {
+        val window = activity.window
+        val insetsController = WindowCompat.getInsetsController(window, window.decorView)
+        insetsController.isAppearanceLightStatusBars = if (forceLightIcons) false else isLightTheme(activity)
     }
 
     /**
@@ -70,10 +86,20 @@ object SystemBars {
      * [isBottomNavHidden] répond `true` (écrans sans Bottom Navigation
      * visible, ex. Connexion/Inscription : [topInsetView] touche alors
      * directement le bas de l'écran et doit faire ce que la barre, masquée,
-     * ne peut plus faire). [isBottomNavHidden] est ré-évalué à CHAQUE
-     * distribution d'insets, pas figé une fois pour toutes : voir
-     * MainActivity, qui force cette redistribution via `requestApplyInsets`
-     * à chaque changement de destination.
+     * ne peut plus faire).
+     *
+     * [isTopInsetTransparent], lui, désactive le padding du HAUT (cas du
+     * Dashboard, voir [updateStatusBarIconAppearance]) : l'écran gère alors
+     * lui-même cet inset en interne (voir `DashboardFragment`, qui pousse
+     * uniquement son en-tête avatar/nom sous la barre, tout en laissant son
+     * fond dégradé s'étendre derrière) plutôt que le conteneur de
+     * navigation partagé — sans quoi TOUS les écrans perdraient leur
+     * padding du haut, pas seulement le Dashboard.
+     *
+     * Les deux lambdas sont ré-évaluées à CHAQUE distribution d'insets, pas
+     * figées une fois pour toutes : voir MainActivity, qui force cette
+     * redistribution via `requestApplyInsets` à chaque changement de
+     * destination.
      *
      * IMPORTANT : un seul listener d'insets peut être actif à la fois sur
      * une même vue (`ViewCompat.setOnApplyWindowInsetsListener` REMPLACE
@@ -85,11 +111,16 @@ object SystemBars {
      * plus jamais appliqué, sur aucun écran, parce qu'un second listener
      * posé juste après sur la même vue écrasait celui-ci).
      */
-    fun applyInsets(topInsetView: View, bottomInsetView: View, isBottomNavHidden: () -> Boolean) {
+    fun applyInsets(
+        topInsetView: View,
+        bottomInsetView: View,
+        isBottomNavHidden: () -> Boolean,
+        isTopInsetTransparent: () -> Boolean
+    ) {
         ViewCompat.setOnApplyWindowInsetsListener(topInsetView) { view, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             view.updatePadding(
-                top = systemBars.top,
+                top = if (isTopInsetTransparent()) 0 else systemBars.top,
                 bottom = if (isBottomNavHidden()) systemBars.bottom else 0
             )
             insets
