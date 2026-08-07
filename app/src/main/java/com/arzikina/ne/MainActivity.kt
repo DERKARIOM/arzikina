@@ -44,10 +44,11 @@ class MainActivity : AppCompatActivity() {
 
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        SystemBars.applyInsets(topInsetView = binding.navHostFragment, bottomInsetView = binding.bottomNavigation)
-        SystemBars.applyConditionalBottomInset(binding.navHostFragment) {
-            binding.bottomNavigation.visibility != View.VISIBLE
-        }
+        SystemBars.applyInsets(
+            topInsetView = binding.navHostFragment,
+            bottomInsetView = binding.bottomNavigation,
+            isBottomNavHidden = { binding.bottomNavigation.visibility != View.VISIBLE }
+        )
 
         val navHostFragment = supportFragmentManager
             .findFragmentById(R.id.navHostFragment) as NavHostFragment
@@ -73,10 +74,11 @@ class MainActivity : AppCompatActivity() {
         // principaux : pas d'item de menu correspondant, et visuellement
         // l'app doit s'y présenter comme un espace à part entière (voir
         // fragment_login.xml / fragment_register.xml, écrans plein cadre).
-        // `requestApplyInsets` force le conditional bottom inset ci-dessus à
+        // `requestApplyInsets` force le listener de SystemBars.applyInsets à
         // se recalculer immédiatement (les insets système eux-mêmes n'ont pas
-        // changé, seule la visibilité de la barre a changé : sans cet appel,
-        // le listener ne serait pas rappelé).
+        // changé, seule la visibilité de la Bottom Navigation a changé, ce
+        // qui doit faire basculer isBottomNavHidden() : sans cet appel, le
+        // listener ne serait pas rappelé).
         navController.addOnDestinationChangedListener { _, destination, _ ->
             binding.bottomNavigation.visibility =
                 if (destination.id in AUTH_DESTINATION_IDS) View.GONE else View.VISIBLE

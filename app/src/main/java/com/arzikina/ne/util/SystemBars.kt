@@ -65,33 +65,38 @@ object SystemBars {
      * Un seul appel dans `MainActivity` couvre tous les écrans (voir
      * `activity_main.xml`) : [topInsetView] est le conteneur de navigation
      * (host de tous les Fragments), [bottomInsetView] la Bottom Navigation.
+     *
+     * [topInsetView] absorbe AUSSI l'inset du bas, mais seulement quand
+     * [isBottomNavHidden] répond `true` (écrans sans Bottom Navigation
+     * visible, ex. Connexion/Inscription : [topInsetView] touche alors
+     * directement le bas de l'écran et doit faire ce que la barre, masquée,
+     * ne peut plus faire). [isBottomNavHidden] est ré-évalué à CHAQUE
+     * distribution d'insets, pas figé une fois pour toutes : voir
+     * MainActivity, qui force cette redistribution via `requestApplyInsets`
+     * à chaque changement de destination.
+     *
+     * IMPORTANT : un seul listener d'insets peut être actif à la fois sur
+     * une même vue (`ViewCompat.setOnApplyWindowInsetsListener` REMPLACE
+     * tout listener déjà posé sur cette vue, il ne s'additionne pas).
+     * [topInsetView] et [bottomInsetView] doivent donc rester deux vues
+     * distinctes, et aucun autre appel ne doit reposer un listener sur l'une
+     * d'elles ailleurs dans le code — sans quoi le padding posé ici serait
+     * silencieusement annulé (bug réel corrigé : le padding du haut n'était
+     * plus jamais appliqué, sur aucun écran, parce qu'un second listener
+     * posé juste après sur la même vue écrasait celui-ci).
      */
-    fun applyInsets(topInsetView: View, bottomInsetView: View) {
+    fun applyInsets(topInsetView: View, bottomInsetView: View, isBottomNavHidden: () -> Boolean) {
         ViewCompat.setOnApplyWindowInsetsListener(topInsetView) { view, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            view.updatePadding(top = systemBars.top)
+            view.updatePadding(
+                top = systemBars.top,
+                bottom = if (isBottomNavHidden()) systemBars.bottom else 0
+            )
             insets
         }
         ViewCompat.setOnApplyWindowInsetsListener(bottomInsetView) { view, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             view.updatePadding(bottom = systemBars.bottom)
-            insets
-        }
-    }
-
-    /**
-     * Cas particulier des écrans sans Bottom Navigation (Connexion,
-     * Inscription) : [view] (le conteneur de navigation lui-même) touche
-     * alors directement le bas de l'écran et doit absorber l'inset bas à la
-     * place de la barre, faute de barre visible en dessous pour le faire.
-     * [isActive] est ré-évalué à CHAQUE distribution d'insets (pas figé une
-     * fois pour toutes) : voir MainActivity, qui force cette redistribution
-     * via `requestApplyInsets` à chaque changement de destination.
-     */
-    fun applyConditionalBottomInset(view: View, isActive: () -> Boolean) {
-        ViewCompat.setOnApplyWindowInsetsListener(view) { v, insets ->
-            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.updatePadding(bottom = if (isActive()) systemBars.bottom else 0)
             insets
         }
     }
