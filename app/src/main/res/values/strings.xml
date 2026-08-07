@@ -43,6 +43,95 @@
     <string name="action_delete">Supprimer</string>
     <string name="action_cancel">Annuler</string>
 
+    <!-- Authentification — Inscription -->
+    <string name="register_title">Créer un compte</string>
+    <string name="register_photo_action">Ajouter une photo</string>
+    <string name="register_full_name_label">Nom complet</string>
+    <string name="register_username_label">Nom d\'utilisateur</string>
+    <string name="register_email_label">Adresse e-mail</string>
+    <string name="register_phone_label">Numéro de téléphone (optionnel)</string>
+    <string name="register_password_label">Mot de passe</string>
+    <string name="register_confirm_password_label">Confirmer le mot de passe</string>
+    <string name="register_submit_action">Créer mon compte</string>
+    <!-- Erreurs de validation, affichées directement sous le champ concerné. -->
+    <string name="register_error_required_field">Ce champ est obligatoire</string>
+    <string name="register_error_invalid_username">3 à 30 caractères : lettres, chiffres, point ou underscore</string>
+    <string name="register_error_invalid_email">Adresse e-mail invalide</string>
+    <string name="register_error_password_too_short">8 caractères minimum</string>
+    <string name="register_error_passwords_do_not_match">Les mots de passe ne correspondent pas</string>
+    <!-- Erreurs renvoyées par AuthRepository (voir AuthError), affichées sous le champ correspondant. -->
+    <string name="register_error_username_taken">Ce nom d\'utilisateur est déjà pris</string>
+    <string name="register_error_email_taken">Cette adresse e-mail est déjà utilisée</string>
+    <string name="register_error_unknown">Une erreur est survenue. Réessaie.</string>
+    <string name="register_login_prompt">Déjà un compte ?</string>
+    <string name="register_login_action">Se connecter</string>
+    <string name="register_security_question_label">Question de sécurité</string>
+    <string name="register_security_answer_label">Réponse</string>
+    <string name="register_error_security_answer_too_short">Réponse trop courte</string>
+
+    <!--
+        Questions de sécurité prédéfinies (voir domain/model/SecurityQuestion) :
+        utilisées à l'inscription (choix) et à "Mot de passe oublié"
+        (réaffichage de la question choisie). Le domaine ne stocke qu'une
+        clé d'énumération, jamais ce texte — voir la KDoc de SecurityQuestion.
+    -->
+    <string name="security_question_first_pet_name">Quel est le nom de votre premier animal de compagnie ?</string>
+    <string name="security_question_birth_city">Dans quelle ville êtes-vous né(e) ?</string>
+    <string name="security_question_mother_maiden_name">Quel est le nom de jeune fille de votre mère ?</string>
+    <string name="security_question_favorite_teacher">Quel est le nom de votre professeur préféré ?</string>
+    <string name="security_question_childhood_best_friend">Quel est le prénom de votre meilleur ami d\'enfance ?</string>
+
+    <!-- Authentification — Connexion -->
+    <string name="login_title">Arzikina</string>
+    <string name="login_subtitle">Connecte-toi pour continuer</string>
+    <string name="login_identifier_label">E-mail ou nom d\'utilisateur</string>
+    <string name="login_password_label">Mot de passe</string>
+    <string name="login_submit_action">Se connecter</string>
+    <string name="login_register_prompt">Pas encore de compte ?</string>
+    <string name="login_register_action">S\'inscrire</string>
+    <!--
+        Volontairement générique et identique quel que soit le champ fautif
+        (identifiant ou mot de passe) : ne jamais indiquer lequel des deux est
+        incorrect évite de révéler à un tiers qu'un identifiant existe bel et
+        bien dans la base (bonne pratique de sécurité standard).
+    -->
+    <string name="login_error_invalid_credentials">Identifiant ou mot de passe incorrect</string>
+    <string name="login_forgot_password_action">Mot de passe oublié ?</string>
+
+    <!-- Authentification — Mot de passe oublié -->
+    <string name="forgot_password_title">Mot de passe oublié</string>
+    <string name="forgot_password_step1_subtitle">Entre ton e-mail ou nom d\'utilisateur pour continuer</string>
+    <string name="forgot_password_continue_action">Continuer</string>
+    <string name="forgot_password_step2_subtitle">Réponds à ta question de sécurité</string>
+    <string name="forgot_password_submit_action">Réinitialiser le mot de passe</string>
+    <string name="forgot_password_error_user_not_found">Aucun compte ne correspond à cet identifiant</string>
+    <string name="forgot_password_error_answer_incorrect">Réponse incorrecte</string>
+    <string name="forgot_password_success_message">Mot de passe réinitialisé. Connecte-toi avec ton nouveau mot de passe.</string>
+
+    <!-- Authentification — Profil -->
+    <string name="more_menu_profile">Profil</string>
+    <string name="profile_title">Profil</string>
+    <string name="profile_username_format">@%1$s</string>
+    <string name="profile_section_security_title">Sécurité</string>
+    <string name="profile_save_action">Enregistrer</string>
+    <string name="profile_success_message">Profil mis à jour.</string>
+    <string name="profile_change_password_action">Changer le mot de passe</string>
+    <string name="profile_security_question_action">Modifier la question de sécurité</string>
+    <string name="profile_logout_action">Se déconnecter</string>
+    <string name="profile_logout_confirm_title">Se déconnecter ?</string>
+    <string name="profile_logout_confirm_message">Tu devras te reconnecter avec ton mot de passe pour accéder à nouveau à tes données. Aucune donnée n\'est supprimée.</string>
+    <!-- Partagé entre "Changer le mot de passe" et "Modifier la question de sécurité" : même champ, même signification dans les deux écrans. -->
+    <string name="profile_current_password_label">Mot de passe actuel</string>
+    <string name="profile_error_current_password_incorrect">Mot de passe actuel incorrect</string>
+
+    <string name="change_password_title">Changer le mot de passe</string>
+    <string name="change_password_submit_action">Mettre à jour le mot de passe</string>
+    <string name="change_password_success_message">Mot de passe mis à jour.</string>
+
+    <string name="update_security_question_title">Question de sécurité</string>
+    <string name="update_security_question_submit_action">Enregistrer</string>
+    <string name="update_security_question_success_message">Question de sécurité mise à jour.</string>
+
     <!-- Comptes -->
     <string name="dashboard_accounts_action">Gérer mes comptes</string>
     <string name="accounts_title">Mes comptes</string>

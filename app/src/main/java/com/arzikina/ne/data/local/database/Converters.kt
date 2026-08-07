@@ -4,6 +4,7 @@ import androidx.room.TypeConverter
 import com.arzikina.ne.domain.model.AccountIcon
 import com.arzikina.ne.domain.model.BudgetPeriod
 import com.arzikina.ne.domain.model.CategoryIcon
+import com.arzikina.ne.domain.model.SecurityQuestion
 import com.arzikina.ne.domain.model.TransactionType
 
 /**
@@ -36,4 +37,10 @@ class Converters {
 
     @TypeConverter
     fun toBudgetPeriod(value: String): BudgetPeriod = BudgetPeriod.valueOf(value)
+
+    @TypeConverter
+    fun fromSecurityQuestion(question: SecurityQuestion): String = question.name
+
+    @TypeConverter
+    fun toSecurityQuestion(value: String): SecurityQuestion = SecurityQuestion.valueOf(value)
 }

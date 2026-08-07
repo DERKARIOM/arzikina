@@ -12,8 +12,10 @@ fun CategoryEntity.toDomain(): Category = Category(
     createdAt = createdAt
 )
 
-fun Category.toEntity(): CategoryEntity = CategoryEntity(
+/** [userId] : fourni par le repository, jamais par l'appelant. */
+fun Category.toEntity(userId: Long): CategoryEntity = CategoryEntity(
     id = id,
+    userId = userId,
     name = name,
     icon = icon,
     colorArgb = colorArgb,

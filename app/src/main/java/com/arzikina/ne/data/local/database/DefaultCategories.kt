@@ -5,33 +5,33 @@ import com.arzikina.ne.domain.model.CategoryIcon
 import com.arzikina.ne.domain.model.TransactionType
 
 /**
- * Catégories proposées par défaut à la première installation.
+ * Catégories proposées par défaut à un nouvel utilisateur.
  *
- * Reprend les exemples du cahier des charges. Utilisée à deux endroits qui
- * doivent rester synchronisés avec la même donnée : le callback `onCreate`
- * de [ArzikinaDatabase] (nouvelle installation) et [MIGRATION_1_2] (mise à
- * jour d'une base existante) — voir leurs commentaires respectifs pour le
- * détail de cette double exécution.
+ * Reprend les exemples du cahier des charges. Utilisée à deux endroits :
+ * après l'inscription d'un nouvel utilisateur (voir la feuille de route
+ * Authentification, écran Inscription) et [MIGRATION_1_2] (mise à jour
+ * d'une base antérieure à la fonctionnalité Catégories) — voir son
+ * commentaire pour le détail de [userId] dans ce second cas.
  */
 internal object DefaultCategories {
 
-    fun seed(now: Long): List<CategoryEntity> = listOf(
+    fun seed(now: Long, userId: Long): List<CategoryEntity> = listOf(
         // Revenus
-        category("Salaire", CategoryIcon.SALARY, 0xFF006C4FL, TransactionType.INCOME, now),
-        category("Divers", CategoryIcon.OTHER, 0xFF64748BL, TransactionType.INCOME, now),
+        category("Salaire", CategoryIcon.SALARY, 0xFF006C4FL, TransactionType.INCOME, now, userId),
+        category("Divers", CategoryIcon.OTHER, 0xFF64748BL, TransactionType.INCOME, now, userId),
 
         // Dépenses
-        category("Nourriture", CategoryIcon.FOOD, 0xFFF59E0BL, TransactionType.EXPENSE, now),
-        category("Transport", CategoryIcon.TRANSPORT, 0xFF2563EBL, TransactionType.EXPENSE, now),
-        category("Santé", CategoryIcon.HEALTH, 0xFFDC2626L, TransactionType.EXPENSE, now),
-        category("Shopping", CategoryIcon.SHOPPING, 0xFF7C3AEDL, TransactionType.EXPENSE, now),
-        category("Cadeaux", CategoryIcon.GIFTS, 0xFFEC4899L, TransactionType.EXPENSE, now),
-        category("Internet", CategoryIcon.INTERNET, 0xFF0EA5E9L, TransactionType.EXPENSE, now),
-        category("Eau", CategoryIcon.WATER, 0xFF06B6D4L, TransactionType.EXPENSE, now),
-        category("Électricité", CategoryIcon.ELECTRICITY, 0xFFF59E0BL, TransactionType.EXPENSE, now),
-        category("Éducation", CategoryIcon.EDUCATION, 0xFF16A34AL, TransactionType.EXPENSE, now),
-        category("Maison", CategoryIcon.HOME, 0xFF10B981L, TransactionType.EXPENSE, now),
-        category("Divers", CategoryIcon.OTHER, 0xFF64748BL, TransactionType.EXPENSE, now)
+        category("Nourriture", CategoryIcon.FOOD, 0xFFF59E0BL, TransactionType.EXPENSE, now, userId),
+        category("Transport", CategoryIcon.TRANSPORT, 0xFF2563EBL, TransactionType.EXPENSE, now, userId),
+        category("Santé", CategoryIcon.HEALTH, 0xFFDC2626L, TransactionType.EXPENSE, now, userId),
+        category("Shopping", CategoryIcon.SHOPPING, 0xFF7C3AEDL, TransactionType.EXPENSE, now, userId),
+        category("Cadeaux", CategoryIcon.GIFTS, 0xFFEC4899L, TransactionType.EXPENSE, now, userId),
+        category("Internet", CategoryIcon.INTERNET, 0xFF0EA5E9L, TransactionType.EXPENSE, now, userId),
+        category("Eau", CategoryIcon.WATER, 0xFF06B6D4L, TransactionType.EXPENSE, now, userId),
+        category("Électricité", CategoryIcon.ELECTRICITY, 0xFFF59E0BL, TransactionType.EXPENSE, now, userId),
+        category("Éducation", CategoryIcon.EDUCATION, 0xFF16A34AL, TransactionType.EXPENSE, now, userId),
+        category("Maison", CategoryIcon.HOME, 0xFF10B981L, TransactionType.EXPENSE, now, userId),
+        category("Divers", CategoryIcon.OTHER, 0xFF64748BL, TransactionType.EXPENSE, now, userId)
     )
 
     private fun category(
@@ -39,8 +39,10 @@ internal object DefaultCategories {
         icon: CategoryIcon,
         colorArgb: Long,
         type: TransactionType,
-        createdAt: Long
+        createdAt: Long,
+        userId: Long
     ) = CategoryEntity(
+        userId = userId,
         name = name,
         icon = icon,
         colorArgb = colorArgb,

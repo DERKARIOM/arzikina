@@ -17,6 +17,10 @@ import com.arzikina.ne.domain.model.BudgetPeriod
  * - Index `unique` sur `categoryId` : un seul budget actif par catégorie
  *   (voir [Budget]). La couche presentation doit vérifier
  *   [BudgetDao.getByCategoryId] avant de proposer la création d'un budget.
+ *   Reste valable telle quelle en multi-utilisateurs : une catégorie
+ *   (identifiant auto-généré) appartient déjà à un seul utilisateur, deux
+ *   personnes ne peuvent donc jamais partager le même `categoryId`.
+ * - [userId] : voir [AccountEntity] (pas de contrainte SQL vers `users`).
  */
 @Entity(
     tableName = "budgets",
@@ -28,11 +32,12 @@ import com.arzikina.ne.domain.model.BudgetPeriod
             onDelete = ForeignKey.CASCADE
         )
     ],
-    indices = [Index("categoryId", unique = true)]
+    indices = [Index("categoryId", unique = true), Index("userId")]
 )
 data class BudgetEntity(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0L,
+    val userId: Long,
     val categoryId: Long,
     val period: BudgetPeriod,
     val limitAmount: Long,

@@ -78,4 +78,21 @@ object SystemBars {
             insets
         }
     }
+
+    /**
+     * Cas particulier des écrans sans Bottom Navigation (Connexion,
+     * Inscription) : [view] (le conteneur de navigation lui-même) touche
+     * alors directement le bas de l'écran et doit absorber l'inset bas à la
+     * place de la barre, faute de barre visible en dessous pour le faire.
+     * [isActive] est ré-évalué à CHAQUE distribution d'insets (pas figé une
+     * fois pour toutes) : voir MainActivity, qui force cette redistribution
+     * via `requestApplyInsets` à chaque changement de destination.
+     */
+    fun applyConditionalBottomInset(view: View, isActive: () -> Boolean) {
+        ViewCompat.setOnApplyWindowInsetsListener(view) { v, insets ->
+            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            v.updatePadding(bottom = if (isActive()) systemBars.bottom else 0)
+            insets
+        }
+    }
 }

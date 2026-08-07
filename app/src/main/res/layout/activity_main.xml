@@ -7,15 +7,23 @@
 
     <!--
         Fragment unique qui héberge toute la navigation (voir navigation/nav_graph.xml).
-        Contrainte à la bordure supérieure de la BottomNavigationView. Les
-        barres système sont transparentes et gérées de façon centralisée
-        (voir util/SystemBars.kt, appelé depuis MainActivity) : ce conteneur
-        reçoit lui-même le padding de la barre de statut, ce qui pousse
-        automatiquement le contenu de CHAQUE écran sous la barre de statut
-        sans qu'aucun fragment n'ait besoin de gérer cet inset individuellement.
-        Le fond visible sous la barre de statut est celui de ce
-        ConstraintLayout racine (?attr/colorSurface), identique à celui de
-        chaque écran : aucune bande de couleur différente.
+        Contrainte à la bordure supérieure de la BottomNavigationView — mais
+        quand celle-ci est masquée (écrans Connexion/Inscription, voir
+        MainActivity), ce conteneur s'étend automatiquement jusqu'au bas de
+        l'écran (comportement ConstraintLayout standard pour une contrainte
+        vers une vue GONE). Les barres système sont transparentes et gérées
+        de façon centralisée (voir util/SystemBars.kt, appelé depuis
+        MainActivity) : ce conteneur reçoit lui-même le padding de la barre de
+        statut, ce qui pousse automatiquement le contenu de CHAQUE écran sous
+        la barre de statut sans qu'aucun fragment n'ait besoin de gérer cet
+        inset individuellement. Le fond visible sous la barre de statut est
+        celui de ce ConstraintLayout racine (?attr/colorSurface), identique à
+        celui de chaque écran : aucune bande de couleur différente.
+
+        Pas de `app:navGraph` ici : le graphe est inflaté et son
+        startDestination fixé dynamiquement dans MainActivity.onCreate, selon
+        qu'une session locale existe déjà ou non (Dashboard vs Connexion).
+        Un attribut statique figerait ce choix au moment du build.
     -->
     <androidx.fragment.app.FragmentContainerView
         android:id="@+id/navHostFragment"
@@ -26,8 +34,7 @@
         app:layout_constraintBottom_toTopOf="@id/bottomNavigation"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:navGraph="@navigation/nav_graph" />
+        app:layout_constraintTop_toTopOf="parent" />
 
     <!--
         Fond explicitement ?attr/colorSurface (même attribut que le fond de

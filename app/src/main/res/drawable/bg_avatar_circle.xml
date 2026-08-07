@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Fond circulaire de l'avatar (photo de profil) sur l'écran Inscription
+     (voir fragment_register.xml) — visible tant qu'aucune photo n'est choisie. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="oval">
+    <solid android:color="?attr/colorSurfaceVariant" />
+</shape>

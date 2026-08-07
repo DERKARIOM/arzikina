@@ -6,14 +6,15 @@ import androidx.room.Upsert
 import com.arzikina.ne.data.local.entity.SavingsGoalEntity
 import kotlinx.coroutines.flow.Flow
 
+/** Voir `data/local/dao/AccountDao` pour le raisonnement sur le filtrage systématique par `userId`. */
 @Dao
 interface SavingsGoalDao {
 
-    @Query("SELECT * FROM savings_goals ORDER BY createdAt DESC")
-    fun observeAll(): Flow<List<SavingsGoalEntity>>
+    @Query("SELECT * FROM savings_goals WHERE userId = :userId ORDER BY createdAt DESC")
+    fun observeAllForUser(userId: Long): Flow<List<SavingsGoalEntity>>
 
-    @Query("SELECT * FROM savings_goals WHERE id = :id")
-    suspend fun getById(id: Long): SavingsGoalEntity?
+    @Query("SELECT * FROM savings_goals WHERE id = :id AND userId = :userId")
+    suspend fun getById(id: Long, userId: Long): SavingsGoalEntity?
 
     @Upsert
     suspend fun upsert(goal: SavingsGoalEntity)
@@ -22,13 +23,13 @@ interface SavingsGoalDao {
     @Upsert
     suspend fun insertAll(goals: List<SavingsGoalEntity>)
 
-    @Query("UPDATE savings_goals SET currentAmount = currentAmount + :amountDelta WHERE id = :id")
-    suspend fun addContribution(id: Long, amountDelta: Long)
+    @Query("UPDATE savings_goals SET currentAmount = currentAmount + :amountDelta WHERE id = :id AND userId = :userId")
+    suspend fun addContribution(id: Long, amountDelta: Long, userId: Long)
 
-    @Query("DELETE FROM savings_goals WHERE id = :id")
-    suspend fun deleteById(id: Long)
+    @Query("DELETE FROM savings_goals WHERE id = :id AND userId = :userId")
+    suspend fun deleteById(id: Long, userId: Long)
 
-    /** Utilisé uniquement par la restauration d'une sauvegarde (remplacement complet). */
-    @Query("DELETE FROM savings_goals")
-    suspend fun deleteAll()
+    /** Utilisé uniquement par la restauration d'une sauvegarde : ne purge QUE les données de [userId]. */
+    @Query("DELETE FROM savings_goals WHERE userId = :userId")
+    suspend fun deleteAllForUser(userId: Long)
 }

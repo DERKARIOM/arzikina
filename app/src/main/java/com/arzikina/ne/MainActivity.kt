@@ -1,12 +1,15 @@
 package com.arzikina.ne
 
 import android.os.Bundle
+import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
+import androidx.core.view.ViewCompat
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.setupWithNavController
 import com.arzikina.ne.databinding.ActivityMainBinding
 import com.arzikina.ne.domain.model.ThemeMode
+import com.arzikina.ne.domain.repository.SessionManager
 import com.arzikina.ne.domain.repository.UserPreferencesRepository
 import com.arzikina.ne.util.SystemBars
 import dagger.hilt.android.AndroidEntryPoint
@@ -29,6 +32,9 @@ class MainActivity : AppCompatActivity() {
     @Inject
     lateinit var userPreferencesRepository: UserPreferencesRepository
 
+    @Inject
+    lateinit var sessionManager: SessionManager
+
     private lateinit var binding: ActivityMainBinding
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -39,10 +45,22 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
         SystemBars.applyInsets(topInsetView = binding.navHostFragment, bottomInsetView = binding.bottomNavigation)
+        SystemBars.applyConditionalBottomInset(binding.navHostFragment) {
+            binding.bottomNavigation.visibility != View.VISIBLE
+        }
 
         val navHostFragment = supportFragmentManager
             .findFragmentById(R.id.navHostFragment) as NavHostFragment
-        binding.bottomNavigation.setupWithNavController(navHostFragment.navController)
+        val navController = navHostFragment.navController
+
+        // Graphe inflaté ici (plutôt que via app:navGraph en XML, voir
+        // activity_main.xml) : c'est ce qui permet de choisir le
+        // startDestination au runtime, selon qu'une session existe déjà.
+        navController.graph = navController.navInflater.inflate(R.navigation.nav_graph).apply {
+            setStartDestination(resolveStartDestination())
+        }
+
+        binding.bottomNavigation.setupWithNavController(navController)
 
         // Désactive la pastille d'indicateur actif dessinée par défaut par Material
         // (un aplat arrondi derrière l'icône) : la sélection ne doit se traduire que
@@ -50,6 +68,32 @@ class MainActivity : AppCompatActivity() {
         // app:itemIconTint / app:itemTextColor dans activity_main.xml), sans aucune
         // forme derrière.
         binding.bottomNavigation.isItemActiveIndicatorEnabled = false
+
+        // Connexion et Inscription n'ont pas leur place dans les onglets
+        // principaux : pas d'item de menu correspondant, et visuellement
+        // l'app doit s'y présenter comme un espace à part entière (voir
+        // fragment_login.xml / fragment_register.xml, écrans plein cadre).
+        // `requestApplyInsets` force le conditional bottom inset ci-dessus à
+        // se recalculer immédiatement (les insets système eux-mêmes n'ont pas
+        // changé, seule la visibilité de la barre a changé : sans cet appel,
+        // le listener ne serait pas rappelé).
+        navController.addOnDestinationChangedListener { _, destination, _ ->
+            binding.bottomNavigation.visibility =
+                if (destination.id in AUTH_DESTINATION_IDS) View.GONE else View.VISIBLE
+            ViewCompat.requestApplyInsets(binding.root)
+        }
+    }
+
+    /**
+     * Lecture bloquante ponctuelle de la session locale (DataStore, source
+     * locale, quasi instantanée — même justification que
+     * [applyStoredThemeMode] ci-dessous) : AVANT le premier affichage, pour
+     * ne jamais montrer un Dashboard puis rediriger vers Connexion (ou
+     * l'inverse) une fois l'app déjà visible.
+     */
+    private fun resolveStartDestination(): Int {
+        val hasSession = runBlocking { sessionManager.getCurrentUserIdOnce() != null }
+        return if (hasSession) R.id.dashboardFragment else R.id.loginFragment
     }
 
     /**
@@ -71,5 +115,10 @@ class MainActivity : AppCompatActivity() {
         if (AppCompatDelegate.getDefaultNightMode() != nightMode) {
             AppCompatDelegate.setDefaultNightMode(nightMode)
         }
+    }
+
+    private companion object {
+        /** Destinations sans Bottom Navigation ni onglet correspondant (voir plus haut). */
+        val AUTH_DESTINATION_IDS = setOf(R.id.loginFragment, R.id.registerFragment, R.id.forgotPasswordFragment)
     }
 }

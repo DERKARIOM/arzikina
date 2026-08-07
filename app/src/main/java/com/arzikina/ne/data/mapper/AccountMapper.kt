@@ -18,8 +18,10 @@ fun AccountEntity.toDomain(): Account = Account(
     createdAt = createdAt
 )
 
-fun Account.toEntity(): AccountEntity = AccountEntity(
+/** [userId] : fourni par le repository (voir [com.arzikina.ne.domain.repository.SessionManager]), jamais par l'appelant. */
+fun Account.toEntity(userId: Long): AccountEntity = AccountEntity(
     id = id,
+    userId = userId,
     name = name,
     icon = icon,
     colorArgb = colorArgb,

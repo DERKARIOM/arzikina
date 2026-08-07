@@ -17,6 +17,22 @@ import com.arzikina.ne.domain.model.UserPreferences
  * mappers Entity <-> domaine existants (package `data.mapper`) : ce sont
  * deux besoins différents (persistance Room vs. format de fichier), même si
  * les champs se ressemblent aujourd'hui.
+ *
+ * `XDto.toEntity(userId)` : le fichier de sauvegarde ne contient
+ * volontairement AUCUN `userId` (format pensé comme portable — voir
+ * [AccountDto] et les autres DTO), c'est `BackupRepositoryImpl` qui assigne
+ * l'utilisateur CONNECTÉ AU MOMENT DE L'IMPORT, indépendamment de qui avait
+ * exporté le fichier à l'origine.
+ *
+ * Limite connue : ces mappers conservent l'`id` d'origine du fichier. Avec
+ * plusieurs utilisateurs partageant les mêmes tables, cet `id` peut déjà
+ * être utilisé par un AUTRE utilisateur, ce qui provoquerait un conflit ou
+ * un écrasement de sa ligne. Cette restauration reste donc, pour l'instant,
+ * fiable uniquement quand un seul utilisateur existe sur l'appareil (ce qui
+ * est le cas jusqu'à la mise en place complète des écrans Connexion/Inscription).
+ * À corriger avant l'ouverture réelle du multi-compte : réattribuer de
+ * nouveaux `id` à l'import et faire correspondre les clés étrangères
+ * (`accountId`/`categoryId`) à leur nouvelle valeur.
  */
 
 fun AccountEntity.toDto() = AccountDto(
@@ -29,8 +45,9 @@ fun AccountEntity.toDto() = AccountDto(
     createdAt = createdAt
 )
 
-fun AccountDto.toEntity() = AccountEntity(
+fun AccountDto.toEntity(userId: Long) = AccountEntity(
     id = id,
+    userId = userId,
     name = name,
     icon = runCatching { AccountIcon.valueOf(icon) }.getOrDefault(AccountIcon.entries.first()),
     colorArgb = colorArgb,
@@ -48,8 +65,9 @@ fun CategoryEntity.toDto() = CategoryDto(
     createdAt = createdAt
 )
 
-fun CategoryDto.toEntity() = CategoryEntity(
+fun CategoryDto.toEntity(userId: Long) = CategoryEntity(
     id = id,
+    userId = userId,
     name = name,
     icon = runCatching { CategoryIcon.valueOf(icon) }.getOrDefault(CategoryIcon.entries.first()),
     colorArgb = colorArgb,
@@ -71,8 +89,9 @@ fun TransactionEntity.toDto() = TransactionDto(
     createdAt = createdAt
 )
 
-fun TransactionDto.toEntity() = TransactionEntity(
+fun TransactionDto.toEntity(userId: Long) = TransactionEntity(
     id = id,
+    userId = userId,
     amount = amount,
     type = runCatching { TransactionType.valueOf(type) }.getOrDefault(TransactionType.EXPENSE),
     accountId = accountId,
@@ -94,8 +113,9 @@ fun BudgetEntity.toDto() = BudgetDto(
     createdAt = createdAt
 )
 
-fun BudgetDto.toEntity() = BudgetEntity(
+fun BudgetDto.toEntity(userId: Long) = BudgetEntity(
     id = id,
+    userId = userId,
     categoryId = categoryId,
     period = runCatching { BudgetPeriod.valueOf(period) }.getOrDefault(BudgetPeriod.MONTHLY),
     limitAmount = limitAmount,
@@ -113,8 +133,9 @@ fun SavingsGoalEntity.toDto() = SavingsGoalDto(
     createdAt = createdAt
 )
 
-fun SavingsGoalDto.toEntity() = SavingsGoalEntity(
+fun SavingsGoalDto.toEntity(userId: Long) = SavingsGoalEntity(
     id = id,
+    userId = userId,
     name = name,
     targetAmount = targetAmount,
     currentAmount = currentAmount,

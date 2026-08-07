@@ -21,6 +21,11 @@ import com.arzikina.ne.domain.model.TransactionType
  * Index sur les deux clés étrangères : requêtes fréquentes (historique par
  * compte, statistiques par catégorie) et exigence Room pour éviter un
  * balayage complet de la table lors des vérifications de contrainte.
+ *
+ * [userId] : voir [AccountEntity] pour le raisonnement (pas de contrainte
+ * SQL vers `users`, domaine non concerné). Redondant avec la propriété du
+ * compte/de la catégorie référencés (qui appartiennent déjà à un seul
+ * utilisateur), mais explicite ici pour un filtrage direct sans jointure.
  */
 @Entity(
     tableName = "transactions",
@@ -37,11 +42,12 @@ import com.arzikina.ne.domain.model.TransactionType
             childColumns = ["categoryId"]
         )
     ],
-    indices = [Index("accountId"), Index("categoryId")]
+    indices = [Index("accountId"), Index("categoryId"), Index("userId")]
 )
 data class TransactionEntity(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0L,
+    val userId: Long,
     val amount: Long,
     val type: TransactionType,
     val accountId: Long,

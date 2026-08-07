@@ -1,17 +1,21 @@
 package com.arzikina.ne.di
 
 import com.arzikina.ne.data.repository.AccountRepositoryImpl
+import com.arzikina.ne.data.repository.AuthRepositoryImpl
 import com.arzikina.ne.data.repository.BackupRepositoryImpl
 import com.arzikina.ne.data.repository.BudgetRepositoryImpl
 import com.arzikina.ne.data.repository.CategoryRepositoryImpl
 import com.arzikina.ne.data.repository.SavingsGoalRepositoryImpl
+import com.arzikina.ne.data.repository.SessionManagerImpl
 import com.arzikina.ne.data.repository.TransactionRepositoryImpl
 import com.arzikina.ne.data.repository.UserPreferencesRepositoryImpl
 import com.arzikina.ne.domain.repository.AccountRepository
+import com.arzikina.ne.domain.repository.AuthRepository
 import com.arzikina.ne.domain.repository.BackupRepository
 import com.arzikina.ne.domain.repository.BudgetRepository
 import com.arzikina.ne.domain.repository.CategoryRepository
 import com.arzikina.ne.domain.repository.SavingsGoalRepository
+import com.arzikina.ne.domain.repository.SessionManager
 import com.arzikina.ne.domain.repository.TransactionRepository
 import com.arzikina.ne.domain.repository.UserPreferencesRepository
 import dagger.Binds
@@ -56,4 +60,12 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindBackupRepository(impl: BackupRepositoryImpl): BackupRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindAuthRepository(impl: AuthRepositoryImpl): AuthRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindSessionManager(impl: SessionManagerImpl): SessionManager
 }

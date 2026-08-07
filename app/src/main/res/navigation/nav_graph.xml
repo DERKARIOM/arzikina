@@ -18,6 +18,32 @@
         presentation/more/MoreFragment.kt), pour ne garder que 5 onglets.
     -->
 
+    <!--
+        loginFragment / registerFragment : le startDestination déclaré ci-dessus
+        (dashboardFragment) n'est qu'un repli pour Android Studio (aperçu de
+        layout, etc.) — MainActivity.resolveStartDestination() écrase toujours
+        ce choix au runtime, AVANT le premier affichage, selon qu'une session
+        locale existe déjà ou non (voir MainActivity.kt). La Bottom Navigation
+        est masquée sur ces deux destinations (voir la même méthode).
+    -->
+    <fragment
+        android:id="@+id/loginFragment"
+        android:name="com.arzikina.ne.presentation.auth.LoginFragment"
+        android:label="@string/login_title"
+        tools:layout="@layout/fragment_login" />
+
+    <fragment
+        android:id="@+id/registerFragment"
+        android:name="com.arzikina.ne.presentation.auth.RegisterFragment"
+        android:label="@string/register_title"
+        tools:layout="@layout/fragment_register" />
+
+    <fragment
+        android:id="@+id/forgotPasswordFragment"
+        android:name="com.arzikina.ne.presentation.auth.ForgotPasswordFragment"
+        android:label="@string/forgot_password_title"
+        tools:layout="@layout/fragment_forgot_password" />
+
     <fragment
         android:id="@+id/dashboardFragment"
         android:name="com.arzikina.ne.presentation.dashboard.DashboardFragment"
@@ -118,5 +144,29 @@
             android:defaultValue="0L"
             app:argType="long" />
     </fragment>
+
+    <!--
+        profileFragment : atteint depuis l'onglet "Autre" (voir MoreFragment),
+        comme budgetFragment/categoriesFragment/settingsFragment. Pas dans
+        AUTH_DESTINATION_IDS (MainActivity.kt) : la Bottom Navigation reste
+        visible ici, contrairement à Connexion/Inscription/Mot de passe oublié.
+    -->
+    <fragment
+        android:id="@+id/profileFragment"
+        android:name="com.arzikina.ne.presentation.profile.ProfileFragment"
+        android:label="@string/profile_title"
+        tools:layout="@layout/fragment_profile" />
+
+    <fragment
+        android:id="@+id/changePasswordFragment"
+        android:name="com.arzikina.ne.presentation.profile.ChangePasswordFragment"
+        android:label="@string/change_password_title"
+        tools:layout="@layout/fragment_change_password" />
+
+    <fragment
+        android:id="@+id/securityQuestionFragment"
+        android:name="com.arzikina.ne.presentation.profile.SecurityQuestionUpdateFragment"
+        android:label="@string/update_security_question_title"
+        tools:layout="@layout/fragment_security_question" />
 
 </navigation>

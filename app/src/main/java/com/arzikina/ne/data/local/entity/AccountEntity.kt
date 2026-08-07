@@ -1,18 +1,33 @@
 package com.arzikina.ne.data.local.entity
 
 import androidx.room.Entity
+import androidx.room.Index
 import androidx.room.PrimaryKey
 import com.arzikina.ne.domain.model.AccountIcon
 
 /**
  * Représentation Room d'un compte. Reste dans la couche data : le domaine
  * manipule uniquement [com.arzikina.ne.domain.model.Account] (voir
- * `data/mapper/AccountMapper`).
+ * `data/mapper/AccountMapper`), qui ne connaît PAS [userId] — voir
+ * `data/repository/AccountRepositoryImpl` pour le raisonnement (isolation
+ * multi-utilisateurs gérée entièrement dans la couche data).
+ *
+ * Pas de contrainte SQL `FOREIGN KEY` vers `users` (voir
+ * [com.arzikina.ne.data.local.database.MIGRATION_6_7] : SQLite ne permet pas
+ * d'ajouter une clé étrangère à une table existante sans la recréer
+ * entièrement). Un index simple suffit pour les performances de requête ;
+ * l'intégrité référentielle (ex. purge des données à la suppression d'un
+ * compte utilisateur — fonctionnalité non encore implémentée) sera assurée
+ * au niveau applicatif le jour où elle sera nécessaire.
  */
-@Entity(tableName = "accounts")
+@Entity(
+    tableName = "accounts",
+    indices = [Index("userId")]
+)
 data class AccountEntity(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0L,
+    val userId: Long,
     val name: String,
     val icon: AccountIcon,
     val colorArgb: Long,

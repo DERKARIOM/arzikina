@@ -8,11 +8,13 @@ import com.arzikina.ne.data.local.dao.BudgetDao
 import com.arzikina.ne.data.local.dao.CategoryDao
 import com.arzikina.ne.data.local.dao.SavingsGoalDao
 import com.arzikina.ne.data.local.dao.TransactionDao
+import com.arzikina.ne.data.local.dao.UserDao
 import com.arzikina.ne.data.local.entity.AccountEntity
 import com.arzikina.ne.data.local.entity.BudgetEntity
 import com.arzikina.ne.data.local.entity.CategoryEntity
 import com.arzikina.ne.data.local.entity.SavingsGoalEntity
 import com.arzikina.ne.data.local.entity.TransactionEntity
+import com.arzikina.ne.data.local.entity.UserEntity
 
 /**
  * Base de données locale unique de l'application (SQLite via Room).
@@ -24,9 +26,11 @@ import com.arzikina.ne.data.local.entity.TransactionEntity
  * propre `Migration` (voir `di/DatabaseModule`), sans jamais modifier les
  * entités existantes en place.
  *
- * Le peuplement des données par défaut au premier lancement se fait via un
- * `RoomDatabase.Callback` déclaré dans `di/DatabaseModule` (et non ici) pour
- * garder cette classe strictement limitée à la définition du schéma.
+ * Le peuplement des comptes/catégories par défaut n'a plus lieu à la
+ * création de la base (voir `di/DatabaseModule`) : il se déclenche
+ * désormais après l'inscription d'un utilisateur (voir `DefaultAccounts`,
+ * `DefaultCategories` et la feuille de route Authentification), puisque ces
+ * données par défaut appartiennent maintenant à un utilisateur précis.
  *
  * Historique des versions :
  * - 1 : Comptes.
@@ -34,6 +38,12 @@ import com.arzikina.ne.data.local.entity.TransactionEntity
  * - 3 : Transactions (voir [MIGRATION_2_3]).
  * - 4 : Budgets (voir [MIGRATION_3_4]).
  * - 5 : Objectifs d'épargne (voir [MIGRATION_4_5]).
+ * - 6 : Authentification, table `users` (voir [MIGRATION_5_6]).
+ * - 7 : Isolation multi-utilisateurs, colonne `userId` sur les 5 tables
+ *   existantes + rattachement des données préexistantes à un utilisateur
+ *   par défaut (voir [MIGRATION_6_7]).
+ * - 8 : Question de sécurité (`securityQuestion` / `securityAnswerHash`),
+ *   pour la réinitialisation locale du mot de passe (voir [MIGRATION_7_8]).
  */
 @Database(
     entities = [
@@ -41,9 +51,10 @@ import com.arzikina.ne.data.local.entity.TransactionEntity
         CategoryEntity::class,
         TransactionEntity::class,
         BudgetEntity::class,
-        SavingsGoalEntity::class
+        SavingsGoalEntity::class,
+        UserEntity::class
     ],
-    version = 5,
+    version = 8,
     exportSchema = true
 )
 @TypeConverters(Converters::class)
@@ -53,4 +64,5 @@ abstract class ArzikinaDatabase : RoomDatabase() {
     abstract fun transactionDao(): TransactionDao
     abstract fun budgetDao(): BudgetDao
     abstract fun savingsGoalDao(): SavingsGoalDao
+    abstract fun userDao(): UserDao
 }

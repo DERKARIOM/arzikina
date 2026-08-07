@@ -47,6 +47,11 @@ class MoreFragment : Fragment(R.layout.fragment_more) {
      */
     private fun menuItems(): List<MoreMenuItem> = listOf(
         MoreMenuItem(
+            iconRes = R.drawable.ic_person_24,
+            titleRes = R.string.more_menu_profile,
+            destinationId = R.id.profileFragment
+        ),
+        MoreMenuItem(
             iconRes = R.drawable.ic_wallet_24,
             titleRes = R.string.nav_budget,
             destinationId = R.id.budgetFragment

@@ -17,8 +17,10 @@ fun TransactionEntity.toDomain(): Transaction = Transaction(
     createdAt = createdAt
 )
 
-fun Transaction.toEntity(): TransactionEntity = TransactionEntity(
+/** [userId] : fourni par le repository, jamais par l'appelant. */
+fun Transaction.toEntity(userId: Long): TransactionEntity = TransactionEntity(
     id = id,
+    userId = userId,
     amount = amount,
     type = type,
     accountId = accountId,
