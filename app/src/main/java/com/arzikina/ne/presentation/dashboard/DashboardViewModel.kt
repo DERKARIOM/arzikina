@@ -9,8 +9,10 @@ import com.arzikina.ne.domain.model.CurrencyAmount
 import com.arzikina.ne.domain.model.Transaction
 import com.arzikina.ne.domain.model.TransactionType
 import com.arzikina.ne.domain.repository.AccountRepository
+import com.arzikina.ne.domain.repository.AuthRepository
 import com.arzikina.ne.domain.repository.BudgetRepository
 import com.arzikina.ne.domain.repository.CategoryRepository
+import com.arzikina.ne.domain.repository.SessionManager
 import com.arzikina.ne.domain.repository.TransactionRepository
 import com.arzikina.ne.presentation.budget.BudgetUiItem
 import com.arzikina.ne.presentation.transactions.TransactionUiItem
@@ -21,6 +23,8 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import java.time.Instant
@@ -49,7 +53,16 @@ data class DashboardUiState(
      * encore. Un seul budget est mis en avant sur le tableau de bord ; la
      * liste complète reste dans l'onglet Budget (voir [BudgetUiItem]).
      */
-    val featuredBudget: BudgetUiItem?
+    val featuredBudget: BudgetUiItem?,
+    /**
+     * Nom complet et photo de profil de l'utilisateur connecté, pour l'en-tête
+     * du tableau de bord (voir DashboardFragment). `null`/vide tant que
+     * l'utilisateur n'a pas encore été chargé — ne devrait normalement pas
+     * arriver en pratique puisque le Dashboard n'est atteignable qu'après
+     * connexion (voir MainActivity.resolveStartDestination).
+     */
+    val userFullName: String,
+    val userProfilePhotoUri: String?
 )
 
 @HiltViewModel
@@ -57,15 +70,20 @@ class DashboardViewModel @Inject constructor(
     accountRepository: AccountRepository,
     transactionRepository: TransactionRepository,
     categoryRepository: CategoryRepository,
-    budgetRepository: BudgetRepository
+    budgetRepository: BudgetRepository,
+    authRepository: AuthRepository,
+    sessionManager: SessionManager
 ) : ViewModel() {
 
     val uiState: StateFlow<AppResult<DashboardUiState>> = combine(
         accountRepository.observeAccounts(),
         transactionRepository.observeTransactions(),
         categoryRepository.observeCategories(),
-        budgetRepository.observeBudgets()
-    ) { accounts, transactions, categories, budgets ->
+        budgetRepository.observeBudgets(),
+        sessionManager.observeCurrentUserId().flatMapLatest { userId ->
+            if (userId == null) flowOf(null) else authRepository.observeUser(userId)
+        }
+    ) { accounts, transactions, categories, budgets, user ->
         val accountsById = accounts.associateBy { it.id }
         val categoriesById = categories.associateBy { it.id }
 
@@ -85,7 +103,9 @@ class DashboardViewModel @Inject constructor(
                     category = categoriesById[transaction.categoryId]
                 )
             },
-            featuredBudget = featuredBudget(budgets, categoriesById, transactions, accountsById)
+            featuredBudget = featuredBudget(budgets, categoriesById, transactions, accountsById),
+            userFullName = user?.fullName.orEmpty(),
+            userProfilePhotoUri = user?.profilePhotoUri
         )
     }
         .map<DashboardUiState, AppResult<DashboardUiState>> { AppResult.Success(it) }

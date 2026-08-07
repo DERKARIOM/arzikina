@@ -19,6 +19,7 @@ import com.arzikina.ne.presentation.budget.BudgetUiItem
 import com.arzikina.ne.util.AppResult
 import com.arzikina.ne.util.Constants
 import com.arzikina.ne.util.Money
+import coil3.load
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 
@@ -100,6 +101,7 @@ class DashboardFragment : Fragment(R.layout.fragment_dashboard) {
         renderBalanceText()
         renderIncomeExpense(uiState.monthlyIncome, uiState.monthlyExpense)
         renderFeaturedBudget(uiState.featuredBudget)
+        renderUserHeader(uiState.userFullName, uiState.userProfilePhotoUri)
 
         val hasTransactions = uiState.recentTransactions.isNotEmpty()
         binding.recentTransactionsList.setVisible(hasTransactions)
@@ -122,6 +124,19 @@ class DashboardFragment : Fragment(R.layout.fragment_dashboard) {
                 onClick = { findNavController().navigate(R.id.budgetFragment) },
                 onDeleteClick = {}
             )
+        }
+    }
+
+    /**
+     * En-tête (avatar + "Salut !" + nom) : [photoUri] `null` conserve le
+     * placeholder [R.drawable.ic_person_24] déjà posé dans le layout (même
+     * pattern que RegisterFragment/ProfileFragment, voir bg_avatar_circle).
+     */
+    private fun renderUserHeader(fullName: String, photoUri: String?) {
+        val binding = binding ?: return
+        binding.userFullNameText.text = fullName
+        if (photoUri != null) {
+            binding.userAvatarImage.load(photoUri)
         }
     }
 

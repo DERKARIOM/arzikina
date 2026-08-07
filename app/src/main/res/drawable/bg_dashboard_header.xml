@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Fond de l'en-tête Dashboard (avatar + salutation) : dégradé brun/ambré
+    fixe, reproduisant une image de référence fournie par l'utilisateur (voir
+    @color/arzikina_dashboard_header_dark et arzikina_dashboard_header_glow
+    dans colors.xml pour le raisonnement). Dégradé radial, centré en haut à
+    droite, pour évoquer les courbes décoratives de l'image de référence sans
+    dupliquer un asset graphique complexe.
+-->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="@color/arzikina_dashboard_header_dark" />
+        </shape>
+    </item>
+    <item>
+        <shape android:shape="rectangle">
+            <gradient
+                android:type="radial"
+                android:gradientRadius="260dp"
+                android:centerX="0.85"
+                android:centerY="0.05"
+                android:startColor="@color/arzikina_dashboard_header_glow"
+                android:endColor="@color/arzikina_dashboard_header_dark" />
+        </shape>
+    </item>
+</layer-list>

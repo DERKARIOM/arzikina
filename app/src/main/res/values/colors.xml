@@ -61,4 +61,18 @@
     <!-- Ligne de séparation entre transactions (voir divider_on_balance_card.xml) : même
          teinte que ci-dessus mais très transparente, pour rester à peine visible. -->
     <color name="arzikina_divider_on_balance_card">#1F94A3B8</color>
+
+    <!--
+        En-tête du Dashboard (avatar + salutation, voir bg_dashboard_header.xml) :
+        couleurs fixes brun/ambré, volontairement identiques en clair et en
+        sombre (même raisonnement que arzikina_balance_card ci-dessus) — sur
+        demande explicite pour correspondre à une image de référence. Seconde
+        famille de couleurs de l'app, cantonnée à cet élément visuel précis, au
+        même titre que la carte Solde n'appartient pas non plus à la palette
+        émeraude/bleu-gris du reste du thème.
+    -->
+    <color name="arzikina_dashboard_header_dark">#1B120E</color>
+    <color name="arzikina_dashboard_header_glow">#8C4A24</color>
+    <color name="arzikina_on_dashboard_header">#FFFFFFFF</color>
+    <color name="arzikina_on_dashboard_header_variant">#E6D9CE</color>
 </resources>

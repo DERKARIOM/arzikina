@@ -11,109 +11,224 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="@dimen/spacing_m">
+        android:orientation="vertical">
 
         <!--
-            Raccourci vers Catégories (écran secondaire, atteint aussi depuis
-            l'onglet Autre). Comptes n'a plus de raccourci ici : c'est
-            désormais l'onglet "Compte" de la Bottom Navigation, déjà atteignable
-            directement — un raccourci en plus aurait été une redondance de
-            navigation. Objectifs suivra quand il sera reconstruit.
+            Bloc du haut (en-tête + carte Solde) en ConstraintLayout : le fond
+            dégradé brun/ambré (dashboardHeaderBackground) doit descendre
+            jusqu'au MILIEU de la carte Solde (demande explicite), pas
+            seulement derrière la ligne avatar/nom. balanceCardMidAnchor est
+            une vue de 1dp centrée verticalement sur toute la hauteur de
+            balanceCardOuter (technique ConstraintLayout : une vue de taille
+            fixe contrainte par le haut ET le bas d'une autre vue se centre
+            automatiquement sur cette plage) ; le fond s'arrête à cette vue,
+            quelle que soit la hauteur réelle (dynamique) de la carte.
         -->
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <View
+                android:id="@+id/dashboardHeaderBackground"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:background="@drawable/bg_dashboard_header"
+                app:layout_constraintBottom_toBottomOf="@id/balanceCardMidAnchor"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <!--
+                Ligne avatar + nom + icône Catégories : un seul LinearLayout
+                horizontal avec gravity="center_vertical", plutôt que trois
+                vues positionnées séparément par contraintes — garantit un
+                alignement vertical simple et fiable des trois éléments sur
+                la même ligne (l'alignement par centrage entre contraintes
+                ConstraintLayout s'est avéré peu fiable pour ce cas).
+            -->
+            <LinearLayout
+                android:id="@+id/headerRow"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="70dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent">
+
+                <FrameLayout
+                    android:id="@+id/userAvatarContainer"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_marginStart="@dimen/spacing_m">
+
+                    <ImageView
+                        android:id="@+id/userAvatarImage"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:background="@drawable/bg_avatar_circle"
+                        android:contentDescription="@null"
+                        android:padding="@dimen/spacing_xs"
+                        android:scaleType="centerCrop"
+                        android:src="@drawable/ic_person_24"
+                        app:tint="@color/arzikina_on_dashboard_header_variant" />
+
+                </FrameLayout>
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="@dimen/spacing_m"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        style="@style/TextAppearance.Material3.BodyMedium"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/dashboard_greeting"
+                        android:textColor="@color/arzikina_on_dashboard_header_variant" />
+
+                    <TextView
+                        android:id="@+id/userFullNameText"
+                        style="@style/TextAppearance.Material3.TitleMedium"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:ellipsize="end"
+                        android:maxLines="1"
+                        android:textColor="@color/arzikina_on_dashboard_header"
+                        android:textStyle="bold"
+                        tools:text="Aïcha Konaté" />
+
+                </LinearLayout>
+
+                <!--
+                    Raccourci vers Catégories (écran secondaire, atteint aussi
+                    depuis l'onglet Autre). Comptes n'a plus de raccourci ici :
+                    c'est désormais l'onglet "Compte" de la Bottom Navigation,
+                    déjà atteignable directement. Objectifs suivra quand il
+                    sera reconstruit.
+                -->
+                <ImageButton
+                    android:id="@+id/categoriesShortcut"
+                    android:layout_width="@dimen/icon_size_large"
+                    android:layout_height="@dimen/icon_size_large"
+                    android:layout_marginStart="@dimen/spacing_s"
+                    android:layout_marginEnd="@dimen/spacing_s"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="@string/dashboard_categories_action"
+                    android:padding="@dimen/spacing_s"
+                    android:src="@drawable/ic_category_other_24"
+                    android:tint="?attr/colorOnSurface" />
+
+            </LinearLayout>
+
+            <!--
+                Solde total (une ligne par devise détenue, voir DashboardViewModel).
+                Carte entière cliquable vers l'onglet "Compte" (détail par compte) ;
+                l'œil masque/affiche le montant sans naviguer (voir DashboardFragment.kt,
+                android:clickable + le stopPropagation implicite d'un ImageButton dans
+                une zone cliquable — les deux zones ont chacune leur propre listener).
+            -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/balanceCardOuter"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_s"
+                app:cardBackgroundColor="@color/arzikina_balance_card"
+                app:cardCornerRadius="@dimen/corner_radius_large"
+                app:cardElevation="0dp"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/headerRow"
+                android:layout_marginStart="@dimen/spacing_m"
+                android:layout_marginEnd="@dimen/spacing_m">
+
+                <androidx.constraintlayout.widget.ConstraintLayout
+                    android:id="@+id/balanceCard"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@color/arzikina_postcart_background"
+                    android:clickable="true"
+                    android:contentDescription="@string/dashboard_balance_details_action"
+                    android:focusable="true"
+                    android:padding="@dimen/spacing_l">
+
+                    <TextView
+                        android:id="@+id/balanceLabel"
+                        style="@style/TextAppearance.Material3.LabelLarge"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/dashboard_balance_label"
+                        android:textColor="@color/arzikina_on_balance_card"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toTopOf="parent" />
+
+                    <TextView
+                        android:id="@+id/balanceValue"
+                        style="@style/TextAppearance.Material3.HeadlineMedium"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/spacing_xs"
+                        android:textColor="@color/arzikina_on_balance_card"
+                        app:layout_constraintEnd_toStartOf="@id/toggleBalanceVisibility"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toBottomOf="@id/balanceLabel"
+                        tools:text="150 000 F CFA" />
+
+                    <ImageButton
+                        android:id="@+id/toggleBalanceVisibility"
+                        android:layout_width="@dimen/icon_size_default"
+                        android:layout_height="@dimen/icon_size_default"
+                        android:layout_marginStart="@dimen/spacing_s"
+                        android:padding="10dp"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:contentDescription="@string/dashboard_balance_hide_action"
+                        android:src="@drawable/ic_visibility_24"
+                        app:layout_constraintBottom_toBottomOf="@id/balanceValue"
+                        app:layout_constraintEnd_toStartOf="@id/balanceChevron"
+                        app:layout_constraintTop_toTopOf="@id/balanceValue"
+                        app:tint="@color/arzikina_on_balance_card" />
+
+                    <ImageView
+                        android:id="@+id/balanceChevron"
+                        android:layout_width="@dimen/icon_size_default"
+                        android:layout_height="@dimen/icon_size_default"
+                        android:contentDescription="@null"
+                        android:visibility="invisible"
+                        android:src="@drawable/ic_chevron_right_24"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintTop_toTopOf="parent"
+                        app:tint="@color/arzikina_on_balance_card" />
+
+                </androidx.constraintlayout.widget.ConstraintLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!--
+                Vue invisible (1dp) qui se centre automatiquement sur toute la
+                hauteur de balanceCardOuter : sert uniquement de repère pour
+                dashboardHeaderBackground ci-dessus (voir commentaire en tête
+                de ce ConstraintLayout).
+            -->
+            <View
+                android:id="@+id/balanceCardMidAnchor"
+                android:layout_width="1dp"
+                android:layout_height="1dp"
+                app:layout_constraintBottom_toBottomOf="@id/balanceCardOuter"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="@id/balanceCardOuter" />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:gravity="end"
-            android:layout_marginBottom="10dp"
-            android:orientation="horizontal">
-
-            <ImageButton
-                android:id="@+id/categoriesShortcut"
-                android:layout_width="@dimen/icon_size_large"
-                android:layout_height="@dimen/icon_size_large"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:contentDescription="@string/dashboard_categories_action"
-                android:padding="@dimen/spacing_s"
-                android:src="@drawable/ic_category_other_24"
-                android:tint="?attr/colorOnSurface" />
-
-        </LinearLayout>
-
-        <!--
-            Solde total (une ligne par devise détenue, voir DashboardViewModel).
-            Carte entière cliquable vers l'onglet "Compte" (détail par compte) ;
-            l'œil masque/affiche le montant sans naviguer (voir DashboardFragment.kt,
-            android:clickable + le stopPropagation implicite d'un ImageButton dans
-            une zone cliquable — les deux zones ont chacune leur propre listener).
-        -->
-        <com.google.android.material.card.MaterialCardView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            app:cardBackgroundColor="@color/arzikina_balance_card"
-            app:cardCornerRadius="@dimen/corner_radius_large"
-            app:cardElevation="0dp">
-
-            <androidx.constraintlayout.widget.ConstraintLayout
-                android:id="@+id/balanceCard"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:background="@color/arzikina_postcart_background"
-                android:clickable="true"
-                android:contentDescription="@string/dashboard_balance_details_action"
-                android:focusable="true"
-                android:padding="@dimen/spacing_l">
-
-                <TextView
-                    android:id="@+id/balanceLabel"
-                    style="@style/TextAppearance.Material3.LabelLarge"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/dashboard_balance_label"
-                    android:textColor="@color/arzikina_on_balance_card"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toTopOf="parent" />
-
-                <TextView
-                    android:id="@+id/balanceValue"
-                    style="@style/TextAppearance.Material3.HeadlineMedium"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="@dimen/spacing_xs"
-                    android:textColor="@color/arzikina_on_balance_card"
-                    app:layout_constraintEnd_toStartOf="@id/toggleBalanceVisibility"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toBottomOf="@id/balanceLabel"
-                    tools:text="150 000 F CFA" />
-
-                <ImageButton
-                    android:id="@+id/toggleBalanceVisibility"
-                    android:layout_width="@dimen/icon_size_default"
-                    android:layout_height="@dimen/icon_size_default"
-                    android:layout_marginStart="@dimen/spacing_s"
-                    android:padding="10dp"
-                    android:background="?attr/selectableItemBackgroundBorderless"
-                    android:contentDescription="@string/dashboard_balance_hide_action"
-                    android:src="@drawable/ic_visibility_24"
-                    app:layout_constraintBottom_toBottomOf="@id/balanceValue"
-                    app:layout_constraintEnd_toStartOf="@id/balanceChevron"
-                    app:layout_constraintTop_toTopOf="@id/balanceValue"
-                    app:tint="@color/arzikina_on_balance_card" />
-
-                <ImageView
-                    android:id="@+id/balanceChevron"
-                    android:layout_width="@dimen/icon_size_default"
-                    android:layout_height="@dimen/icon_size_default"
-                    android:contentDescription="@null"
-                    android:visibility="invisible"
-                    android:src="@drawable/ic_chevron_right_24"
-                    app:layout_constraintBottom_toBottomOf="parent"
-                    app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintTop_toTopOf="parent"
-                    app:tint="@color/arzikina_on_balance_card" />
-
-            </androidx.constraintlayout.widget.ConstraintLayout>
-        </com.google.android.material.card.MaterialCardView>
+            android:orientation="vertical"
+            android:padding="@dimen/spacing_m">
 
         <!--
             Dépenses vs revenus du mois en cours : un seul widget (mini
@@ -378,6 +493,8 @@
 
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
+
+        </LinearLayout>
 
     </LinearLayout>
 

@@ -133,6 +133,7 @@
     <string name="update_security_question_success_message">Question de sécurité mise à jour.</string>
 
     <!-- Comptes -->
+    <string name="dashboard_greeting">Salut !</string>
     <string name="dashboard_accounts_action">Gérer mes comptes</string>
     <string name="accounts_title">Mes comptes</string>
     <string name="accounts_add">Ajouter</string>
