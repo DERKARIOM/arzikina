@@ -80,5 +80,6 @@
     <color name="arzikina_dashboard_header_dark">#001B14</color>
     <color name="arzikina_dashboard_header_glow">#008C67</color>
     <color name="arzikina_on_dashboard_header">#FFFFFFFF</color>
+    <color name="white">#FFFFFFFF</color>
     <color name="arzikina_on_dashboard_header_variant">#CEE6E0</color>
 </resources>

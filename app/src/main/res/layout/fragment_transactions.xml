@@ -204,9 +204,11 @@
         android:id="@+id/addTransactionButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:textColor="@color/white"
         android:layout_margin="@dimen/spacing_m"
         android:text="@string/transactions_add"
         app:icon="@drawable/ic_add_24"
+        app:iconTint="@color/white"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
