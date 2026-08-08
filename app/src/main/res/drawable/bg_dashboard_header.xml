@@ -1,11 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    Fond de l'en-tête Dashboard (avatar + salutation) : dégradé brun/ambré
-    fixe, reproduisant une image de référence fournie par l'utilisateur (voir
+    Fond de l'en-tête Dashboard (avatar + salutation) : dégradé vert sarcelle
+    fixe, repris de la couleur du compte par défaut "Banque" (voir
     @color/arzikina_dashboard_header_dark et arzikina_dashboard_header_glow
     dans colors.xml pour le raisonnement). Dégradé radial, centré en haut à
-    droite, pour évoquer les courbes décoratives de l'image de référence sans
-    dupliquer un asset graphique complexe.
+    droite (structure inchangée depuis la version brun/ambré d'origine).
 -->
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
     <item>

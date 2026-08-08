@@ -64,15 +64,21 @@
 
     <!--
         En-tête du Dashboard (avatar + salutation, voir bg_dashboard_header.xml) :
-        couleurs fixes brun/ambré, volontairement identiques en clair et en
-        sombre (même raisonnement que arzikina_balance_card ci-dessus) — sur
-        demande explicite pour correspondre à une image de référence. Seconde
-        famille de couleurs de l'app, cantonnée à cet élément visuel précis, au
-        même titre que la carte Solde n'appartient pas non plus à la palette
-        émeraude/bleu-gris du reste du thème.
+        couleurs fixes, volontairement identiques en clair et en sombre (même
+        raisonnement que arzikina_balance_card ci-dessus). Dérivées du vert
+        sarcelle du compte par défaut "Banque" (0xFF006C4F, voir DefaultAccounts.seed)
+        par la même méthode que AccountCardGradient (teinte conservée, seule la
+        composante V du HSV varie) — sur demande explicite, remplace l'ancien
+        dégradé brun/ambré. Choix FIXE (comme avant) et non lié en direct au
+        compte "Banque" : si l'utilisateur renomme/recolore ce compte plus
+        tard, cet en-tête ne change pas tout seul — à réévaluer si ce lien
+        doit un jour devenir dynamique. Seconde famille de couleurs de l'app,
+        cantonnée à cet élément visuel précis, au même titre que la carte
+        Solde n'appartient pas non plus à la palette émeraude/bleu-gris du
+        reste du thème.
     -->
-    <color name="arzikina_dashboard_header_dark">#1B120E</color>
-    <color name="arzikina_dashboard_header_glow">#8C4A24</color>
+    <color name="arzikina_dashboard_header_dark">#001B14</color>
+    <color name="arzikina_dashboard_header_glow">#008C67</color>
     <color name="arzikina_on_dashboard_header">#FFFFFFFF</color>
-    <color name="arzikina_on_dashboard_header_variant">#E6D9CE</color>
+    <color name="arzikina_on_dashboard_header_variant">#CEE6E0</color>
 </resources>
