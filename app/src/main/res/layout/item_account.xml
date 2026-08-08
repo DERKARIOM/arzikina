@@ -1,82 +1,131 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<!--
+    Carte de compte façon carte bancaire (voir maquette "RÉORGANISATION – PAGE
+    COMPTE") : fond en dégradé calculé depuis Account.colorArgb (voir
+    AccountsAdapter/AccountCardGradient, appliqué par code sur `cardContent` —
+    un ConstraintLayout imbriqué, pas la MaterialCardView elle-même, qui ne
+    supporte pas un `cardBackgroundColor` en dégradé). Toute la carte est
+    cliquable et ouvre "Détail du compte" ; modifier/supprimer se fait depuis
+    le menu "⋮" de cet écran (voir AccountDetailFragment) — pas de bouton
+    dédié ici, comme sur la maquette.
+-->
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/accountCard"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:background="?attr/selectableItemBackground"
+    android:layout_marginHorizontal="@dimen/spacing_m"
+    android:layout_marginTop="@dimen/spacing_m"
+    android:checkable="false"
     android:clickable="true"
     android:focusable="true"
-    android:paddingHorizontal="@dimen/spacing_m"
-    android:paddingVertical="@dimen/spacing_s">
+    app:cardCornerRadius="@dimen/corner_radius_medium"
+    app:cardElevation="@dimen/elevation_raised"
+    app:rippleColor="@android:color/white">
 
-    <ImageView
-        android:id="@+id/accountIcon"
-        android:layout_width="@dimen/icon_size_large"
-        android:layout_height="@dimen/icon_size_large"
-        android:background="@drawable/bg_icon_circle"
-        android:contentDescription="@null"
-        android:padding="@dimen/spacing_s"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:tint="@android:color/white" />
-
-    <TextView
-        android:id="@+id/accountName"
-        style="@style/TextAppearance.Material3.TitleSmall"
-        android:layout_width="0dp"
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/cardContent"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginStart="@dimen/spacing_m"
-        android:ellipsize="end"
-        android:maxLines="1"
-        android:textColor="?attr/colorOnSurface"
-        app:layout_constraintEnd_toStartOf="@id/deleteButton"
-        app:layout_constraintStart_toEndOf="@id/accountIcon"
-        app:layout_constraintTop_toTopOf="@id/accountIcon"
-        tools:text="Espèces" />
+        android:minHeight="120dp"
+        android:padding="@dimen/spacing_l">
 
-    <TextView
-        android:id="@+id/accountBalance"
-        style="@style/TextAppearance.Material3.BodySmall"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="@dimen/spacing_m"
-        android:layout_marginTop="2dp"
-        android:ellipsize="end"
-        android:maxLines="1"
-        android:textColor="?attr/colorOnSurfaceVariant"
-        app:layout_constraintEnd_toStartOf="@id/deleteButton"
-        app:layout_constraintStart_toEndOf="@id/accountIcon"
-        app:layout_constraintTop_toBottomOf="@id/accountName"
-        tools:text="150 000 F CFA" />
+        <!--
+            Motif discret ("fond avec dégradé et motifs subtils", voir
+            maquette) : un simple cercle blanc semi-transparent qui déborde
+            du cadre, découpé par la forme de la carte. Déclaré en premier
+            pour rester sous le reste du contenu.
+        -->
+        <View
+            android:layout_width="140dp"
+            android:layout_height="140dp"
+            android:layout_marginBottom="-60dp"
+            android:layout_marginEnd="-40dp"
+            android:alpha="0.10"
+            android:background="@drawable/bg_icon_circle"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
 
-    <ImageButton
-        android:id="@+id/deleteButton"
-        android:layout_width="@dimen/icon_size_default"
-        android:layout_height="@dimen/icon_size_default"
-        android:background="?attr/selectableItemBackgroundBorderless"
-        android:contentDescription="@string/action_delete"
-        android:src="@drawable/ic_delete_24"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="@id/accountChevron"
-        app:layout_constraintTop_toTopOf="parent" />
+        <!--
+            Badge blanc opaque (contrairement aux icônes de transaction, qui
+            reçoivent la couleur du compte en fond) : sur une carte déjà en
+            dégradé coloré, c'est l'icône elle-même qui prend cette couleur
+            (voir AccountsAdapter), pour rester lisible quel que soit le
+            dégradé.
+        -->
+        <ImageView
+            android:id="@+id/accountIcon"
+            android:layout_width="@dimen/icon_size_large"
+            android:layout_height="@dimen/icon_size_large"
+            android:background="@drawable/bg_icon_circle"
+            android:contentDescription="@null"
+            android:padding="@dimen/spacing_s"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:ignore="ContentDescription"
+            tools:tint="#3B82F6" />
 
-    <!--
-        Indicateur de navigation (voir maquette) : purement visuel pour
-        l'instant, la destination "Détail du compte" (transactions groupées
-        par jour) sera créée à l'étape suivante. Le clic sur toute la ligne
-        (voir android:clickable sur le ConstraintLayout racine) reste géré
-        par AccountsFragment, pas par cette flèche elle-même.
-    -->
-    <ImageView
-        android:id="@+id/accountChevron"
-        android:layout_width="@dimen/icon_size_default"
-        android:layout_height="@dimen/icon_size_default"
-        android:contentDescription="@null"
-        android:src="@drawable/ic_chevron_right_24"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:tint="?attr/colorOnSurfaceVariant" />
+        <TextView
+            android:id="@+id/accountName"
+            style="@style/TextAppearance.Material3.TitleMedium"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/spacing_m"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textColor="@android:color/white"
+            android:textStyle="bold"
+            app:layout_constraintEnd_toStartOf="@id/accountBalance"
+            app:layout_constraintStart_toEndOf="@id/accountIcon"
+            app:layout_constraintTop_toTopOf="@id/accountIcon"
+            tools:text="Compte principal" />
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+        <TextView
+            android:id="@+id/accountType"
+            style="@style/TextAppearance.Material3.BodySmall"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/spacing_m"
+            android:layout_marginTop="2dp"
+            android:alpha="0.85"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textColor="@android:color/white"
+            app:layout_constraintEnd_toStartOf="@id/accountBalance"
+            app:layout_constraintStart_toEndOf="@id/accountIcon"
+            app:layout_constraintTop_toBottomOf="@id/accountName"
+            tools:text="Banque" />
+
+        <TextView
+            android:id="@+id/accountBalance"
+            style="@style/TextAppearance.Material3.TitleLarge"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textColor="@android:color/white"
+            android:textStyle="bold"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:text="150 000 F CFA" />
+
+        <TextView
+            android:id="@+id/cardBadge"
+            style="@style/TextAppearance.Material3.LabelMedium"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/spacing_l"
+            android:alpha="0.9"
+            android:letterSpacing="0.12"
+            android:text="@string/accounts_card_badge"
+            android:textColor="@android:color/white"
+            android:textStyle="bold"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/accountIcon"
+            app:layout_constraintVertical_bias="1" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</com.google.android.material.card.MaterialCardView>

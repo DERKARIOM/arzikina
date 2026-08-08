@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Case de la grille "Catégorie" du formulaire de transaction (voir
+    CategoryQuickPickAdapter) : icône colorée + nom, plus une case spéciale
+    "Ajouter" (icône "+", ouvre le formulaire de nouvelle catégorie). L'anneau
+    de sélection (bg_category_pick_selector) est porté par le conteneur autour
+    de l'icône, pas par l'icône elle-même, qui garde sa propre couleur.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="?attr/selectableItemBackground"
+    android:clickable="true"
+    android:focusable="true"
+    android:gravity="center"
+    android:orientation="vertical"
+    android:paddingVertical="@dimen/spacing_s">
+
+    <FrameLayout
+        android:id="@+id/iconRing"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="@drawable/bg_category_pick_selector"
+        android:padding="4dp">
+
+        <ImageView
+            android:id="@+id/categoryIcon"
+            android:layout_width="@dimen/icon_size_large"
+            android:layout_height="@dimen/icon_size_large"
+            android:background="@drawable/bg_icon_rounded_square"
+            android:contentDescription="@null"
+            android:padding="@dimen/spacing_s"
+            app:tint="@android:color/white"
+            tools:ignore="ContentDescription" />
+
+    </FrameLayout>
+
+    <TextView
+        android:id="@+id/categoryName"
+        style="@style/TextAppearance.Material3.LabelSmall"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/spacing_xs"
+        android:ellipsize="end"
+        android:gravity="center"
+        android:maxLines="1"
+        android:textColor="?attr/colorOnSurface"
+        tools:text="Déjeuner" />
+
+</LinearLayout>

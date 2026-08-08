@@ -22,67 +22,20 @@
         tools:title="Espèces" />
 
     <!--
-        Résumé du compte : icône + nom + solde courant, même style de carte
-        que la carte Solde du Dashboard/Mes comptes (@color/arzikina_balance_card).
+        Résumé du compte : LA MÊME carte façon carte bancaire que sur "Mes
+        comptes" (voir item_account.xml/AccountCardBinder), incluse ici plutôt
+        que recopiée — un seul layout à maintenir pour les deux écrans. Le
+        view binding généré expose ce fragment de vue comme un
+        `ItemAccountBinding` nommé d'après cet id (binding.accountSummaryCard.*).
     -->
-    <com.google.android.material.card.MaterialCardView
+    <include
         android:id="@+id/accountSummaryCard"
+        layout="@layout/item_account"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_margin="@dimen/spacing_m"
-        app:cardBackgroundColor="@color/arzikina_balance_card"
-        app:cardCornerRadius="@dimen/corner_radius_large"
-        app:cardElevation="0dp"
-        app:layout_constraintTop_toBottomOf="@id/toolbar">
-
-        <androidx.constraintlayout.widget.ConstraintLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:background="@color/arzikina_postcart_background"
-            android:padding="@dimen/spacing_l">
-
-            <ImageView
-                android:id="@+id/accountIcon"
-                android:layout_width="@dimen/icon_size_large"
-                android:layout_height="@dimen/icon_size_large"
-                android:background="@drawable/bg_icon_circle"
-                android:contentDescription="@null"
-                android:padding="@dimen/spacing_s"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent"
-                app:tint="@android:color/white" />
-
-            <TextView
-                android:id="@+id/accountName"
-                style="@style/TextAppearance.Material3.LabelLarge"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="@dimen/spacing_m"
-                android:ellipsize="end"
-                android:maxLines="1"
-                android:textColor="@color/arzikina_on_balance_card"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toEndOf="@id/accountIcon"
-                app:layout_constraintTop_toTopOf="@id/accountIcon"
-                tools:text="Espèces" />
-
-            <TextView
-                android:id="@+id/accountBalance"
-                style="@style/TextAppearance.Material3.HeadlineSmall"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="@dimen/spacing_m"
-                android:layout_marginTop="2dp"
-                android:ellipsize="end"
-                android:maxLines="1"
-                android:textColor="@color/arzikina_on_balance_card"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toEndOf="@id/accountIcon"
-                app:layout_constraintTop_toBottomOf="@id/accountName"
-                tools:text="7 050 F CFA" />
-
-        </androidx.constraintlayout.widget.ConstraintLayout>
-    </com.google.android.material.card.MaterialCardView>
+        android:layout_marginTop="@dimen/spacing_m"
+        android:layout_marginHorizontal="@dimen/spacing_m"
+        app:layout_constraintTop_toBottomOf="@id/toolbar" />
 
     <TextView
         android:id="@+id/emptyState"

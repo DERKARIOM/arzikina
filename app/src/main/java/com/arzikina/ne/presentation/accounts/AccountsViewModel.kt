@@ -2,12 +2,8 @@ package com.arzikina.ne.presentation.accounts
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.arzikina.ne.domain.model.CurrencyAmount
-import com.arzikina.ne.domain.model.Transaction
-import com.arzikina.ne.domain.model.TransactionType
 import com.arzikina.ne.domain.repository.AccountRepository
 import com.arzikina.ne.domain.repository.TransactionRepository
-import com.arzikina.ne.domain.repository.UserPreferencesRepository
 import com.arzikina.ne.util.AppResult
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
@@ -16,24 +12,15 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 /**
- * État affiché par l'écran "Mes comptes".
- *
- * [totalBalance] est réduit à une seule devise — celle définie comme
- * "principale" dans les Paramètres ([UserPreferencesRepository]) — plutôt
- * que d'afficher une ligne par devise comme le fait le Dashboard : demande
- * explicite d'une carte à une seule ligne. Les comptes tenus dans une AUTRE
- * devise sont exclus de ce total (additionner des devises différentes sans
- * taux de change donnerait un nombre erroné) ; même règle déjà appliquée par
- * [com.arzikina.ne.presentation.statistics.StatisticsViewModel]. Leur solde
- * individuel reste bien sûr visible sur leur propre ligne dans [accounts].
+ * État affiché par l'écran "Mes comptes". Plus de solde total agrégé ici
+ * (bloc retiré de l'écran) : chaque compte affiche déjà son propre solde sur
+ * sa carte (voir [AccountUiItem]/`item_account.xml`).
  */
 data class AccountsUiState(
-    val accounts: List<AccountUiItem>,
-    val totalBalance: CurrencyAmount
+    val accounts: List<AccountUiItem>
 )
 
 /**
@@ -41,35 +28,20 @@ data class AccountsUiState(
  */
 @HiltViewModel
 class AccountsViewModel @Inject constructor(
-    private val accountRepository: AccountRepository,
-    transactionRepository: TransactionRepository,
-    userPreferencesRepository: UserPreferencesRepository
+    accountRepository: AccountRepository,
+    transactionRepository: TransactionRepository
 ) : ViewModel() {
 
     val uiState: StateFlow<AppResult<AccountsUiState>> = combine(
         accountRepository.observeAccounts(),
-        transactionRepository.observeTransactions(),
-        userPreferencesRepository.observePreferences()
-    ) { accounts, transactions, preferences ->
-        val signedByAccount = transactions
-            .groupBy { it.accountId }
-            .mapValues { (_, txs) -> txs.sumOf { it.signedAmount() } }
-
+        transactionRepository.observeTransactions()
+    ) { accounts, transactions ->
+        val currentBalances = computeCurrentBalances(accounts, transactions)
         val items = accounts.map { account ->
-            AccountUiItem(
-                account = account,
-                currentBalance = account.initialBalance + (signedByAccount[account.id] ?: 0L)
-            )
+            AccountUiItem(account = account, currentBalance = currentBalances[account.id] ?: account.initialBalance)
         }
 
-        val totalBalanceMinor = items
-            .filter { it.account.currencyCode == preferences.currencyCode }
-            .sumOf { it.currentBalance }
-
-        AccountsUiState(
-            accounts = items,
-            totalBalance = CurrencyAmount(preferences.currencyCode, totalBalanceMinor)
-        )
+        AccountsUiState(accounts = items)
     }
         .map<AccountsUiState, AppResult<AccountsUiState>> { AppResult.Success(it) }
         .catch { throwable -> emit(AppResult.Error(throwable.message ?: "Erreur inconnue", throwable)) }
@@ -78,12 +50,4 @@ class AccountsViewModel @Inject constructor(
             started = SharingStarted.WhileSubscribed(stopTimeoutMillis = 5_000),
             initialValue = AppResult.Loading
         )
-
-    fun deleteAccount(id: Long) {
-        viewModelScope.launch {
-            accountRepository.deleteAccount(id)
-        }
-    }
-
-    private fun Transaction.signedAmount(): Long = if (type == TransactionType.INCOME) amount else -amount
 }

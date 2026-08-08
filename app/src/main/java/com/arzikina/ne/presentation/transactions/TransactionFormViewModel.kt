@@ -11,6 +11,7 @@ import com.arzikina.ne.domain.model.TransactionType
 import com.arzikina.ne.domain.repository.AccountRepository
 import com.arzikina.ne.domain.repository.CategoryRepository
 import com.arzikina.ne.domain.repository.TransactionRepository
+import com.arzikina.ne.presentation.accounts.computeCurrentBalances
 import com.arzikina.ne.util.Money
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -20,6 +21,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
@@ -87,6 +89,17 @@ class TransactionFormViewModel @Inject constructor(
         .flatMapLatest { type -> categoryRepository.observeCategoriesByType(type) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
+    /**
+     * Solde COURANT de chaque compte (voir [computeCurrentBalances]), affiché
+     * sur la ligne "Compte" et dans [com.arzikina.ne.presentation.components.AccountPickerDialog] —
+     * pas [Account.initialBalance].
+     */
+    val accountBalances: StateFlow<Map<Long, Long>> = combine(
+        accounts,
+        transactionRepository.observeTransactions()
+    ) { accounts, transactions -> computeCurrentBalances(accounts, transactions) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyMap())
+
     init {
         if (isEditMode) {
             viewModelScope.launch {
@@ -118,6 +131,21 @@ class TransactionFormViewModel @Inject constructor(
 
     fun onAmountChange(value: String) {
         _formState.update { it.copy(amountInput = value, amountError = null) }
+    }
+
+    /**
+     * Raccourci rapide (voir maquette "PERSONNALISATION – AJOUT DE
+     * TRANSACTION", +1000/+5000/+10000) : AJOUTE [majorUnits] au montant déjà
+     * saisi plutôt que de le remplacer, pour permettre de cumuler plusieurs
+     * raccourcis (ex. +5000 puis +1000 pour 6000). Un montant vide ou invalide
+     * est traité comme 0.
+     */
+    fun onQuickAmountAdd(majorUnits: Long) {
+        _formState.update { state ->
+            val currentMinor = Money.parseToMinorUnits(state.amountInput) ?: 0L
+            val newMinor = currentMinor + majorUnits * 100
+            state.copy(amountInput = Money.formatMajorUnits(newMinor), amountError = null)
+        }
     }
 
     fun onTypeChange(type: TransactionType) {

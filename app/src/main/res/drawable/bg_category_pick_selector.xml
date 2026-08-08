@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Anneau de sélection autour d'une case de la grille "Catégorie" du
+    formulaire de transaction (voir item_category_quick_pick.xml) — porté par
+    le conteneur qui entoure l'icône, pas l'icône elle-même : celle-ci garde
+    sa propre couleur de fond (Category.colorArgb), il ne faut pas les
+    confondre. Même principe que bg_icon_picker_selector, forme carrée plutôt
+    que ronde pour rester cohérent avec bg_icon_rounded_square.
+-->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_selected="true">
+        <shape android:shape="rectangle">
+            <corners android:radius="@dimen/corner_radius_small" />
+            <solid android:color="?attr/colorPrimaryContainer" />
+            <stroke
+                android:width="2dp"
+                android:color="?attr/colorPrimary" />
+        </shape>
+    </item>
+    <item>
+        <shape android:shape="rectangle">
+            <corners android:radius="@dimen/corner_radius_small" />
+            <solid android:color="@android:color/transparent" />
+        </shape>
+    </item>
+</selector>

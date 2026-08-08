@@ -1,6 +1,5 @@
 package com.arzikina.ne.presentation.accounts
 
-import android.content.res.ColorStateList
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
@@ -8,20 +7,21 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.arzikina.ne.databinding.ItemAccountBinding
 import com.arzikina.ne.domain.model.Account
-import com.arzikina.ne.domain.model.CurrencyAmount
-import com.arzikina.ne.util.Money
 
 /**
- * Liste des comptes. Voir [com.arzikina.ne.presentation.dashboard.RecentTransactionsAdapter]
- * pour le raisonnement (`ListAdapter`/`DiffUtil` plutôt que `notifyDataSetChanged`).
+ * Liste des comptes, une carte dégradée par compte façon carte bancaire (voir
+ * `item_account.xml`/[AccountCardGradient]). Voir
+ * [com.arzikina.ne.presentation.dashboard.RecentTransactionsAdapter] pour le
+ * raisonnement (`ListAdapter`/`DiffUtil` plutôt que `notifyDataSetChanged`).
  *
  * Prend des [AccountUiItem] (solde COURANT) plutôt que des [Account] bruts
  * (solde initial) depuis la réorganisation de l'écran "Mes comptes" — voir
- * [AccountsViewModel].
+ * [AccountsViewModel]. Pas de suppression depuis la liste (voir maquette, qui
+ * n'en montre pas non plus) : modifier/supprimer se fait depuis le menu "⋮"
+ * de "Détail du compte", atteint via [onClick].
  */
 class AccountsAdapter(
-    private val onClick: (Account) -> Unit,
-    private val onDeleteClick: (Account) -> Unit
+    private val onClick: (Account) -> Unit
 ) : ListAdapter<AccountUiItem, AccountsAdapter.ViewHolder>(DIFF_CALLBACK) {
 
     override fun onCreateViewHolder(parent: ViewGroup, position: Int): ViewHolder {
@@ -30,20 +30,14 @@ class AccountsAdapter(
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        holder.bind(getItem(position), onClick, onDeleteClick)
+        holder.bind(getItem(position), onClick)
     }
 
     class ViewHolder(private val binding: ItemAccountBinding) : RecyclerView.ViewHolder(binding.root) {
-        fun bind(item: AccountUiItem, onClick: (Account) -> Unit, onDeleteClick: (Account) -> Unit) {
+        fun bind(item: AccountUiItem, onClick: (Account) -> Unit) {
             val account = item.account
-
-            binding.accountIcon.setImageResource(AccountIconMapper.iconFor(account.icon))
-            binding.accountIcon.backgroundTintList = ColorStateList.valueOf(account.colorArgb.toInt())
-            binding.accountName.text = account.name
-            binding.accountBalance.text = Money.format(CurrencyAmount(account.currencyCode, item.currentBalance))
-
-            binding.root.setOnClickListener { onClick(account) }
-            binding.deleteButton.setOnClickListener { onDeleteClick(account) }
+            AccountCardBinder.bind(binding, account, item.currentBalance)
+            binding.accountCard.setOnClickListener { onClick(account) }
         }
     }
 

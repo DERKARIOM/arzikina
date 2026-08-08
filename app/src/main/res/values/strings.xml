@@ -137,9 +137,17 @@
     <string name="dashboard_accounts_action">Gérer mes comptes</string>
     <string name="accounts_title">Mes comptes</string>
     <string name="accounts_add">Ajouter</string>
-    <string name="accounts_balance_total_label">Solde total</string>
-    <string name="accounts_balance_hide_action">Masquer le solde total</string>
-    <string name="accounts_balance_show_action">Afficher le solde total</string>
+    <!-- Libellé "type" affiché sur la carte de compte (voir AccountIconDisplay). -->
+    <string name="account_type_cash">Espèces</string>
+    <string name="account_type_bank">Banque</string>
+    <string name="account_type_mobile_money">Mobile Money</string>
+    <string name="account_type_savings">Épargne</string>
+    <string name="account_type_wallet">Portefeuille</string>
+    <string name="account_type_other">Autre</string>
+    <!-- Repère bas-droite de la carte de compte (voir maquette, badge "VISA"
+         remplacé par le nom de l'app pour ne pas laisser croire à un lien
+         avec un réseau de paiement réel). -->
+    <string name="accounts_card_badge">ARZIKINA</string>
     <string name="accounts_empty_title">Aucun compte pour l\'instant</string>
     <string name="accounts_empty_message">Ajoute ton premier compte pour commencer à suivre tes finances.</string>
     <string name="accounts_delete_title">Supprimer ce compte ?</string>
@@ -190,6 +198,15 @@
     <string name="transaction_form_description_label">Description (optionnel)</string>
     <string name="transaction_form_payment_method_label">Moyen de paiement (optionnel)</string>
     <string name="transaction_form_payment_method_none">Non précisé</string>
+    <string name="transaction_form_date_time_label">Date et heure</string>
+    <string name="transaction_form_category_see_all">Voir tout</string>
+    <string name="transaction_form_category_see_less">Réduire</string>
+    <string name="transaction_form_category_add">Ajouter</string>
+    <string name="transaction_form_more_details">Ajouter plus de détails</string>
+    <string name="transaction_form_account_picker_title">Choisir un compte</string>
+    <string name="transaction_form_account_balance">Solde : %1$s</string>
+    <string name="transaction_form_save_action">Enregistrer la transaction</string>
+    <string name="transaction_form_account_placeholder">Choisir un compte</string>
     <string name="payment_method_cash">Espèces</string>
     <string name="payment_method_card">Carte bancaire</string>
     <string name="payment_method_mobile_money">Mobile Money</string>

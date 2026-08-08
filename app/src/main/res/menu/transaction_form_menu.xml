@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Action rapide "Enregistrer" dans la Toolbar (voir maquette
+    "PERSONNALISATION – AJOUT DE TRANSACTION", coche en haut à droite) — en
+    plus du bouton "Enregistrer la transaction" en bas de l'écran, pas à sa
+    place : les deux appellent TransactionFormViewModel.save(), pratique pour
+    valider sans avoir à faire défiler tout le formulaire.
+-->
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <item
+        android:id="@+id/action_save_transaction"
+        android:icon="@drawable/ic_check_24"
+        android:title="@string/action_save"
+        app:showAsAction="always" />
+</menu>

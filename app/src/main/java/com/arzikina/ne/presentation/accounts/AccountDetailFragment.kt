@@ -1,6 +1,5 @@
 package com.arzikina.ne.presentation.accounts
 
-import android.content.res.ColorStateList
 import android.os.Bundle
 import android.view.View
 import androidx.core.os.bundleOf
@@ -13,13 +12,11 @@ import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.arzikina.ne.R
 import com.arzikina.ne.databinding.FragmentAccountDetailBinding
-import com.arzikina.ne.domain.model.CurrencyAmount
 import com.arzikina.ne.presentation.components.ConfirmDialogs
 import com.arzikina.ne.presentation.transactions.GroupedTransactionsAdapter
 import com.arzikina.ne.presentation.transactions.TransactionUiItem
 import com.arzikina.ne.presentation.transactions.toListRows
 import com.arzikina.ne.util.AppResult
-import com.arzikina.ne.util.Money
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 
@@ -50,6 +47,10 @@ class AccountDetailFragment : Fragment(R.layout.fragment_account_detail) {
         binding = viewBinding
 
         setUpToolbar(viewBinding)
+        // Carte incluse (voir fragment_account_detail.xml) : purement informative
+        // ici, contrairement à la même carte sur "Mes comptes" qui navigue au clic.
+        viewBinding.accountSummaryCard.accountCard.isClickable = false
+        viewBinding.accountSummaryCard.accountCard.isFocusable = false
         viewBinding.transactionsList.layoutManager = LinearLayoutManager(requireContext())
         viewBinding.transactionsList.adapter = adapter
         viewBinding.addTransactionButton.setOnClickListener { navigateToNewTransactionForm() }
@@ -91,10 +92,7 @@ class AccountDetailFragment : Fragment(R.layout.fragment_account_detail) {
         val account = uiState.account
 
         binding.toolbar.title = account.name
-        binding.accountIcon.setImageResource(AccountIconMapper.iconFor(account.icon))
-        binding.accountIcon.backgroundTintList = ColorStateList.valueOf(account.colorArgb.toInt())
-        binding.accountName.text = account.name
-        binding.accountBalance.text = Money.format(CurrencyAmount(account.currencyCode, uiState.currentBalance))
+        AccountCardBinder.bind(binding.accountSummaryCard, account, uiState.currentBalance)
 
         val rows = uiState.sections.toListRows()
         val hasTransactions = rows.isNotEmpty()

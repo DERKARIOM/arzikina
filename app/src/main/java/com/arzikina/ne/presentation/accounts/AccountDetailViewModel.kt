@@ -4,7 +4,6 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.arzikina.ne.domain.model.Account
-import com.arzikina.ne.domain.model.signedAmount
 import com.arzikina.ne.domain.repository.AccountRepository
 import com.arzikina.ne.domain.repository.CategoryRepository
 import com.arzikina.ne.domain.repository.TransactionRepository
@@ -52,7 +51,7 @@ class AccountDetailViewModel @Inject constructor(
         val categoriesById = categories.associateBy { it.id }
 
         val accountTransactions = transactions.filter { it.accountId == accountId }
-        val currentBalance = account.initialBalance + accountTransactions.sumOf { it.signedAmount() }
+        val currentBalance = computeCurrentBalances(listOf(account), accountTransactions)[account.id] ?: account.initialBalance
         val runningBalances = computeRunningBalances(accountTransactions, listOf(account))
 
         val items = accountTransactions.map { transaction ->

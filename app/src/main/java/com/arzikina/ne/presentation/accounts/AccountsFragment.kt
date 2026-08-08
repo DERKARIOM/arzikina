@@ -12,17 +12,16 @@ import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.arzikina.ne.R
 import com.arzikina.ne.databinding.FragmentAccountsBinding
-import com.arzikina.ne.domain.model.Account
-import com.arzikina.ne.domain.model.CurrencyAmount
-import com.arzikina.ne.presentation.components.ConfirmDialogs
 import com.arzikina.ne.util.AppResult
-import com.arzikina.ne.util.Money
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 
 /**
- * Liste des comptes, avec ajout/édition/suppression. Reconstruit en
- * XML/Views (voir instructions projet) ; [AccountsViewModel] est inchangé.
+ * Liste des comptes, sous forme de cartes façon carte bancaire (voir
+ * `item_account.xml`). Reconstruit en XML/Views (voir instructions projet) ;
+ * [AccountsViewModel] est inchangé. Ajout via [addAccountButton] ; modifier/
+ * supprimer se fait depuis "Détail du compte" (menu "⋮"), plus depuis cette
+ * liste (voir [AccountsAdapter]).
  */
 @AndroidEntryPoint
 class AccountsFragment : Fragment(R.layout.fragment_accounts) {
@@ -30,16 +29,8 @@ class AccountsFragment : Fragment(R.layout.fragment_accounts) {
     private val viewModel: AccountsViewModel by viewModels()
     private var binding: FragmentAccountsBinding? = null
     private val adapter = AccountsAdapter(
-        onClick = { account -> navigateToDetail(account.id) },
-        onDeleteClick = { account -> confirmDelete(account) }
+        onClick = { account -> navigateToDetail(account.id) }
     )
-
-    /**
-     * Purement local à l'écran, comme [com.arzikina.ne.presentation.dashboard.DashboardFragment.isBalanceHidden] :
-     * revient à "visible" à chaque ouverture, pas de préférence persistée.
-     */
-    private var isTotalBalanceHidden = false
-    private var latestTotalBalance: CurrencyAmount? = null
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -49,10 +40,6 @@ class AccountsFragment : Fragment(R.layout.fragment_accounts) {
         viewBinding.accountsList.layoutManager = LinearLayoutManager(requireContext())
         viewBinding.accountsList.adapter = adapter
         viewBinding.addAccountButton.setOnClickListener { navigateToForm(accountId = 0L) }
-        viewBinding.toggleTotalBalanceVisibility.setOnClickListener {
-            isTotalBalanceHidden = !isTotalBalanceHidden
-            renderTotalBalanceText()
-        }
 
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -74,36 +61,7 @@ class AccountsFragment : Fragment(R.layout.fragment_accounts) {
         val hasAccounts = uiState.accounts.isNotEmpty()
         binding.accountsList.visibility = if (hasAccounts) View.VISIBLE else View.GONE
         binding.emptyState.visibility = if (hasAccounts) View.GONE else View.VISIBLE
-        binding.totalBalanceCard.visibility = if (hasAccounts) View.VISIBLE else View.GONE
         adapter.submitList(uiState.accounts)
-
-        latestTotalBalance = uiState.totalBalance
-        renderTotalBalanceText()
-    }
-
-    private fun renderTotalBalanceText() {
-        val binding = binding ?: return
-        val totalBalance = latestTotalBalance ?: return
-        binding.totalBalanceValue.text = if (isTotalBalanceHidden) {
-            getString(R.string.dashboard_balance_masked)
-        } else {
-            Money.format(totalBalance)
-        }
-        binding.toggleTotalBalanceVisibility.setImageResource(
-            if (isTotalBalanceHidden) R.drawable.ic_visibility_off_24 else R.drawable.ic_visibility_24
-        )
-        binding.toggleTotalBalanceVisibility.contentDescription = getString(
-            if (isTotalBalanceHidden) R.string.accounts_balance_show_action else R.string.accounts_balance_hide_action
-        )
-    }
-
-    private fun confirmDelete(account: Account) {
-        ConfirmDialogs.confirm(
-            context = requireContext(),
-            title = getString(R.string.accounts_delete_title),
-            message = getString(R.string.accounts_delete_message, account.name),
-            onConfirm = { viewModel.deleteAccount(account.id) }
-        )
     }
 
     private fun navigateToForm(accountId: Long) {
