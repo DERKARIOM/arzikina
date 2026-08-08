@@ -16,6 +16,7 @@ import com.arzikina.ne.data.local.database.MIGRATION_4_5
 import com.arzikina.ne.data.local.database.MIGRATION_5_6
 import com.arzikina.ne.data.local.database.MIGRATION_6_7
 import com.arzikina.ne.data.local.database.MIGRATION_7_8
+import com.arzikina.ne.data.local.database.MIGRATION_8_9
 import com.arzikina.ne.util.Constants
 import dagger.Module
 import dagger.Provides
@@ -47,7 +48,7 @@ object DatabaseModule {
         Room.databaseBuilder(context, ArzikinaDatabase::class.java, Constants.DATABASE_NAME)
             .addMigrations(
                 MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5,
-                MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8
+                MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9
             )
             .build()
 

@@ -4,6 +4,7 @@ import androidx.room.TypeConverter
 import com.arzikina.ne.domain.model.AccountIcon
 import com.arzikina.ne.domain.model.BudgetPeriod
 import com.arzikina.ne.domain.model.CategoryIcon
+import com.arzikina.ne.domain.model.PaymentMethod
 import com.arzikina.ne.domain.model.SecurityQuestion
 import com.arzikina.ne.domain.model.TransactionType
 
@@ -43,4 +44,11 @@ class Converters {
 
     @TypeConverter
     fun toSecurityQuestion(value: String): SecurityQuestion = SecurityQuestion.valueOf(value)
+
+    /** Nullable (contrairement aux enums ci-dessus) : voir [PaymentMethod], champ "si applicable". */
+    @TypeConverter
+    fun fromPaymentMethod(method: PaymentMethod?): String? = method?.name
+
+    @TypeConverter
+    fun toPaymentMethod(value: String?): PaymentMethod? = value?.let { PaymentMethod.valueOf(it) }
 }

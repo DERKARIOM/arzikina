@@ -65,6 +65,9 @@ data class TransactionDto(
     val receiptPhotoUri: String? = null,
     val latitude: Double? = null,
     val longitude: Double? = null,
+    /** Ajouté après coup (voir `domain/model/PaymentMethod`) : défaut `null`
+     * pour rester compatible avec les fichiers exportés avant son existence. */
+    val paymentMethod: String? = null,
     val createdAt: Long
 )
 

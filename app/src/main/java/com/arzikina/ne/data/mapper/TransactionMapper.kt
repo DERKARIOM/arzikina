@@ -14,6 +14,7 @@ fun TransactionEntity.toDomain(): Transaction = Transaction(
     receiptPhotoUri = receiptPhotoUri,
     latitude = latitude,
     longitude = longitude,
+    paymentMethod = paymentMethod,
     createdAt = createdAt
 )
 
@@ -30,5 +31,6 @@ fun Transaction.toEntity(userId: Long): TransactionEntity = TransactionEntity(
     receiptPhotoUri = receiptPhotoUri,
     latitude = latitude,
     longitude = longitude,
+    paymentMethod = paymentMethod,
     createdAt = createdAt
 )

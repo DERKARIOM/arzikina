@@ -14,9 +14,15 @@ import com.arzikina.ne.domain.model.Transaction
  * théoriquement impossible grâce aux clés étrangères, voir
  * `data/local/entity/TransactionEntity`), pour que l'UI reste robuste même
  * dans ce cas.
+ *
+ * @param runningBalance solde du compte juste après cette transaction (voir
+ * [computeRunningBalances]), `null` quand il n'est pas calculé pour cet écran
+ * (voir [com.arzikina.ne.presentation.dashboard.RecentTransactionsAdapter],
+ * qui n'affiche jamais ce champ) ou quand le compte est inconnu.
  */
 data class TransactionUiItem(
     val transaction: Transaction,
     val account: Account?,
-    val category: Category?
+    val category: Category?,
+    val runningBalance: Long? = null
 )

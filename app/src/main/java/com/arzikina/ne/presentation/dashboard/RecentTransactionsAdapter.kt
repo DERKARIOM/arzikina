@@ -11,9 +11,10 @@ import com.arzikina.ne.presentation.transactions.TransactionUiItem
 
 /**
  * Liste compacte des dernières transactions affichée sur le tableau de bord
- * (lecture seule, pas de suppression ni de clic — voir
- * [com.arzikina.ne.presentation.transactions.TransactionsAdapter] pour la
- * version complète de l'écran Transactions).
+ * (lecture seule, pas de suppression ni de clic, ni de regroupement par
+ * jour — voir [com.arzikina.ne.presentation.transactions.GroupedTransactionsAdapter]
+ * pour la version complète, groupée, des écrans Transactions et "Détail du
+ * compte").
  *
  * [ListAdapter]/[DiffUtil] plutôt qu'un simple [RecyclerView.Adapter] avec
  * `notifyDataSetChanged()` : la liste change à chaque nouvelle transaction

@@ -65,6 +65,16 @@
             android:name="transactionId"
             android:defaultValue="0L"
             app:argType="long" />
+        <!--
+            0L = "aucun compte présélectionné" (même convention que
+            transactionId). Renseigné uniquement par AccountDetailFragment,
+            pour pré-remplir le compte quand on ajoute une transaction depuis
+            l'écran "Détail du compte" (voir TransactionFormViewModel).
+        -->
+        <argument
+            android:name="presetAccountId"
+            android:defaultValue="0L"
+            app:argType="long" />
     </fragment>
 
     <fragment
@@ -125,6 +135,23 @@
         <argument
             android:name="accountId"
             android:defaultValue="0L"
+            app:argType="long" />
+    </fragment>
+
+    <!--
+        Transactions d'UN compte, groupées par jour — atteint en cliquant sur
+        un compte depuis accountsFragment (voir AccountsFragment.navigateToDetail).
+        accountId n'a volontairement PAS de valeur par défaut : cet écran n'a
+        de sens que pour un compte précis, contrairement à accountFormFragment
+        (0L = "nouveau compte") ou transactionFormFragment.
+    -->
+    <fragment
+        android:id="@+id/accountDetailFragment"
+        android:name="com.arzikina.ne.presentation.accounts.AccountDetailFragment"
+        android:label="@string/accounts_title"
+        tools:layout="@layout/fragment_account_detail">
+        <argument
+            android:name="accountId"
             app:argType="long" />
     </fragment>
 

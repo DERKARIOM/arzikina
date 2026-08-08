@@ -15,6 +15,10 @@ package com.arzikina.ne.domain.model
  * @param latitude, @param longitude localisation du mouvement : champs
  * préparés pour une future fonctionnalité de géolocalisation des dépenses,
  * non exploités par l'UI actuelle.
+ * @param paymentMethod moyen de paiement, optionnel ("si applicable" — voir
+ * [PaymentMethod]) : `null` tant que l'utilisateur ne l'a pas précisé, y
+ * compris pour toutes les transactions enregistrées avant l'introduction de
+ * ce champ.
  * @param id 0L tant que la transaction n'a pas encore été enregistrée en base.
  */
 data class Transaction(
@@ -28,5 +32,14 @@ data class Transaction(
     val receiptPhotoUri: String? = null,
     val latitude: Double? = null,
     val longitude: Double? = null,
+    val paymentMethod: PaymentMethod? = null,
     val createdAt: Long
 )
+
+/**
+ * Montant signé : positif pour un revenu, négatif pour une dépense. Évite de
+ * réécrire ce `when` dans chaque calcul de solde (solde courant d'un compte,
+ * solde historique par transaction — voir
+ * [com.arzikina.ne.presentation.transactions.computeRunningBalances]).
+ */
+fun Transaction.signedAmount(): Long = if (type == TransactionType.INCOME) amount else -amount

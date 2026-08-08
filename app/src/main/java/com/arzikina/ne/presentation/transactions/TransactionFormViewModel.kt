@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.arzikina.ne.domain.model.Account
 import com.arzikina.ne.domain.model.Category
+import com.arzikina.ne.domain.model.PaymentMethod
 import com.arzikina.ne.domain.model.Transaction
 import com.arzikina.ne.domain.model.TransactionType
 import com.arzikina.ne.domain.repository.AccountRepository
@@ -46,6 +47,7 @@ data class TransactionFormState(
     val categoryId: Long = 0L,
     val dateTimeMillis: Long = System.currentTimeMillis(),
     val description: String = "",
+    val paymentMethod: PaymentMethod? = null,
     val createdAt: Long? = null,
     val amountError: String? = null,
     val accountError: String? = null,
@@ -97,10 +99,19 @@ class TransactionFormViewModel @Inject constructor(
                             categoryId = transaction.categoryId,
                             dateTimeMillis = transaction.date,
                             description = transaction.description,
+                            paymentMethod = transaction.paymentMethod,
                             createdAt = transaction.createdAt
                         )
                     }
                 }
+            }
+        } else {
+            // Pré-remplit le compte quand ce formulaire est ouvert depuis
+            // "Détail du compte" (voir AccountDetailFragment.navigateToNewTransactionForm) :
+            // 0L = "aucun compte présélectionné", même convention que transactionId.
+            val presetAccountId = savedStateHandle.get<Long>(PRESET_ACCOUNT_ID_ARG) ?: 0L
+            if (presetAccountId != 0L) {
+                _formState.update { it.copy(accountId = presetAccountId) }
             }
         }
     }
@@ -124,6 +135,10 @@ class TransactionFormViewModel @Inject constructor(
 
     fun onDescriptionChange(value: String) {
         _formState.update { it.copy(description = value) }
+    }
+
+    fun onPaymentMethodChange(method: PaymentMethod?) {
+        _formState.update { it.copy(paymentMethod = method) }
     }
 
     fun onDateChange(date: LocalDate) {
@@ -167,6 +182,7 @@ class TransactionFormViewModel @Inject constructor(
                     categoryId = state.categoryId,
                     date = state.dateTimeMillis,
                     description = state.description.trim(),
+                    paymentMethod = state.paymentMethod,
                     createdAt = state.createdAt ?: System.currentTimeMillis()
                 )
             )
@@ -184,5 +200,6 @@ class TransactionFormViewModel @Inject constructor(
 
     private companion object {
         const val TRANSACTION_ID_ARG = "transactionId"
+        const val PRESET_ACCOUNT_ID_ARG = "presetAccountId"
     }
 }

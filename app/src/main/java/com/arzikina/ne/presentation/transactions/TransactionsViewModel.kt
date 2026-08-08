@@ -84,7 +84,14 @@ class TransactionsViewModel @Inject constructor(
     val categories: StateFlow<List<Category>> = categoryRepository.observeCategories()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
-    val uiState: StateFlow<AppResult<List<TransactionUiItem>>> = combine(
+    /**
+     * Groupée par jour (voir [groupByDay]) — même présentation que "Détail du
+     * compte" ([com.arzikina.ne.presentation.accounts.AccountDetailViewModel]),
+     * demande explicite de cohérence entre les deux écrans qui listent des
+     * transactions au long cours (par opposition à l'aperçu "5 dernières" du
+     * Dashboard, qui reste une liste plate).
+     */
+    val uiState: StateFlow<AppResult<List<TransactionDaySection>>> = combine(
         transactionRepository.observeTransactions(),
         accountRepository.observeAccounts(),
         categoryRepository.observeCategories(),
@@ -94,6 +101,8 @@ class TransactionsViewModel @Inject constructor(
         val categoriesById = categories.associateBy { it.id }
         val today = LocalDate.now()
         val normalizedQuery = filters.query.trim()
+        // Sur les transactions NON filtrées : voir computeRunningBalances.
+        val runningBalances = computeRunningBalances(transactions, accounts)
 
         transactions
             .asSequence()
@@ -101,7 +110,8 @@ class TransactionsViewModel @Inject constructor(
                 TransactionUiItem(
                     transaction = transaction,
                     account = accountsById[transaction.accountId],
-                    category = categoriesById[transaction.categoryId]
+                    category = categoriesById[transaction.categoryId],
+                    runningBalance = runningBalances[transaction.id]
                 )
             }
             .filter { item -> matchesType(item.transaction.type, filters.type) }
@@ -110,8 +120,9 @@ class TransactionsViewModel @Inject constructor(
             .filter { item -> matchesPeriod(item.transaction.date, filters.period, today) }
             .filter { item -> matchesQuery(item, normalizedQuery) }
             .toList()
+            .groupByDay()
     }
-        .map<List<TransactionUiItem>, AppResult<List<TransactionUiItem>>> { AppResult.Success(it) }
+        .map<List<TransactionDaySection>, AppResult<List<TransactionDaySection>>> { AppResult.Success(it) }
         .catch { throwable -> emit(AppResult.Error(throwable.message ?: "Erreur inconnue", throwable)) }
         .stateIn(
             scope = viewModelScope,

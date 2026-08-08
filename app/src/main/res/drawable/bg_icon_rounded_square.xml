@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Fond carré à coins arrondis derrière une icône de catégorie de transaction
+    (remplace bg_icon_circle pour ce style, demandé pour aligner l'app sur la
+    maquette de référence). La couleur vient toujours de Category.colorArgb,
+    appliquée par code via backgroundTint (voir TransactionItemBinder) : la
+    couleur ici n'est qu'un espace réservé neutre.
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="#FFFFFFFF" />
+    <corners android:radius="@dimen/corner_radius_small" />
+</shape>

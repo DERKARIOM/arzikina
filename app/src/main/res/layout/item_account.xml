@@ -48,7 +48,7 @@
         app:layout_constraintEnd_toStartOf="@id/deleteButton"
         app:layout_constraintStart_toEndOf="@id/accountIcon"
         app:layout_constraintTop_toBottomOf="@id/accountName"
-        tools:text="Solde initial : 150 000 F CFA" />
+        tools:text="150 000 F CFA" />
 
     <ImageButton
         android:id="@+id/deleteButton"
@@ -58,7 +58,25 @@
         android:contentDescription="@string/action_delete"
         android:src="@drawable/ic_delete_24"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintEnd_toEndOf="@id/accountChevron"
         app:layout_constraintTop_toTopOf="parent" />
+
+    <!--
+        Indicateur de navigation (voir maquette) : purement visuel pour
+        l'instant, la destination "Détail du compte" (transactions groupées
+        par jour) sera créée à l'étape suivante. Le clic sur toute la ligne
+        (voir android:clickable sur le ConstraintLayout racine) reste géré
+        par AccountsFragment, pas par cette flèche elle-même.
+    -->
+    <ImageView
+        android:id="@+id/accountChevron"
+        android:layout_width="@dimen/icon_size_default"
+        android:layout_height="@dimen/icon_size_default"
+        android:contentDescription="@null"
+        android:src="@drawable/ic_chevron_right_24"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:tint="?attr/colorOnSurfaceVariant" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

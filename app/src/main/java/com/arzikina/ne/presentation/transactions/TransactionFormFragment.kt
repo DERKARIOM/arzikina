@@ -13,6 +13,7 @@ import com.arzikina.ne.R
 import com.arzikina.ne.databinding.FragmentTransactionFormBinding
 import com.arzikina.ne.domain.model.Account
 import com.arzikina.ne.domain.model.Category
+import com.arzikina.ne.domain.model.PaymentMethod
 import com.arzikina.ne.domain.model.TransactionType
 import com.arzikina.ne.presentation.components.ConfirmDialogs
 import com.google.android.material.datepicker.MaterialDatePicker
@@ -55,6 +56,7 @@ class TransactionFormFragment : Fragment(R.layout.fragment_transaction_form) {
         setUpToolbar(viewBinding)
         setUpTypeToggle(viewBinding)
         setUpDropdowns(viewBinding)
+        setUpPaymentMethodDropdown(viewBinding)
         setUpDateTime(viewBinding)
         setUpInputs(viewBinding)
 
@@ -111,6 +113,21 @@ class TransactionFormFragment : Fragment(R.layout.fragment_transaction_form) {
         }
         binding.categoryInput.setOnItemClickListener { _, _, position, _ ->
             latestCategories.getOrNull(position)?.let { viewModel.onCategoryChange(it.id) }
+        }
+    }
+
+    /**
+     * Liste FERMÉE et fixe (contrairement à setUpDropdowns, qui dépend de
+     * données chargées) : un premier item "Non précisé" (index 0) remet le
+     * champ à `null`, les suivants correspondent 1-à-1 à [PaymentMethod.entries].
+     */
+    private fun setUpPaymentMethodDropdown(binding: FragmentTransactionFormBinding) {
+        val labels = listOf(getString(R.string.transaction_form_payment_method_none)) +
+            PaymentMethod.entries.map { getString(it.displayTextRes()) }
+        binding.paymentMethodInput.setSimpleItems(labels.toTypedArray())
+        binding.paymentMethodInput.setOnItemClickListener { _, _, position, _ ->
+            val method = PaymentMethod.entries.getOrNull(position - 1)
+            viewModel.onPaymentMethodChange(method)
         }
     }
 
@@ -199,6 +216,12 @@ class TransactionFormFragment : Fragment(R.layout.fragment_transaction_form) {
 
         if (binding.descriptionInput.text?.toString() != state.description) {
             binding.descriptionInput.setText(state.description)
+        }
+
+        val paymentMethodLabel = state.paymentMethod?.let { getString(it.displayTextRes()) }
+            ?: getString(R.string.transaction_form_payment_method_none)
+        if (binding.paymentMethodInput.text?.toString() != paymentMethodLabel) {
+            binding.paymentMethodInput.setText(paymentMethodLabel, false)
         }
     }
 

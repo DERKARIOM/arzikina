@@ -44,6 +44,8 @@ import com.arzikina.ne.data.local.entity.UserEntity
  *   par défaut (voir [MIGRATION_6_7]).
  * - 8 : Question de sécurité (`securityQuestion` / `securityAnswerHash`),
  *   pour la réinitialisation locale du mot de passe (voir [MIGRATION_7_8]).
+ * - 9 : Moyen de paiement optionnel sur une transaction (`paymentMethod`,
+ *   voir [MIGRATION_8_9]).
  */
 @Database(
     entities = [
@@ -54,7 +56,7 @@ import com.arzikina.ne.data.local.entity.UserEntity
         SavingsGoalEntity::class,
         UserEntity::class
     ],
-    version = 8,
+    version = 9,
     exportSchema = true
 )
 @TypeConverters(Converters::class)

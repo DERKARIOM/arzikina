@@ -4,6 +4,7 @@ import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
+import com.arzikina.ne.domain.model.PaymentMethod
 import com.arzikina.ne.domain.model.TransactionType
 
 /**
@@ -57,5 +58,7 @@ data class TransactionEntity(
     val receiptPhotoUri: String?,
     val latitude: Double?,
     val longitude: Double?,
+    /** Voir [com.arzikina.ne.domain.model.Transaction.paymentMethod] : `NULL` = non précisé. */
+    val paymentMethod: PaymentMethod?,
     val createdAt: Long
 )

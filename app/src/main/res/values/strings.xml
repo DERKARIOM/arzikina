@@ -137,10 +137,18 @@
     <string name="dashboard_accounts_action">Gérer mes comptes</string>
     <string name="accounts_title">Mes comptes</string>
     <string name="accounts_add">Ajouter</string>
+    <string name="accounts_balance_total_label">Solde total</string>
+    <string name="accounts_balance_hide_action">Masquer le solde total</string>
+    <string name="accounts_balance_show_action">Afficher le solde total</string>
     <string name="accounts_empty_title">Aucun compte pour l\'instant</string>
     <string name="accounts_empty_message">Ajoute ton premier compte pour commencer à suivre tes finances.</string>
     <string name="accounts_delete_title">Supprimer ce compte ?</string>
     <string name="accounts_delete_message">Supprimer « %1$s » ? Cette action est irréversible.</string>
+    <string name="transaction_day_today">Aujourd\'hui</string>
+    <string name="transaction_day_yesterday">Hier</string>
+    <string name="account_detail_empty">Aucune transaction pour ce compte.</string>
+    <string name="account_detail_menu_edit">Modifier le compte</string>
+    <string name="account_detail_menu_delete">Supprimer le compte</string>
     <string name="account_form_title_add">Nouveau compte</string>
     <string name="account_form_title_edit">Modifier le compte</string>
     <string name="account_form_name_label">Nom du compte</string>
@@ -148,7 +156,6 @@
     <string name="account_form_color_label">Couleur</string>
     <string name="account_form_currency_label">Devise</string>
     <string name="account_form_balance_label">Solde initial</string>
-    <string name="account_item_initial_balance">Solde initial : %1$s</string>
 
     <!-- Catégories -->
     <string name="dashboard_categories_action">Gérer mes catégories</string>
@@ -181,6 +188,13 @@
     <string name="transaction_form_date_label">Date</string>
     <string name="transaction_form_time_label">Heure</string>
     <string name="transaction_form_description_label">Description (optionnel)</string>
+    <string name="transaction_form_payment_method_label">Moyen de paiement (optionnel)</string>
+    <string name="transaction_form_payment_method_none">Non précisé</string>
+    <string name="payment_method_cash">Espèces</string>
+    <string name="payment_method_card">Carte bancaire</string>
+    <string name="payment_method_mobile_money">Mobile Money</string>
+    <string name="payment_method_bank_transfer">Virement bancaire</string>
+    <string name="payment_method_other">Autre</string>
     <string name="transaction_uncategorized">Sans catégorie</string>
     <string name="transaction_unknown_account">Compte inconnu</string>
     <string name="transactions_filters_action">Filtres</string>

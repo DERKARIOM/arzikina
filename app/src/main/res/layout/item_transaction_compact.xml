@@ -7,16 +7,34 @@
     android:paddingHorizontal="@dimen/spacing_m"
     android:paddingVertical="@dimen/spacing_s">
 
+    <!--
+        Séparateur fin en haut de CHAQUE ligne : couvre à la fois "entre
+        l'en-tête de jour et la première transaction" et "entre chaque
+        transaction" sans logique de position dans l'adapter.
+        ?attr/colorOnSurfaceVariant reste lisible sur fond normal comme sur le
+        "postcard" sombre (voir ThemeOverlay.Arzikina.OnBalanceCard).
+    -->
+    <View
+        android:id="@+id/divider"
+        android:layout_width="0dp"
+        android:layout_height="1dp"
+        android:alpha="0.15"
+        android:background="?attr/colorOnSurfaceVariant"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
     <ImageView
         android:id="@+id/categoryIcon"
         android:layout_width="@dimen/icon_size_large"
         android:layout_height="@dimen/icon_size_large"
-        android:background="@drawable/bg_icon_circle"
+        android:layout_marginTop="@dimen/spacing_s"
+        android:background="@drawable/bg_icon_rounded_square"
         android:contentDescription="@null"
         android:padding="@dimen/spacing_s"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/divider"
         app:tint="@android:color/white"
         tools:ignore="ContentDescription" />
 
@@ -29,11 +47,17 @@
         android:ellipsize="end"
         android:maxLines="1"
         android:textColor="?attr/colorOnSurface"
+        android:textStyle="bold"
         app:layout_constraintEnd_toStartOf="@id/amount"
         app:layout_constraintStart_toEndOf="@id/categoryIcon"
         app:layout_constraintTop_toTopOf="@id/categoryIcon"
         tools:text="Nourriture" />
 
+    <!--
+        Contenu bascule selon l'écran (voir TransactionItemBinder) : "Compte •
+        date" (+ moyen de paiement) sur le Dashboard, description libre de la
+        transaction sur Transactions/Détail du compte — masqué si vide.
+    -->
     <TextView
         android:id="@+id/subtitle"
         style="@style/TextAppearance.Material3.BodySmall"
@@ -47,7 +71,7 @@
         app:layout_constraintEnd_toStartOf="@id/amount"
         app:layout_constraintStart_toEndOf="@id/categoryIcon"
         app:layout_constraintTop_toBottomOf="@id/categoryName"
-        tools:text="Espèces • 12 août" />
+        tools:text="Petit déjeuner" />
 
     <TextView
         android:id="@+id/amount"
@@ -55,18 +79,41 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="@dimen/spacing_s"
-        app:layout_constraintBottom_toBottomOf="@id/categoryIcon"
+        app:layout_constraintBottom_toTopOf="@id/runningBalance"
         app:layout_constraintEnd_toStartOf="@id/deleteButton"
         app:layout_constraintTop_toTopOf="@id/categoryIcon"
+        app:layout_constraintVertical_chainStyle="packed"
         app:layout_goneMarginEnd="0dp"
-        tools:text="-2 500 F CFA" />
+        tools:text="-300 F CFA" />
+
+    <!--
+        Solde du compte juste après cette transaction (voir
+        computeRunningBalances, presentation/transactions/RunningBalance.kt) —
+        masqué si l'info n'est pas disponible (ex. RecentTransactionsAdapter
+        du Dashboard, qui ne la calcule pas). GONE : le chaînage vertical
+        recentre alors "amount" seul entre le haut et le bas de l'icône,
+        comme avant l'ajout de ce champ.
+    -->
+    <TextView
+        android:id="@+id/runningBalance"
+        style="@style/TextAppearance.Material3.LabelSmall"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="@id/categoryIcon"
+        app:layout_constraintEnd_toEndOf="@id/amount"
+        app:layout_constraintTop_toBottomOf="@id/amount"
+        tools:text="(6 250 F CFA)"
+        tools:visibility="visible" />
 
     <!--
         Masqué par défaut (voir com.arzikina.ne.presentation.dashboard.RecentTransactionsAdapter,
-        qui ne le référence jamais) : seul l'écran Transactions
-        (com.arzikina.ne.presentation.transactions.TransactionsAdapter) le
-        rend visible et le câble, pour ne pas dupliquer toute la mise en page
-        d'une ligne juste pour ajouter un bouton de suppression.
+        qui ne le référence jamais) : seul GroupedTransactionsAdapter le rend
+        visible et le câble sur l'écran Transactions, pour ne pas dupliquer
+        toute la mise en page d'une ligne juste pour ajouter un bouton de
+        suppression.
     -->
     <ImageButton
         android:id="@+id/deleteButton"

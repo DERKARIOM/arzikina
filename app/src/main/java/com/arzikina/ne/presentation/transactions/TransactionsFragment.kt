@@ -36,7 +36,7 @@ class TransactionsFragment : Fragment(R.layout.fragment_transactions) {
     private val viewModel: TransactionsViewModel by viewModels()
     private var binding: FragmentTransactionsBinding? = null
 
-    private val adapter = TransactionsAdapter(
+    private val adapter = GroupedTransactionsAdapter(
         onClick = { item -> navigateToForm(item.transaction.id) },
         onDeleteClick = { item -> confirmDelete(item) }
     )
@@ -145,14 +145,14 @@ class TransactionsFragment : Fragment(R.layout.fragment_transactions) {
         }
     }
 
-    private fun render(state: AppResult<List<TransactionUiItem>>) {
+    private fun render(state: AppResult<List<TransactionDaySection>>) {
         val binding = binding ?: return
         if (state !is AppResult.Success) return
 
         val hasTransactions = state.data.isNotEmpty()
-        binding.transactionsList.visibility = if (hasTransactions) View.VISIBLE else View.GONE
+        binding.transactionsCard.visibility = if (hasTransactions) View.VISIBLE else View.GONE
         binding.emptyState.visibility = if (hasTransactions) View.GONE else View.VISIBLE
-        adapter.submitList(state.data)
+        adapter.submitList(state.data.toListRows())
     }
 
     private fun renderFilters(filters: TransactionFilters, accounts: List<Account>, categories: List<Category>) {

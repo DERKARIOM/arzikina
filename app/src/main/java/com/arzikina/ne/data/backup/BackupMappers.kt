@@ -8,6 +8,7 @@ import com.arzikina.ne.data.local.entity.TransactionEntity
 import com.arzikina.ne.domain.model.AccountIcon
 import com.arzikina.ne.domain.model.BudgetPeriod
 import com.arzikina.ne.domain.model.CategoryIcon
+import com.arzikina.ne.domain.model.PaymentMethod
 import com.arzikina.ne.domain.model.ThemeMode
 import com.arzikina.ne.domain.model.TransactionType
 import com.arzikina.ne.domain.model.UserPreferences
@@ -86,6 +87,7 @@ fun TransactionEntity.toDto() = TransactionDto(
     receiptPhotoUri = receiptPhotoUri,
     latitude = latitude,
     longitude = longitude,
+    paymentMethod = paymentMethod?.name,
     createdAt = createdAt
 )
 
@@ -101,6 +103,10 @@ fun TransactionDto.toEntity(userId: Long) = TransactionEntity(
     receiptPhotoUri = receiptPhotoUri,
     latitude = latitude,
     longitude = longitude,
+    // `null` reste `null` ici (contrairement aux enums non-nullables ci-dessus,
+    // qui retombent sur une valeur par défaut) : un moyen de paiement non
+    // précisé dans le fichier doit rester non précisé après import.
+    paymentMethod = paymentMethod?.let { runCatching { PaymentMethod.valueOf(it) }.getOrNull() },
     createdAt = createdAt
 )
 

@@ -4,6 +4,7 @@ import com.arzikina.ne.domain.model.BudgetPeriod
 import java.time.DayOfWeek
 import java.time.Instant
 import java.time.LocalDate
+import java.time.LocalTime
 import java.time.YearMonth
 import java.time.ZoneId
 import java.time.temporal.TemporalAdjusters
@@ -19,6 +20,10 @@ object DatePeriods {
 
     fun toLocalDate(epochMillis: Long): LocalDate =
         Instant.ofEpochMilli(epochMillis).atZone(ZoneId.systemDefault()).toLocalDate()
+
+    /** Voir [toLocalDate] : même conversion, pour l'heure (ex. "12:30" sur une ligne de transaction). */
+    fun toLocalTime(epochMillis: Long): LocalTime =
+        Instant.ofEpochMilli(epochMillis).atZone(ZoneId.systemDefault()).toLocalTime()
 
     fun isInCurrentMonth(epochMillis: Long, today: LocalDate = LocalDate.now()): Boolean =
         YearMonth.from(toLocalDate(epochMillis)) == YearMonth.from(today)
