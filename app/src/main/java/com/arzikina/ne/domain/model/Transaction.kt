@@ -1,13 +1,21 @@
 package com.arzikina.ne.domain.model
 
 /**
- * Mouvement financier unique (dépense ou revenu).
+ * Mouvement financier unique : dépense, revenu, ou transfert entre deux
+ * comptes (voir [TransactionType]).
  *
  * @param amount montant en unité mineure de la devise (voir [Account]), toujours
- * positif : c'est [type] qui porte l'information "revenu" ou "dépense".
- * @param accountId compte sur lequel le mouvement est imputé.
+ * positif : c'est [type] qui porte l'information "revenu", "dépense" ou "transfert".
+ * @param accountId compte sur lequel le mouvement est imputé — pour un
+ * [TransactionType.TRANSFER], le compte SOURCE (l'argent en sort).
+ * @param transferAccountId compte DESTINATION d'un transfert (l'argent y
+ * entre) ; `null` sauf pour [TransactionType.TRANSFER]. Distinct de
+ * [accountId] par construction (un transfert vers le même compte n'a pas de
+ * sens, vérifié côté formulaire).
  * @param categoryId catégorie du mouvement ; son [Category.type] doit
- * correspondre à [type] (cohérence vérifiée côté formulaire).
+ * correspondre à [type] (cohérence vérifiée côté formulaire). `null`
+ * uniquement pour [TransactionType.TRANSFER], qui n'a pas de catégorie (voir
+ * [TransactionType]) — toujours renseignée pour un revenu ou une dépense.
  * @param date instant choisi par l'utilisateur (date + heure fusionnées en
  * epoch millis), distinct de [createdAt] qui est la date d'enregistrement.
  * @param description libre, vide par défaut.
@@ -26,7 +34,8 @@ data class Transaction(
     val amount: Long,
     val type: TransactionType,
     val accountId: Long,
-    val categoryId: Long,
+    val transferAccountId: Long? = null,
+    val categoryId: Long?,
     val date: Long,
     val description: String = "",
     val receiptPhotoUri: String? = null,
@@ -37,9 +46,12 @@ data class Transaction(
 )
 
 /**
- * Montant signé : positif pour un revenu, négatif pour une dépense. Évite de
- * réécrire ce `when` dans chaque calcul de solde (solde courant d'un compte,
- * solde historique par transaction — voir
- * [com.arzikina.ne.presentation.transactions.computeRunningBalances]).
+ * Montant signé côté [Transaction.accountId] : positif pour un revenu,
+ * négatif pour une dépense OU pour la jambe "source" d'un transfert (l'argent
+ * QUITTE ce compte). Ne couvre PAS le crédit du compte destination d'un
+ * transfert ([Transaction.transferAccountId]) — voir
+ * [com.arzikina.ne.presentation.accounts.computeCurrentBalances], seul
+ * endroit qui doit connaître les DEUX comptes d'une même transaction. Évite
+ * de réécrire ce `when` dans chaque calcul de solde.
  */
 fun Transaction.signedAmount(): Long = if (type == TransactionType.INCOME) amount else -amount

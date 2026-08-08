@@ -46,6 +46,8 @@ import com.arzikina.ne.data.local.entity.UserEntity
  *   pour la réinitialisation locale du mot de passe (voir [MIGRATION_7_8]).
  * - 9 : Moyen de paiement optionnel sur une transaction (`paymentMethod`,
  *   voir [MIGRATION_8_9]).
+ * - 10 : Transfert entre deux comptes (`transferAccountId`, `categoryId`
+ *   devient optionnel — voir [MIGRATION_9_10]).
  */
 @Database(
     entities = [
@@ -56,7 +58,7 @@ import com.arzikina.ne.data.local.entity.UserEntity
         SavingsGoalEntity::class,
         UserEntity::class
     ],
-    version = 9,
+    version = 10,
     exportSchema = true
 )
 @TypeConverters(Converters::class)

@@ -16,6 +16,7 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import com.arzikina.ne.R
 import com.arzikina.ne.databinding.FragmentTransactionFormBinding
+import com.arzikina.ne.databinding.ItemAccountFieldBinding
 import com.arzikina.ne.domain.model.Account
 import com.arzikina.ne.domain.model.Category
 import com.arzikina.ne.domain.model.CurrencyAmount
@@ -46,8 +47,11 @@ import java.util.Locale
  * maquette "PERSONNALISATION – AJOUT DE TRANSACTION") : mêmes champs et
  * comportements qu'avant (voir [TransactionFormViewModel], inchangé sur le
  * fond), présentés en cartes/lignes cliquables plutôt qu'en menus déroulants
- * classiques. Pas de type "Transfert", de dictée vocale ni de scan de reçu
- * ici — chantiers séparés.
+ * classiques ; le type (Dépense/Revenu/Transfert) est un menu déroulant fermé
+ * (voir [setUpTypeDropdown]). Le transfert masque la carte Catégorie (sans
+ * objet) et affiche une seconde ligne "Compte destination" (voir
+ * [renderDestinationAccountRow]) — pas de dictée vocale ni de scan de reçu
+ * ici, chantiers séparés.
  *
  * Les champs date/heure restent non focusables (voir `fragment_transaction_form.xml`) :
  * la saisie se fait uniquement via [MaterialDatePicker]/[MaterialTimePicker],
@@ -75,11 +79,18 @@ class TransactionFormFragment : Fragment(R.layout.fragment_transaction_form) {
         val viewBinding = FragmentTransactionFormBinding.bind(view)
         binding = viewBinding
 
+        // Seul le libellé diffère de item_account_field.xml (qui vaut par défaut
+        // "Compte", correct pour accountField) : pas besoin de re-fixer ceci à
+        // chaque render(), une seule fois ici suffit.
+        viewBinding.destinationAccountField.accountFieldLabel.text =
+            getString(R.string.transaction_form_destination_account_label)
+
         setUpToolbar(viewBinding)
-        setUpTypeToggle(viewBinding)
+        setUpTypeDropdown(viewBinding)
         setUpQuickAmounts(viewBinding)
         setUpCategoryGrid(viewBinding)
         setUpAccountRow(viewBinding)
+        setUpDestinationAccountRow(viewBinding)
         setUpPaymentMethodDropdown(viewBinding)
         setUpDateTime(viewBinding)
         setUpInputs(viewBinding)
@@ -133,11 +144,16 @@ class TransactionFormFragment : Fragment(R.layout.fragment_transaction_form) {
         binding.deleteButton.visibility = if (viewModel.isEditMode) View.VISIBLE else View.GONE
     }
 
-    private fun setUpTypeToggle(binding: FragmentTransactionFormBinding) {
-        binding.typeGroup.addOnButtonCheckedListener { _, checkedId, isChecked ->
-            if (!isChecked) return@addOnButtonCheckedListener
-            val type = if (checkedId == R.id.typeIncome) TransactionType.INCOME else TransactionType.EXPENSE
-            viewModel.onTypeChange(type)
+    /**
+     * Liste FERMÉE (même pattern que [setUpPaymentMethodDropdown]) : les
+     * libellés viennent de [TYPE_OPTIONS], dont l'ordre pilote celui affiché
+     * dans le menu (Dépense, Revenu, Transfert).
+     */
+    private fun setUpTypeDropdown(binding: FragmentTransactionFormBinding) {
+        val labels = TYPE_OPTIONS.map { (_, labelRes) -> getString(labelRes) }
+        binding.typeInput.setSimpleItems(labels.toTypedArray())
+        binding.typeInput.setOnItemClickListener { _, _, position, _ ->
+            viewModel.onTypeChange(TYPE_OPTIONS[position].first)
         }
     }
 
@@ -160,14 +176,34 @@ class TransactionFormFragment : Fragment(R.layout.fragment_transaction_form) {
         }
     }
 
-    /** Ouvre [AccountPickerDialog] au lieu d'un menu déroulant classique. */
+    /**
+     * Ouvre [AccountPickerDialog] au lieu d'un menu déroulant classique. Pour
+     * un transfert, exclut le compte destination déjà choisi (voir
+     * [setUpDestinationAccountRow] pour l'exclusion symétrique) : impossible
+     * de choisir deux fois le même compte plutôt qu'une erreur après coup.
+     */
     private fun setUpAccountRow(binding: FragmentTransactionFormBinding) {
         binding.accountRow.setOnClickListener {
+            val state = viewModel.formState.value
+            val excludedId = state.transferAccountId.takeIf { state.type == TransactionType.TRANSFER }
             AccountPickerDialog.show(
                 context = requireContext(),
-                accounts = latestAccounts,
+                accounts = latestAccounts.filter { it.id != excludedId },
                 balanceFor = { account -> viewModel.accountBalances.value[account.id] ?: account.initialBalance },
                 onSelect = { account -> viewModel.onAccountChange(account.id) }
+            )
+        }
+    }
+
+    /** Uniquement pertinent pour un transfert (voir [renderDestinationAccountRow]) : exclut le compte source. */
+    private fun setUpDestinationAccountRow(binding: FragmentTransactionFormBinding) {
+        binding.destinationAccountRow.setOnClickListener {
+            val excludedId = viewModel.formState.value.accountId
+            AccountPickerDialog.show(
+                context = requireContext(),
+                accounts = latestAccounts.filter { it.id != excludedId },
+                balanceFor = { account -> viewModel.accountBalances.value[account.id] ?: account.initialBalance },
+                onSelect = { account -> viewModel.onTransferAccountChange(account.id) }
             )
         }
     }
@@ -253,13 +289,20 @@ class TransactionFormFragment : Fragment(R.layout.fragment_transaction_form) {
         latestCategories = data.categories
         latestSelectedCategoryId = state.categoryId
 
+        val isTransfer = state.type == TransactionType.TRANSFER
+
         renderType(binding, state.type)
         renderAmount(binding, state, data.accounts, data.accountBalances)
+
+        // Une catégorie n'a pas de sens pour un transfert (voir TransactionType.TRANSFER) :
+        // toute la carte disparaît plutôt que de la vider, pour ne pas laisser un bloc vide.
+        binding.categoryCard.visibility = if (isTransfer) View.GONE else View.VISIBLE
         renderCategoryGrid()
         binding.categoryErrorText.text = state.categoryError
-        binding.categoryErrorText.visibility = if (state.categoryError != null) View.VISIBLE else View.GONE
+        binding.categoryErrorText.visibility = if (!isTransfer && state.categoryError != null) View.VISIBLE else View.GONE
 
         renderAccountRow(binding, state, data.accounts, data.accountBalances)
+        renderDestinationAccountRow(binding, state, isTransfer, data.accounts, data.accountBalances)
 
         binding.dateTimeValue.text = formatDateTimeRowValue(state.dateTimeMillis)
 
@@ -275,9 +318,9 @@ class TransactionFormFragment : Fragment(R.layout.fragment_transaction_form) {
     }
 
     private fun renderType(binding: FragmentTransactionFormBinding, type: TransactionType) {
-        val expectedTypeButtonId = if (type == TransactionType.INCOME) R.id.typeIncome else R.id.typeExpense
-        if (binding.typeGroup.checkedButtonId != expectedTypeButtonId) {
-            binding.typeGroup.check(expectedTypeButtonId)
+        val label = getString(TYPE_OPTIONS.first { (optionType, _) -> optionType == type }.second)
+        if (binding.typeInput.text?.toString() != label) {
+            binding.typeInput.setText(label, false)
         }
     }
 
@@ -294,9 +337,15 @@ class TransactionFormFragment : Fragment(R.layout.fragment_transaction_form) {
         binding.amountErrorText.text = state.amountError
         binding.amountErrorText.visibility = if (state.amountError != null) View.VISIBLE else View.GONE
 
+        // `when` exhaustif (pas de `else`) : le compilateur signale l'oubli si un
+        // futur type s'ajoute à TransactionType, plutôt qu'un fallback silencieux.
         val typeColor = ContextCompat.getColor(
             requireContext(),
-            if (state.type == TransactionType.EXPENSE) R.color.expense_red else R.color.income_green
+            when (state.type) {
+                TransactionType.EXPENSE -> R.color.expense_red
+                TransactionType.INCOME -> R.color.income_green
+                TransactionType.TRANSFER -> R.color.arzikina_primary
+            }
         )
         binding.amountInput.setTextColor(typeColor)
         binding.saveButton.backgroundTintList = ColorStateList.valueOf(typeColor)
@@ -330,27 +379,53 @@ class TransactionFormFragment : Fragment(R.layout.fragment_transaction_form) {
         accounts: List<Account>,
         accountBalances: Map<Long, Long>
     ) {
-        val selectedAccount = accounts.firstOrNull { it.id == state.accountId }
-        if (selectedAccount != null) {
-            binding.accountRowIcon.setImageResource(AccountIconMapper.iconFor(selectedAccount.icon))
-            binding.accountRowIcon.backgroundTintList = ColorStateList.valueOf(selectedAccount.colorArgb.toInt())
-            binding.accountRowName.text = selectedAccount.name
-            val balance = accountBalances[selectedAccount.id] ?: selectedAccount.initialBalance
-            binding.accountRowBalance.text = getString(
-                R.string.transaction_form_account_balance,
-                Money.format(CurrencyAmount(selectedAccount.currencyCode, balance))
-            )
-            binding.accountRowBalance.visibility = View.VISIBLE
-        } else {
-            binding.accountRowIcon.setImageResource(R.drawable.ic_account_other_24)
-            binding.accountRowIcon.backgroundTintList = ColorStateList.valueOf(
-                ContextCompat.getColor(requireContext(), R.color.arzikina_outline)
-            )
-            binding.accountRowName.text = getString(R.string.transaction_form_account_placeholder)
-            binding.accountRowBalance.visibility = View.GONE
-        }
+        bindAccountField(binding.accountField, accounts.firstOrNull { it.id == state.accountId }, accountBalances)
         binding.accountErrorText.text = state.accountError
         binding.accountErrorText.visibility = if (state.accountError != null) View.VISIBLE else View.GONE
+    }
+
+    /** Compte destination : uniquement visible pour un transfert (voir TransactionType.TRANSFER). */
+    private fun renderDestinationAccountRow(
+        binding: FragmentTransactionFormBinding,
+        state: TransactionFormState,
+        isTransfer: Boolean,
+        accounts: List<Account>,
+        accountBalances: Map<Long, Long>
+    ) {
+        binding.destinationAccountRow.visibility = if (isTransfer) View.VISIBLE else View.GONE
+        if (!isTransfer) {
+            binding.destinationAccountErrorText.visibility = View.GONE
+            return
+        }
+        bindAccountField(binding.destinationAccountField, accounts.firstOrNull { it.id == state.transferAccountId }, accountBalances)
+        binding.destinationAccountErrorText.text = state.transferAccountError
+        binding.destinationAccountErrorText.visibility = if (state.transferAccountError != null) View.VISIBLE else View.GONE
+    }
+
+    /**
+     * Logique de rendu partagée par [renderAccountRow] et [renderDestinationAccountRow]
+     * (voir item_account_field.xml, inclus deux fois dans fragment_transaction_form.xml)
+     * pour ne pas dupliquer ce if/else.
+     */
+    private fun bindAccountField(fieldBinding: ItemAccountFieldBinding, account: Account?, accountBalances: Map<Long, Long>) {
+        if (account != null) {
+            fieldBinding.accountFieldIcon.setImageResource(AccountIconMapper.iconFor(account.icon))
+            fieldBinding.accountFieldIcon.backgroundTintList = ColorStateList.valueOf(account.colorArgb.toInt())
+            fieldBinding.accountFieldName.text = account.name
+            val balance = accountBalances[account.id] ?: account.initialBalance
+            fieldBinding.accountFieldBalance.text = getString(
+                R.string.transaction_form_account_balance,
+                Money.format(CurrencyAmount(account.currencyCode, balance))
+            )
+            fieldBinding.accountFieldBalance.visibility = View.VISIBLE
+        } else {
+            fieldBinding.accountFieldIcon.setImageResource(R.drawable.ic_account_other_24)
+            fieldBinding.accountFieldIcon.backgroundTintList = ColorStateList.valueOf(
+                ContextCompat.getColor(requireContext(), R.color.arzikina_outline)
+            )
+            fieldBinding.accountFieldName.text = getString(R.string.transaction_form_account_placeholder)
+            fieldBinding.accountFieldBalance.visibility = View.GONE
+        }
     }
 
     /**
@@ -406,5 +481,12 @@ class TransactionFormFragment : Fragment(R.layout.fragment_transaction_form) {
         val TIME_FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm", Locale.FRENCH)
         const val COLLAPSED_CATEGORY_LIMIT = 7
         val QUICK_AMOUNTS = listOf(1_000L, 5_000L, 10_000L)
+
+        /** Ordre d'affichage du menu déroulant "Type" (voir [setUpTypeDropdown]/[renderType]). */
+        val TYPE_OPTIONS = listOf(
+            TransactionType.EXPENSE to R.string.category_type_expense,
+            TransactionType.INCOME to R.string.category_type_income,
+            TransactionType.TRANSFER to R.string.transaction_form_type_transfer
+        )
     }
 }

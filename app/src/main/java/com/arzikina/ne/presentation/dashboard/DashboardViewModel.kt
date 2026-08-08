@@ -14,6 +14,7 @@ import com.arzikina.ne.domain.repository.BudgetRepository
 import com.arzikina.ne.domain.repository.CategoryRepository
 import com.arzikina.ne.domain.repository.SessionManager
 import com.arzikina.ne.domain.repository.TransactionRepository
+import com.arzikina.ne.presentation.accounts.computeCurrentBalances
 import com.arzikina.ne.presentation.budget.BudgetUiItem
 import com.arzikina.ne.presentation.transactions.TransactionUiItem
 import com.arzikina.ne.util.AppResult
@@ -100,7 +101,8 @@ class DashboardViewModel @Inject constructor(
                 TransactionUiItem(
                     transaction = transaction,
                     account = accountsById[transaction.accountId],
-                    category = categoriesById[transaction.categoryId]
+                    // categoryId est `null` pour un transfert (voir TransactionType.TRANSFER).
+                    category = transaction.categoryId?.let { categoriesById[it] }
                 )
             },
             featuredBudget = featuredBudget(budgets, categoriesById, transactions, accountsById),
@@ -117,20 +119,16 @@ class DashboardViewModel @Inject constructor(
         )
 
     /**
-     * Solde de chaque compte = solde initial + somme signée de ses
-     * transactions, regroupé par devise (voir [CurrencyAmount]).
+     * Solde de chaque compte (voir [computeCurrentBalances], qui gère aussi
+     * le crédit du compte destination d'un transfert), regroupé par devise
+     * (voir [CurrencyAmount]).
      */
     private fun computeBalances(accounts: List<Account>, transactions: List<Transaction>): List<CurrencyAmount> {
-        val signedByAccount = transactions
-            .groupBy { it.accountId }
-            .mapValues { (_, txs) -> txs.sumOf { it.signedAmount() } }
-
+        val balancesByAccount = computeCurrentBalances(accounts, transactions)
         return accounts
             .groupBy { it.currencyCode }
             .map { (currencyCode, accountsInCurrency) ->
-                val total = accountsInCurrency.sumOf { account ->
-                    account.initialBalance + (signedByAccount[account.id] ?: 0L)
-                }
+                val total = accountsInCurrency.sumOf { account -> balancesByAccount[account.id] ?: account.initialBalance }
                 CurrencyAmount(currencyCode, total)
             }
     }
@@ -168,8 +166,6 @@ class DashboardViewModel @Inject constructor(
             )
         }
         .maxByOrNull { it.progress }
-
-    private fun Transaction.signedAmount(): Long = if (type == TransactionType.INCOME) amount else -amount
 
     private fun Transaction.dateAsZonedDateTime() =
         Instant.ofEpochMilli(date).atZone(ZoneId.systemDefault())

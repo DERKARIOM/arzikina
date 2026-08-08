@@ -46,6 +46,10 @@ data class TransactionFormState(
     val amountInput: String = "",
     val type: TransactionType = TransactionType.EXPENSE,
     val accountId: Long = 0L,
+    /** Compte destination d'un transfert (voir [TransactionType.TRANSFER]) ; même
+     * convention "0L = non choisi" que [accountId]/[categoryId]. Sans objet pour
+     * un revenu/une dépense — voir [TransactionFormViewModel.onTypeChange]. */
+    val transferAccountId: Long = 0L,
     val categoryId: Long = 0L,
     val dateTimeMillis: Long = System.currentTimeMillis(),
     val description: String = "",
@@ -53,7 +57,8 @@ data class TransactionFormState(
     val createdAt: Long? = null,
     val amountError: String? = null,
     val accountError: String? = null,
-    val categoryError: String? = null
+    val categoryError: String? = null,
+    val transferAccountError: String? = null
 )
 
 sealed interface TransactionFormEvent {
@@ -109,7 +114,11 @@ class TransactionFormViewModel @Inject constructor(
                             amountInput = Money.formatMajorUnits(transaction.amount),
                             type = transaction.type,
                             accountId = transaction.accountId,
-                            categoryId = transaction.categoryId,
+                            transferAccountId = transaction.transferAccountId ?: 0L,
+                            // `?: 0L` : categoryId n'est `null` que pour un transfert
+                            // (voir TransactionType.TRANSFER) — 0L reste "aucune catégorie",
+                            // même convention que les autres champs de ce formulaire.
+                            categoryId = transaction.categoryId ?: 0L,
                             dateTimeMillis = transaction.date,
                             description = transaction.description,
                             paymentMethod = transaction.paymentMethod,
@@ -149,12 +158,28 @@ class TransactionFormViewModel @Inject constructor(
     }
 
     fun onTypeChange(type: TransactionType) {
-        // La catégorie précédente peut ne plus correspondre au nouveau type.
-        _formState.update { it.copy(type = type, categoryId = 0L, categoryError = null) }
+        // La catégorie précédente peut ne plus correspondre au nouveau type ; sans objet
+        // pour un transfert (voir TransactionType.TRANSFER), remise à 0L dans tous les cas.
+        // Le compte destination, lui, n'a de sens QUE pour un transfert : on le remet à
+        // 0L en le quittant (pour ne pas resservir un choix obsolète si l'utilisateur
+        // revient sur "Transfert" plus tard), mais on le CONSERVE en y restant.
+        _formState.update { state ->
+            state.copy(
+                type = type,
+                categoryId = 0L,
+                categoryError = null,
+                transferAccountId = if (type == TransactionType.TRANSFER) state.transferAccountId else 0L,
+                transferAccountError = null
+            )
+        }
     }
 
     fun onAccountChange(accountId: Long) {
         _formState.update { it.copy(accountId = accountId, accountError = null) }
+    }
+
+    fun onTransferAccountChange(accountId: Long) {
+        _formState.update { it.copy(transferAccountId = accountId, transferAccountError = null) }
     }
 
     fun onCategoryChange(categoryId: Long) {
@@ -195,11 +220,21 @@ class TransactionFormViewModel @Inject constructor(
             _formState.update { it.copy(accountError = "Choisis un compte") }
             return
         }
-        if (state.categoryId == 0L) {
+        if (state.type == TransactionType.TRANSFER) {
+            if (state.transferAccountId == 0L) {
+                _formState.update { it.copy(transferAccountError = "Choisis un compte de destination") }
+                return
+            }
+            if (state.transferAccountId == state.accountId) {
+                _formState.update { it.copy(transferAccountError = "Le compte de destination doit être différent du compte source") }
+                return
+            }
+        } else if (state.categoryId == 0L) {
             _formState.update { it.copy(categoryError = "Choisis une catégorie") }
             return
         }
 
+        val isTransfer = state.type == TransactionType.TRANSFER
         viewModelScope.launch {
             transactionRepository.saveTransaction(
                 Transaction(
@@ -207,7 +242,10 @@ class TransactionFormViewModel @Inject constructor(
                     amount = amountMinor,
                     type = state.type,
                     accountId = state.accountId,
-                    categoryId = state.categoryId,
+                    // Un transfert n'a pas de catégorie (voir TransactionType.TRANSFER) ;
+                    // à l'inverse, transferAccountId n'a de sens QUE pour un transfert.
+                    transferAccountId = if (isTransfer) state.transferAccountId else null,
+                    categoryId = if (isTransfer) null else state.categoryId,
                     date = state.dateTimeMillis,
                     description = state.description.trim(),
                     paymentMethod = state.paymentMethod,

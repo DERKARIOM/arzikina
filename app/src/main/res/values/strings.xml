@@ -190,6 +190,9 @@
     <string name="transactions_delete_message">Cette action est irréversible.</string>
     <string name="transaction_form_title_add">Nouvelle transaction</string>
     <string name="transaction_form_title_edit">Modifier la transaction</string>
+    <string name="transaction_form_type_label">Type</string>
+    <string name="transaction_form_type_transfer">Transfert</string>
+    <string name="transaction_form_destination_account_label">Compte destination</string>
     <string name="transaction_form_amount_label">Montant</string>
     <string name="transaction_form_account_label">Compte</string>
     <string name="transaction_form_category_label">Catégorie</string>

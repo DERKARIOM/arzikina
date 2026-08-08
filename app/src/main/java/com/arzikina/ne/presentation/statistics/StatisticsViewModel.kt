@@ -102,8 +102,12 @@ class StatisticsViewModel @Inject constructor(
         val total = monthlyExpenses.sumOf { it.amount }
         if (total <= 0L) return emptyList()
 
+        // categoryId n'est `null` que pour un transfert (voir TransactionType.TRANSFER), déjà
+        // exclu de monthlyExpenses par le filtre `type == EXPENSE` ci-dessus ; mapNotNull couvre
+        // quand même ce cas pour rester correct si l'invariant venait à changer.
         return monthlyExpenses
-            .groupBy { it.categoryId }
+            .mapNotNull { transaction -> transaction.categoryId?.let { it to transaction } }
+            .groupBy({ (categoryId, _) -> categoryId }, { (_, transaction) -> transaction })
             .map { (categoryId, txs) ->
                 val amount = txs.sumOf { it.amount }
                 CategoryBreakdownItem(

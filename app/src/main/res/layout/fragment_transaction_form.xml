@@ -46,42 +46,42 @@
             android:padding="@dimen/spacing_m">
 
             <!--
-                Pas de couleur par type ici (rouge/vert) : ce serait redondant
-                avec la carte Montant et le bouton Enregistrer, qui portent
-                déjà cette couleur — le sélecteur garde la couleur primaire de
-                l'app pour l'état coché, cohérent avec le reste de l'UI.
+                Type sous forme de menu déroulant fermé (voir
+                TransactionFormFragment.setUpTypeDropdown), plus compact que
+                l'ancien sélecteur à deux boutons — et prêt à accueillir un
+                3e choix "Transfert" (voir TransactionFormViewModel, chantier
+                séparé) sans changer ce widget. Pas de couleur par type ici
+                (rouge/vert) : ce serait redondant avec la carte Montant et le
+                bouton Enregistrer, qui portent déjà cette couleur.
             -->
-            <com.google.android.material.button.MaterialButtonToggleGroup
-                android:id="@+id/typeGroup"
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/typeCard"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                app:selectionRequired="true"
-                app:singleSelection="true">
+                android:theme="@style/ThemeOverlay.Arzikina.OnBalanceCard"
+                app:cardBackgroundColor="@color/arzikina_postcart_background"
+                app:cardCornerRadius="@dimen/corner_radius_medium"
+                app:cardElevation="@dimen/elevation_raised">
 
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/typeExpense"
-                    style="?attr/materialButtonOutlinedStyle"
-                    android:layout_width="0dp"
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/typeLayout"
+                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:checkable="true"
-                    android:checked="true"
-                    android:text="@string/category_type_expense"
-                    app:icon="@drawable/ic_arrow_downward_24"
-                    app:iconGravity="textStart" />
+                    android:layout_margin="@dimen/spacing_xs"
+                    android:hint="@string/transaction_form_type_label"
+                    app:boxStrokeWidth="0dp"
+                    app:boxStrokeWidthFocused="0dp">
 
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/typeIncome"
-                    style="?attr/materialButtonOutlinedStyle"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:checkable="true"
-                    android:text="@string/category_type_income"
-                    app:icon="@drawable/ic_arrow_upward_24"
-                    app:iconGravity="textStart" />
+                    <com.google.android.material.textfield.MaterialAutoCompleteTextView
+                        android:id="@+id/typeInput"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="none"
+                        tools:text="Dépense" />
 
-            </com.google.android.material.button.MaterialButtonToggleGroup>
+                </com.google.android.material.textfield.TextInputLayout>
+            </com.google.android.material.card.MaterialCardView>
 
             <!--
                 Montant : grand et coloré (rouge/vert selon le type, voir
@@ -210,45 +210,63 @@
                 TransactionFormFragment.isCategoryGridExpanded) — pas un
                 nouvel écran de sélection à part.
             -->
-            <LinearLayout
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/categoryCard"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/spacing_l"
-                android:orientation="horizontal">
+                android:theme="@style/ThemeOverlay.Arzikina.OnBalanceCard"
+                app:cardBackgroundColor="@color/arzikina_postcart_background"
+                app:cardCornerRadius="@dimen/corner_radius_medium"
+                app:cardElevation="@dimen/elevation_raised">
 
-                <TextView
-                    android:id="@+id/categoryLabel"
-                    style="@style/TextAppearance.Material3.TitleSmall"
-                    android:layout_width="0dp"
+                <LinearLayout
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="@string/transaction_form_category_label"
-                    android:textColor="?attr/colorOnSurface" />
+                    android:orientation="vertical"
+                    android:padding="@dimen/spacing_m">
 
-                <TextView
-                    android:id="@+id/categorySeeAllToggle"
-                    style="@style/TextAppearance.Material3.LabelLarge"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:background="?attr/selectableItemBackground"
-                    android:drawableEnd="@drawable/ic_chevron_right_24"
-                    android:gravity="center_vertical"
-                    android:padding="@dimen/spacing_xs"
-                    android:text="@string/transaction_form_category_see_all"
-                    android:textColor="?attr/colorPrimary" />
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal">
 
-            </LinearLayout>
+                        <TextView
+                            android:id="@+id/categoryLabel"
+                            style="@style/TextAppearance.Material3.TitleSmall"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="@string/transaction_form_category_label"
+                            android:textColor="?attr/colorOnSurface" />
 
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/categoryGrid"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/spacing_s"
-                android:nestedScrollingEnabled="false"
-                app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
-                app:spanCount="4"
-                tools:itemCount="8"
-                tools:listitem="@layout/item_category_quick_pick" />
+                        <TextView
+                            android:id="@+id/categorySeeAllToggle"
+                            style="@style/TextAppearance.Material3.LabelLarge"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:background="?attr/selectableItemBackground"
+                            android:drawableEnd="@drawable/ic_chevron_right_24"
+                            android:gravity="center_vertical"
+                            android:padding="@dimen/spacing_xs"
+                            android:text="@string/transaction_form_category_see_all"
+                            android:textColor="?attr/colorPrimary" />
+
+                    </LinearLayout>
+
+                    <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/categoryGrid"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/spacing_s"
+                        android:nestedScrollingEnabled="false"
+                        app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
+                        app:spanCount="4"
+                        tools:itemCount="8"
+                        tools:listitem="@layout/item_category_quick_pick" />
+
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
 
             <TextView
                 android:id="@+id/categoryErrorText"
@@ -262,11 +280,14 @@
                 tools:visibility="visible" />
 
             <!--
-                Compte : ligne cliquable (icône, nom, solde courant) plutôt
-                qu'un menu déroulant, ouvre AccountPickerDialog. Le solde
-                affiché vient de TransactionFormViewModel.accountBalances
-                (voir com.arzikina.ne.presentation.accounts.computeCurrentBalances),
-                pas de Account.initialBalance.
+                Compte (source, pour un transfert) : ligne cliquable (icône,
+                nom, solde courant) plutôt qu'un menu déroulant, ouvre
+                AccountPickerDialog. Le solde affiché vient de
+                TransactionFormViewModel.accountBalances (voir
+                com.arzikina.ne.presentation.accounts.computeCurrentBalances),
+                pas de Account.initialBalance. Contenu factorisé dans
+                item_account_field.xml (voir ce fichier) : réutilisé tel quel
+                pour la ligne "Compte destination" ci-dessous.
             -->
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/accountRow"
@@ -281,74 +302,10 @@
                 app:cardCornerRadius="@dimen/corner_radius_medium"
                 app:cardElevation="@dimen/elevation_raised">
 
-                <androidx.constraintlayout.widget.ConstraintLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:padding="@dimen/spacing_m">
+                <include
+                    android:id="@+id/accountField"
+                    layout="@layout/item_account_field" />
 
-                    <ImageView
-                        android:id="@+id/accountRowIcon"
-                        android:layout_width="@dimen/icon_size_large"
-                        android:layout_height="@dimen/icon_size_large"
-                        android:background="@drawable/bg_icon_circle"
-                        android:contentDescription="@null"
-                        android:padding="@dimen/spacing_s"
-                        app:layout_constraintBottom_toBottomOf="parent"
-                        app:layout_constraintStart_toStartOf="parent"
-                        app:layout_constraintTop_toTopOf="parent"
-                        app:tint="@android:color/white"
-                        tools:ignore="ContentDescription" />
-
-                    <TextView
-                        android:id="@+id/accountRowLabel"
-                        style="@style/TextAppearance.Material3.BodySmall"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="@dimen/spacing_m"
-                        android:text="@string/transaction_form_account_label"
-                        android:textColor="?attr/colorOnSurfaceVariant"
-                        app:layout_constraintEnd_toStartOf="@id/accountRowBalance"
-                        app:layout_constraintStart_toEndOf="@id/accountRowIcon"
-                        app:layout_constraintTop_toTopOf="@id/accountRowIcon" />
-
-                    <TextView
-                        android:id="@+id/accountRowName"
-                        style="@style/TextAppearance.Material3.TitleSmall"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="@dimen/spacing_m"
-                        android:ellipsize="end"
-                        android:maxLines="1"
-                        android:textColor="?attr/colorOnSurface"
-                        app:layout_constraintEnd_toStartOf="@id/accountRowBalance"
-                        app:layout_constraintStart_toEndOf="@id/accountRowIcon"
-                        app:layout_constraintTop_toBottomOf="@id/accountRowLabel"
-                        tools:text="Choisir un compte" />
-
-                    <TextView
-                        android:id="@+id/accountRowBalance"
-                        style="@style/TextAppearance.Material3.BodySmall"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginEnd="@dimen/spacing_s"
-                        android:textColor="?attr/colorOnSurfaceVariant"
-                        app:layout_constraintBottom_toBottomOf="@id/accountRowIcon"
-                        app:layout_constraintEnd_toStartOf="@id/accountRowChevron"
-                        app:layout_constraintTop_toTopOf="@id/accountRowIcon"
-                        tools:text="Solde : 50 000 F CFA" />
-
-                    <ImageView
-                        android:id="@+id/accountRowChevron"
-                        android:layout_width="@dimen/icon_size_default"
-                        android:layout_height="@dimen/icon_size_default"
-                        android:contentDescription="@null"
-                        android:src="@drawable/ic_chevron_right_24"
-                        app:layout_constraintBottom_toBottomOf="@id/accountRowIcon"
-                        app:layout_constraintEnd_toEndOf="parent"
-                        app:layout_constraintTop_toTopOf="@id/accountRowIcon"
-                        app:tint="?attr/colorOnSurfaceVariant" />
-
-                </androidx.constraintlayout.widget.ConstraintLayout>
             </com.google.android.material.card.MaterialCardView>
 
             <TextView
@@ -360,6 +317,46 @@
                 android:textColor="@color/expense_red"
                 android:visibility="gone"
                 tools:text="Choisis un compte"
+                tools:visibility="visible" />
+
+            <!--
+                Compte destination : uniquement pour un transfert (voir
+                TransactionType.TRANSFER), GONE sinon (voir
+                TransactionFormFragment.renderDestinationAccountRow). Même
+                structure que la ligne "Compte" ci-dessus (item_account_field.xml),
+                dont seul le libellé diffère ("Compte destination", écrasé par
+                code dans onViewCreated).
+            -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/destinationAccountRow"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_m"
+                android:checkable="false"
+                android:clickable="true"
+                android:focusable="true"
+                android:theme="@style/ThemeOverlay.Arzikina.OnBalanceCard"
+                android:visibility="gone"
+                app:cardBackgroundColor="@color/arzikina_postcart_background"
+                app:cardCornerRadius="@dimen/corner_radius_medium"
+                app:cardElevation="@dimen/elevation_raised"
+                tools:visibility="visible">
+
+                <include
+                    android:id="@+id/destinationAccountField"
+                    layout="@layout/item_account_field" />
+
+            </com.google.android.material.card.MaterialCardView>
+
+            <TextView
+                android:id="@+id/destinationAccountErrorText"
+                style="@style/TextAppearance.Material3.BodySmall"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:textColor="@color/expense_red"
+                android:visibility="gone"
+                tools:text="Choisis un compte de destination"
                 tools:visibility="visible" />
 
             <!--
@@ -437,23 +434,43 @@
                 </androidx.constraintlayout.widget.ConstraintLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <com.google.android.material.textfield.TextInputLayout
-                android:id="@+id/descriptionLayout"
-                style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+            <!--
+                Postcard sombre comme les autres blocs (voir amountCard/
+                accountRow/dateTimeRow) : le champ garde son style
+                OutlinedBox pour l'animation du label flottant, mais sans son
+                propre contour (boxStrokeWidth=0) pour éviter un double cadre
+                "boîte dans la boîte" une fois posé sur le fond sombre.
+            -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/descriptionCard"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/spacing_m"
-                android:hint="@string/transaction_form_description_label"
-                app:startIconDrawable="@drawable/ic_label_24">
+                android:theme="@style/ThemeOverlay.Arzikina.OnBalanceCard"
+                app:cardBackgroundColor="@color/arzikina_postcart_background"
+                app:cardCornerRadius="@dimen/corner_radius_medium"
+                app:cardElevation="@dimen/elevation_raised">
 
-                <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/descriptionInput"
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/descriptionLayout"
+                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:inputType="textCapSentences"
-                    android:maxLines="3" />
+                    android:layout_margin="@dimen/spacing_xs"
+                    android:hint="@string/transaction_form_description_label"
+                    app:boxStrokeWidth="0dp"
+                    app:boxStrokeWidthFocused="0dp"
+                    app:startIconDrawable="@drawable/ic_label_24">
 
-            </com.google.android.material.textfield.TextInputLayout>
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/descriptionInput"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="textCapSentences"
+                        android:maxLines="3" />
+
+                </com.google.android.material.textfield.TextInputLayout>
+            </com.google.android.material.card.MaterialCardView>
 
             <!--
                 Repliable (voir TransactionFormFragment.setUpMoreDetailsToggle) :

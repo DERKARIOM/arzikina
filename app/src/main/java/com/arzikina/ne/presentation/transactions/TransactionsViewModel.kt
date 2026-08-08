@@ -109,7 +109,8 @@ class TransactionsViewModel @Inject constructor(
                 TransactionUiItem(
                     transaction = transaction,
                     account = accountsById[transaction.accountId],
-                    category = categoriesById[transaction.categoryId],
+                    // categoryId est `null` pour un transfert (voir TransactionType.TRANSFER).
+                    category = transaction.categoryId?.let { categoriesById[it] },
                     runningBalance = runningBalances[transaction.id]
                 )
             }

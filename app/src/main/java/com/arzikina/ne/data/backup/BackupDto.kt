@@ -59,7 +59,13 @@ data class TransactionDto(
     val amount: Long,
     val type: String,
     val accountId: Long,
-    val categoryId: Long,
+    /** Ajouté après coup (voir `domain/model/TransactionType.TRANSFER`) : défaut
+     * `null` pour rester compatible avec les fichiers exportés avant son existence
+     * (aucune transaction d'un ancien fichier n'est un transfert). */
+    val transferAccountId: Long? = null,
+    /** Devenu optionnel en même temps que [transferAccountId] : `null` pour un
+     * transfert, toujours renseigné pour un revenu ou une dépense. */
+    val categoryId: Long? = null,
     val date: Long,
     val description: String,
     val receiptPhotoUri: String? = null,

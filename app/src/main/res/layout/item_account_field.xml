@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Ligne "compte" réutilisable (icône, libellé, nom, solde, chevron) —
+    incluse deux fois dans fragment_transaction_form.xml (compte via
+    accountRow/accountField, compte destination d'un transfert via
+    destinationAccountRow/destinationAccountField — voir
+    TransactionFormFragment.setUpTypeDropdown) grâce à <include> + ViewBinding
+    imbriqué (même pattern que accountSummaryCard sur "Détail du compte"),
+    pour ne pas dupliquer cette structure.
+
+    Le libellé par défaut ci-dessous ("Compte") n'est correct que pour la
+    première ligne : TransactionFormFragment.onViewCreated l'écrase une fois
+    pour la ligne destination ("Compte destination").
+-->
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:padding="@dimen/spacing_m">
+
+    <ImageView
+        android:id="@+id/accountFieldIcon"
+        android:layout_width="@dimen/icon_size_large"
+        android:layout_height="@dimen/icon_size_large"
+        android:background="@drawable/bg_icon_circle"
+        android:contentDescription="@null"
+        android:padding="@dimen/spacing_s"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:tint="@android:color/white"
+        tools:ignore="ContentDescription" />
+
+    <TextView
+        android:id="@+id/accountFieldLabel"
+        style="@style/TextAppearance.Material3.BodySmall"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/spacing_m"
+        android:text="@string/transaction_form_account_label"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        app:layout_constraintEnd_toStartOf="@id/accountFieldBalance"
+        app:layout_constraintStart_toEndOf="@id/accountFieldIcon"
+        app:layout_constraintTop_toTopOf="@id/accountFieldIcon" />
+
+    <TextView
+        android:id="@+id/accountFieldName"
+        style="@style/TextAppearance.Material3.TitleSmall"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/spacing_m"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:textColor="?attr/colorOnSurface"
+        app:layout_constraintEnd_toStartOf="@id/accountFieldBalance"
+        app:layout_constraintStart_toEndOf="@id/accountFieldIcon"
+        app:layout_constraintTop_toBottomOf="@id/accountFieldLabel"
+        tools:text="Choisir un compte" />
+
+    <TextView
+        android:id="@+id/accountFieldBalance"
+        style="@style/TextAppearance.Material3.BodySmall"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="@dimen/spacing_s"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        app:layout_constraintBottom_toBottomOf="@id/accountFieldIcon"
+        app:layout_constraintEnd_toStartOf="@id/accountFieldChevron"
+        app:layout_constraintTop_toTopOf="@id/accountFieldIcon"
+        tools:text="Solde : 50 000 F CFA" />
+
+    <ImageView
+        android:id="@+id/accountFieldChevron"
+        android:layout_width="@dimen/icon_size_default"
+        android:layout_height="@dimen/icon_size_default"
+        android:contentDescription="@null"
+        android:src="@drawable/ic_chevron_right_24"
+        app:layout_constraintBottom_toBottomOf="@id/accountFieldIcon"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="@id/accountFieldIcon"
+        app:tint="?attr/colorOnSurfaceVariant" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>
