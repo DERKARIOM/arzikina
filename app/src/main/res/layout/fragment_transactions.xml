@@ -62,6 +62,7 @@
                 <com.google.android.material.chip.Chip
                     android:id="@+id/typeChipAll"
                     style="@style/Widget.Material3.Chip.Filter"
+                    android:textColor="@color/white"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:checked="true"
@@ -69,6 +70,7 @@
 
                 <com.google.android.material.chip.Chip
                     android:id="@+id/typeChipExpense"
+                    android:textColor="@color/white"
                     style="@style/Widget.Material3.Chip.Filter"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -77,6 +79,7 @@
                 <com.google.android.material.chip.Chip
                     android:id="@+id/typeChipIncome"
                     style="@style/Widget.Material3.Chip.Filter"
+                    android:textColor="@color/white"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="@string/category_type_income" />
@@ -95,12 +98,14 @@
                     android:id="@+id/periodChipAll"
                     style="@style/Widget.Material3.Chip.Filter"
                     android:layout_width="wrap_content"
+                    android:textColor="@color/white"
                     android:layout_height="wrap_content"
                     android:checked="true"
                     android:text="@string/transactions_period_all" />
 
                 <com.google.android.material.chip.Chip
                     android:id="@+id/periodChipWeek"
+                    android:textColor="@color/white"
                     style="@style/Widget.Material3.Chip.Filter"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -110,6 +115,7 @@
                     android:id="@+id/periodChipMonth"
                     style="@style/Widget.Material3.Chip.Filter"
                     android:layout_width="wrap_content"
+                    android:textColor="@color/white"
                     android:layout_height="wrap_content"
                     android:text="@string/transactions_period_this_month" />
 
@@ -206,7 +212,7 @@
         android:layout_height="wrap_content"
         android:textColor="@color/white"
         android:layout_margin="@dimen/spacing_m"
-        android:text="@string/transactions_add"
+        android:text=""
         app:icon="@drawable/ic_add_24"
         app:iconTint="@color/white"
         app:layout_constraintBottom_toBottomOf="parent"
