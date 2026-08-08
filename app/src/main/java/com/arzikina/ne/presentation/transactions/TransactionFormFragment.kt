@@ -61,6 +61,7 @@ class TransactionFormFragment : Fragment(R.layout.fragment_transaction_form) {
         setUpInputs(viewBinding)
 
         viewBinding.saveButton.setOnClickListener { viewModel.save() }
+        viewBinding.deleteButton.setOnClickListener { confirmDelete() }
 
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -82,21 +83,19 @@ class TransactionFormFragment : Fragment(R.layout.fragment_transaction_form) {
         binding = null
     }
 
+    /**
+     * Le bouton "Supprimer" (voir `fragment_transaction_form.xml`) ne
+     * s'affiche qu'en modification — pas de menu "⋮" dans la Toolbar ici,
+     * contrairement aux formulaires Compte/Catégorie/Budget : la suppression
+     * est placée à côté d'"Enregistrer", plus visible pour une action aussi
+     * fréquente sur cet écran.
+     */
     private fun setUpToolbar(binding: FragmentTransactionFormBinding) {
         binding.toolbar.title = getString(
             if (viewModel.isEditMode) R.string.transaction_form_title_edit else R.string.transaction_form_title_add
         )
         binding.toolbar.setNavigationOnClickListener { findNavController().navigateUp() }
-        binding.toolbar.inflateMenu(R.menu.form_delete_menu)
-        binding.toolbar.menu.findItem(R.id.action_delete_item).isVisible = viewModel.isEditMode
-        binding.toolbar.setOnMenuItemClickListener { item ->
-            if (item.itemId == R.id.action_delete_item) {
-                confirmDelete()
-                true
-            } else {
-                false
-            }
-        }
+        binding.deleteButton.visibility = if (viewModel.isEditMode) View.VISIBLE else View.GONE
     }
 
     private fun setUpTypeToggle(binding: FragmentTransactionFormBinding) {

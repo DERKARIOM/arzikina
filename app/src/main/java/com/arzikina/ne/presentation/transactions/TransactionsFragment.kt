@@ -15,7 +15,6 @@ import com.arzikina.ne.R
 import com.arzikina.ne.databinding.FragmentTransactionsBinding
 import com.arzikina.ne.domain.model.Account
 import com.arzikina.ne.domain.model.Category
-import com.arzikina.ne.presentation.components.ConfirmDialogs
 import com.arzikina.ne.util.AppResult
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.combine
@@ -37,8 +36,7 @@ class TransactionsFragment : Fragment(R.layout.fragment_transactions) {
     private var binding: FragmentTransactionsBinding? = null
 
     private val adapter = GroupedTransactionsAdapter(
-        onClick = { item -> navigateToForm(item.transaction.id) },
-        onDeleteClick = { item -> confirmDelete(item) }
+        onClick = { item -> navigateToForm(item.transaction.id) }
     )
 
     /** Dernières listes reçues, pour convertir une position de menu déroulant en identifiant. */
@@ -150,7 +148,7 @@ class TransactionsFragment : Fragment(R.layout.fragment_transactions) {
         if (state !is AppResult.Success) return
 
         val hasTransactions = state.data.isNotEmpty()
-        binding.transactionsCard.visibility = if (hasTransactions) View.VISIBLE else View.GONE
+        binding.transactionsList.visibility = if (hasTransactions) View.VISIBLE else View.GONE
         binding.emptyState.visibility = if (hasTransactions) View.GONE else View.VISIBLE
         adapter.submitList(state.data.toListRows())
     }
@@ -199,15 +197,6 @@ class TransactionsFragment : Fragment(R.layout.fragment_transactions) {
         }
 
         binding.resetFiltersButton.visibility = if (filters.hasActiveFilters) View.VISIBLE else View.GONE
-    }
-
-    private fun confirmDelete(item: TransactionUiItem) {
-        ConfirmDialogs.confirm(
-            context = requireContext(),
-            title = getString(R.string.transactions_delete_title),
-            message = getString(R.string.transactions_delete_message),
-            onConfirm = { viewModel.deleteTransaction(item.transaction.id) }
-        )
     }
 
     private fun navigateToForm(transactionId: Long) {

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Fond du premier élément d'un groupe "postcard" (en-tête de jour, voir
+    item_transaction_day_header.xml) : coins arrondis en haut seulement, pour
+    que chaque jour forme son propre bloc visuellement détaché du suivant
+    (voir GroupedTransactionsAdapter / bg_postcard_bottom pour le dernier
+    élément du groupe).
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="@color/arzikina_postcart_background" />
+    <corners
+        android:bottomLeftRadius="0dp"
+        android:bottomRightRadius="0dp"
+        android:topLeftRadius="@dimen/corner_radius_medium"
+        android:topRightRadius="@dimen/corner_radius_medium" />
+</shape>

@@ -99,13 +99,18 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/accountSummaryCard" />
 
+    <!--
+        Même traitement "postcard" par jour que l'écran Transactions (voir
+        fragment_transactions.xml) : cohérence entre les deux écrans qui
+        listent des transactions au long cours.
+    -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/transactionsList"
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:clipToPadding="false"
-        android:paddingHorizontal="@dimen/spacing_s"
         android:paddingBottom="88dp"
+        android:theme="@style/ThemeOverlay.Arzikina.OnBalanceCard"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"

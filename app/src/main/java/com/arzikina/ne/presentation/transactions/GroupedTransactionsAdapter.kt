@@ -17,16 +17,28 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
-/** Une ligne de liste groupée par jour : soit un en-tête ([Header]), soit une transaction ([Row]). */
+/**
+ * Une ligne de liste groupée par jour : soit un en-tête ([Header]), soit une
+ * transaction ([Row]).
+ *
+ * @param isLastInSection sur [Row], vrai pour la dernière transaction de son
+ * jour — [GroupedTransactionsAdapter] s'en sert pour arrondir le bas de son
+ * fond "postcard" (voir [bg_postcard_bottom][com.arzikina.ne.R.drawable.bg_postcard_bottom]),
+ * afin que chaque jour forme un bloc visuellement détaché des autres, dont la
+ * hauteur suit naturellement le nombre de transactions de ce jour-là.
+ */
 sealed interface TransactionListRow {
     data class Header(val section: TransactionDaySection) : TransactionListRow
-    data class Row(val item: TransactionUiItem) : TransactionListRow
+    data class Row(val item: TransactionUiItem, val isLastInSection: Boolean) : TransactionListRow
 }
 
 /** Aplatit [sections] en une liste de lignes prête pour [GroupedTransactionsAdapter]. */
 fun List<TransactionDaySection>.toListRows(): List<TransactionListRow> =
     flatMap { section ->
-        listOf(TransactionListRow.Header(section)) + section.items.map { TransactionListRow.Row(it) }
+        listOf(TransactionListRow.Header(section)) +
+            section.items.mapIndexed { index, item ->
+                TransactionListRow.Row(item, isLastInSection = index == section.items.lastIndex)
+            }
     }
 
 /**
@@ -36,13 +48,12 @@ fun List<TransactionDaySection>.toListRows(): List<TransactionListRow> =
  * compte" — un seul adapter pour ne pas dupliquer la logique de rendu
  * multi-type entre les deux écrans.
  *
- * [onDeleteClick] : `null` masque le bouton de suppression (cas "Détail du
- * compte", où seul le menu "⋮" du compte gère la suppression) ; non-null
- * l'affiche (cas écran Transactions).
+ * Pas de suppression depuis la liste (plus de bouton poubelle par ligne) :
+ * la suppression se fait désormais uniquement depuis le formulaire de
+ * modification, ouvert via [onClick] — voir [TransactionFormFragment].
  */
 class GroupedTransactionsAdapter(
-    private val onClick: (TransactionUiItem) -> Unit,
-    private val onDeleteClick: ((TransactionUiItem) -> Unit)? = null
+    private val onClick: (TransactionUiItem) -> Unit
 ) : ListAdapter<TransactionListRow, RecyclerView.ViewHolder>(DIFF_CALLBACK) {
 
     override fun getItemViewType(position: Int): Int = when (getItem(position)) {
@@ -61,7 +72,7 @@ class GroupedTransactionsAdapter(
         when (val row = getItem(position)) {
             is TransactionListRow.Header -> (holder as HeaderViewHolder).bind(row.section)
             is TransactionListRow.Row ->
-                (holder as TransactionViewHolder).bind(row.item, onClick, onDeleteClick)
+                (holder as TransactionViewHolder).bind(row.item, row.isLastInSection, onClick)
         }
     }
 
@@ -125,17 +136,32 @@ class GroupedTransactionsAdapter(
         }
     }
 
+    /**
+     * En plus du contenu ([TransactionItemBinder]), donne à chaque ligne son
+     * fond "postcard" et sa marge horizontale — l'en-tête de jour porte déjà
+     * les siens en dur dans son layout (voir `item_transaction_day_header.xml`),
+     * mais `item_transaction_compact.xml` est partagé avec
+     * [com.arzikina.ne.presentation.dashboard.RecentTransactionsAdapter], qui
+     * n'a besoin ni de l'un ni de l'autre : on ne peut donc pas les fixer en
+     * dur dans le layout sans casser le Dashboard.
+     */
     class TransactionViewHolder(private val binding: ItemTransactionCompactBinding) : RecyclerView.ViewHolder(binding.root) {
         fun bind(
             item: TransactionUiItem,
-            onClick: (TransactionUiItem) -> Unit,
-            onDeleteClick: ((TransactionUiItem) -> Unit)?
+            isLastInSection: Boolean,
+            onClick: (TransactionUiItem) -> Unit
         ) {
             TransactionItemBinder.bind(binding, item, showDescriptionSubtitle = true)
             binding.root.setOnClickListener { onClick(item) }
-            binding.deleteButton.visibility = if (onDeleteClick != null) View.VISIBLE else View.GONE
-            if (onDeleteClick != null) {
-                binding.deleteButton.setOnClickListener { onDeleteClick(item) }
+
+            binding.root.setBackgroundResource(
+                if (isLastInSection) R.drawable.bg_postcard_bottom else R.color.arzikina_postcart_background
+            )
+            val sideMargin = binding.root.resources.getDimensionPixelSize(R.dimen.spacing_m)
+            (binding.root.layoutParams as? ViewGroup.MarginLayoutParams)?.let { params ->
+                params.marginStart = sideMargin
+                params.marginEnd = sideMargin
+                binding.root.layoutParams = params
             }
         }
     }

@@ -178,38 +178,27 @@
         app:layout_constraintTop_toBottomOf="@id/filtersPanel" />
 
     <!--
-        Carte sombre fixe, même style que les cartes de synthèse du Dashboard/
-        "Mes comptes" (@color/arzikina_postcart_background) : demande
-        explicite de reprendre ce "postcard" ici. android:theme sur la
-        RecyclerView remappe colorOnSurface/colorOnSurfaceVariant pour rester
-        lisible sur ce fond (voir ThemeOverlay.Arzikina.OnBalanceCard,
-        themes.xml — même mécanisme que sur le Dashboard) ; les en-têtes de
-        jour et les lignes de transaction (item_transaction_compact.xml, déjà
-        thème-sensibles) n'ont besoin d'aucune modification.
+        Chaque jour forme son propre bloc "postcard" sombre
+        (@color/arzikina_postcart_background), de hauteur dynamique selon son
+        nombre de transactions — voir GroupedTransactionsAdapter (fond +
+        marges par ligne) et bg_postcard_top/bg_postcard_bottom (coins
+        arrondis en haut/bas de chaque groupe). Plus de carte englobante
+        unique : android:theme reste posé directement sur la RecyclerView pour
+        que colorOnSurface/colorOnSurfaceVariant restent lisibles sur ce fond
+        (voir ThemeOverlay.Arzikina.OnBalanceCard, themes.xml).
     -->
-    <com.google.android.material.card.MaterialCardView
-        android:id="@+id/transactionsCard"
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/transactionsList"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:layout_margin="@dimen/spacing_m"
-        app:cardBackgroundColor="@color/arzikina_postcart_background"
-        app:cardCornerRadius="@dimen/corner_radius_medium"
-        app:cardElevation="0dp"
+        android:clipToPadding="false"
+        android:paddingBottom="88dp"
+        android:theme="@style/ThemeOverlay.Arzikina.OnBalanceCard"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/filtersPanel">
-
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/transactionsList"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:clipToPadding="false"
-            android:paddingBottom="88dp"
-            android:theme="@style/ThemeOverlay.Arzikina.OnBalanceCard"
-            tools:listitem="@layout/item_transaction_compact" />
-
-    </com.google.android.material.card.MaterialCardView>
+        app:layout_constraintTop_toBottomOf="@id/filtersPanel"
+        tools:listitem="@layout/item_transaction_compact" />
 
     <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
         android:id="@+id/addTransactionButton"

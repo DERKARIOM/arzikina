@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Fond de la dernière transaction d'un groupe "postcard" (voir
+    GroupedTransactionsAdapter.TransactionViewHolder) : coins arrondis en bas
+    seulement, pour refermer le bloc du jour. Les transactions du milieu
+    utilisent un simple aplat (@color/arzikina_postcart_background, pas de
+    drawable dédié) ; l'en-tête arrondit le haut (bg_postcard_top).
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="@color/arzikina_postcart_background" />
+    <corners
+        android:bottomLeftRadius="@dimen/corner_radius_medium"
+        android:bottomRightRadius="@dimen/corner_radius_medium"
+        android:topLeftRadius="0dp"
+        android:topRightRadius="0dp" />
+</shape>

@@ -1,4 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+    Pas de background ni de marge horizontale statiques ici : ce layout est
+    partagé avec RecentTransactionsAdapter (Dashboard), qui n'en a pas besoin
+    (déjà dans une carte). GroupedTransactionsAdapter.TransactionViewHolder
+    les fixe par code, seulement pour les écrans Transactions/Détail du
+    compte : marge horizontale pour aligner les bords sur l'en-tête de jour
+    (bg_postcard_top), fond (aplat @color/arzikina_postcart_background pour
+    une ligne "du milieu", @drawable/bg_postcard_bottom pour la dernière ligne
+    d'un groupe).
+-->
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
@@ -80,10 +90,9 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="@dimen/spacing_s"
         app:layout_constraintBottom_toTopOf="@id/runningBalance"
-        app:layout_constraintEnd_toStartOf="@id/deleteButton"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="@id/categoryIcon"
         app:layout_constraintVertical_chainStyle="packed"
-        app:layout_goneMarginEnd="0dp"
         tools:text="-300 F CFA" />
 
     <!--
@@ -107,24 +116,5 @@
         app:layout_constraintTop_toBottomOf="@id/amount"
         tools:text="(6 250 F CFA)"
         tools:visibility="visible" />
-
-    <!--
-        Masqué par défaut (voir com.arzikina.ne.presentation.dashboard.RecentTransactionsAdapter,
-        qui ne le référence jamais) : seul GroupedTransactionsAdapter le rend
-        visible et le câble sur l'écran Transactions, pour ne pas dupliquer
-        toute la mise en page d'une ligne juste pour ajouter un bouton de
-        suppression.
-    -->
-    <ImageButton
-        android:id="@+id/deleteButton"
-        android:layout_width="@dimen/icon_size_default"
-        android:layout_height="@dimen/icon_size_default"
-        android:background="?attr/selectableItemBackgroundBorderless"
-        android:contentDescription="@string/action_delete"
-        android:src="@drawable/ic_delete_24"
-        android:visibility="gone"
-        app:layout_constraintBottom_toBottomOf="@id/categoryIcon"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="@id/categoryIcon" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

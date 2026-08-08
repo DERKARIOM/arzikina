@@ -11,8 +11,11 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    android:layout_marginTop="@dimen/spacing_m"
+    android:layout_marginHorizontal="@dimen/spacing_m"
+    android:background="@drawable/bg_postcard_top"
     android:paddingHorizontal="@dimen/spacing_m"
-    android:paddingTop="@dimen/spacing_m"
+    android:paddingTop="@dimen/spacing_s"
     android:paddingBottom="@dimen/spacing_xs">
 
     <TextView

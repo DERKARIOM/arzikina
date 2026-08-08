@@ -20,7 +20,6 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.launch
 import java.time.LocalDate
 import javax.inject.Inject
 
@@ -152,12 +151,6 @@ class TransactionsViewModel @Inject constructor(
 
     fun resetFilters() {
         _filters.update { it.copy(type = TransactionTypeFilter.ALL, accountId = null, categoryId = null, period = TransactionPeriodFilter.ALL) }
-    }
-
-    fun deleteTransaction(id: Long) {
-        viewModelScope.launch {
-            transactionRepository.deleteTransaction(id)
-        }
     }
 
     private fun matchesType(type: TransactionType, filter: TransactionTypeFilter): Boolean =

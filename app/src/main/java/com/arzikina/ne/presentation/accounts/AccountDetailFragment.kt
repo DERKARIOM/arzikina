@@ -35,9 +35,10 @@ class AccountDetailFragment : Fragment(R.layout.fragment_account_detail) {
     private val viewModel: AccountDetailViewModel by viewModels()
     private var binding: FragmentAccountDetailBinding? = null
     /**
-     * Pas de [GroupedTransactionsAdapter.onDeleteClick] ici : contrairement à
-     * l'écran Transactions, la suppression d'une transaction ne se fait pas
-     * depuis cette liste (seul le compte a un menu de suppression, "⋮").
+     * Aucune suppression de transaction depuis cette liste (ni ailleurs dans
+     * l'app désormais, voir [GroupedTransactionsAdapter]) : elle se fait
+     * uniquement depuis le formulaire de modification, ouvert par [onClick]
+     * ci-dessous — le compte, lui, garde son propre menu de suppression, "⋮".
      */
     private val adapter = GroupedTransactionsAdapter(
         onClick = { item -> navigateToTransactionForm(item) }
