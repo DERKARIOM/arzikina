@@ -17,6 +17,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.arzikina.ne.R
 import com.arzikina.ne.databinding.FragmentDashboardBinding
 import com.arzikina.ne.domain.model.CurrencyAmount
+import com.arzikina.ne.presentation.accounts.AccountCardGradient
 import com.arzikina.ne.presentation.budget.BudgetAdapter
 import com.arzikina.ne.presentation.budget.BudgetUiItem
 import com.arzikina.ne.util.AppResult
@@ -25,6 +26,7 @@ import com.arzikina.ne.util.Money
 import coil3.load
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
+import java.util.Locale
 
 /**
  * Écran d'accueil : solde total, revenus/dépenses du mois en cours et
@@ -81,6 +83,11 @@ class DashboardFragment : Fragment(R.layout.fragment_dashboard) {
         // nouvelle vue.
         ViewCompat.requestApplyInsets(viewBinding.headerRow)
 
+        // Dégradé façon carte VISA virtuelle (voir AccountCardGradient, réutilisé tel quel
+        // depuis "Mes comptes") : fixe, pas issu d'un compte réel puisque cette carte
+        // représente le solde TOTAL, tous comptes confondus (voir BALANCE_CARD_COLOR).
+        viewBinding.balanceCard.background = AccountCardGradient.create(BALANCE_CARD_COLOR)
+
         viewBinding.categoriesShortcut.setOnClickListener {
             findNavController().navigate(R.id.categoriesFragment)
         }
@@ -123,6 +130,8 @@ class DashboardFragment : Fragment(R.layout.fragment_dashboard) {
         renderIncomeExpense(uiState.monthlyIncome, uiState.monthlyExpense)
         renderFeaturedBudget(uiState.featuredBudget)
         renderUserHeader(uiState.userFullName, uiState.userProfilePhotoUri)
+        binding.cardNumberText.text = getString(R.string.dashboard_card_number_format, uiState.cardNumberLastDigits)
+        binding.cardHolderNameText.text = uiState.userFullName.uppercase(Locale.FRENCH)
 
         val hasTransactions = uiState.recentTransactions.isNotEmpty()
         binding.recentTransactionsList.setVisible(hasTransactions)
@@ -221,5 +230,16 @@ class DashboardFragment : Fragment(R.layout.fragment_dashboard) {
 
     private fun View.setVisible(visible: Boolean) {
         visibility = if (visible) View.VISIBLE else View.GONE
+    }
+
+    private companion object {
+        /**
+         * Base du dégradé de la carte Solde (voir [AccountCardGradient]) — même
+         * valeur que `@color/arzikina_primary`, dupliquée ici en `Long` plutôt que
+         * lue depuis les ressources : cette carte représente le solde TOTAL, tous
+         * comptes confondus, donc une couleur fixe de l'app plutôt que celle d'un
+         * compte réel (voir commentaire sur balanceCard dans fragment_dashboard.xml).
+         */
+        const val BALANCE_CARD_COLOR = 0xFF42B998L
     }
 }

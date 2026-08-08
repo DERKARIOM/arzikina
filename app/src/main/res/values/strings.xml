@@ -230,6 +230,10 @@
     <string name="dashboard_balance_label">Solde total</string>
     <!-- Texte affiché à la place du montant quand le solde est masqué (voir DashboardFragment.kt). -->
     <string name="dashboard_balance_masked">•••••• CFA</string>
+    <!-- Numéro décoratif de la carte virtuelle (voir DashboardViewModel.cardNumberLastDigits) :
+         %s = les 4 derniers chiffres, dérivés de l'identifiant utilisateur, jamais un vrai
+         numéro de carte bancaire. -->
+    <string name="dashboard_card_number_format">•••• •••• •••• %s</string>
     <string name="dashboard_balance_hide_action">Masquer le solde</string>
     <string name="dashboard_balance_show_action">Afficher le solde</string>
     <!-- Contenu accessible de la carte Solde, cliquable pour ouvrir le détail par compte. -->

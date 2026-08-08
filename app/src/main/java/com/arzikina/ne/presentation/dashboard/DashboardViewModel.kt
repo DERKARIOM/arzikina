@@ -63,7 +63,15 @@ data class DashboardUiState(
      * connexion (voir MainActivity.resolveStartDestination).
      */
     val userFullName: String,
-    val userProfilePhotoUri: String?
+    val userProfilePhotoUri: String?,
+    /**
+     * 4 chiffres décoratifs pour la carte "Solde total" façon carte VISA
+     * virtuelle (voir fragment_dashboard.xml, maquette carte). Dérivés de
+     * [com.arzikina.ne.domain.model.User.id] (voir [DashboardViewModel]) —
+     * jamais un vrai numéro de carte bancaire, purement esthétique et stable
+     * tant que l'utilisateur ne change pas.
+     */
+    val cardNumberLastDigits: String
 )
 
 @HiltViewModel
@@ -107,7 +115,8 @@ class DashboardViewModel @Inject constructor(
             },
             featuredBudget = featuredBudget(budgets, categoriesById, transactions, accountsById),
             userFullName = user?.fullName.orEmpty(),
-            userProfilePhotoUri = user?.profilePhotoUri
+            userProfilePhotoUri = user?.profilePhotoUri,
+            cardNumberLastDigits = cardNumberLastDigits(user?.id)
         )
     }
         .map<DashboardUiState, AppResult<DashboardUiState>> { AppResult.Success(it) }
@@ -166,6 +175,17 @@ class DashboardViewModel @Inject constructor(
             )
         }
         .maxByOrNull { it.progress }
+
+    /**
+     * 4 chiffres décoratifs (voir [DashboardUiState.cardNumberLastDigits]) —
+     * multiplie [userId] par un nombre premier avant de tronquer à 4 chiffres
+     * pour éviter un motif trop reconnaissable (ex. "0001", "0002"... pour les
+     * tout premiers utilisateurs) tout en restant stable pour un même utilisateur.
+     */
+    private fun cardNumberLastDigits(userId: Long?): String {
+        val id = userId ?: return "0000"
+        return ((id * 7_919L) % 10_000L).toString().padStart(4, '0')
+    }
 
     private fun Transaction.dateAsZonedDateTime() =
         Instant.ofEpochMilli(date).atZone(ZoneId.systemDefault())
