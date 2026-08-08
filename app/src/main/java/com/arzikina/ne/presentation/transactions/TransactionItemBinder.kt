@@ -70,7 +70,7 @@ object TransactionItemBinder {
         val amountCurrency = item.account?.currencyCode
         val formattedAmount = amountCurrency?.let {
             Money.format(CurrencyAmount(it, item.transaction.amount))
-        } ?: Money.formatMajorUnits(item.transaction.amount)
+        } ?: Money.formatAmount(item.transaction.amount)
         binding.amount.text = "${if (isIncome) "+" else "-"}$formattedAmount"
         binding.amount.setTextColor(
             ContextCompat.getColor(context, if (isIncome) R.color.income_green else R.color.expense_red)
