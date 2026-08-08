@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Fond de badge/chip posé SUR un bloc "postcard" sombre (arzikina_postcart_background) —
+    voir amountCurrencyBadge dans fragment_transaction_form.xml. Un blanc semi-
+    transparent plutôt que ?attr/colorSurfaceVariant : cet attribut suit le
+    thème clair global et serait illisible une fois le bloc parent assombri.
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="#26FFFFFF" />
+    <corners android:radius="8dp" />
+</shape>
