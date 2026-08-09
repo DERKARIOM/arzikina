@@ -48,6 +48,8 @@ import com.arzikina.ne.data.local.entity.UserEntity
  *   voir [MIGRATION_8_9]).
  * - 10 : Transfert entre deux comptes (`transferAccountId`, `categoryId`
  *   devient optionnel — voir [MIGRATION_9_10]).
+ * - 11 : Compte de type Carte de crédit (`type`, `cardLastFourDigits`,
+ *   `cardExpiryMonth`, `cardExpiryYear` sur `accounts` — voir [MIGRATION_10_11]).
  */
 @Database(
     entities = [
@@ -58,7 +60,7 @@ import com.arzikina.ne.data.local.entity.UserEntity
         SavingsGoalEntity::class,
         UserEntity::class
     ],
-    version = 10,
+    version = 11,
     exportSchema = true
 )
 @TypeConverters(Converters::class)

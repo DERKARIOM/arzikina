@@ -1,6 +1,8 @@
 package com.arzikina.ne.presentation.accounts
 
 import android.os.Bundle
+import android.transition.AutoTransition
+import android.transition.TransitionManager
 import android.view.View
 import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.Fragment
@@ -13,6 +15,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.arzikina.ne.R
 import com.arzikina.ne.databinding.FragmentAccountFormBinding
 import com.arzikina.ne.domain.model.AccountIcon
+import com.arzikina.ne.domain.model.AccountType
 import com.arzikina.ne.domain.model.SupportedCurrency
 import com.arzikina.ne.presentation.components.ColorPickerAdapter
 import com.arzikina.ne.presentation.components.ConfirmDialogs
@@ -53,6 +56,7 @@ class AccountFormFragment : Fragment(R.layout.fragment_account_form) {
         binding = viewBinding
 
         setUpToolbar(viewBinding)
+        setUpTypeDropdown(viewBinding)
         setUpPickers(viewBinding)
         setUpCurrencyDropdown(viewBinding)
         setUpInputs(viewBinding)
@@ -89,6 +93,16 @@ class AccountFormFragment : Fragment(R.layout.fragment_account_form) {
         }
     }
 
+    /** Liste FERMÉE (même pattern que `TransactionFormFragment.setUpTypeDropdown`) : les
+     * libellés viennent de [TYPE_OPTIONS], dont l'ordre pilote celui affiché dans le menu. */
+    private fun setUpTypeDropdown(binding: FragmentAccountFormBinding) {
+        val labels = TYPE_OPTIONS.map { getString(it.displayTextRes()) }
+        binding.typeInput.setSimpleItems(labels.toTypedArray())
+        binding.typeInput.setOnItemClickListener { _, _, position, _ ->
+            viewModel.onTypeChange(TYPE_OPTIONS[position])
+        }
+    }
+
     private fun setUpPickers(binding: FragmentAccountFormBinding) {
         binding.iconPicker.layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
         binding.iconPicker.adapter = iconPickerAdapter
@@ -110,6 +124,15 @@ class AccountFormFragment : Fragment(R.layout.fragment_account_form) {
         }
         binding.balanceInput.doAfterTextChanged { text ->
             viewModel.onInitialBalanceChange(text?.toString().orEmpty())
+        }
+        binding.cardNumberInput.doAfterTextChanged { text ->
+            viewModel.onCardNumberChange(text?.toString().orEmpty())
+        }
+        binding.cardExpiryInput.doAfterTextChanged { text ->
+            viewModel.onCardExpiryChange(text?.toString().orEmpty())
+        }
+        binding.cardCvvInput.doAfterTextChanged { text ->
+            viewModel.onCardCvvChange(text?.toString().orEmpty())
         }
     }
 
@@ -135,6 +158,43 @@ class AccountFormFragment : Fragment(R.layout.fragment_account_form) {
 
         iconPickerAdapter.setSelected(state.icon)
         colorPickerAdapter.setSelected(state.colorArgb)
+
+        val typeLabel = getString(state.type.displayTextRes())
+        if (binding.typeInput.text?.toString() != typeLabel) {
+            binding.typeInput.setText(typeLabel, false)
+        }
+
+        val isCreditCard = state.type == AccountType.CREDIT_CARD
+        val wasCreditCardFieldsVisible = binding.creditCardFieldsGroup.visibility == View.VISIBLE
+        if (wasCreditCardFieldsVisible != isCreditCard) {
+            // "Animations légères... lors de l'ajout de la carte" (section UX) : un fondu enchaîné
+            // avec léger redimensionnement plutôt qu'une apparition/disparition instantanée du bloc
+            // de champs — seulement quand la visibilité change RÉELLEMENT (pas à chaque frappe).
+            TransitionManager.beginDelayedTransition(binding.formFieldsContainer, AutoTransition().setDuration(200L))
+        }
+        binding.creditCardFieldsGroup.visibility = if (isCreditCard) View.VISIBLE else View.GONE
+        if (isCreditCard) {
+            if (binding.cardNumberInput.text?.toString() != state.cardNumberInput) {
+                binding.cardNumberInput.setText(state.cardNumberInput)
+                binding.cardNumberInput.setSelection(state.cardNumberInput.length)
+            }
+            binding.cardNumberLayout.error = state.cardNumberError
+            binding.cardNumberLayout.helperText = state.existingCardLastFourDigits?.let {
+                getString(R.string.account_form_card_number_helper_edit, it)
+            }
+
+            if (binding.cardExpiryInput.text?.toString() != state.cardExpiryInput) {
+                binding.cardExpiryInput.setText(state.cardExpiryInput)
+                binding.cardExpiryInput.setSelection(state.cardExpiryInput.length)
+            }
+            binding.cardExpiryLayout.error = state.cardExpiryError
+
+            if (binding.cardCvvInput.text?.toString() != state.cardCvvInput) {
+                binding.cardCvvInput.setText(state.cardCvvInput)
+                binding.cardCvvInput.setSelection(state.cardCvvInput.length)
+            }
+            binding.cardCvvLayout.error = state.cardCvvError
+        }
     }
 
     private fun handleEvent(event: AccountFormEvent) {
@@ -150,5 +210,10 @@ class AccountFormFragment : Fragment(R.layout.fragment_account_form) {
             message = getString(R.string.accounts_delete_message, viewModel.formState.value.name),
             onConfirm = { viewModel.delete() }
         )
+    }
+
+    private companion object {
+        /** Ordre d'affichage du menu déroulant "Type de compte" (voir [setUpTypeDropdown]). */
+        val TYPE_OPTIONS = AccountType.entries
     }
 }

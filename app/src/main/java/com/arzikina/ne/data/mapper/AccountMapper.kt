@@ -15,7 +15,11 @@ fun AccountEntity.toDomain(): Account = Account(
     colorArgb = colorArgb,
     currencyCode = currencyCode,
     initialBalance = initialBalanceMinor,
-    createdAt = createdAt
+    createdAt = createdAt,
+    type = type,
+    cardLastFourDigits = cardLastFourDigits,
+    cardExpiryMonth = cardExpiryMonth,
+    cardExpiryYear = cardExpiryYear
 )
 
 /** [userId] : fourni par le repository (voir [com.arzikina.ne.domain.repository.SessionManager]), jamais par l'appelant. */
@@ -27,5 +31,9 @@ fun Account.toEntity(userId: Long): AccountEntity = AccountEntity(
     colorArgb = colorArgb,
     currencyCode = currencyCode,
     initialBalanceMinor = initialBalance,
-    createdAt = createdAt
+    createdAt = createdAt,
+    type = type,
+    cardLastFourDigits = cardLastFourDigits,
+    cardExpiryMonth = cardExpiryMonth,
+    cardExpiryYear = cardExpiryYear
 )

@@ -2,6 +2,7 @@ package com.arzikina.ne.data.local.database
 
 import com.arzikina.ne.data.local.entity.AccountEntity
 import com.arzikina.ne.domain.model.AccountIcon
+import com.arzikina.ne.domain.model.AccountType
 import com.arzikina.ne.util.Constants
 
 /**
@@ -23,6 +24,7 @@ internal object DefaultAccounts {
             userId = userId,
             name = "Espèces",
             icon = AccountIcon.CASH,
+            type = AccountType.CASH,
             colorArgb = 0xFF16A34AL,
             currencyCode = Constants.DEFAULT_CURRENCY_CODE,
             initialBalanceMinor = 0L,
@@ -32,6 +34,7 @@ internal object DefaultAccounts {
             userId = userId,
             name = "Banque",
             icon = AccountIcon.BANK,
+            type = AccountType.BANK,
             colorArgb = 0xFF006C4FL,
             currencyCode = Constants.DEFAULT_CURRENCY_CODE,
             initialBalanceMinor = 0L,
@@ -41,6 +44,7 @@ internal object DefaultAccounts {
             userId = userId,
             name = "Mobile Money",
             icon = AccountIcon.MOBILE_MONEY,
+            type = AccountType.MOBILE_MONEY,
             colorArgb = 0xFFF59E0BL,
             currencyCode = Constants.DEFAULT_CURRENCY_CODE,
             initialBalanceMinor = 0L,
@@ -50,6 +54,7 @@ internal object DefaultAccounts {
             userId = userId,
             name = "Épargne",
             icon = AccountIcon.SAVINGS,
+            type = AccountType.SAVINGS,
             colorArgb = 0xFF00A578L,
             currencyCode = Constants.DEFAULT_CURRENCY_CODE,
             initialBalanceMinor = 0L,
@@ -59,6 +64,9 @@ internal object DefaultAccounts {
             userId = userId,
             name = "Wallet",
             icon = AccountIcon.WALLET,
+            // Pas d'équivalent WALLET dans AccountType (voir sa doc) : même
+            // repli que la migration pour un compte existant sans type dédié.
+            type = AccountType.CASH,
             colorArgb = 0xFF4C6B3FL,
             currencyCode = Constants.DEFAULT_CURRENCY_CODE,
             initialBalanceMinor = 0L,

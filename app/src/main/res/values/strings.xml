@@ -143,11 +143,17 @@
     <string name="account_type_mobile_money">Mobile Money</string>
     <string name="account_type_savings">Épargne</string>
     <string name="account_type_wallet">Portefeuille</string>
+    <string name="account_type_credit_card">Carte de crédit</string>
     <string name="account_type_other">Autre</string>
     <!-- Repère bas-droite de la carte de compte (voir maquette, badge "VISA"
          remplacé par le nom de l'app pour ne pas laisser croire à un lien
          avec un réseau de paiement réel). -->
     <string name="accounts_card_badge">ARZIKINA</string>
+    <!-- Expiration TOUJOURS masquée dans la liste des comptes (pas de bouton œil ici,
+         contrairement à "Détail du compte" — voir AccountCardCreditBinder). -->
+    <string name="account_card_masked_expiry">••/••</string>
+    <string name="account_card_reveal_action">Afficher les informations de la carte</string>
+    <string name="account_card_hide_action">Masquer les informations de la carte</string>
     <string name="accounts_empty_title">Aucun compte pour l\'instant</string>
     <string name="accounts_empty_message">Ajoute ton premier compte pour commencer à suivre tes finances.</string>
     <string name="accounts_delete_title">Supprimer ce compte ?</string>
@@ -164,6 +170,15 @@
     <string name="account_form_color_label">Couleur</string>
     <string name="account_form_currency_label">Devise</string>
     <string name="account_form_balance_label">Solde initial</string>
+    <string name="account_form_type_label">Type de compte</string>
+    <string name="account_form_card_section_label">Informations de la carte</string>
+    <string name="account_form_card_number_label">Numéro de carte</string>
+    <!-- Affiché sous le champ numéro UNIQUEMENT en édition d'une carte existante (voir
+         AccountFormViewModel) : le numéro complet n'étant jamais conservé, laisser ce champ vide
+         garde le numéro déjà enregistré (seuls ses 4 derniers chiffres, %s, sont connus). -->
+    <string name="account_form_card_number_helper_edit">Laisser vide pour conserver le numéro se terminant par %s</string>
+    <string name="account_form_card_expiry_label">Expiration (MM/AA)</string>
+    <string name="account_form_card_cvv_label">Code de sécurité (CVV/CVC)</string>
 
     <!-- Catégories -->
     <string name="dashboard_categories_action">Gérer mes catégories</string>

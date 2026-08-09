@@ -5,7 +5,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.arzikina.ne.domain.model.Account
 import com.arzikina.ne.domain.repository.AccountRepository
+import com.arzikina.ne.domain.repository.AuthRepository
 import com.arzikina.ne.domain.repository.CategoryRepository
+import com.arzikina.ne.domain.repository.SessionManager
 import com.arzikina.ne.domain.repository.TransactionRepository
 import com.arzikina.ne.presentation.transactions.TransactionDaySection
 import com.arzikina.ne.presentation.transactions.TransactionUiItem
@@ -17,6 +19,8 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -25,11 +29,16 @@ import javax.inject.Inject
 /**
  * État affiché par l'écran "Détail du compte". [sections] est trié du jour
  * le plus récent au plus ancien (voir [groupByDay]).
+ *
+ * @param cardHolderName voir [AccountUiItem.cardHolderName] (même
+ * raisonnement : nom de l'utilisateur connecté, sans effet hors
+ * [com.arzikina.ne.domain.model.AccountType.CREDIT_CARD]).
  */
 data class AccountDetailUiState(
     val account: Account,
     val currentBalance: Long,
-    val sections: List<TransactionDaySection>
+    val sections: List<TransactionDaySection>,
+    val cardHolderName: String = ""
 )
 
 @HiltViewModel
@@ -37,7 +46,9 @@ class AccountDetailViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val accountRepository: AccountRepository,
     private val transactionRepository: TransactionRepository,
-    categoryRepository: CategoryRepository
+    categoryRepository: CategoryRepository,
+    authRepository: AuthRepository,
+    sessionManager: SessionManager
 ) : ViewModel() {
 
     val accountId: Long = savedStateHandle.get<Long>(ACCOUNT_ID_ARG) ?: 0L
@@ -45,8 +56,11 @@ class AccountDetailViewModel @Inject constructor(
     val uiState: StateFlow<AppResult<AccountDetailUiState>> = combine(
         accountRepository.observeAccounts(),
         transactionRepository.observeTransactions(),
-        categoryRepository.observeCategories()
-    ) { accounts, transactions, categories ->
+        categoryRepository.observeCategories(),
+        sessionManager.observeCurrentUserId().flatMapLatest { userId ->
+            if (userId == null) flowOf(null) else authRepository.observeUser(userId)
+        }
+    ) { accounts, transactions, categories, user ->
         val account = accounts.find { it.id == accountId } ?: return@combine null
         val categoriesById = categories.associateBy { it.id }
 
@@ -71,7 +85,12 @@ class AccountDetailViewModel @Inject constructor(
             )
         }
 
-        AccountDetailUiState(account = account, currentBalance = currentBalance, sections = items.groupByDay())
+        AccountDetailUiState(
+            account = account,
+            currentBalance = currentBalance,
+            sections = items.groupByDay(),
+            cardHolderName = user?.fullName.orEmpty()
+        )
     }
         .map<AccountDetailUiState?, AppResult<AccountDetailUiState>> { state ->
             state?.let { AppResult.Success(it) } ?: AppResult.Error("Compte introuvable")

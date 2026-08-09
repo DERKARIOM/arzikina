@@ -6,6 +6,7 @@ import com.arzikina.ne.data.local.entity.CategoryEntity
 import com.arzikina.ne.data.local.entity.SavingsGoalEntity
 import com.arzikina.ne.data.local.entity.TransactionEntity
 import com.arzikina.ne.domain.model.AccountIcon
+import com.arzikina.ne.domain.model.AccountType
 import com.arzikina.ne.domain.model.BudgetPeriod
 import com.arzikina.ne.domain.model.CategoryIcon
 import com.arzikina.ne.domain.model.PaymentMethod
@@ -43,7 +44,11 @@ fun AccountEntity.toDto() = AccountDto(
     colorArgb = colorArgb,
     currencyCode = currencyCode,
     initialBalanceMinor = initialBalanceMinor,
-    createdAt = createdAt
+    createdAt = createdAt,
+    type = type.name,
+    cardLastFourDigits = cardLastFourDigits,
+    cardExpiryMonth = cardExpiryMonth,
+    cardExpiryYear = cardExpiryYear
 )
 
 fun AccountDto.toEntity(userId: Long) = AccountEntity(
@@ -54,7 +59,11 @@ fun AccountDto.toEntity(userId: Long) = AccountEntity(
     colorArgb = colorArgb,
     currencyCode = currencyCode,
     initialBalanceMinor = initialBalanceMinor,
-    createdAt = createdAt
+    createdAt = createdAt,
+    type = runCatching { AccountType.valueOf(type) }.getOrDefault(AccountType.CASH),
+    cardLastFourDigits = cardLastFourDigits,
+    cardExpiryMonth = cardExpiryMonth,
+    cardExpiryYear = cardExpiryYear
 )
 
 fun CategoryEntity.toDto() = CategoryDto(

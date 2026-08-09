@@ -22,11 +22,16 @@
         tools:title="Espèces" />
 
     <!--
-        Résumé du compte : LA MÊME carte façon carte bancaire que sur "Mes
-        comptes" (voir item_account.xml/AccountCardBinder), incluse ici plutôt
-        que recopiée — un seul layout à maintenir pour les deux écrans. Le
-        view binding généré expose ce fragment de vue comme un
-        `ItemAccountBinding` nommé d'après cet id (binding.accountSummaryCard.*).
+        Résumé du compte, DEUX présentations mutuellement exclusives (voir
+        AccountDetailFragment.render, qui bascule leur visibilité selon
+        account.type) : la carte façon carte bancaire classique, comme sur
+        "Mes comptes" (item_account.xml/AccountCardBinder), OU la carte
+        virtuelle façon VISA pour AccountType.CREDIT_CARD
+        (item_account_credit_card.xml/AccountCardCreditBinder) — incluses ici
+        plutôt que recopiées, un seul layout à maintenir par présentation pour
+        les deux écrans qui la montrent. Le view binding généré expose ces
+        fragments de vue comme des `ItemAccountBinding`/`ItemAccountCreditCardBinding`
+        nommés d'après leur id (binding.accountSummaryCard.*/accountSummaryCreditCard.*).
     -->
     <include
         android:id="@+id/accountSummaryCard"
@@ -36,6 +41,30 @@
         android:layout_marginTop="@dimen/spacing_m"
         android:layout_marginHorizontal="@dimen/spacing_m"
         app:layout_constraintTop_toBottomOf="@id/toolbar" />
+
+    <include
+        android:id="@+id/accountSummaryCreditCard"
+        layout="@layout/item_account_credit_card"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/spacing_m"
+        android:layout_marginHorizontal="@dimen/spacing_m"
+        android:visibility="gone"
+        app:layout_constraintTop_toBottomOf="@id/toolbar" />
+
+    <!--
+        Se positionne juste sous celle des deux cartes ci-dessus qui est
+        VISIBLE (une Barrier ignore les vues GONE) : évite de dupliquer la
+        logique de bascule de visibilité dans les contraintes du reste de
+        l'écran, qui n'a besoin de connaître que "sous le résumé", peu importe
+        lequel.
+    -->
+    <androidx.constraintlayout.widget.Barrier
+        android:id="@+id/summaryBarrier"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:barrierDirection="bottom"
+        app:constraint_referenced_ids="accountSummaryCard,accountSummaryCreditCard" />
 
     <TextView
         android:id="@+id/emptyState"
@@ -50,7 +79,7 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/accountSummaryCard" />
+        app:layout_constraintTop_toBottomOf="@id/summaryBarrier" />
 
     <!--
         Même traitement "postcard" par jour que l'écran Transactions (voir
@@ -67,7 +96,7 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/accountSummaryCard"
+        app:layout_constraintTop_toBottomOf="@id/summaryBarrier"
         tools:listitem="@layout/item_transaction_compact" />
 
     <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton

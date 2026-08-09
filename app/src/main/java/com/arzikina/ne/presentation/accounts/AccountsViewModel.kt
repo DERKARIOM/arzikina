@@ -3,6 +3,8 @@ package com.arzikina.ne.presentation.accounts
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.arzikina.ne.domain.repository.AccountRepository
+import com.arzikina.ne.domain.repository.AuthRepository
+import com.arzikina.ne.domain.repository.SessionManager
 import com.arzikina.ne.domain.repository.TransactionRepository
 import com.arzikina.ne.util.AppResult
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -10,6 +12,8 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import javax.inject.Inject
@@ -29,16 +33,28 @@ data class AccountsUiState(
 @HiltViewModel
 class AccountsViewModel @Inject constructor(
     accountRepository: AccountRepository,
-    transactionRepository: TransactionRepository
+    transactionRepository: TransactionRepository,
+    authRepository: AuthRepository,
+    sessionManager: SessionManager
 ) : ViewModel() {
 
     val uiState: StateFlow<AppResult<AccountsUiState>> = combine(
         accountRepository.observeAccounts(),
-        transactionRepository.observeTransactions()
-    ) { accounts, transactions ->
+        transactionRepository.observeTransactions(),
+        // Nom du titulaire affiché sur une carte de crédit (voir AccountUiItem.cardHolderName) :
+        // même source que la carte VISA du Dashboard, pas un champ propre au compte.
+        sessionManager.observeCurrentUserId().flatMapLatest { userId ->
+            if (userId == null) flowOf(null) else authRepository.observeUser(userId)
+        }
+    ) { accounts, transactions, user ->
         val currentBalances = computeCurrentBalances(accounts, transactions)
+        val cardHolderName = user?.fullName.orEmpty()
         val items = accounts.map { account ->
-            AccountUiItem(account = account, currentBalance = currentBalances[account.id] ?: account.initialBalance)
+            AccountUiItem(
+                account = account,
+                currentBalance = currentBalances[account.id] ?: account.initialBalance,
+                cardHolderName = cardHolderName
+            )
         }
 
         AccountsUiState(accounts = items)

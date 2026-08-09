@@ -2,6 +2,7 @@ package com.arzikina.ne.data.local.database
 
 import androidx.room.TypeConverter
 import com.arzikina.ne.domain.model.AccountIcon
+import com.arzikina.ne.domain.model.AccountType
 import com.arzikina.ne.domain.model.BudgetPeriod
 import com.arzikina.ne.domain.model.CategoryIcon
 import com.arzikina.ne.domain.model.PaymentMethod
@@ -20,6 +21,12 @@ class Converters {
 
     @TypeConverter
     fun toAccountIcon(value: String): AccountIcon = AccountIcon.valueOf(value)
+
+    @TypeConverter
+    fun fromAccountType(type: AccountType): String = type.name
+
+    @TypeConverter
+    fun toAccountType(value: String): AccountType = AccountType.valueOf(value)
 
     @TypeConverter
     fun fromCategoryIcon(icon: CategoryIcon): String = icon.name

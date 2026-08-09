@@ -4,6 +4,7 @@ import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
 import com.arzikina.ne.domain.model.AccountIcon
+import com.arzikina.ne.domain.model.AccountType
 
 /**
  * Représentation Room d'un compte. Reste dans la couche data : le domaine
@@ -33,5 +34,14 @@ data class AccountEntity(
     val colorArgb: Long,
     val currencyCode: String,
     val initialBalanceMinor: Long,
-    val createdAt: Long
+    val createdAt: Long,
+    /** Voir [com.arzikina.ne.domain.model.Account.type] — ajouté en v11 (voir
+     * `MIGRATION_10_11`), dérivé de [icon] pour les comptes déjà existants. */
+    val type: AccountType = AccountType.CASH,
+    /** Voir [com.arzikina.ne.domain.model.Account.cardLastFourDigits]. */
+    val cardLastFourDigits: String? = null,
+    /** Voir [com.arzikina.ne.domain.model.Account.cardExpiryMonth]. */
+    val cardExpiryMonth: Int? = null,
+    /** Voir [com.arzikina.ne.domain.model.Account.cardExpiryYear]. */
+    val cardExpiryYear: Int? = null
 )

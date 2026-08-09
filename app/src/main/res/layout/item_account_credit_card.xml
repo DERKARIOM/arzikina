@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Carte VIRTUELLE façon VISA/Mastercard pour un compte AccountType.CREDIT_CARD
+    (voir AccountCardCreditBinder) — layout séparé de item_account.xml plutôt
+    qu'une variante conditionnelle du même fichier : les deux ont assez peu en
+    commun visuellement (puce, numéro/expiration masqués, titulaire) pour que
+    partager un seul layout complexifierait plus qu'il ne simplifierait. Même
+    technique de dégradé de fond posé par code (voir AccountCardGradient) et
+    même cercle décoratif que item_account.xml.
+-->
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/accountCard"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginHorizontal="@dimen/spacing_m"
+    android:layout_marginTop="@dimen/spacing_m"
+    android:checkable="false"
+    android:clickable="true"
+    android:focusable="true"
+    app:cardCornerRadius="@dimen/corner_radius_medium"
+    app:cardElevation="@dimen/elevation_raised"
+    app:rippleColor="@android:color/white">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/cardContent"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:minHeight="170dp"
+        android:padding="@dimen/spacing_l">
+
+        <!-- Cercle décoratif translucide, même effet que sur item_account.xml. -->
+        <View
+            android:layout_width="140dp"
+            android:layout_height="140dp"
+            android:layout_marginBottom="-60dp"
+            android:layout_marginEnd="-40dp"
+            android:alpha="0.10"
+            android:background="@drawable/bg_icon_circle"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
+
+        <!-- Puce bancaire décorative (voir bg_card_chip.xml). -->
+        <View
+            android:id="@+id/cardChip"
+            android:layout_width="36dp"
+            android:layout_height="26dp"
+            android:background="@drawable/bg_card_chip"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <TextView
+            android:id="@+id/accountBalance"
+            style="@style/TextAppearance.Material3.TitleLarge"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textColor="@android:color/white"
+            android:textStyle="bold"
+            app:layout_constraintBottom_toBottomOf="@id/cardChip"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="@id/cardChip"
+            tools:text="150 000 F CFA" />
+
+        <TextView
+            android:id="@+id/accountName"
+            style="@style/TextAppearance.Material3.TitleMedium"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/spacing_m"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textColor="@android:color/white"
+            android:textStyle="bold"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/cardChip"
+            tools:text="Ma carte Visa" />
+
+        <!--
+            Numéro TOUJOURS masqué ici (pas de bouton œil dans la liste — voir
+            "Détail du compte" pour le masquage/affichage temporaire) : seuls
+            les 4 derniers chiffres (Account.cardLastFourDigits) sont même
+            connus de l'application (voir AccountType.CREDIT_CARD).
+        -->
+        <TextView
+            android:id="@+id/cardMaskedNumber"
+            style="@style/TextAppearance.Material3.TitleMedium"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/spacing_m"
+            android:letterSpacing="0.1"
+            android:textColor="@android:color/white"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/accountName"
+            tools:text="•••• •••• •••• 4238" />
+
+        <TextView
+            android:id="@+id/cardMaskedExpiry"
+            style="@style/TextAppearance.Material3.BodySmall"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:alpha="0.85"
+            android:textColor="@android:color/white"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/cardMaskedNumber"
+            tools:text="Exp. ••/••" />
+
+        <!--
+            Masqué (GONE) par défaut : uniquement affiché sur "Détail du
+            compte" (voir AccountDetailFragment), jamais dans la liste "Mes
+            comptes" — voir AccountCardCreditBinder.bind(showVisibilityToggle).
+            Ne fait basculer QUE l'expiration (voir sa doc) : le numéro
+            affiche déjà ses 4 derniers chiffres par défaut (seuls connus de
+            l'app, voir AccountType.CREDIT_CARD) et n'a rien de plus à révéler.
+        -->
+        <ImageButton
+            android:id="@+id/cardVisibilityToggle"
+            android:layout_width="@dimen/icon_size_default"
+            android:layout_height="@dimen/icon_size_default"
+            android:layout_marginStart="@dimen/spacing_s"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:padding="6dp"
+            android:src="@drawable/ic_visibility_24"
+            android:visibility="gone"
+            app:layout_constraintBottom_toBottomOf="@id/cardMaskedExpiry"
+            app:layout_constraintStart_toEndOf="@id/cardMaskedExpiry"
+            app:layout_constraintTop_toTopOf="@id/cardMaskedExpiry"
+            app:tint="@android:color/white"
+            tools:ignore="ContentDescription"
+            tools:visibility="visible" />
+
+        <TextView
+            android:id="@+id/cardHolderName"
+            style="@style/TextAppearance.Material3.LabelLarge"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/spacing_l"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textColor="@android:color/white"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toStartOf="@id/cardBadge"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/cardMaskedExpiry"
+            tools:text="AÏCHA KONATÉ" />
+
+        <TextView
+            android:id="@+id/cardBadge"
+            style="@style/TextAppearance.Material3.LabelMedium"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:alpha="0.9"
+            android:letterSpacing="0.12"
+            android:text="@string/accounts_card_badge"
+            android:textColor="@android:color/white"
+            android:textStyle="bold"
+            app:layout_constraintBottom_toBottomOf="@id/cardHolderName"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="@id/cardHolderName" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</com.google.android.material.card.MaterialCardView>

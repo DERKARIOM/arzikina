@@ -12,6 +12,7 @@ import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.arzikina.ne.R
 import com.arzikina.ne.databinding.FragmentAccountsBinding
+import com.arzikina.ne.presentation.components.NavAnimations
 import com.arzikina.ne.util.AppResult
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
@@ -65,7 +66,7 @@ class AccountsFragment : Fragment(R.layout.fragment_accounts) {
     }
 
     private fun navigateToForm(accountId: Long) {
-        findNavController().navigate(R.id.accountFormFragment, bundleOf("accountId" to accountId))
+        findNavController().navigate(R.id.accountFormFragment, bundleOf("accountId" to accountId), NavAnimations.fade)
     }
 
     /**
@@ -74,6 +75,6 @@ class AccountsFragment : Fragment(R.layout.fragment_accounts) {
      * un compte se fait dorénavant depuis le menu "⋮" de cet écran détail.
      */
     private fun navigateToDetail(accountId: Long) {
-        findNavController().navigate(R.id.accountDetailFragment, bundleOf("accountId" to accountId))
+        findNavController().navigate(R.id.accountDetailFragment, bundleOf("accountId" to accountId), NavAnimations.fade)
     }
 }

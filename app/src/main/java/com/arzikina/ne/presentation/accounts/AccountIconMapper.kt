@@ -18,6 +18,7 @@ object AccountIconMapper {
         AccountIcon.MOBILE_MONEY -> R.drawable.ic_account_mobile_money_24
         AccountIcon.SAVINGS -> R.drawable.ic_account_savings_24
         AccountIcon.WALLET -> R.drawable.ic_account_wallet_24
+        AccountIcon.CREDIT_CARD -> R.drawable.ic_account_credit_card_24
         AccountIcon.OTHER -> R.drawable.ic_account_other_24
     }
 }

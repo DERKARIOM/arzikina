@@ -40,7 +40,20 @@ data class AccountDto(
     val colorArgb: Long,
     val currencyCode: String,
     val initialBalanceMinor: Long,
-    val createdAt: Long
+    val createdAt: Long,
+    /** Ajouté après coup (voir `domain/model/AccountType`) : défaut `"CASH"`
+     * pour rester compatible avec les fichiers exportés avant son existence. */
+    val type: String = "CASH",
+    /**
+     * Uniquement pour un compte [com.arzikina.ne.domain.model.AccountType.CREDIT_CARD] :
+     * les 4 derniers chiffres seulement (voir `Account.cardLastFourDigits`).
+     * Le numéro complet et le CVV ne sont JAMAIS conservés par l'application,
+     * même en mémoire au-delà de la saisie — ils n'existent donc nulle part
+     * qui pourrait finir dans une sauvegarde.
+     */
+    val cardLastFourDigits: String? = null,
+    val cardExpiryMonth: Int? = null,
+    val cardExpiryYear: Int? = null
 )
 
 @Serializable
