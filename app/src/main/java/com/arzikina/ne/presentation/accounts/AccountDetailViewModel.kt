@@ -4,6 +4,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.arzikina.ne.domain.model.Account
+import com.arzikina.ne.domain.model.CardSecrets
 import com.arzikina.ne.domain.repository.AccountRepository
 import com.arzikina.ne.domain.repository.AuthRepository
 import com.arzikina.ne.domain.repository.CategoryRepository
@@ -15,8 +16,12 @@ import com.arzikina.ne.presentation.transactions.computeRunningBalances
 import com.arzikina.ne.presentation.transactions.groupByDay
 import com.arzikina.ne.util.AppResult
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
@@ -108,7 +113,53 @@ class AccountDetailViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Numéro complet + CVV DÉCHIFFRÉS, `null` par défaut (masqué). Vit ici plutôt que dans le
+     * Fragment (contrairement au choix initial de `DashboardFragment.isBalanceHidden`) : la
+     * révélation exige un déchiffrement via [AccountRepository.revealCardSecrets], une opération
+     * de la couche data qui n'a rien à faire dans une Fragment — Clean Architecture oblige.
+     */
+    private val _cardSecrets = MutableStateFlow<CardSecrets?>(null)
+    val cardSecrets: StateFlow<CardSecrets?> = _cardSecrets.asStateFlow()
+
+    private var autoHideJob: Job? = null
+
+    /** Bascule masqué <-> révélé. Ignoré si un compte classique appelle ceci par erreur : il n'y a
+     * simplement jamais de secret enregistré pour lui, [revealCardSecrets] renverra `null`. */
+    fun toggleCardSecrets() {
+        if (_cardSecrets.value != null) {
+            hideCardSecrets()
+            return
+        }
+        autoHideJob?.cancel()
+        viewModelScope.launch {
+            _cardSecrets.value = accountRepository.revealCardSecrets(accountId)
+            if (_cardSecrets.value != null) {
+                autoHideJob = viewModelScope.launch {
+                    delay(AUTO_HIDE_DELAY_MILLIS)
+                    _cardSecrets.value = null
+                }
+            }
+        }
+    }
+
+    /** Remasquage immédiat (bouton, [android.app.Activity.onPause] de l'écran, délai écoulé). */
+    fun hideCardSecrets() {
+        autoHideJob?.cancel()
+        _cardSecrets.value = null
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        // Le secret déchiffré ne doit jamais survivre au ViewModel (voir CardSecrets, "jamais
+        // conservés au-delà de la session d'affichage courante").
+        _cardSecrets.value = null
+    }
+
     private companion object {
         const val ACCOUNT_ID_ARG = "accountId"
+
+        /** Délai avant remasquage automatique des informations de la carte (section sécurité). */
+        const val AUTO_HIDE_DELAY_MILLIS = 10_000L
     }
 }

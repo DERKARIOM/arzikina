@@ -6,9 +6,10 @@ package com.arzikina.ne.util
  * Android), même principe que [Money] : testable isolément, réutilisable par
  * n'importe quel écran.
  *
- * Ne stocke jamais le numéro complet ni le CVV — ces fonctions ne font que
- * VALIDER la saisie ; c'est à l'appelant (voir `AccountFormViewModel.save`)
- * de n'en extraire que les 4 derniers chiffres avant tout enregistrement.
+ * Ce fichier ne fait que VALIDER/FORMATER la saisie, jamais que la persister :
+ * l'enregistrement (4 derniers chiffres en clair sur `Account`, numéro complet
+ * + CVV chiffrés dans `card_secrets`) est entièrement délégué à l'appelant
+ * (voir `AccountFormViewModel.save` et `data/security/CardCipher`).
  */
 object CardInputFormatter {
     private const val MAX_CARD_NUMBER_DIGITS = 19
@@ -24,6 +25,11 @@ object CardInputFormatter {
     fun cardNumberDigits(input: String): String = digitsOnly(input, MAX_CARD_NUMBER_DIGITS)
 
     fun cvvDigits(input: String): String = digitsOnly(input, MAX_CVV_DIGITS)
+
+    /** Regroupe [digits] par paquets de 4 pour l'affichage (ex. "1234567890123456" ->
+     * "1234 5678 9012 3456"), utilisé uniquement lors de la révélation temporaire du numéro
+     * complet (voir `AccountDetailViewModel.cardSecrets`). */
+    fun groupDigits(digits: String): String = digits.chunked(4).joinToString(" ")
 
     /** Insère automatiquement "/" après les 2 premiers chiffres (ex. "1228" -> "12/28"),
      * pour une saisie "MM/AA" au clavier numérique sans que l'utilisateur tape lui-même le "/". */

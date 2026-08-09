@@ -25,8 +25,10 @@ interface AccountDao {
     @Query("SELECT * FROM accounts WHERE id = :id AND userId = :userId")
     suspend fun getById(id: Long, userId: Long): AccountEntity?
 
+    /** Retourne l'id de la ligne insérée, ou -1 en cas de mise à jour (comportement standard
+     * de Room @Upsert) — voir `AccountRepositoryImpl.saveAccount` pour la logique qui en dépend. */
     @Upsert
-    suspend fun upsert(account: AccountEntity)
+    suspend fun upsert(account: AccountEntity): Long
 
     @Upsert
     suspend fun insertAll(accounts: List<AccountEntity>)

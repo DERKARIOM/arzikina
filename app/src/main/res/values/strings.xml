@@ -152,6 +152,10 @@
     <!-- Expiration TOUJOURS masquée dans la liste des comptes (pas de bouton œil ici,
          contrairement à "Détail du compte" — voir AccountCardCreditBinder). -->
     <string name="account_card_masked_expiry">••/••</string>
+    <!-- CVV masqué par défaut (voir AccountCardCreditBinder) ; %1$s reçoit le CVV en clair
+         uniquement pendant la révélation temporaire (voir AccountDetailViewModel.cardSecrets). -->
+    <string name="account_card_masked_cvv">CVV •••</string>
+    <string name="account_card_cvv_format">CVV %1$s</string>
     <string name="account_card_reveal_action">Afficher les informations de la carte</string>
     <string name="account_card_hide_action">Masquer les informations de la carte</string>
     <string name="accounts_empty_title">Aucun compte pour l\'instant</string>

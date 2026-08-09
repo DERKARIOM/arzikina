@@ -14,6 +14,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.arzikina.ne.R
 import com.arzikina.ne.databinding.FragmentAccountDetailBinding
 import com.arzikina.ne.domain.model.AccountType
+import com.arzikina.ne.domain.model.CardSecrets
 import com.arzikina.ne.presentation.components.ConfirmDialogs
 import com.arzikina.ne.presentation.components.NavAnimations
 import com.arzikina.ne.presentation.transactions.GroupedTransactionsAdapter
@@ -21,8 +22,6 @@ import com.arzikina.ne.presentation.transactions.TransactionUiItem
 import com.arzikina.ne.presentation.transactions.toListRows
 import com.arzikina.ne.util.AppResult
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 /**
@@ -47,15 +46,13 @@ class AccountDetailFragment : Fragment(R.layout.fragment_account_detail) {
     )
 
     /**
-     * État UNIQUEMENT local à cet écran (pas dans [AccountDetailViewModel],
-     * même choix que `DashboardFragment.isBalanceHidden`) : purement une
-     * question d'affichage, sans logique métier. `false` par défaut (voir
-     * "masquées par défaut", section sécurité) ; jamais restauré après une
-     * recréation de vue (rotation...), ce qui est le comportement voulu.
+     * Dernier état métier connu (voir [render]) et dernier secret révélé connu (voir le
+     * collecteur de [AccountDetailViewModel.cardSecrets] ci-dessous) : conservés séparément
+     * plutôt que fusionnés dans un seul état, car ils viennent de deux flux indépendants du
+     * ViewModel et se redessinent chacun à leur rythme (voir [renderCreditCardCard]).
      */
-    private var isSensitiveInfoRevealed = false
-    private var autoHideJob: Job? = null
     private var latestUiState: AccountDetailUiState? = null
+    private var latestCardSecrets: CardSecrets? = null
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -78,28 +75,34 @@ class AccountDetailFragment : Fragment(R.layout.fragment_account_detail) {
                 viewModel.uiState.collect { state -> render(state) }
             }
         }
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                // `drop(1)` inutile ici : la 1ère valeur est toujours `null`, donc l'animation de
+                // fondu (voir [animateCreditCardVisibilityChange]) part déjà d'un état masqué
+                // cohérent avec le contenu initial dessiné par [render].
+                viewModel.cardSecrets.collect { secrets ->
+                    latestCardSecrets = secrets
+                    animateCreditCardVisibilityChange()
+                }
+            }
+        }
     }
 
     /**
      * Masquage automatique "lorsque l'écran n'est plus visible" (section
      * sécurité) : couvre l'app mise en arrière-plan ET la navigation vers un
-     * autre écran, sans dépendre du délai de [scheduleAutoHide]. Défense en
-     * profondeur en plus de [WindowManager.LayoutParams.FLAG_SECURE] (qui
-     * empêche captures d'écran/aperçu récents, mais pas un simple retour au
-     * premier plan après un moment).
+     * autre écran, sans dépendre du délai auto-remasquage du ViewModel.
+     * Défense en profondeur en plus de [WindowManager.LayoutParams.FLAG_SECURE]
+     * (qui empêche captures d'écran/aperçu récents, mais pas un simple retour
+     * au premier plan après un moment).
      */
     override fun onPause() {
         super.onPause()
-        if (isSensitiveInfoRevealed) {
-            isSensitiveInfoRevealed = false
-            autoHideJob?.cancel()
-            renderCreditCardCard()
-        }
+        viewModel.hideCardSecrets()
     }
 
     override fun onDestroyView() {
         super.onDestroyView()
-        autoHideJob?.cancel()
         // Ne doit jamais "fuiter" vers un autre écran (voir sa pose dans [render]).
         activity?.window?.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
         binding = null
@@ -169,48 +172,31 @@ class AccountDetailFragment : Fragment(R.layout.fragment_account_detail) {
             account = uiState.account,
             currentBalance = uiState.currentBalance,
             cardHolderName = uiState.cardHolderName,
-            isSensitiveInfoVisible = isSensitiveInfoRevealed,
+            revealedSecrets = latestCardSecrets,
             showVisibilityToggle = true,
-            onToggleVisibility = { onToggleSensitiveInfo() }
+            onToggleVisibility = { viewModel.toggleCardSecrets() }
         )
     }
 
-    private fun onToggleSensitiveInfo() {
-        isSensitiveInfoRevealed = !isSensitiveInfoRevealed
-        autoHideJob?.cancel()
-        animateCreditCardVisibilityChange()
-        if (isSensitiveInfoRevealed) {
-            scheduleAutoHide()
-        }
-    }
-
-    /** Masquage automatique après un délai (section sécurité), en plus de [onPause]. */
-    private fun scheduleAutoHide() {
-        autoHideJob = viewLifecycleOwner.lifecycleScope.launch {
-            delay(AUTO_HIDE_DELAY_MILLIS)
-            isSensitiveInfoRevealed = false
-            animateCreditCardVisibilityChange()
-        }
-    }
-
     /**
-     * Anime le passage masqué <-> affiché de l'expiration ("animations légères... lors de
-     * l'affichage/masquage des informations", section UX) : un léger fondu enchaîné plutôt qu'un
-     * remplacement de texte instantané. [renderCreditCardCard] reste appelée pour le contenu ;
-     * cette fonction ne fait qu'entourer cet appel d'une transition visuelle.
+     * Anime le passage masqué <-> révélé (numéro complet, expiration, CVV — "animations
+     * légères... lors de l'affichage/masquage des informations", section UX) : un léger fondu
+     * enchaîné plutôt qu'un remplacement de texte instantané. [renderCreditCardCard] reste
+     * appelée pour le contenu ; cette fonction ne fait qu'entourer cet appel d'une transition
+     * visuelle. Sans effet pour un compte classique (les vues n'existent pas dans son layout).
      */
     private fun animateCreditCardVisibilityChange() {
-        val expiryView = binding?.accountSummaryCreditCard?.cardMaskedExpiry
-        if (expiryView == null) {
+        val numberView = binding?.accountSummaryCreditCard?.cardMaskedNumber
+        if (numberView == null) {
             renderCreditCardCard()
             return
         }
-        expiryView.animate()
+        numberView.animate()
             .alpha(0f)
             .setDuration(FADE_ANIM_MILLIS)
             .withEndAction {
                 renderCreditCardCard()
-                binding?.accountSummaryCreditCard?.cardMaskedExpiry?.animate()
+                binding?.accountSummaryCreditCard?.cardMaskedNumber?.animate()
                     ?.alpha(1f)
                     ?.setDuration(FADE_ANIM_MILLIS)
                     ?.start()
@@ -250,9 +236,6 @@ class AccountDetailFragment : Fragment(R.layout.fragment_account_detail) {
     }
 
     private companion object {
-        /** Délai avant remasquage automatique des informations de la carte (section sécurité). */
-        const val AUTO_HIDE_DELAY_MILLIS = 10_000L
-
         /** Durée du fondu d'affichage/masquage (voir [animateCreditCardVisibilityChange]). */
         const val FADE_ANIM_MILLIS = 120L
     }

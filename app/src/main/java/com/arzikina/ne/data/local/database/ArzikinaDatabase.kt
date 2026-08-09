@@ -5,12 +5,14 @@ import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import com.arzikina.ne.data.local.dao.AccountDao
 import com.arzikina.ne.data.local.dao.BudgetDao
+import com.arzikina.ne.data.local.dao.CardSecretDao
 import com.arzikina.ne.data.local.dao.CategoryDao
 import com.arzikina.ne.data.local.dao.SavingsGoalDao
 import com.arzikina.ne.data.local.dao.TransactionDao
 import com.arzikina.ne.data.local.dao.UserDao
 import com.arzikina.ne.data.local.entity.AccountEntity
 import com.arzikina.ne.data.local.entity.BudgetEntity
+import com.arzikina.ne.data.local.entity.CardSecretEntity
 import com.arzikina.ne.data.local.entity.CategoryEntity
 import com.arzikina.ne.data.local.entity.SavingsGoalEntity
 import com.arzikina.ne.data.local.entity.TransactionEntity
@@ -50,6 +52,8 @@ import com.arzikina.ne.data.local.entity.UserEntity
  *   devient optionnel — voir [MIGRATION_9_10]).
  * - 11 : Compte de type Carte de crédit (`type`, `cardLastFourDigits`,
  *   `cardExpiryMonth`, `cardExpiryYear` sur `accounts` — voir [MIGRATION_10_11]).
+ * - 12 : Numéro complet et CVV d'une carte de crédit, CHIFFRÉS, table séparée `card_secrets`
+ *   (voir [MIGRATION_11_12]/[CardSecretEntity]/`data/security/CardCipher`).
  */
 @Database(
     entities = [
@@ -58,9 +62,10 @@ import com.arzikina.ne.data.local.entity.UserEntity
         TransactionEntity::class,
         BudgetEntity::class,
         SavingsGoalEntity::class,
-        UserEntity::class
+        UserEntity::class,
+        CardSecretEntity::class
     ],
-    version = 11,
+    version = 12,
     exportSchema = true
 )
 @TypeConverters(Converters::class)
@@ -71,4 +76,5 @@ abstract class ArzikinaDatabase : RoomDatabase() {
     abstract fun budgetDao(): BudgetDao
     abstract fun savingsGoalDao(): SavingsGoalDao
     abstract fun userDao(): UserDao
+    abstract fun cardSecretDao(): CardSecretDao
 }

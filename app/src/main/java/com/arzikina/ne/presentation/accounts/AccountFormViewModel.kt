@@ -30,8 +30,9 @@ import javax.inject.Inject
  *
  * Champs `card*Input` : sans objet hors [AccountType.CREDIT_CARD] (voir
  * [AccountFormFragment], qui masque leur section). [cardNumberInput] et
- * [cardCvvInput] ne sont JAMAIS écrits en base (voir [AccountType.CREDIT_CARD]) :
- * ils n'existent que le temps de la validation dans [save].
+ * [cardCvvInput], une fois validés, sont chiffrés via `CardCipher` puis
+ * persistés séparément par [AccountRepository.saveCardSecrets] (voir [save]) —
+ * ils ne transitent JAMAIS en clair au-delà de ce ViewModel.
  */
 data class AccountFormState(
     val name: String = "",
@@ -216,8 +217,12 @@ class AccountFormViewModel @Inject constructor(
             cardExpiryYear = 2000 + expiryDigits.substring(2).toInt()
         }
 
+        // Un NOUVEAU numéro a été saisi (donc pas simplement conservé, voir keepExistingCard
+        // ci-dessus) uniquement si le type est carte ET que cardNumberInput n'est pas vide.
+        val hasNewCardSecrets = state.type == AccountType.CREDIT_CARD && state.cardNumberInput.isNotEmpty()
+
         viewModelScope.launch {
-            accountRepository.saveAccount(
+            val savedAccountId = accountRepository.saveAccount(
                 Account(
                     id = accountId,
                     name = trimmedName,
@@ -232,9 +237,12 @@ class AccountFormViewModel @Inject constructor(
                     cardExpiryYear = cardExpiryYear
                 )
             )
+            if (hasNewCardSecrets) {
+                // Chiffré via Android Keystore avant toute écriture (voir CardCipher) : le numéro
+                // complet/CVV en clair ne transitent jamais au-delà de cet appel.
+                accountRepository.saveCardSecrets(savedAccountId, state.cardNumberInput, state.cardCvvInput)
+            }
             _events.emit(AccountFormEvent.Saved)
-            // state.cardNumberInput/cardCvvInput ne sont jamais lus au-delà de ce point : ils
-            // s'effacent avec le ViewModel (fermeture de l'écran) sans avoir jamais été stockés.
         }
     }
 

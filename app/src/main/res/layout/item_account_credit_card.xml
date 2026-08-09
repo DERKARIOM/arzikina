@@ -109,12 +109,30 @@
             tools:text="Exp. ••/••" />
 
         <!--
+            CVV : masqué par défaut ("•••"), affiché en clair uniquement le temps de la
+            révélation déclenchée par cardVisibilityToggle (voir AccountDetailViewModel.cardSecrets)
+            — jamais affiché dans la liste "Mes comptes" (showVisibilityToggle=false).
+        -->
+        <TextView
+            android:id="@+id/cardMaskedCvv"
+            style="@style/TextAppearance.Material3.BodySmall"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/spacing_m"
+            android:alpha="0.85"
+            android:textColor="@android:color/white"
+            app:layout_constraintBottom_toBottomOf="@id/cardMaskedExpiry"
+            app:layout_constraintStart_toEndOf="@id/cardMaskedExpiry"
+            app:layout_constraintTop_toTopOf="@id/cardMaskedExpiry"
+            tools:text="CVV •••" />
+
+        <!--
             Masqué (GONE) par défaut : uniquement affiché sur "Détail du
             compte" (voir AccountDetailFragment), jamais dans la liste "Mes
             comptes" — voir AccountCardCreditBinder.bind(showVisibilityToggle).
-            Ne fait basculer QUE l'expiration (voir sa doc) : le numéro
-            affiche déjà ses 4 derniers chiffres par défaut (seuls connus de
-            l'app, voir AccountType.CREDIT_CARD) et n'a rien de plus à révéler.
+            Fait basculer l'expiration, le numéro complet ET le CVV (voir
+            AccountDetailViewModel.cardSecrets) entre leur forme masquée et
+            leur forme réelle, déchiffrée à la demande.
         -->
         <ImageButton
             android:id="@+id/cardVisibilityToggle"
@@ -125,9 +143,9 @@
             android:padding="6dp"
             android:src="@drawable/ic_visibility_24"
             android:visibility="gone"
-            app:layout_constraintBottom_toBottomOf="@id/cardMaskedExpiry"
-            app:layout_constraintStart_toEndOf="@id/cardMaskedExpiry"
-            app:layout_constraintTop_toTopOf="@id/cardMaskedExpiry"
+            app:layout_constraintBottom_toBottomOf="@id/cardMaskedCvv"
+            app:layout_constraintStart_toEndOf="@id/cardMaskedCvv"
+            app:layout_constraintTop_toTopOf="@id/cardMaskedCvv"
             app:tint="@android:color/white"
             tools:ignore="ContentDescription"
             tools:visibility="visible" />
