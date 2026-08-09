@@ -162,6 +162,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="@dimen/spacing_s"
+                        android:visibility="gone"
                         android:orientation="horizontal"
                         app:layout_constraintTop_toBottomOf="@id/amountErrorText">
 
@@ -554,10 +555,12 @@
                     android:id="@+id/saveButton"
                     android:layout_width="0dp"
                     android:layout_height="56dp"
+                    android:textColor="@color/white"
+                    android:background="@drawable/forme_radius_10dp"
                     android:layout_weight="1"
                     android:text="@string/transaction_form_save_action"
                     android:textStyle="bold"
-                    app:cornerRadius="@dimen/corner_radius_extra_large" />
+                     />
 
             </LinearLayout>
 

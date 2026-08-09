@@ -348,7 +348,6 @@ class TransactionFormFragment : Fragment(R.layout.fragment_transaction_form) {
             }
         )
         binding.amountInput.setTextColor(typeColor)
-        binding.saveButton.backgroundTintList = ColorStateList.valueOf(typeColor)
 
         val selectedAccount = accounts.firstOrNull { it.id == state.accountId }
         binding.amountCurrencyBadge.text = selectedAccount?.let {
