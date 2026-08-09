@@ -53,6 +53,10 @@ data class TransactionFormState(
     val categoryId: Long = 0L,
     val dateTimeMillis: Long = System.currentTimeMillis(),
     val description: String = "",
+    /** `true` quand [description] a été générée par [TransactionFormViewModel.autoFillTransferDescription]
+     * (voir sa doc) plutôt que saisie par l'utilisateur — permet de continuer à la régénérer tant
+     * qu'il n'y a pas touché, sans jamais écraser une saisie volontaire. Sans effet hors transfert. */
+    val isDescriptionAutoFilled: Boolean = false,
     val paymentMethod: PaymentMethod? = null,
     val createdAt: Long? = null,
     val amountError: String? = null,
@@ -164,22 +168,30 @@ class TransactionFormViewModel @Inject constructor(
         // 0L en le quittant (pour ne pas resservir un choix obsolète si l'utilisateur
         // revient sur "Transfert" plus tard), mais on le CONSERVE en y restant.
         _formState.update { state ->
-            state.copy(
-                type = type,
-                categoryId = 0L,
-                categoryError = null,
-                transferAccountId = if (type == TransactionType.TRANSFER) state.transferAccountId else 0L,
-                transferAccountError = null
+            val leavingTransfer = state.type == TransactionType.TRANSFER && type != TransactionType.TRANSFER
+            // La description "Compte A → Compte B" n'a plus de sens hors transfert : on l'efface
+            // UNIQUEMENT si elle était auto-générée (une description tapée à la main est conservée).
+            val clearingAutoDescription = leavingTransfer && state.isDescriptionAutoFilled
+            autoFillTransferDescription(
+                state.copy(
+                    type = type,
+                    categoryId = 0L,
+                    categoryError = null,
+                    transferAccountId = if (type == TransactionType.TRANSFER) state.transferAccountId else 0L,
+                    transferAccountError = null,
+                    description = if (clearingAutoDescription) "" else state.description,
+                    isDescriptionAutoFilled = if (clearingAutoDescription) false else state.isDescriptionAutoFilled
+                )
             )
         }
     }
 
     fun onAccountChange(accountId: Long) {
-        _formState.update { it.copy(accountId = accountId, accountError = null) }
+        _formState.update { autoFillTransferDescription(it.copy(accountId = accountId, accountError = null)) }
     }
 
     fun onTransferAccountChange(accountId: Long) {
-        _formState.update { it.copy(transferAccountId = accountId, transferAccountError = null) }
+        _formState.update { autoFillTransferDescription(it.copy(transferAccountId = accountId, transferAccountError = null)) }
     }
 
     fun onCategoryChange(categoryId: Long) {
@@ -187,7 +199,38 @@ class TransactionFormViewModel @Inject constructor(
     }
 
     fun onDescriptionChange(value: String) {
-        _formState.update { it.copy(description = value) }
+        _formState.update { state ->
+            // Si la nouvelle valeur correspond exactement à la description qu'on aurait générée,
+            // on la considère toujours "auto" (évite qu'une re-synchronisation UI→ViewModel du
+            // texte auto-rempli — voir TransactionFormFragment.render — soit prise pour une
+            // saisie manuelle et bloque les régénérations suivantes). Toute autre valeur = saisie
+            // volontaire de l'utilisateur, qui ne sera plus jamais écrasée automatiquement.
+            val generated = transferDescription(state.accountId, state.transferAccountId)
+            state.copy(description = value, isDescriptionAutoFilled = state.isDescriptionAutoFilled && value == generated)
+        }
+    }
+
+    /** Nom des deux comptes séparés par une flèche (ex. "Espèces → Banque"), `null` tant que les
+     * deux comptes d'un transfert ne sont pas encore choisis ou inconnus. */
+    private fun transferDescription(sourceAccountId: Long, destinationAccountId: Long): String? {
+        if (sourceAccountId == 0L || destinationAccountId == 0L) return null
+        val accountsById = accounts.value.associateBy { it.id }
+        val sourceName = accountsById[sourceAccountId]?.name ?: return null
+        val destinationName = accountsById[destinationAccountId]?.name ?: return null
+        return "$sourceName → $destinationName"
+    }
+
+    /**
+     * Régénère [TransactionFormState.description] à partir des comptes source/destination quand
+     * [TransactionFormState.type] est [TransactionType.TRANSFER] — tant que l'utilisateur n'a pas
+     * tapé sa propre description (voir [TransactionFormState.isDescriptionAutoFilled]). Sans effet
+     * hors transfert, ou si l'un des deux comptes n'est pas encore choisi.
+     */
+    private fun autoFillTransferDescription(state: TransactionFormState): TransactionFormState {
+        if (state.type != TransactionType.TRANSFER) return state
+        if (state.description.isNotBlank() && !state.isDescriptionAutoFilled) return state
+        val generated = transferDescription(state.accountId, state.transferAccountId) ?: return state
+        return state.copy(description = generated, isDescriptionAutoFilled = true)
     }
 
     fun onPaymentMethodChange(method: PaymentMethod?) {

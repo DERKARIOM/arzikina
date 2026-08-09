@@ -50,17 +50,24 @@ class AccountDetailViewModel @Inject constructor(
         val account = accounts.find { it.id == accountId } ?: return@combine null
         val categoriesById = categories.associateBy { it.id }
 
-        val accountTransactions = transactions.filter { it.accountId == accountId }
+        // Un transfert dont ce compte est la DESTINATION doit apparaître ici aussi (voir
+        // TransactionType.TRANSFER) : accountId seul ne couvre que la jambe "source".
+        val accountTransactions = transactions.filter { it.accountId == accountId || it.transferAccountId == accountId }
+        // `accountTransactions` suffit ici (pas besoin de la liste complète) : pour chaque
+        // transfert filtré, computeCurrentBalances/computeRunningBalances savent déjà créditer
+        // la jambe destination dès que transferAccountId == accountId (voir leur documentation).
         val currentBalance = computeCurrentBalances(listOf(account), accountTransactions)[account.id] ?: account.initialBalance
         val runningBalances = computeRunningBalances(accountTransactions, listOf(account))
 
         val items = accountTransactions.map { transaction ->
+            val isTransferReceived = transaction.transferAccountId == accountId
             TransactionUiItem(
                 transaction = transaction,
                 account = account,
                 // categoryId est `null` pour un transfert (voir TransactionType.TRANSFER).
                 category = transaction.categoryId?.let { categoriesById[it] },
-                runningBalance = runningBalances[transaction.id]
+                runningBalance = runningBalances[transaction.id to accountId],
+                isTransferReceived = isTransferReceived
             )
         }
 

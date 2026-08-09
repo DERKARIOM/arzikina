@@ -106,16 +106,39 @@ class TransactionsViewModel @Inject constructor(
         transactions
             .asSequence()
             .map { transaction ->
+                // Par défaut, un transfert est affiché du point de vue de son compte SOURCE (une
+                // seule ligne dans la liste globale non filtrée). Quand l'utilisateur filtre
+                // explicitement sur son compte DESTINATION, on bascule la ligne sur ce point de
+                // vue (compte affiché, sens du montant) — voir TransactionItemBinder — sans quoi
+                // le transfert resterait invisible pour ce filtre (voir point 3 ci-dessous).
+                val isTransferReceived = filters.accountId != null && transaction.transferAccountId == filters.accountId
+                // `?:` défensif : isTransferReceived garantit transferAccountId non-null en
+                // pratique (il est comparé à filters.accountId, lui-même non-null dans ce cas),
+                // mais le compilateur ne peut pas le déduire d'un `if` à deux branches typées différemment.
+                val perspectiveAccountId: Long = if (isTransferReceived) {
+                    transaction.transferAccountId ?: transaction.accountId
+                } else {
+                    transaction.accountId
+                }
                 TransactionUiItem(
                     transaction = transaction,
-                    account = accountsById[transaction.accountId],
+                    account = accountsById[perspectiveAccountId],
                     // categoryId est `null` pour un transfert (voir TransactionType.TRANSFER).
                     category = transaction.categoryId?.let { categoriesById[it] },
-                    runningBalance = runningBalances[transaction.id]
+                    runningBalance = runningBalances[transaction.id to perspectiveAccountId],
+                    isTransferReceived = isTransferReceived
                 )
             }
             .filter { item -> matchesType(item.transaction.type, filters.type) }
-            .filter { item -> filters.accountId == null || item.transaction.accountId == filters.accountId }
+            // Un transfert doit apparaître aussi bien pour son compte source que destination
+            // (voir TransactionType.TRANSFER) : la liste "Toutes les transactions" (accountId ==
+            // null) n'affiche qu'une ligne par transaction, mais un filtre par compte doit
+            // retrouver le mouvement quel que soit le côté du transfert où se trouve ce compte.
+            .filter { item ->
+                filters.accountId == null ||
+                    item.transaction.accountId == filters.accountId ||
+                    item.transaction.transferAccountId == filters.accountId
+            }
             .filter { item -> filters.categoryId == null || item.transaction.categoryId == filters.categoryId }
             .filter { item -> matchesPeriod(item.transaction.date, filters.period, today) }
             .filter { item -> matchesQuery(item, normalizedQuery) }

@@ -217,6 +217,8 @@
     <string name="payment_method_other">Autre</string>
     <string name="transaction_uncategorized">Sans catégorie</string>
     <string name="transaction_unknown_account">Compte inconnu</string>
+    <!-- Catégorie affichée pour TransactionType.TRANSFER (qui n'a pas de vraie Category, voir Transaction.categoryId). -->
+    <string name="transaction_category_transfer">Transfert d\'argent</string>
     <string name="transactions_filters_action">Filtres</string>
     <string name="transactions_search_placeholder">Rechercher une transaction</string>
     <string name="transactions_period_all">Toute période</string>

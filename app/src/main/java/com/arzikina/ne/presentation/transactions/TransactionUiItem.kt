@@ -19,10 +19,19 @@ import com.arzikina.ne.domain.model.Transaction
  * [computeRunningBalances]), `null` quand il n'est pas calculé pour cet écran
  * (voir [com.arzikina.ne.presentation.dashboard.RecentTransactionsAdapter],
  * qui n'affiche jamais ce champ) ou quand le compte est inconnu.
+ * @param isTransferReceived pour [com.arzikina.ne.domain.model.TransactionType.TRANSFER]
+ * uniquement : `true` quand cette ligne représente le point de vue du compte
+ * DESTINATION (crédit, [account] == `transaction.transferAccountId`) plutôt
+ * que du compte source (débit, comportement par défaut). Toujours `false`
+ * pour un revenu/une dépense. Piloté par l'écran qui construit cet item (voir
+ * [com.arzikina.ne.presentation.accounts.AccountDetailViewModel] et
+ * [TransactionsViewModel]), pas déductible de [transaction] seul puisque
+ * celle-ci ne porte pas la notion de "compte consulté".
  */
 data class TransactionUiItem(
     val transaction: Transaction,
     val account: Account?,
     val category: Category?,
-    val runningBalance: Long? = null
+    val runningBalance: Long? = null,
+    val isTransferReceived: Boolean = false
 )

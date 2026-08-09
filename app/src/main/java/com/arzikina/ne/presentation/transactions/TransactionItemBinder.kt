@@ -38,16 +38,27 @@ object TransactionItemBinder {
     fun bind(binding: ItemTransactionCompactBinding, item: TransactionUiItem, showDescriptionSubtitle: Boolean = false) {
         val context = binding.root.context
         val category = item.category
+        // Un TRANSFER n'a pas de Category (voir Transaction.categoryId) : icône/libellé/couleur
+        // fixes dédiés plutôt que le générique "Sans catégorie", pour rester compréhensible dans
+        // les listes qui mélangent transferts et dépenses/revenus.
+        val isTransfer = item.transaction.type == TransactionType.TRANSFER
 
         binding.categoryIcon.setImageResource(
-            category?.let { CategoryIconMapper.iconFor(it.icon) } ?: R.drawable.ic_category_other_24
+            when {
+                isTransfer -> R.drawable.ic_swap_horiz_24
+                else -> category?.let { CategoryIconMapper.iconFor(it.icon) } ?: R.drawable.ic_category_other_24
+            }
         )
-        val circleColor = category?.colorArgb?.toInt()
-            ?: ContextCompat.getColor(context, R.color.arzikina_outline)
+        val circleColor = when {
+            isTransfer -> ContextCompat.getColor(context, R.color.arzikina_primary)
+            else -> category?.colorArgb?.toInt() ?: ContextCompat.getColor(context, R.color.arzikina_outline)
+        }
         binding.categoryIcon.backgroundTintList = ColorStateList.valueOf(circleColor)
 
-        binding.categoryName.text = category?.name
-            ?: context.getString(R.string.transaction_uncategorized)
+        binding.categoryName.text = when {
+            isTransfer -> context.getString(R.string.transaction_category_transfer)
+            else -> category?.name ?: context.getString(R.string.transaction_uncategorized)
+        }
 
         binding.subtitle.setTypeface(binding.subtitle.typeface, if (showDescriptionSubtitle) Typeface.ITALIC else Typeface.NORMAL)
         if (showDescriptionSubtitle) {
@@ -66,14 +77,25 @@ object TransactionItemBinder {
             } ?: base
         }
 
-        val isIncome = item.transaction.type == TransactionType.INCOME
+        // Un transfert n'est ni un revenu ni une dépense (voir TransactionType.TRANSFER, exclu
+        // des totaux revenus/dépenses partout ailleurs) : signe +/- selon le sens réel de ce côté
+        // (isTransferReceived, voir TransactionUiItem), mais couleur PRIMARY dédiée plutôt que
+        // vert/rouge, pour ne pas le confondre visuellement avec un vrai revenu/une vraie dépense.
+        val isCredit = item.transaction.type == TransactionType.INCOME || (isTransfer && item.isTransferReceived)
         val amountCurrency = item.account?.currencyCode
         val formattedAmount = amountCurrency?.let {
             Money.format(CurrencyAmount(it, item.transaction.amount))
         } ?: Money.formatAmount(item.transaction.amount)
-        binding.amount.text = "${if (isIncome) "+" else "-"}$formattedAmount"
+        binding.amount.text = "${if (isCredit) "+" else "-"}$formattedAmount"
         binding.amount.setTextColor(
-            ContextCompat.getColor(context, if (isIncome) R.color.income_green else R.color.expense_red)
+            ContextCompat.getColor(
+                context,
+                when {
+                    isTransfer -> R.color.arzikina_primary
+                    isCredit -> R.color.income_green
+                    else -> R.color.expense_red
+                }
+            )
         )
 
         if (item.runningBalance != null && amountCurrency != null) {
