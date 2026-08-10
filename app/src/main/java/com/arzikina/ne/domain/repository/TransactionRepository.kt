@@ -18,8 +18,11 @@ interface TransactionRepository {
 
     suspend fun getTransaction(id: Long): Transaction?
 
-    /** Crée la transaction si [Transaction.id] vaut 0, la met à jour sinon. */
-    suspend fun saveTransaction(transaction: Transaction)
+    /** Crée la transaction si [Transaction.id] vaut 0, la met à jour sinon. Retourne l'id définitif
+     * de la transaction (celui généré à la création, ou [Transaction.id] inchangé pour une mise à
+     * jour) — voir [AccountRepository.saveAccount] pour le même principe, utile ici pour lier une
+     * transaction générée automatiquement à un `Loan`/`LoanPayment`. */
+    suspend fun saveTransaction(transaction: Transaction): Long
 
     suspend fun deleteTransaction(id: Long)
 }

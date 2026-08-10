@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Contenu du petit dialogue "Nouvelle personne" (voir PersonPickerDialog). -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingHorizontal="@dimen/spacing_l"
+    android:paddingTop="@dimen/spacing_s">
+
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/newPersonNameLayout"
+        style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="@string/loan_form_new_person_name_label">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/newPersonNameInput"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="textPersonName" />
+
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/newPersonPhoneLayout"
+        style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/spacing_m"
+        android:hint="@string/loan_form_new_person_phone_label">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/newPersonPhoneInput"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="phone" />
+
+    </com.google.android.material.textfield.TextInputLayout>
+
+</LinearLayout>

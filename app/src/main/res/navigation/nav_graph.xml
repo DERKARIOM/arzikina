@@ -221,15 +221,58 @@
         tools:layout="@layout/fragment_all_utilities" />
 
     <!--
-        Placeholder "en cours de développement" (voir LoansFragment) : aucun modèle de données
-        pour l'instant, uniquement la navigation — à remplacer par le vrai écran plus tard sans
-        changer cet id ni son point d'entrée depuis le Dashboard/"Tous les utilitaires".
+        Écran principal Prêts/Emprunts (voir presentation/utilities/loans/LoansViewModel) :
+        cartes de résumé + liste. id de destination et point d'entrée depuis le Dashboard/"Tous
+        les utilitaires" inchangés depuis le placeholder initial.
     -->
     <fragment
         android:id="@+id/loansFragment"
         android:name="com.arzikina.ne.presentation.utilities.LoansFragment"
         android:label="@string/utility_loans_title"
         tools:layout="@layout/fragment_loans" />
+
+    <!--
+        Ajout d'un prêt/emprunt (voir presentation/utilities/loans/LoanFormFragment), atteint
+        depuis le FAB/l'état vide de loansFragment. Toujours en création (pas d'argument
+        `loanId` comme accountFormFragment) : l'édition n'est pas prévue à ce stade du plan de
+        développement Prêts/Emprunts.
+    -->
+    <fragment
+        android:id="@+id/loanFormFragment"
+        android:name="com.arzikina.ne.presentation.utilities.loans.LoanFormFragment"
+        android:label="@string/loan_form_title_step1"
+        tools:layout="@layout/fragment_loan_form" />
+
+    <!--
+        Détail d'un prêt/emprunt (voir presentation/utilities/loans/LoanDetailFragment), atteint
+        en cliquant sur une carte de loansFragment. loanId n'a volontairement PAS de valeur par
+        défaut, même raisonnement que accountDetailFragment/accountId ci-dessus.
+    -->
+    <fragment
+        android:id="@+id/loanDetailFragment"
+        android:name="com.arzikina.ne.presentation.utilities.loans.LoanDetailFragment"
+        android:label="@string/loan_detail_title"
+        tools:layout="@layout/fragment_loan_detail">
+        <argument
+            android:name="loanId"
+            app:argType="long" />
+    </fragment>
+
+    <!--
+        Enregistrement d'un remboursement (voir presentation/utilities/loans/LoanPaymentFormFragment),
+        atteint depuis le bouton "Enregistrer un remboursement" de loanDetailFragment. loanId
+        obligatoire (même raisonnement que loanDetailFragment ci-dessus) : ce formulaire n'a de
+        sens que rattaché à un prêt/emprunt précis.
+    -->
+    <fragment
+        android:id="@+id/loanPaymentFormFragment"
+        android:name="com.arzikina.ne.presentation.utilities.loans.LoanPaymentFormFragment"
+        android:label="@string/loan_payment_form_title"
+        tools:layout="@layout/fragment_loan_payment_form">
+        <argument
+            android:name="loanId"
+            app:argType="long" />
+    </fragment>
 
     <!--
         Première UI réelle pour BackupViewModel (voir presentation/settings/BackupFragment,

@@ -16,5 +16,8 @@ enum class CategoryIcon {
     ELECTRICITY,
     EDUCATION,
     HOME,
-    OTHER
+    OTHER,
+    /** Ajouté pour les catégories par défaut Prêts/Emprunts (voir `DefaultCategories`) — simple
+     * valeur d'enum stockée en texte (voir `Converters`), aucune migration Room nécessaire. */
+    LOAN
 }

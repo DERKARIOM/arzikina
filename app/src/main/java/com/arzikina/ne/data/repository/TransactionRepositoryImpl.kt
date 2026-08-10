@@ -34,8 +34,11 @@ class TransactionRepositoryImpl @Inject constructor(
     override suspend fun getTransaction(id: Long): Transaction? =
         withContext(ioDispatcher) { transactionDao.getById(id, requireCurrentUserId())?.toDomain() }
 
-    override suspend fun saveTransaction(transaction: Transaction) =
-        withContext(ioDispatcher) { transactionDao.upsert(transaction.toEntity(requireCurrentUserId())) }
+    override suspend fun saveTransaction(transaction: Transaction): Long = withContext(ioDispatcher) {
+        val generatedId = transactionDao.upsert(transaction.toEntity(requireCurrentUserId()))
+        // @Upsert ne retourne l'id généré QUE pour une insertion réelle (voir `AccountRepositoryImpl.saveAccount`).
+        if (transaction.id != 0L) transaction.id else generatedId
+    }
 
     override suspend fun deleteTransaction(id: Long) =
         withContext(ioDispatcher) { transactionDao.deleteById(id, requireCurrentUserId()) }

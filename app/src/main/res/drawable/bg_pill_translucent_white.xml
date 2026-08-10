@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Variante FIXE (pas de tint par code) de bg_pill.xml : petit badge translucide blanc utilisé sur
+    les cartes de résumé Prêts/Emprunts (voir item_loan_summary_header.xml), qui ont déjà leur
+    propre couleur de fond — un tint dynamique n'a pas de sens ici.
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="#26FFFFFF" />
+    <corners android:radius="999dp" />
+</shape>

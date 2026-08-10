@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Pastille arrondie générique (statut d'un prêt/emprunt, voir item_loan.xml). Même principe que
+    bg_icon_circle.xml : couleur neutre ici, appliquée par code via `backgroundTint` (voir
+    presentation/utilities/loans/LoanStatusDisplay). Rayon volontairement énorme (999dp) pour
+    garantir un bord totalement arrondi quelle que soit la hauteur réelle de la pastille.
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="#FFFFFFFF" />
+    <corners android:radius="999dp" />
+</shape>

@@ -6,6 +6,9 @@ import com.arzikina.ne.data.local.dao.AccountDao
 import com.arzikina.ne.data.local.dao.BudgetDao
 import com.arzikina.ne.data.local.dao.CardSecretDao
 import com.arzikina.ne.data.local.dao.CategoryDao
+import com.arzikina.ne.data.local.dao.LoanDao
+import com.arzikina.ne.data.local.dao.LoanPaymentDao
+import com.arzikina.ne.data.local.dao.PersonDao
 import com.arzikina.ne.data.local.dao.SavingsGoalDao
 import com.arzikina.ne.data.local.dao.TransactionDao
 import com.arzikina.ne.data.local.dao.UserDao
@@ -21,6 +24,7 @@ import com.arzikina.ne.data.local.database.MIGRATION_8_9
 import com.arzikina.ne.data.local.database.MIGRATION_9_10
 import com.arzikina.ne.data.local.database.MIGRATION_10_11
 import com.arzikina.ne.data.local.database.MIGRATION_11_12
+import com.arzikina.ne.data.local.database.MIGRATION_12_13
 import com.arzikina.ne.util.Constants
 import dagger.Module
 import dagger.Provides
@@ -53,7 +57,7 @@ object DatabaseModule {
             .addMigrations(
                 MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5,
                 MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9,
-                MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12
+                MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13
             )
             .build()
 
@@ -77,4 +81,13 @@ object DatabaseModule {
 
     @Provides
     fun provideCardSecretDao(database: ArzikinaDatabase): CardSecretDao = database.cardSecretDao()
+
+    @Provides
+    fun providePersonDao(database: ArzikinaDatabase): PersonDao = database.personDao()
+
+    @Provides
+    fun provideLoanDao(database: ArzikinaDatabase): LoanDao = database.loanDao()
+
+    @Provides
+    fun provideLoanPaymentDao(database: ArzikinaDatabase): LoanPaymentDao = database.loanPaymentDao()
 }

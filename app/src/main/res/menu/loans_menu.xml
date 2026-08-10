@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Action "Filtres" de la Toolbar de l'écran principal Prêts/Emprunts (voir
+    LoansFragment.toggleFiltersPanel) — même icône/libellé que transactions_menu.xml (générique,
+    pas de raison de dupliquer la chaîne pour ce concept identique sur les deux écrans).
+-->
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <item
+        android:id="@+id/action_toggle_filters"
+        android:icon="@drawable/ic_filter_24"
+        android:title="@string/transactions_filters_action"
+        app:showAsAction="always" />
+</menu>

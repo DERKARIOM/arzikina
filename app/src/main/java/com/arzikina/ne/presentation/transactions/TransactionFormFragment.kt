@@ -13,6 +13,7 @@ import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.navigation.NavOptions
 import androidx.navigation.fragment.findNavController
 import com.arzikina.ne.R
 import com.arzikina.ne.databinding.FragmentTransactionFormBinding
@@ -26,6 +27,7 @@ import com.arzikina.ne.domain.model.TransactionType
 import com.arzikina.ne.presentation.accounts.AccountIconMapper
 import com.arzikina.ne.presentation.components.AccountPickerDialog
 import com.arzikina.ne.presentation.components.ConfirmDialogs
+import com.arzikina.ne.presentation.components.NavAnimations
 import com.arzikina.ne.util.Money
 import com.google.android.material.datepicker.MaterialDatePicker
 import com.google.android.material.timepicker.MaterialTimePicker
@@ -70,7 +72,7 @@ class TransactionFormFragment : Fragment(R.layout.fragment_transaction_form) {
     private var isMoreDetailsExpanded = false
 
     private val categoryAdapter = CategoryQuickPickAdapter(
-        onSelect = { category -> viewModel.onCategoryChange(category.id) },
+        onSelect = { category -> if (isLoanLinked()) Unit else viewModel.onCategoryChange(category.id) },
         onAddNew = { navigateToNewCategory() }
     )
 
@@ -98,6 +100,9 @@ class TransactionFormFragment : Fragment(R.layout.fragment_transaction_form) {
 
         viewBinding.saveButton.setOnClickListener { viewModel.save() }
         viewBinding.deleteButton.setOnClickListener { confirmDelete() }
+        viewBinding.loanLinkedBanner.setOnClickListener {
+            viewModel.formState.value.linkedLoanId?.let { loanId -> navigateToLoanDetail(loanId) }
+        }
 
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -164,7 +169,7 @@ class TransactionFormFragment : Fragment(R.layout.fragment_transaction_form) {
         buttons.forEachIndexed { index, button ->
             val amount = QUICK_AMOUNTS[index]
             button.text = "+${formatter.format(amount)}"
-            button.setOnClickListener { viewModel.onQuickAmountAdd(amount) }
+            button.setOnClickListener { if (!isLoanLinked()) viewModel.onQuickAmountAdd(amount) }
         }
     }
 
@@ -184,6 +189,7 @@ class TransactionFormFragment : Fragment(R.layout.fragment_transaction_form) {
      */
     private fun setUpAccountRow(binding: FragmentTransactionFormBinding) {
         binding.accountRow.setOnClickListener {
+            if (isLoanLinked()) return@setOnClickListener
             val state = viewModel.formState.value
             val excludedId = state.transferAccountId.takeIf { state.type == TransactionType.TRANSFER }
             AccountPickerDialog.show(
@@ -198,6 +204,7 @@ class TransactionFormFragment : Fragment(R.layout.fragment_transaction_form) {
     /** Uniquement pertinent pour un transfert (voir [renderDestinationAccountRow]) : exclut le compte source. */
     private fun setUpDestinationAccountRow(binding: FragmentTransactionFormBinding) {
         binding.destinationAccountRow.setOnClickListener {
+            if (isLoanLinked()) return@setOnClickListener
             val excludedId = viewModel.formState.value.accountId
             AccountPickerDialog.show(
                 context = requireContext(),
@@ -225,7 +232,7 @@ class TransactionFormFragment : Fragment(R.layout.fragment_transaction_form) {
 
     /** Une seule ligne cliquable (voir maquette) : la date puis l'heure s'enchaînent au lieu de deux champs séparés. */
     private fun setUpDateTime(binding: FragmentTransactionFormBinding) {
-        binding.dateTimeRow.setOnClickListener { showDatePicker() }
+        binding.dateTimeRow.setOnClickListener { if (!isLoanLinked()) showDatePicker() }
     }
 
     private fun setUpInputs(binding: FragmentTransactionFormBinding) {
@@ -290,6 +297,18 @@ class TransactionFormFragment : Fragment(R.layout.fragment_transaction_form) {
         latestSelectedCategoryId = state.categoryId
 
         val isTransfer = state.type == TransactionType.TRANSFER
+        val isLoanLinked = state.linkedLoanId != null
+
+        // Voir la doc de TransactionFormState.linkedLoanId : bannière + verrouillage des champs de
+        // saisie DIRECTE (montant, description, listes déroulantes) plutôt qu'un écran entièrement
+        // différent — les lignes cliquables (compte, catégorie, date) restent, elles, guardées
+        // individuellement dans chaque setUpXxx() ci-dessus (isLoanLinked()).
+        binding.loanLinkedBanner.visibility = if (isLoanLinked) View.VISIBLE else View.GONE
+        binding.amountInput.isEnabled = !isLoanLinked
+        binding.descriptionInput.isEnabled = !isLoanLinked
+        binding.typeInput.isEnabled = !isLoanLinked
+        binding.paymentMethodInput.isEnabled = !isLoanLinked
+        binding.deleteButton.visibility = if (viewModel.isEditMode && !isLoanLinked) View.VISIBLE else View.GONE
 
         renderType(binding, state.type)
         renderAmount(binding, state, data.accounts, data.accountBalances)
@@ -451,10 +470,12 @@ class TransactionFormFragment : Fragment(R.layout.fragment_transaction_form) {
     private fun handleEvent(event: TransactionFormEvent) {
         when (event) {
             TransactionFormEvent.Saved, TransactionFormEvent.Deleted -> findNavController().navigateUp()
+            is TransactionFormEvent.LoanLinked -> navigateToLoanDetail(event.loanId)
         }
     }
 
     private fun confirmDelete() {
+        if (isLoanLinked()) return
         ConfirmDialogs.confirm(
             context = requireContext(),
             title = getString(R.string.transactions_delete_title),
@@ -465,6 +486,27 @@ class TransactionFormFragment : Fragment(R.layout.fragment_transaction_form) {
 
     private fun navigateToNewCategory() {
         findNavController().navigate(R.id.categoryFormFragment, bundleOf("categoryId" to 0L))
+    }
+
+    /** Voir la doc de `TransactionFormState.linkedLoanId` : accès synchrone utilisé par les
+     * gestionnaires de clic (même principe que `viewModel.formState.value` ailleurs dans ce
+     * Fragment, ex. [setUpAccountRow]). */
+    private fun isLoanLinked(): Boolean = viewModel.formState.value.linkedLoanId != null
+
+    /** `popUpTo` retire ce formulaire de la pile de retour (voir [TransactionFormEvent.LoanLinked]) :
+     * revenir en arrière depuis "Détail du prêt/emprunt" doit ramener à l'écran d'où cette
+     * transaction a été ouverte (Transactions/Détail de compte), pas à ce formulaire bloqué. Même
+     * animation de fondu que [NavAnimations.fade], reconstruite ici pour y ajouter `popUpTo` (objet
+     * partagé volontairement minimal, voir sa doc). */
+    private fun navigateToLoanDetail(loanId: Long) {
+        val options = NavOptions.Builder()
+            .setEnterAnim(R.anim.fade_in)
+            .setExitAnim(R.anim.fade_out)
+            .setPopEnterAnim(R.anim.fade_in)
+            .setPopExitAnim(R.anim.fade_out)
+            .setPopUpTo(R.id.transactionFormFragment, inclusive = true)
+            .build()
+        findNavController().navigate(R.id.loanDetailFragment, bundleOf("loanId" to loanId), options)
     }
 
     /** Regroupe les 4 flux observés pour éviter un `combine` imbriqué illisible (voir [onViewCreated]). */

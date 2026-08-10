@@ -1,0 +1,664 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Ajout d'un prêt/emprunt, en 2 pages (voir maquette) : page1/page2 sont deux blocs du MÊME
+    écran, togglés par visibilité (voir LoanFormFragment/LoanFormViewModel.step) — pas deux
+    destinations de navigation séparées, pour garder tout l'état saisi dans un seul ViewModel.
+-->
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="?attr/colorSurface">
+
+    <com.google.android.material.appbar.MaterialToolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:background="?attr/colorSurface"
+        app:layout_constraintTop_toTopOf="parent"
+        app:navigationIcon="@drawable/ic_arrow_back_24"
+        app:title="@string/loan_form_title_step1"
+        app:titleTextColor="?attr/colorOnSurface" />
+
+    <!-- "1/2" (voir LoanFormFragment.render) : superposé au Toolbar plutôt qu'un menu, pas
+         d'action associée. -->
+    <TextView
+        android:id="@+id/stepIndicator"
+        style="@style/TextAppearance.Material3.LabelLarge"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="@dimen/spacing_m"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        app:layout_constraintBottom_toBottomOf="@id/toolbar"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="@id/toolbar"
+        tools:text="1/2" />
+
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/scrollContainer"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:fillViewport="true"
+        app:layout_constraintBottom_toTopOf="@id/primaryActionButton"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/toolbar">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="@dimen/spacing_m">
+
+            <!-- ==================== PAGE 1 ==================== -->
+            <LinearLayout
+                android:id="@+id/page1"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <TextView
+                    style="@style/TextAppearance.Material3.BodyMedium"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/loan_form_type_label"
+                    android:textColor="?attr/colorOnSurfaceVariant" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/spacing_s"
+                    android:orientation="horizontal">
+
+                    <com.google.android.material.card.MaterialCardView
+                        android:id="@+id/typeLentCard"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginEnd="@dimen/spacing_s"
+                        android:layout_weight="1"
+                        android:checkable="true"
+                        android:clickable="true"
+                        android:focusable="true"
+                        app:cardCornerRadius="@dimen/corner_radius_medium"
+                        app:strokeWidth="1.5dp">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="center_horizontal"
+                            android:orientation="vertical"
+                            android:padding="@dimen/spacing_m">
+
+                            <ImageView
+                                android:layout_width="@dimen/icon_size_default"
+                                android:layout_height="@dimen/icon_size_default"
+                                android:contentDescription="@null"
+                                android:src="@drawable/ic_loan_24"
+                                app:tint="@color/loan_lent_color" />
+
+                            <TextView
+                                style="@style/TextAppearance.Material3.TitleSmall"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="@dimen/spacing_s"
+                                android:text="@string/loan_form_type_lent_title"
+                                android:textColor="?attr/colorOnSurface" />
+
+                            <TextView
+                                style="@style/TextAppearance.Material3.BodySmall"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:gravity="center"
+                                android:text="@string/loan_form_type_lent_subtitle"
+                                android:textColor="?attr/colorOnSurfaceVariant" />
+
+                        </LinearLayout>
+
+                    </com.google.android.material.card.MaterialCardView>
+
+                    <com.google.android.material.card.MaterialCardView
+                        android:id="@+id/typeBorrowedCard"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="@dimen/spacing_s"
+                        android:layout_weight="1"
+                        android:checkable="true"
+                        android:clickable="true"
+                        android:focusable="true"
+                        app:cardCornerRadius="@dimen/corner_radius_medium"
+                        app:strokeWidth="1.5dp">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="center_horizontal"
+                            android:orientation="vertical"
+                            android:padding="@dimen/spacing_m">
+
+                            <ImageView
+                                android:layout_width="@dimen/icon_size_default"
+                                android:layout_height="@dimen/icon_size_default"
+                                android:contentDescription="@null"
+                                android:src="@drawable/ic_loan_24"
+                                app:tint="@color/expense_red" />
+
+                            <TextView
+                                style="@style/TextAppearance.Material3.TitleSmall"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="@dimen/spacing_s"
+                                android:text="@string/loan_form_type_borrowed_title"
+                                android:textColor="?attr/colorOnSurface" />
+
+                            <TextView
+                                style="@style/TextAppearance.Material3.BodySmall"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:gravity="center"
+                                android:text="@string/loan_form_type_borrowed_subtitle"
+                                android:textColor="?attr/colorOnSurfaceVariant" />
+
+                        </LinearLayout>
+
+                    </com.google.android.material.card.MaterialCardView>
+
+                </LinearLayout>
+
+                <!-- Personne (voir PersonPickerDialog) : même structure qu'item_account_field.xml,
+                     dupliquée volontairement (concept différent : une personne, pas un compte). -->
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/personRow"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/spacing_l"
+                    android:checkable="false"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:theme="@style/ThemeOverlay.Arzikina.OnBalanceCard"
+                    app:cardBackgroundColor="@color/arzikina_postcart_background"
+                    app:cardCornerRadius="@dimen/corner_radius_medium"
+                    app:cardElevation="@dimen/elevation_raised">
+
+                    <androidx.constraintlayout.widget.ConstraintLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:padding="@dimen/spacing_m">
+
+                        <ImageView
+                            android:id="@+id/personFieldIcon"
+                            android:layout_width="@dimen/icon_size_large"
+                            android:layout_height="@dimen/icon_size_large"
+                            android:background="@drawable/bg_icon_circle"
+                            android:backgroundTint="?attr/colorOnSurfaceVariant"
+                            android:contentDescription="@null"
+                            android:padding="@dimen/spacing_s"
+                            android:src="@drawable/ic_account_other_24"
+                            app:layout_constraintBottom_toBottomOf="parent"
+                            app:layout_constraintStart_toStartOf="parent"
+                            app:layout_constraintTop_toTopOf="parent"
+                            app:tint="@android:color/white" />
+
+                        <TextView
+                            style="@style/TextAppearance.Material3.BodySmall"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="@dimen/spacing_m"
+                            android:text="@string/loan_form_person_label"
+                            android:textColor="?attr/colorOnSurfaceVariant"
+                            app:layout_constraintEnd_toStartOf="@id/personFieldChevron"
+                            app:layout_constraintStart_toEndOf="@id/personFieldIcon"
+                            app:layout_constraintTop_toTopOf="@id/personFieldIcon" />
+
+                        <TextView
+                            android:id="@+id/personFieldName"
+                            style="@style/TextAppearance.Material3.TitleSmall"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="@dimen/spacing_m"
+                            android:layout_marginTop="2dp"
+                            android:ellipsize="end"
+                            android:maxLines="1"
+                            android:text="@string/loan_form_person_placeholder"
+                            android:textColor="?attr/colorOnSurface"
+                            app:layout_constraintEnd_toStartOf="@id/personFieldChevron"
+                            app:layout_constraintStart_toEndOf="@id/personFieldIcon"
+                            app:layout_constraintTop_toBottomOf="@id/personFieldIcon" />
+
+                        <ImageView
+                            android:id="@+id/personFieldChevron"
+                            android:layout_width="@dimen/icon_size_default"
+                            android:layout_height="@dimen/icon_size_default"
+                            android:contentDescription="@null"
+                            android:src="@drawable/ic_chevron_right_24"
+                            app:layout_constraintBottom_toBottomOf="@id/personFieldIcon"
+                            app:layout_constraintEnd_toEndOf="parent"
+                            app:layout_constraintTop_toTopOf="@id/personFieldIcon"
+                            app:tint="?attr/colorOnSurfaceVariant" />
+
+                    </androidx.constraintlayout.widget.ConstraintLayout>
+
+                </com.google.android.material.card.MaterialCardView>
+
+                <TextView
+                    android:id="@+id/personErrorText"
+                    style="@style/TextAppearance.Material3.BodySmall"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:textColor="@color/expense_red"
+                    android:visibility="gone"
+                    tools:text="Choisis une personne"
+                    tools:visibility="visible" />
+
+                <!-- Compte (voir item_account_field.xml, même composant que le formulaire de
+                     transaction). -->
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/accountRow"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/spacing_l"
+                    android:checkable="false"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:theme="@style/ThemeOverlay.Arzikina.OnBalanceCard"
+                    app:cardBackgroundColor="@color/arzikina_postcart_background"
+                    app:cardCornerRadius="@dimen/corner_radius_medium"
+                    app:cardElevation="@dimen/elevation_raised">
+
+                    <include
+                        android:id="@+id/accountField"
+                        layout="@layout/item_account_field" />
+
+                </com.google.android.material.card.MaterialCardView>
+
+                <TextView
+                    android:id="@+id/accountErrorText"
+                    style="@style/TextAppearance.Material3.BodySmall"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:textColor="@color/expense_red"
+                    android:visibility="gone"
+                    tools:text="Choisis un compte"
+                    tools:visibility="visible" />
+
+                <!-- Montant : même structure que amountCard du formulaire de transaction, sans
+                     les raccourcis rapides (pas de valeurs "habituelles" pour un prêt/emprunt). -->
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/amountCard"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/spacing_l"
+                    android:theme="@style/ThemeOverlay.Arzikina.OnBalanceCard"
+                    app:cardBackgroundColor="@color/arzikina_postcart_background"
+                    app:cardCornerRadius="@dimen/corner_radius_medium"
+                    app:cardElevation="@dimen/elevation_raised">
+
+                    <androidx.constraintlayout.widget.ConstraintLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:padding="@dimen/spacing_m">
+
+                        <TextView
+                            android:id="@+id/amountLabel"
+                            style="@style/TextAppearance.Material3.BodyMedium"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:text="@string/loan_form_amount_label"
+                            android:textColor="?attr/colorOnSurfaceVariant"
+                            app:layout_constraintEnd_toStartOf="@id/amountCurrencyBadge"
+                            app:layout_constraintStart_toStartOf="parent"
+                            app:layout_constraintTop_toTopOf="parent" />
+
+                        <TextView
+                            android:id="@+id/amountCurrencyBadge"
+                            style="@style/TextAppearance.Material3.LabelLarge"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:background="@drawable/bg_chip_on_balance_card"
+                            android:paddingHorizontal="@dimen/spacing_s"
+                            android:paddingVertical="4dp"
+                            android:textColor="?attr/colorOnSurfaceVariant"
+                            app:layout_constraintEnd_toEndOf="parent"
+                            app:layout_constraintTop_toTopOf="parent"
+                            tools:text="F CFA" />
+
+                        <EditText
+                            android:id="@+id/amountInput"
+                            style="@style/TextAppearance.Material3.HeadlineMedium"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/spacing_xs"
+                            android:background="@null"
+                            android:hint="0"
+                            android:inputType="numberDecimal"
+                            android:maxLines="1"
+                            android:textColor="?attr/colorOnSurface"
+                            android:textStyle="bold"
+                            app:layout_constraintTop_toBottomOf="@id/amountLabel"
+                            tools:text="150 000" />
+
+                        <TextView
+                            android:id="@+id/amountErrorText"
+                            style="@style/TextAppearance.Material3.BodySmall"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:textColor="@color/expense_red"
+                            android:visibility="gone"
+                            app:layout_constraintStart_toStartOf="parent"
+                            app:layout_constraintTop_toBottomOf="@id/amountInput"
+                            tools:text="Montant invalide"
+                            tools:visibility="visible" />
+
+                    </androidx.constraintlayout.widget.ConstraintLayout>
+
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- Dates : deux champs non focusables (voir TransactionFormFragment), ouverts via
+                     MaterialDatePicker. -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/spacing_l"
+                    android:orientation="horizontal">
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:id="@+id/startDateLayout"
+                        style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginEnd="@dimen/spacing_s"
+                        android:layout_weight="1"
+                        android:hint="@string/loan_form_start_date_label">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/startDateInput"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:clickable="true"
+                            android:cursorVisible="false"
+                            android:focusable="false"
+                            tools:text="12/05/2025" />
+
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:id="@+id/dueDateLayout"
+                        style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="@dimen/spacing_s"
+                        android:layout_weight="1"
+                        android:hint="@string/loan_form_due_date_label">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/dueDateInput"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:clickable="true"
+                            android:cursorVisible="false"
+                            android:focusable="false"
+                            tools:text="12/06/2025" />
+
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/dueDateErrorText"
+                    style="@style/TextAppearance.Material3.BodySmall"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:textColor="@color/expense_red"
+                    android:visibility="gone"
+                    tools:text="L'échéance doit être après la date de début"
+                    tools:visibility="visible" />
+
+            </LinearLayout>
+
+            <!-- ==================== PAGE 2 ==================== -->
+            <LinearLayout
+                android:id="@+id/page2"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone"
+                tools:visibility="gone">
+
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:theme="@style/ThemeOverlay.Arzikina.OnBalanceCard"
+                    app:cardBackgroundColor="@color/arzikina_postcart_background"
+                    app:cardCornerRadius="@dimen/corner_radius_medium"
+                    app:cardElevation="@dimen/elevation_raised">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="@dimen/spacing_m">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal">
+
+                            <TextView
+                                android:id="@+id/summaryPersonAvatar"
+                                android:layout_width="@dimen/icon_size_large"
+                                android:layout_height="@dimen/icon_size_large"
+                                android:background="@drawable/bg_icon_circle"
+                                android:gravity="center"
+                                android:textColor="@android:color/white"
+                                android:textStyle="bold"
+                                tools:backgroundTint="#3B82F6"
+                                tools:text="A" />
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="@dimen/spacing_m"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:id="@+id/summaryTitle"
+                                    style="@style/TextAppearance.Material3.TitleSmall"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:textColor="@android:color/white"
+                                    tools:text="Emprunt voiture" />
+
+                                <TextView
+                                    android:id="@+id/summaryPersonLine"
+                                    style="@style/TextAppearance.Material3.BodySmall"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    tools:text="De M. Moussa" />
+
+                            </LinearLayout>
+
+                        </LinearLayout>
+
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="1dp"
+                            android:layout_marginVertical="@dimen/spacing_m"
+                            android:background="@color/arzikina_divider_on_balance_card" />
+
+                        <!-- Trois lignes "libellé / valeur" simples (pas de composant dédié : un
+                             LinearLayout à deux TextView suffit, comme ailleurs dans l'app). -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal">
+
+                            <TextView
+                                style="@style/TextAppearance.Material3.BodyMedium"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="@string/loan_form_summary_amount_label"
+                                android:textColor="@color/arzikina_on_balance_card_variant" />
+
+                            <TextView
+                                android:id="@+id/summaryAmountValue"
+                                style="@style/TextAppearance.Material3.TitleSmall"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:textColor="@android:color/white"
+                                tools:text="300 000 F CFA" />
+
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/spacing_s"
+                            android:orientation="horizontal">
+
+                            <TextView
+                                style="@style/TextAppearance.Material3.BodyMedium"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="@string/loan_form_start_date_label"
+                                android:textColor="@color/arzikina_on_balance_card_variant" />
+
+                            <TextView
+                                android:id="@+id/summaryStartDateValue"
+                                style="@style/TextAppearance.Material3.TitleSmall"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:textColor="@android:color/white"
+                                tools:text="12/05/2025" />
+
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/spacing_s"
+                            android:orientation="horizontal">
+
+                            <TextView
+                                style="@style/TextAppearance.Material3.BodyMedium"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="@string/loan_form_due_date_label"
+                                android:textColor="@color/arzikina_on_balance_card_variant" />
+
+                            <TextView
+                                android:id="@+id/summaryDueDateValue"
+                                style="@style/TextAppearance.Material3.TitleSmall"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:textColor="@android:color/white"
+                                tools:text="12/10/2025" />
+
+                        </LinearLayout>
+
+                    </LinearLayout>
+
+                </com.google.android.material.card.MaterialCardView>
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/descriptionLayout"
+                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/spacing_l"
+                    android:hint="@string/loan_form_description_label">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/descriptionInput"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="@string/loan_form_description_placeholder"
+                        android:inputType="textMultiLine|textCapSentences"
+                        android:maxLines="3" />
+
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <!-- Premier versement (facultatif) : voir maquette, encadré distinct. -->
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/spacing_l"
+                    app:cardCornerRadius="@dimen/corner_radius_medium"
+                    app:cardElevation="0dp"
+                    app:strokeColor="?attr/colorOutline"
+                    app:strokeWidth="1dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="@dimen/spacing_m">
+
+                        <TextView
+                            style="@style/TextAppearance.Material3.TitleSmall"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/loan_form_first_payment_title"
+                            android:textColor="?attr/colorOnSurface" />
+
+                        <com.google.android.material.textfield.TextInputLayout
+                            android:id="@+id/firstPaymentAmountLayout"
+                            style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/spacing_m"
+                            android:hint="@string/loan_form_first_payment_amount_label">
+
+                            <com.google.android.material.textfield.TextInputEditText
+                                android:id="@+id/firstPaymentAmountInput"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:inputType="numberDecimal" />
+
+                        </com.google.android.material.textfield.TextInputLayout>
+
+                        <com.google.android.material.textfield.TextInputLayout
+                            android:id="@+id/firstPaymentDateLayout"
+                            style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/spacing_m"
+                            android:hint="@string/loan_form_first_payment_date_label">
+
+                            <com.google.android.material.textfield.TextInputEditText
+                                android:id="@+id/firstPaymentDateInput"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:clickable="true"
+                                android:cursorVisible="false"
+                                android:focusable="false"
+                                tools:text="12/05/2025" />
+
+                        </com.google.android.material.textfield.TextInputLayout>
+
+                    </LinearLayout>
+
+                </com.google.android.material.card.MaterialCardView>
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+    </androidx.core.widget.NestedScrollView>
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/primaryActionButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="@dimen/spacing_m"
+        android:text="@string/loan_form_next_action"
+        app:layout_constraintBottom_toBottomOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

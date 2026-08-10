@@ -1,0 +1,305 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Premier élément de la liste de l'écran "Détail du prêt/emprunt" (voir LoanDetailAdapter,
+    même principe Header+Rows que item_loan_summary_header.xml/item_loan.xml sur l'écran
+    principal) : réunit la carte "postcard" de résumé (avatar/titre/statut/montants/progression,
+    même structure visuelle que item_loan.xml), la carte "Informations" (dates/description), et le
+    titre de la section "Versements" — les remboursements eux-mêmes sont des items séparés
+    (item_loan_payment.xml) suivant celui-ci dans la liste.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingHorizontal="@dimen/spacing_m"
+    android:paddingTop="@dimen/spacing_m">
+
+    <!-- ==================== Carte résumé (postcard) ==================== -->
+    <com.google.android.material.card.MaterialCardView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:checkable="false"
+        app:cardBackgroundColor="@color/arzikina_postcart_background"
+        app:cardCornerRadius="@dimen/corner_radius_medium"
+        app:cardElevation="@dimen/elevation_raised">
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="@dimen/spacing_m">
+
+            <TextView
+                android:id="@+id/personAvatar"
+                android:layout_width="@dimen/icon_size_large"
+                android:layout_height="@dimen/icon_size_large"
+                android:background="@drawable/bg_icon_circle"
+                android:gravity="center"
+                android:textColor="@android:color/white"
+                android:textStyle="bold"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                tools:backgroundTint="#16A34A"
+                tools:text="A" />
+
+            <TextView
+                android:id="@+id/loanTitle"
+                style="@style/TextAppearance.Material3.TitleMedium"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/spacing_m"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:textColor="@android:color/white"
+                app:layout_constraintEnd_toStartOf="@id/statusPill"
+                app:layout_constraintStart_toEndOf="@id/personAvatar"
+                app:layout_constraintTop_toTopOf="@id/personAvatar"
+                tools:text="Prêt personnel" />
+
+            <TextView
+                android:id="@+id/personLine"
+                style="@style/TextAppearance.Material3.BodySmall"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/spacing_m"
+                android:layout_marginTop="2dp"
+                android:ellipsize="end"
+                android:maxLines="1"
+                app:layout_constraintEnd_toStartOf="@id/statusPill"
+                app:layout_constraintStart_toEndOf="@id/personAvatar"
+                app:layout_constraintTop_toBottomOf="@id/loanTitle"
+                tools:text="À Aminata Diallo"
+                tools:textColor="#16A34A" />
+
+            <TextView
+                android:id="@+id/statusPill"
+                style="@style/TextAppearance.Material3.LabelSmall"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_pill"
+                android:paddingHorizontal="@dimen/spacing_s"
+                android:paddingVertical="3dp"
+                android:textColor="@android:color/white"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="@id/personAvatar"
+                tools:backgroundTint="#16A34A"
+                tools:text="En cours" />
+
+            <androidx.constraintlayout.widget.Barrier
+                android:id="@+id/headerBarrier"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:barrierDirection="bottom"
+                app:constraint_referenced_ids="personAvatar,personLine" />
+
+            <TextView
+                android:id="@+id/amountValue"
+                style="@style/TextAppearance.Material3.HeadlineSmall"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_l"
+                android:textColor="@android:color/white"
+                android:textStyle="bold"
+                app:layout_constraintEnd_toStartOf="@id/remainingValue"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/headerBarrier"
+                tools:text="150 000 F CFA" />
+
+            <TextView
+                android:id="@+id/remainingValue"
+                style="@style/TextAppearance.Material3.HeadlineSmall"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_l"
+                android:textStyle="bold"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/headerBarrier"
+                tools:text="100 000 F CFA"
+                tools:textColor="#DC2626" />
+
+            <TextView
+                android:id="@+id/repaidLabel"
+                style="@style/TextAppearance.Material3.BodySmall"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:textColor="@color/arzikina_on_balance_card_variant"
+                app:layout_constraintEnd_toStartOf="@id/remainingLabel"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/amountValue"
+                tools:text="Remboursé : 50 000 F CFA" />
+
+            <TextView
+                android:id="@+id/remainingLabel"
+                style="@style/TextAppearance.Material3.BodySmall"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:text="@string/loan_detail_remaining_label"
+                android:textColor="@color/arzikina_on_balance_card_variant"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/remainingValue" />
+
+            <androidx.constraintlayout.widget.Barrier
+                android:id="@+id/detailsBarrier"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:barrierDirection="bottom"
+                app:constraint_referenced_ids="repaidLabel,remainingLabel" />
+
+            <com.google.android.material.progressindicator.LinearProgressIndicator
+                android:id="@+id/progressBar"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_s"
+                app:indicatorColor="@color/loan_lent_color"
+                app:layout_constraintEnd_toStartOf="@id/progressPercent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/detailsBarrier"
+                app:trackColor="@color/arzikina_divider_on_balance_card"
+                app:trackCornerRadius="4dp"
+                app:trackThickness="6dp"
+                tools:progress="33" />
+
+            <TextView
+                android:id="@+id/progressPercent"
+                style="@style/TextAppearance.Material3.LabelSmall"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/spacing_s"
+                android:textColor="@android:color/white"
+                app:layout_constraintBottom_toBottomOf="@id/progressBar"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="@id/progressBar"
+                tools:text="33%" />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+    </com.google.android.material.card.MaterialCardView>
+
+    <!-- ==================== Carte Informations ==================== -->
+    <com.google.android.material.card.MaterialCardView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/spacing_m"
+        android:checkable="false"
+        app:cardCornerRadius="@dimen/corner_radius_medium"
+        app:cardElevation="0dp"
+        app:strokeColor="?attr/colorOutline"
+        app:strokeWidth="1dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="@dimen/spacing_m">
+
+            <TextView
+                style="@style/TextAppearance.Material3.TitleSmall"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/loan_detail_info_title"
+                android:textColor="?attr/colorOnSurface" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_m"
+                android:orientation="horizontal">
+
+                <TextView
+                    style="@style/TextAppearance.Material3.BodyMedium"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/loan_detail_created_label"
+                    android:textColor="?attr/colorOnSurfaceVariant" />
+
+                <TextView
+                    android:id="@+id/createdValue"
+                    style="@style/TextAppearance.Material3.TitleSmall"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="?attr/colorOnSurface"
+                    tools:text="12 mai 2025" />
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_s"
+                android:orientation="horizontal">
+
+                <TextView
+                    style="@style/TextAppearance.Material3.BodyMedium"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/loan_detail_due_label"
+                    android:textColor="?attr/colorOnSurfaceVariant" />
+
+                <TextView
+                    android:id="@+id/dueValue"
+                    style="@style/TextAppearance.Material3.TitleSmall"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="?attr/colorOnSurface"
+                    tools:text="12 juin 2025" />
+
+            </LinearLayout>
+
+            <!-- Masqué si Loan.description est vide (voir LoanDetailAdapter). -->
+            <LinearLayout
+                android:id="@+id/descriptionContainer"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_s"
+                android:orientation="vertical"
+                tools:visibility="visible">
+
+                <TextView
+                    style="@style/TextAppearance.Material3.BodyMedium"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/loan_detail_description_label"
+                    android:textColor="?attr/colorOnSurfaceVariant" />
+
+                <TextView
+                    android:id="@+id/descriptionValue"
+                    style="@style/TextAppearance.Material3.BodyMedium"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:textColor="?attr/colorOnSurface"
+                    tools:text="Pour les frais de scolarité du trimestre." />
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+    </com.google.android.material.card.MaterialCardView>
+
+    <!-- ==================== Section Versements ==================== -->
+    <TextView
+        android:id="@+id/paymentsSectionTitle"
+        style="@style/TextAppearance.Material3.TitleSmall"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/spacing_l"
+        android:textColor="?attr/colorOnSurface"
+        tools:text="Versements (2)" />
+
+    <TextView
+        android:id="@+id/paymentsEmptyText"
+        style="@style/TextAppearance.Material3.BodyMedium"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/spacing_s"
+        android:text="@string/loan_detail_payments_empty"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        android:visibility="gone"
+        tools:visibility="visible" />
+
+</LinearLayout>

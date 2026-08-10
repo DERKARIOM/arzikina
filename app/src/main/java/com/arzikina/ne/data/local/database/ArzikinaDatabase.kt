@@ -7,6 +7,9 @@ import com.arzikina.ne.data.local.dao.AccountDao
 import com.arzikina.ne.data.local.dao.BudgetDao
 import com.arzikina.ne.data.local.dao.CardSecretDao
 import com.arzikina.ne.data.local.dao.CategoryDao
+import com.arzikina.ne.data.local.dao.LoanDao
+import com.arzikina.ne.data.local.dao.LoanPaymentDao
+import com.arzikina.ne.data.local.dao.PersonDao
 import com.arzikina.ne.data.local.dao.SavingsGoalDao
 import com.arzikina.ne.data.local.dao.TransactionDao
 import com.arzikina.ne.data.local.dao.UserDao
@@ -14,6 +17,9 @@ import com.arzikina.ne.data.local.entity.AccountEntity
 import com.arzikina.ne.data.local.entity.BudgetEntity
 import com.arzikina.ne.data.local.entity.CardSecretEntity
 import com.arzikina.ne.data.local.entity.CategoryEntity
+import com.arzikina.ne.data.local.entity.LoanEntity
+import com.arzikina.ne.data.local.entity.LoanPaymentEntity
+import com.arzikina.ne.data.local.entity.PersonEntity
 import com.arzikina.ne.data.local.entity.SavingsGoalEntity
 import com.arzikina.ne.data.local.entity.TransactionEntity
 import com.arzikina.ne.data.local.entity.UserEntity
@@ -54,6 +60,8 @@ import com.arzikina.ne.data.local.entity.UserEntity
  *   `cardExpiryMonth`, `cardExpiryYear` sur `accounts` — voir [MIGRATION_10_11]).
  * - 12 : Numéro complet et CVV d'une carte de crédit, CHIFFRÉS, table séparée `card_secrets`
  *   (voir [MIGRATION_11_12]/[CardSecretEntity]/`data/security/CardCipher`).
+ * - 13 : Prêts / Emprunts, tables `persons`, `loans`, `loan_payments` (voir
+ *   [MIGRATION_12_13]/[PersonEntity]/[LoanEntity]/[LoanPaymentEntity]).
  */
 @Database(
     entities = [
@@ -63,9 +71,12 @@ import com.arzikina.ne.data.local.entity.UserEntity
         BudgetEntity::class,
         SavingsGoalEntity::class,
         UserEntity::class,
-        CardSecretEntity::class
+        CardSecretEntity::class,
+        PersonEntity::class,
+        LoanEntity::class,
+        LoanPaymentEntity::class
     ],
-    version = 12,
+    version = 13,
     exportSchema = true
 )
 @TypeConverters(Converters::class)
@@ -77,4 +88,7 @@ abstract class ArzikinaDatabase : RoomDatabase() {
     abstract fun savingsGoalDao(): SavingsGoalDao
     abstract fun userDao(): UserDao
     abstract fun cardSecretDao(): CardSecretDao
+    abstract fun personDao(): PersonDao
+    abstract fun loanDao(): LoanDao
+    abstract fun loanPaymentDao(): LoanPaymentDao
 }

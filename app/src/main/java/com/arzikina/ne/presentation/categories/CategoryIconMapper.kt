@@ -28,5 +28,6 @@ object CategoryIconMapper {
         CategoryIcon.EDUCATION -> R.drawable.ic_category_education_24
         CategoryIcon.HOME -> R.drawable.ic_category_home_24
         CategoryIcon.OTHER -> R.drawable.ic_category_other_24
+        CategoryIcon.LOAN -> R.drawable.ic_loan_24
     }
 }

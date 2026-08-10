@@ -5,7 +5,11 @@ import com.arzikina.ne.domain.model.AccountIcon
 import com.arzikina.ne.domain.model.AccountType
 import com.arzikina.ne.domain.model.BudgetPeriod
 import com.arzikina.ne.domain.model.CategoryIcon
+import com.arzikina.ne.domain.model.LoanReason
+import com.arzikina.ne.domain.model.LoanStatus
+import com.arzikina.ne.domain.model.LoanType
 import com.arzikina.ne.domain.model.PaymentMethod
+import com.arzikina.ne.domain.model.RepaymentMode
 import com.arzikina.ne.domain.model.SecurityQuestion
 import com.arzikina.ne.domain.model.TransactionType
 
@@ -58,4 +62,28 @@ class Converters {
 
     @TypeConverter
     fun toPaymentMethod(value: String?): PaymentMethod? = value?.let { PaymentMethod.valueOf(it) }
+
+    @TypeConverter
+    fun fromLoanType(type: LoanType): String = type.name
+
+    @TypeConverter
+    fun toLoanType(value: String): LoanType = LoanType.valueOf(value)
+
+    @TypeConverter
+    fun fromLoanReason(reason: LoanReason): String = reason.name
+
+    @TypeConverter
+    fun toLoanReason(value: String): LoanReason = LoanReason.valueOf(value)
+
+    @TypeConverter
+    fun fromRepaymentMode(mode: RepaymentMode): String = mode.name
+
+    @TypeConverter
+    fun toRepaymentMode(value: String): RepaymentMode = RepaymentMode.valueOf(value)
+
+    @TypeConverter
+    fun fromLoanStatus(status: LoanStatus): String = status.name
+
+    @TypeConverter
+    fun toLoanStatus(value: String): LoanStatus = LoanStatus.valueOf(value)
 }

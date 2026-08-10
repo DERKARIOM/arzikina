@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Détail d'un prêt/emprunt (voir maquette). Un seul RecyclerView (en-tête + versements, voir
+    LoanDetailAdapter) plutôt qu'un NestedScrollView contenant un RecyclerView imbriqué — même
+    principe que fragment_loans.xml ("optimise les listes longues", instructions projet), même si
+    la liste des versements reste courte en pratique.
+-->
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="?attr/colorSurface">
+
+    <com.google.android.material.appbar.MaterialToolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:background="?attr/colorSurface"
+        app:layout_constraintTop_toTopOf="parent"
+        app:navigationIcon="@drawable/ic_arrow_back_24"
+        app:title="@string/loan_detail_title"
+        app:titleTextColor="?attr/colorOnSurface" />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/detailList"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:clipToPadding="false"
+        android:paddingBottom="88dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/toolbar"
+        tools:listitem="@layout/item_loan_payment" />
+
+    <!--
+        Enregistrement d'un remboursement : ouvre LoanPaymentFormFragment (voir
+        LoanDetailFragment.navigateToPaymentForm, Étape 6 "Gestion des remboursements" du plan de
+        développement Prêts/Emprunts).
+    -->
+    <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
+        android:id="@+id/addPaymentButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="@dimen/spacing_m"
+        android:text="@string/loan_detail_add_payment_action"
+        android:textColor="@color/white"
+        app:icon="@drawable/ic_add_24"
+        app:iconTint="@color/white"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

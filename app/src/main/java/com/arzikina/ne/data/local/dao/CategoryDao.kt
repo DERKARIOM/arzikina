@@ -20,6 +20,13 @@ interface CategoryDao {
     @Query("SELECT * FROM categories WHERE id = :id AND userId = :userId")
     suspend fun getById(id: Long, userId: Long): CategoryEntity?
 
+    /** Utilisé par `LoanRepositoryImpl` pour retrouver l'une des 4 catégories par défaut Prêts/
+     * Emprunts (voir `DefaultCategories`) par son nom exact — l'icône seule ([CategoryIcon.LOAN])
+     * ne suffit pas à les distinguer : deux d'entre elles partagent le même [TransactionType]
+     * (ex. "Prêt accordé" et "Remboursement d'emprunt" sont toutes deux des dépenses). */
+    @Query("SELECT * FROM categories WHERE name = :name AND userId = :userId LIMIT 1")
+    suspend fun getFirstByNameForUser(name: String, userId: Long): CategoryEntity?
+
     @Upsert
     suspend fun upsert(category: CategoryEntity)
 

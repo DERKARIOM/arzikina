@@ -16,8 +16,11 @@ interface TransactionDao {
     @Query("SELECT * FROM transactions WHERE id = :id AND userId = :userId")
     suspend fun getById(id: Long, userId: Long): TransactionEntity?
 
+    /** Retourne l'id de la ligne insérée, ou -1 en cas de mise à jour (voir `AccountDao.upsert`) —
+     * nécessaire pour lier une transaction générée automatiquement à un `Loan`/`LoanPayment`
+     * (voir `data/repository/LoanRepositoryImpl`). */
     @Upsert
-    suspend fun upsert(transaction: TransactionEntity)
+    suspend fun upsert(transaction: TransactionEntity): Long
 
     /** Utilisé uniquement par la restauration d'une sauvegarde (remplacement complet). */
     @Upsert

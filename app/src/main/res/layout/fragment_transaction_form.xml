@@ -46,6 +46,38 @@
             android:padding="@dimen/spacing_m">
 
             <!--
+                Transaction générée automatiquement par un prêt/emprunt (voir la doc de
+                TransactionFormViewModel.TransactionFormState.linkedLoanId) : bannière cliquable
+                redirigeant vers "Détail du prêt/emprunt" plutôt que de laisser modifier/supprimer
+                cette transaction ici, ce qui désynchroniserait le montant remboursé/restant affiché
+                là-bas. Masquée (GONE) dans tous les autres cas, la grande majorité des transactions.
+            -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/loanLinkedBanner"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="@dimen/spacing_m"
+                android:checkable="false"
+                android:clickable="true"
+                android:focusable="true"
+                android:visibility="gone"
+                app:cardBackgroundColor="@color/warning_amber"
+                app:cardCornerRadius="@dimen/corner_radius_medium"
+                app:cardElevation="0dp"
+                tools:visibility="visible">
+
+                <TextView
+                    android:id="@+id/loanLinkedBannerText"
+                    style="@style/TextAppearance.Material3.BodyMedium"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:padding="@dimen/spacing_m"
+                    android:text="@string/transaction_form_loan_linked_banner"
+                    android:textColor="@android:color/white" />
+
+            </com.google.android.material.card.MaterialCardView>
+
+            <!--
                 Type sous forme de menu déroulant fermé (voir
                 TransactionFormFragment.setUpTypeDropdown), plus compact que
                 l'ancien sélecteur à deux boutons — et prêt à accueillir un

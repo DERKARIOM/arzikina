@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Dernière ligne du dialogue de sélection (voir PersonPickerDialog) : ouvre le petit dialogue
+     "Nouvelle personne" plutôt que d'obliger à quitter le formulaire de prêt/emprunt en cours. -->
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="?attr/selectableItemBackground"
+    android:clickable="true"
+    android:focusable="true"
+    android:paddingHorizontal="@dimen/spacing_m"
+    android:paddingVertical="@dimen/spacing_s">
+
+    <ImageView
+        android:id="@+id/addNewIcon"
+        android:layout_width="@dimen/icon_size_large"
+        android:layout_height="@dimen/icon_size_large"
+        android:background="@drawable/bg_icon_circle"
+        android:backgroundTint="?attr/colorPrimary"
+        android:contentDescription="@null"
+        android:padding="@dimen/spacing_s"
+        android:src="@drawable/ic_add_24"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:tint="@android:color/white" />
+
+    <TextView
+        style="@style/TextAppearance.Material3.TitleSmall"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/spacing_m"
+        android:text="@string/loan_form_add_new_person"
+        android:textColor="?attr/colorPrimary"
+        app:layout_constraintBottom_toBottomOf="@id/addNewIcon"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@id/addNewIcon"
+        app:layout_constraintTop_toTopOf="@id/addNewIcon" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

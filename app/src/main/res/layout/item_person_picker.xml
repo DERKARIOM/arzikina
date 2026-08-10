@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Ligne "personne existante" du dialogue de sélection (voir PersonPickerDialog). Même structure
+     que item_account_picker.xml, avatar initiale+couleur (voir PersonAvatar) au lieu d'une icône. -->
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="?attr/selectableItemBackground"
+    android:clickable="true"
+    android:focusable="true"
+    android:paddingHorizontal="@dimen/spacing_m"
+    android:paddingVertical="@dimen/spacing_s">
+
+    <TextView
+        android:id="@+id/personAvatar"
+        android:layout_width="@dimen/icon_size_large"
+        android:layout_height="@dimen/icon_size_large"
+        android:background="@drawable/bg_icon_circle"
+        android:gravity="center"
+        android:textColor="@android:color/white"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:backgroundTint="#3B82F6"
+        tools:text="A" />
+
+    <TextView
+        android:id="@+id/personName"
+        style="@style/TextAppearance.Material3.TitleSmall"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/spacing_m"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:textColor="?attr/colorOnSurface"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@id/personAvatar"
+        app:layout_constraintTop_toTopOf="@id/personAvatar"
+        tools:text="Aminata Diallo" />
+
+    <TextView
+        android:id="@+id/personPhone"
+        style="@style/TextAppearance.Material3.BodySmall"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/spacing_m"
+        android:layout_marginTop="2dp"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@id/personAvatar"
+        app:layout_constraintTop_toBottomOf="@id/personName"
+        tools:text="+227 90 00 00 00" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

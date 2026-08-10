@@ -42,6 +42,7 @@
     <string name="action_save">Enregistrer</string>
     <string name="action_delete">Supprimer</string>
     <string name="action_cancel">Annuler</string>
+    <string name="action_add">Ajouter</string>
 
     <!-- Authentification — Inscription -->
     <string name="register_title">Créer un compte</string>
@@ -207,6 +208,8 @@
     <string name="transactions_empty_message">Ajoute ta première transaction pour commencer à suivre tes finances.</string>
     <string name="transactions_delete_title">Supprimer cette transaction ?</string>
     <string name="transactions_delete_message">Cette action est irréversible.</string>
+    <!-- Voir TransactionFormViewModel.TransactionFormState.linkedLoanId. -->
+    <string name="transaction_form_loan_linked_banner">Cette transaction fait partie d\'un prêt/emprunt. Touche ici pour la gérer depuis « Détail du prêt/emprunt ».</string>
     <string name="transaction_form_title_add">Nouvelle transaction</string>
     <string name="transaction_form_title_edit">Modifier la transaction</string>
     <string name="transaction_form_type_label">Type</string>
@@ -337,4 +340,96 @@
     <string name="savings_goal_form_current_label">Montant déjà épargné</string>
     <string name="savings_goal_form_deadline_toggle">Définir une échéance</string>
     <string name="savings_goal_form_deadline_label">Échéance</string>
+
+    <!--
+        Prêts / Emprunts — écran principal (voir presentation/utilities/loans/LoansFragment).
+        "utility_loans_title" (existante, voir plus haut) reste le titre de la barre d'outils.
+    -->
+    <string name="loans_summary_receivable_title">Total reçu</string>
+    <string name="loans_summary_receivable_count">%d prêt(s) accordé(s)</string>
+    <string name="loans_summary_owed_title">Total dû</string>
+    <string name="loans_summary_owed_count">%d emprunt(s)</string>
+    <string name="loans_list_title">Mes prêts et emprunts</string>
+    <string name="loans_list_count">%d élément(s)</string>
+    <string name="loans_default_title_lent">Prêt</string>
+    <string name="loans_default_title_borrowed">Emprunt</string>
+    <string name="loans_person_prefix_lent">À %s</string>
+    <string name="loans_person_prefix_borrowed">De %s</string>
+    <string name="loans_repaid_amount">Remboursé : %s</string>
+    <string name="loans_remaining_label">Restant</string>
+    <string name="loans_progress_percent">%d%%</string>
+    <string name="loans_status_ongoing">En cours</string>
+    <string name="loans_status_repaid">Remboursé</string>
+    <string name="loans_status_overdue">En retard</string>
+    <string name="loans_status_upcoming">À venir</string>
+    <string name="loans_empty_title">Aucun enregistrement</string>
+    <string name="loans_empty_message">Ajoutez votre premier prêt ou emprunt pour commencer à suivre vos transactions.</string>
+    <string name="loans_add_action">Ajouter un prêt / emprunt</string>
+    <!-- Provisoire : réutilisé par LoanDetailFragment pour le bouton "Enregistrer un remboursement"
+         (voir plan de développement Prêts/Emprunts, étape suivante "Gestion des remboursements") —
+         ce message s'affiche tant que ce formulaire n'existe pas encore. -->
+    <string name="loans_coming_soon">Disponible à une prochaine étape du développement.</string>
+
+    <!-- Prêts / Emprunts — écran détail (voir presentation/utilities/loans/LoanDetailFragment). -->
+    <string name="loan_detail_title">Détail</string>
+    <string name="loan_detail_remaining_label">Restant à payer</string>
+    <string name="loan_detail_info_title">Informations</string>
+    <string name="loan_detail_created_label">Créé le</string>
+    <string name="loan_detail_due_label">Échéance</string>
+    <string name="loan_detail_description_label">Description</string>
+    <string name="loan_detail_payments_title">Versements (%d)</string>
+    <string name="loan_detail_payments_empty">Aucun remboursement enregistré pour le moment.</string>
+    <string name="loan_detail_add_payment_action">Enregistrer un remboursement</string>
+    <string name="loan_detail_delete_title">Supprimer ce prêt / emprunt ?</string>
+    <string name="loan_detail_delete_message">Supprimer « %1$s » ? Cette action est irréversible et supprimera aussi les transactions associées (décaissement et remboursements).</string>
+
+    <!-- Prêts / Emprunts — formulaire d'enregistrement d'un remboursement
+         (voir presentation/utilities/loans/LoanPaymentFormFragment). -->
+    <string name="loan_payment_form_title">Enregistrer un remboursement</string>
+    <string name="loan_payment_form_remaining_label">Restant à payer</string>
+    <string name="loan_payment_form_amount_label">Montant du remboursement</string>
+    <string name="loan_payment_form_date_label">Date</string>
+    <string name="loan_payment_form_note_label">Note</string>
+    <string name="loan_payment_form_note_placeholder">Ajoute une note (facultatif)</string>
+    <string name="loan_payment_form_save_action">Enregistrer</string>
+    <string name="loan_payment_form_saved_message">Remboursement enregistré.</string>
+    <string name="loan_payment_delete_title">Supprimer ce remboursement ?</string>
+    <string name="loan_payment_delete_message">Supprimer ce remboursement de %1$s ? Cette action est irréversible et supprimera aussi la transaction associée.</string>
+
+    <!-- Prêts / Emprunts — recherche et filtres de l'écran principal (voir LoansViewModel/LoansFragment). -->
+    <string name="loans_search_placeholder">Rechercher un prêt ou un emprunt</string>
+    <string name="loans_filter_all">Tous</string>
+    <string name="loans_no_results_title">Aucun résultat</string>
+    <string name="loans_no_results_message">Aucun prêt ou emprunt ne correspond à ta recherche.</string>
+
+    <!-- Formulaire d'ajout d'un prêt/emprunt, en 2 pages (voir LoanFormFragment/LoanFormViewModel). -->
+    <string name="loan_form_title_step1">Ajouter un prêt / emprunt</string>
+    <string name="loan_form_title_step2">Résumé du prêt / emprunt</string>
+    <string name="loan_form_step_indicator">%1$d/%2$d</string>
+    <string name="loan_form_type_label">Type</string>
+    <string name="loan_form_type_lent_title">Prêt</string>
+    <string name="loan_form_type_lent_subtitle">Vous prêtez de l\'argent</string>
+    <string name="loan_form_type_borrowed_title">Emprunt</string>
+    <string name="loan_form_type_borrowed_subtitle">Vous empruntez de l\'argent</string>
+    <string name="loan_form_person_label">Bénéficiaire / Prêteur</string>
+    <string name="loan_form_person_placeholder">Sélectionner une personne</string>
+    <string name="loan_form_person_picker_title">Choisir une personne</string>
+    <string name="loan_form_add_new_person">Ajouter une nouvelle personne</string>
+    <string name="loan_form_new_person_title">Nouvelle personne</string>
+    <string name="loan_form_new_person_name_label">Nom</string>
+    <string name="loan_form_new_person_phone_label">Téléphone (facultatif)</string>
+    <string name="loan_form_new_person_name_required">Le nom est obligatoire</string>
+    <string name="loan_form_amount_label">Montant</string>
+    <string name="loan_form_start_date_label">Date de début</string>
+    <string name="loan_form_due_date_label">Date d\'échéance</string>
+    <string name="loan_form_next_action">Suivant</string>
+    <string name="loan_form_summary_type_label">Type</string>
+    <string name="loan_form_summary_amount_label">Montant total</string>
+    <string name="loan_form_description_label">Description</string>
+    <string name="loan_form_description_placeholder">Ajoute une note (facultatif)</string>
+    <string name="loan_form_first_payment_title">Premier versement (facultatif)</string>
+    <string name="loan_form_first_payment_amount_label">Montant</string>
+    <string name="loan_form_first_payment_date_label">Date</string>
+    <string name="loan_form_save_action">Enregistrer</string>
+    <string name="loan_form_saved_message">Prêt/emprunt enregistré.</string>
 </resources>

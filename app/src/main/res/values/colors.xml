@@ -82,4 +82,18 @@
     <color name="arzikina_on_dashboard_header">#FFFFFFFF</color>
     <color name="white">#FFFFFFFF</color>
     <color name="arzikina_on_dashboard_header_variant">#CEE6E0</color>
+
+    <!--
+        Prêts/Emprunts (voir presentation/utilities/loans) : vert/rouge IDENTIQUES aux catégories
+        par défaut de cette fonctionnalité (voir data/local/database/DefaultCategories, 0xFF16A34A /
+        @color/expense_red = 0xFFDC2626) — pas @color/income_green (teal, couleur d'action générale
+        de l'app) pour rester visuellement cohérent au sein de cette seule fonctionnalité. Les
+        boutons/FAB de cet écran réutilisent en revanche ?attr/colorPrimary comme partout ailleurs
+        dans Arzikina (décision explicite, pas la couleur violette de la maquette d'origine).
+    -->
+    <color name="loan_lent_color">#FF16A34A</color>
+    <!-- Fond des cartes de résumé (voir item_loan_summary_header.xml) : mêmes teintes que
+         ci-dessus mais très assombries, pour rester lisibles en carte "postcard" sombre. -->
+    <color name="loan_summary_lent_bg">#1B3226</color>
+    <color name="loan_summary_borrowed_bg">#3A1E1E</color>
 </resources>

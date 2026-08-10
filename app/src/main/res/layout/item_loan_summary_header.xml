@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Première ligne de la RecyclerView de l'écran principal Prêts/Emprunts (voir
+    LoansAdapter/LoansListRow.Header) : les deux cartes de résumé + l'en-tête de la liste des
+    prêts/emprunts qui suit. Fait partie du défilement (pas un en-tête fixe) : voir la doc de
+    LoansListRow pour le raisonnement.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:paddingHorizontal="@dimen/spacing_m"
+        android:paddingTop="@dimen/spacing_m">
+
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="@dimen/spacing_s"
+            android:layout_weight="1"
+            app:cardBackgroundColor="@color/loan_summary_lent_bg"
+            app:cardCornerRadius="@dimen/corner_radius_medium"
+            app:cardElevation="@dimen/elevation_card">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="@dimen/spacing_m">
+
+                <ImageView
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:background="@drawable/bg_icon_circle"
+                    android:backgroundTint="@color/loan_lent_color"
+                    android:contentDescription="@null"
+                    android:padding="8dp"
+                    android:src="@drawable/ic_arrow_up_right_24"
+                    app:tint="@android:color/white" />
+
+                <TextView
+                    style="@style/TextAppearance.Material3.BodySmall"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/spacing_s"
+                    android:text="@string/loans_summary_receivable_title"
+                    android:textColor="@color/arzikina_on_balance_card_variant" />
+
+                <TextView
+                    android:id="@+id/receivableAmount"
+                    style="@style/TextAppearance.Material3.TitleMedium"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:textColor="@android:color/white"
+                    android:textStyle="bold"
+                    tools:text="1 000 000 F CFA" />
+
+                <TextView
+                    android:id="@+id/receivableCount"
+                    style="@style/TextAppearance.Material3.LabelSmall"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/spacing_s"
+                    android:background="@drawable/bg_pill_translucent_white"
+                    android:paddingHorizontal="@dimen/spacing_s"
+                    android:paddingVertical="3dp"
+                    android:textColor="@android:color/white"
+                    tools:text="3 prêt(s) accordé(s)" />
+
+            </LinearLayout>
+
+        </com.google.android.material.card.MaterialCardView>
+
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/spacing_s"
+            android:layout_weight="1"
+            app:cardBackgroundColor="@color/loan_summary_borrowed_bg"
+            app:cardCornerRadius="@dimen/corner_radius_medium"
+            app:cardElevation="@dimen/elevation_card">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="@dimen/spacing_m">
+
+                <ImageView
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:background="@drawable/bg_icon_circle"
+                    android:backgroundTint="@color/expense_red"
+                    android:contentDescription="@null"
+                    android:padding="8dp"
+                    android:src="@drawable/ic_arrow_down_24"
+                    app:tint="@android:color/white" />
+
+                <TextView
+                    style="@style/TextAppearance.Material3.BodySmall"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/spacing_s"
+                    android:text="@string/loans_summary_owed_title"
+                    android:textColor="@color/arzikina_on_balance_card_variant" />
+
+                <TextView
+                    android:id="@+id/owedAmount"
+                    style="@style/TextAppearance.Material3.TitleMedium"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:textColor="@android:color/white"
+                    android:textStyle="bold"
+                    tools:text="750 000 F CFA" />
+
+                <TextView
+                    android:id="@+id/owedCount"
+                    style="@style/TextAppearance.Material3.LabelSmall"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/spacing_s"
+                    android:background="@drawable/bg_pill_translucent_white"
+                    android:paddingHorizontal="@dimen/spacing_s"
+                    android:paddingVertical="3dp"
+                    android:textColor="@android:color/white"
+                    tools:text="2 emprunt(s)" />
+
+            </LinearLayout>
+
+        </com.google.android.material.card.MaterialCardView>
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/spacing_l"
+        android:orientation="horizontal"
+        android:paddingHorizontal="@dimen/spacing_m">
+
+        <TextView
+            style="@style/TextAppearance.Material3.TitleSmall"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/loans_list_title"
+            android:textColor="?attr/colorOnSurface" />
+
+        <TextView
+            android:id="@+id/listCount"
+            style="@style/TextAppearance.Material3.BodySmall"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            tools:text="5 élément(s)" />
+
+    </LinearLayout>
+
+</LinearLayout>

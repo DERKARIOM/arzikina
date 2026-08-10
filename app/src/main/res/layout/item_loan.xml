@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Carte d'un prêt/emprunt (voir maquette écran principal Prêts/Emprunts). Postcard sombre FIXE
+    (voir @color/arzikina_postcart_background, même convention que item_budget.xml/item_account.xml)
+    plutôt qu'un fond dépendant du thème : cohérent avec le reste de l'app pour ce style de carte.
+    Toute la carte est cliquable (ouvre "Détail du prêt", voir LoansAdapter) — pas de bouton dédié,
+    comme item_account.xml.
+-->
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/loanCard"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginHorizontal="@dimen/spacing_m"
+    android:layout_marginTop="@dimen/spacing_m"
+    android:checkable="false"
+    android:clickable="true"
+    android:focusable="true"
+    app:cardBackgroundColor="@color/arzikina_postcart_background"
+    app:cardCornerRadius="@dimen/corner_radius_medium"
+    app:cardElevation="@dimen/elevation_raised"
+    app:rippleColor="@android:color/white">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="@dimen/spacing_m">
+
+        <TextView
+            android:id="@+id/personAvatar"
+            android:layout_width="@dimen/icon_size_large"
+            android:layout_height="@dimen/icon_size_large"
+            android:background="@drawable/bg_icon_circle"
+            android:gravity="center"
+            android:textColor="@android:color/white"
+            android:textStyle="bold"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:backgroundTint="#16A34A"
+            tools:text="A" />
+
+        <TextView
+            android:id="@+id/loanTitle"
+            style="@style/TextAppearance.Material3.TitleSmall"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/spacing_m"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textColor="@android:color/white"
+            app:layout_constraintEnd_toStartOf="@id/statusPill"
+            app:layout_constraintStart_toEndOf="@id/personAvatar"
+            app:layout_constraintTop_toTopOf="@id/personAvatar"
+            tools:text="Prêt personnel" />
+
+        <TextView
+            android:id="@+id/personLine"
+            style="@style/TextAppearance.Material3.BodySmall"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/spacing_m"
+            android:layout_marginTop="2dp"
+            android:ellipsize="end"
+            android:maxLines="1"
+            app:layout_constraintEnd_toStartOf="@id/statusPill"
+            app:layout_constraintStart_toEndOf="@id/personAvatar"
+            app:layout_constraintTop_toBottomOf="@id/loanTitle"
+            tools:text="À Aminata Diallo"
+            tools:textColor="#16A34A" />
+
+        <TextView
+            android:id="@+id/statusPill"
+            style="@style/TextAppearance.Material3.LabelSmall"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_pill"
+            android:paddingHorizontal="@dimen/spacing_s"
+            android:paddingVertical="3dp"
+            android:textColor="@android:color/white"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="@id/personAvatar"
+            tools:backgroundTint="#16A34A"
+            tools:text="En cours" />
+
+        <!-- Garantit que la ligne des montants démarre sous le plus bas de {avatar, titre+personne},
+             qui peuvent dépasser les 40dp de l'avatar selon la longueur du texte/l'échelle de police. -->
+        <androidx.constraintlayout.widget.Barrier
+            android:id="@+id/headerBarrier"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:barrierDirection="bottom"
+            app:constraint_referenced_ids="personAvatar,personLine" />
+
+        <TextView
+            android:id="@+id/amountValue"
+            style="@style/TextAppearance.Material3.TitleMedium"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/spacing_m"
+            android:textColor="@android:color/white"
+            android:textStyle="bold"
+            app:layout_constraintEnd_toStartOf="@id/remainingValue"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/headerBarrier"
+            tools:text="150 000 F CFA" />
+
+        <TextView
+            android:id="@+id/remainingValue"
+            style="@style/TextAppearance.Material3.TitleMedium"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/spacing_m"
+            android:textStyle="bold"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/headerBarrier"
+            tools:text="100 000 F CFA"
+            tools:textColor="#DC2626" />
+
+        <TextView
+            android:id="@+id/repaidLabel"
+            style="@style/TextAppearance.Material3.BodySmall"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:textColor="@color/arzikina_on_balance_card_variant"
+            app:layout_constraintEnd_toStartOf="@id/remainingLabel"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/amountValue"
+            tools:text="Remboursé : 50 000 F CFA" />
+
+        <TextView
+            android:id="@+id/remainingLabel"
+            style="@style/TextAppearance.Material3.BodySmall"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:text="@string/loans_remaining_label"
+            android:textColor="@color/arzikina_on_balance_card_variant"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/remainingValue" />
+
+        <!-- "Remboursé"/"Restant" peuvent avoir des hauteurs légèrement différentes (longueur du
+             montant formaté) : une Barrier garantit que la barre de progression démarre sous le
+             plus bas des deux, jamais en chevauchement. -->
+        <androidx.constraintlayout.widget.Barrier
+            android:id="@+id/detailsBarrier"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:barrierDirection="bottom"
+            app:constraint_referenced_ids="repaidLabel,remainingLabel" />
+
+        <com.google.android.material.progressindicator.LinearProgressIndicator
+            android:id="@+id/progressBar"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/spacing_s"
+            app:indicatorColor="@color/loan_lent_color"
+            app:layout_constraintEnd_toStartOf="@id/progressPercent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/detailsBarrier"
+            app:trackColor="@color/arzikina_divider_on_balance_card"
+            app:trackCornerRadius="4dp"
+            app:trackThickness="6dp"
+            tools:progress="33" />
+
+        <TextView
+            android:id="@+id/progressPercent"
+            style="@style/TextAppearance.Material3.LabelSmall"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/spacing_s"
+            android:textColor="@android:color/white"
+            app:layout_constraintBottom_toBottomOf="@id/progressBar"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="@id/progressBar"
+            tools:text="33%" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</com.google.android.material.card.MaterialCardView>

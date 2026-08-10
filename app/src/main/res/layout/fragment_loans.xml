@@ -1,13 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    Écran "en cours de développement" pour Prêts/Emprunts (voir bloc Utilitaires du Dashboard).
-    Aucun modèle de données ni logique métier ici volontairement (voir la demande : "créer
-    uniquement la navigation vers un écran placeholder propre" pour cette première version) —
-    seule la navigation existe, prête à être remplacée par le vrai écran plus tard sans changer
-    l'entrée du bloc Utilitaires (même id de destination, voir nav_graph.xml).
+    Écran principal Prêts/Emprunts (voir presentation/utilities/loans/LoansFragment). Remplace le
+    placeholder "en cours de développement" (voir git history) — l'id de destination
+    `loansFragment` et son point d'entrée depuis le Dashboard restent inchangés (voir nav_graph.xml).
+
+    Une seule RecyclerView (loansList) pour les cartes de résumé + la liste des prêts/emprunts
+    (voir LoansAdapter/LoansListRow) : pas de zone scrollable séparée pour les cartes de résumé.
+
+    Recherche + panneau de filtres (voir LoansViewModel.LoanFilters) : même structure que
+    fragment_transactions.xml (recherche instantanée + ChipGroup par filtre, panneau masqué par
+    défaut, basculé par l'action "Filtres" de la Toolbar) — cohérence entre les deux écrans qui
+    listent des éléments au long cours avec recherche/filtres.
 -->
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="?attr/colorSurface">
@@ -18,28 +25,199 @@
         android:layout_height="?attr/actionBarSize"
         android:background="?attr/colorSurface"
         app:layout_constraintTop_toTopOf="parent"
+        app:menu="@menu/loans_menu"
         app:navigationIcon="@drawable/ic_arrow_back_24"
         app:title="@string/utility_loans_title"
         app:titleTextColor="?attr/colorOnSurface" />
 
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/searchLayout"
+        style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="@dimen/spacing_m"
+        android:layout_marginTop="@dimen/spacing_s"
+        android:hint="@string/loans_search_placeholder"
+        app:endIconMode="clear_text"
+        app:layout_constraintTop_toBottomOf="@id/toolbar"
+        app:startIconDrawable="@drawable/ic_search_24">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/searchInput"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="text"
+            android:maxLines="1" />
+
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/filtersPanel"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/spacing_s"
+        android:visibility="gone"
+        app:layout_constraintTop_toBottomOf="@id/searchLayout"
+        tools:visibility="visible">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingHorizontal="@dimen/spacing_m">
+
+            <com.google.android.material.chip.ChipGroup
+                android:id="@+id/typeChipGroup"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:selectionRequired="true"
+                app:singleSelection="true">
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/typeChipAll"
+                    style="@style/Widget.Material3.Chip.Filter"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:checked="true"
+                    android:text="@string/loans_filter_all"
+                    android:textColor="@color/white" />
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/typeChipLent"
+                    style="@style/Widget.Material3.Chip.Filter"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/loan_form_type_lent_title"
+                    android:textColor="@color/white" />
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/typeChipBorrowed"
+                    style="@style/Widget.Material3.Chip.Filter"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/loan_form_type_borrowed_title"
+                    android:textColor="@color/white" />
+
+            </com.google.android.material.chip.ChipGroup>
+
+            <com.google.android.material.chip.ChipGroup
+                android:id="@+id/statusChipGroup"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_xs"
+                app:selectionRequired="true"
+                app:singleSelection="true">
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/statusChipAll"
+                    style="@style/Widget.Material3.Chip.Filter"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:checked="true"
+                    android:text="@string/loans_filter_all"
+                    android:textColor="@color/white" />
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/statusChipOngoing"
+                    style="@style/Widget.Material3.Chip.Filter"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/loans_status_ongoing"
+                    android:textColor="@color/white" />
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/statusChipOverdue"
+                    style="@style/Widget.Material3.Chip.Filter"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/loans_status_overdue"
+                    android:textColor="@color/white" />
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/statusChipUpcoming"
+                    style="@style/Widget.Material3.Chip.Filter"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/loans_status_upcoming"
+                    android:textColor="@color/white" />
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/statusChipRepaid"
+                    style="@style/Widget.Material3.Chip.Filter"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/loans_status_repaid"
+                    android:textColor="@color/white" />
+
+            </com.google.android.material.chip.ChipGroup>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/resetFiltersButton"
+                style="?attr/materialButtonOutlinedStyle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="end"
+                android:layout_marginTop="@dimen/spacing_s"
+                android:layout_marginBottom="@dimen/spacing_s"
+                android:text="@string/transactions_filters_reset"
+                android:visibility="gone" />
+
+        </LinearLayout>
+
+    </androidx.core.widget.NestedScrollView>
+
+    <!-- "Aucun résultat" pour la recherche/le filtre courant : ligne à l'intérieur MÊME de
+         loansList (voir LoansListRow.NoResults/LoansAdapter), pas une vue séparée — la carte de
+         résumé (Header) reste ainsi visible en tête de liste même quand le filtre ne retourne rien
+         (voir la doc de LoansUiState.summary). -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/loansList"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:clipToPadding="false"
+        android:paddingBottom="88dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/filtersPanel"
+        tools:listitem="@layout/item_loan" />
+
+    <!-- FAB icône seule (texte vide), même convention que fragment_accounts.xml. -->
+    <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
+        android:id="@+id/addLoanButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="@dimen/spacing_m"
+        android:contentDescription="@string/loans_add_action"
+        android:text=""
+        app:icon="@drawable/ic_add_24"
+        app:iconTint="@color/white"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- État vide (voir maquette dédiée) : remplace la liste ET le FAB tant qu'il n'existe aucun
+         prêt/emprunt — un bouton pleine largeur au centre plutôt qu'un FAB, comme sur la maquette. -->
     <LinearLayout
+        android:id="@+id/emptyState"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:gravity="center"
         android:orientation="vertical"
         android:padding="@dimen/spacing_l"
+        android:visibility="gone"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/toolbar">
+        app:layout_constraintTop_toBottomOf="@id/toolbar"
+        tools:visibility="visible">
 
         <ImageView
             android:layout_width="@dimen/icon_size_xlarge"
             android:layout_height="@dimen/icon_size_xlarge"
-            android:alpha="0.5"
+            android:alpha="0.6"
             android:contentDescription="@null"
-            android:src="@drawable/ic_loan_24"
-            app:tint="?attr/colorOnSurfaceVariant" />
+            android:src="@drawable/ic_wallet_24"
+            app:tint="?attr/colorPrimary" />
 
         <TextView
             style="@style/TextAppearance.Material3.TitleMedium"
@@ -47,7 +225,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="@dimen/spacing_m"
             android:gravity="center"
-            android:text="@string/utility_loans_title"
+            android:text="@string/loans_empty_title"
             android:textColor="?attr/colorOnSurface" />
 
         <TextView
@@ -56,8 +234,16 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="@dimen/spacing_s"
             android:gravity="center"
-            android:text="@string/utility_placeholder_message"
+            android:text="@string/loans_empty_message"
             android:textColor="?attr/colorOnSurfaceVariant" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/emptyAddLoanButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/spacing_l"
+            android:text="@string/loans_add_action"
+            app:icon="@drawable/ic_add_24" />
 
     </LinearLayout>
 

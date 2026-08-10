@@ -8,8 +8,10 @@ import com.arzikina.ne.domain.model.Category
 import com.arzikina.ne.domain.model.PaymentMethod
 import com.arzikina.ne.domain.model.Transaction
 import com.arzikina.ne.domain.model.TransactionType
+import com.arzikina.ne.domain.model.LoanCategoryNames
 import com.arzikina.ne.domain.repository.AccountRepository
 import com.arzikina.ne.domain.repository.CategoryRepository
+import com.arzikina.ne.domain.repository.LoanRepository
 import com.arzikina.ne.domain.repository.TransactionRepository
 import com.arzikina.ne.presentation.accounts.computeCurrentBalances
 import com.arzikina.ne.util.Money
@@ -62,12 +64,26 @@ data class TransactionFormState(
     val amountError: String? = null,
     val accountError: String? = null,
     val categoryError: String? = null,
-    val transferAccountError: String? = null
+    val transferAccountError: String? = null,
+    /**
+     * Non-`null` uniquement en modification, une fois [LoanRepository.findLoanIdForTransaction]
+     * résolu (voir [TransactionFormViewModel.init]) : id du prêt/emprunt dont cette transaction est
+     * le décaissement OU un remboursement. Modifier/supprimer une telle transaction ici
+     * désynchroniserait `Loan.amountRepaid`/`remainingAmount`/`status` — [save]/[delete] refusent
+     * tous deux dans ce cas (voir leur doc), [TransactionFormFragment] désactive aussi les champs
+     * et affiche une bannière redirigeant vers "Détail du prêt/emprunt".
+     */
+    val linkedLoanId: Long? = null
 )
 
 sealed interface TransactionFormEvent {
     data object Saved : TransactionFormEvent
     data object Deleted : TransactionFormEvent
+
+    /** Tentative de [TransactionFormViewModel.save]/[TransactionFormViewModel.delete] refusée
+     * (voir la doc de [TransactionFormState.linkedLoanId]) — [TransactionFormFragment] navigue
+     * vers "Détail du prêt/emprunt" à la place. */
+    data class LoanLinked(val loanId: Long) : TransactionFormEvent
 }
 
 @HiltViewModel
@@ -75,7 +91,8 @@ class TransactionFormViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val transactionRepository: TransactionRepository,
     private val accountRepository: AccountRepository,
-    private val categoryRepository: CategoryRepository
+    private val categoryRepository: CategoryRepository,
+    private val loanRepository: LoanRepository
 ) : ViewModel() {
 
     private val transactionId: Long = savedStateHandle.get<Long>(TRANSACTION_ID_ARG) ?: 0L
@@ -91,11 +108,19 @@ class TransactionFormViewModel @Inject constructor(
     val accounts: StateFlow<List<Account>> = accountRepository.observeAccounts()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
-    /** Recalculée à chaque changement de type (revenu/dépense), comme sur l'écran Catégories. */
+    /**
+     * Recalculée à chaque changement de type (revenu/dépense), comme sur l'écran Catégories.
+     *
+     * Exclut les 4 catégories système Prêts/Emprunts ([LoanCategoryNames]) : elles restent des
+     * catégories normales partout ailleurs (listes de transactions, détail de compte, catégories),
+     * mais ne doivent pas être choisissables ici pour une transaction manuelle — voir la doc de
+     * [TransactionFormState.linkedLoanId] pour le raisonnement complet côté synchronisation.
+     */
     val categories: StateFlow<List<Category>> = _formState
         .map { it.type }
         .distinctUntilChanged()
         .flatMapLatest { type -> categoryRepository.observeCategoriesByType(type) }
+        .map { categories -> categories.filterNot { it.name in LoanCategoryNames.ALL } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     /**
@@ -128,6 +153,13 @@ class TransactionFormViewModel @Inject constructor(
                             paymentMethod = transaction.paymentMethod,
                             createdAt = transaction.createdAt
                         )
+                    }
+                    // Voir la doc de [TransactionFormState.linkedLoanId] : résolu après le reste de
+                    // l'état ci-dessus (pas bloquant pour l'affichage initial des champs), la
+                    // désactivation/bannière apparaît dès que cette valeur arrive.
+                    val loanId = loanRepository.findLoanIdForTransaction(transactionId)
+                    if (loanId != null) {
+                        _formState.update { it.copy(linkedLoanId = loanId) }
                     }
                 }
             }
@@ -254,6 +286,11 @@ class TransactionFormViewModel @Inject constructor(
     fun save() {
         val state = _formState.value
 
+        if (state.linkedLoanId != null) {
+            viewModelScope.launch { _events.emit(TransactionFormEvent.LoanLinked(state.linkedLoanId)) }
+            return
+        }
+
         val amountMinor = Money.parseToMinorUnits(state.amountInput)
         if (amountMinor == null || amountMinor <= 0L) {
             _formState.update { it.copy(amountError = "Montant invalide") }
@@ -301,6 +338,11 @@ class TransactionFormViewModel @Inject constructor(
 
     fun delete() {
         if (!isEditMode) return
+        val linkedLoanId = _formState.value.linkedLoanId
+        if (linkedLoanId != null) {
+            viewModelScope.launch { _events.emit(TransactionFormEvent.LoanLinked(linkedLoanId)) }
+            return
+        }
         viewModelScope.launch {
             transactionRepository.deleteTransaction(transactionId)
             _events.emit(TransactionFormEvent.Deleted)
