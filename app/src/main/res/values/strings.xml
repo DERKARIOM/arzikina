@@ -269,6 +269,20 @@
     <string name="dashboard_budget_see_all">Voir tout</string>
     <string name="dashboard_budget_empty_title">Aucun budget pour l\'instant</string>
     <string name="dashboard_budget_empty_action">Créer un budget</string>
+    <!--
+        Bloc "Utilitaires" (voir presentation/utilities) : raccourcis vers des fonctionnalités
+        annexes (Catégories, Prêts/Emprunts, Sauvegarde...), placé juste avant le bloc Budget.
+        Voir aussi utility_*_title ci-dessous (titres des tuiles, réutilisés comme titre d'écran
+        pour éviter toute duplication de chaîne entre la tuile et l'écran qu'elle ouvre).
+    -->
+    <string name="dashboard_utilities_title">Utilitaires</string>
+    <string name="dashboard_utilities_see_all">Voir tout</string>
+    <string name="utility_loans_title">Prêts / Emprunts</string>
+    <string name="utility_backup_title">Sauvegarder / Restaurer</string>
+    <string name="all_utilities_title">Tous les utilitaires</string>
+    <!-- Écran "en cours de développement" (voir LoansFragment) : générique, réutilisable pour
+         tout futur utilitaire pas encore implémenté. -->
+    <string name="utility_placeholder_message">Cette fonctionnalité est en cours de développement. Reviens bientôt !</string>
     <string name="dashboard_recent_transactions_title">Dernières transactions</string>
     <string name="dashboard_recent_transactions_empty">Aucune transaction pour l\'instant.</string>
     <string name="dashboard_transaction_subtitle">%1$s • %2$s</string>

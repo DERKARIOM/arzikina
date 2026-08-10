@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Tuile du bloc Utilitaires (voir UtilityTileAdapter) : icône + titre, même principe visuel que
+    item_category_quick_pick.xml (grille "Catégorie" du formulaire de transaction), mais fond
+    d'icône à couleur FIXE (?attr/colorPrimary, posée ici en XML) plutôt que par code — toutes
+    les tuiles Utilitaires partagent la même couleur, contrairement aux catégories qui ont chacune
+    la leur (voir Category.colorArgb).
+
+    Largeur fixe (@dimen/utility_tile_width) : alignement régulier que ce layout soit utilisé
+    dans un RecyclerView horizontal (Dashboard) ou une grille (écran "Tous les utilitaires").
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="@dimen/utility_tile_width"
+    android:layout_height="wrap_content"
+    android:layout_margin="@dimen/spacing_xs"
+    android:background="?attr/selectableItemBackground"
+    android:clickable="true"
+    android:focusable="true"
+    android:gravity="center"
+    android:orientation="vertical"
+    android:paddingVertical="@dimen/spacing_s">
+
+    <ImageView
+        android:id="@+id/utilityIcon"
+        android:layout_width="@dimen/icon_size_large"
+        android:layout_height="@dimen/icon_size_large"
+        android:background="@drawable/bg_icon_rounded_square"
+        android:backgroundTint="?attr/colorPrimary"
+        android:contentDescription="@null"
+        android:padding="@dimen/spacing_s"
+        app:tint="@android:color/white"
+        tools:ignore="ContentDescription"
+        tools:src="@drawable/ic_label_24" />
+
+    <TextView
+        android:id="@+id/utilityTitle"
+        style="@style/TextAppearance.Material3.LabelSmall"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/spacing_xs"
+        android:ellipsize="end"
+        android:gravity="center"
+        android:maxLines="2"
+        android:textColor="?attr/colorOnSurface"
+        tools:text="Catégories" />
+
+</LinearLayout>

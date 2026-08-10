@@ -10,6 +10,9 @@ object Constants {
     /** Devise proposée par défaut à la première installation (contexte ouest-africain). */
     const val DEFAULT_CURRENCY_CODE = "XOF"
 
+    /** Nom de fichier suggéré par défaut lors d'un export (voir `presentation/settings/BackupFragment`). */
+    const val DEFAULT_BACKUP_FILE_NAME = "arzikina_backup.json"
+
     /**
      * Compte créé automatiquement par [com.arzikina.ne.data.local.database.MIGRATION_6_7]
      * pour prendre possession des données existantes lors de la mise à jour

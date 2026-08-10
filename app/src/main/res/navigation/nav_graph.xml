@@ -209,6 +209,39 @@
         android:label="@string/change_password_title"
         tools:layout="@layout/fragment_change_password" />
 
+    <!--
+        Bloc Utilitaires (voir fragment_dashboard.xml, juste avant le bloc Budget) : raccourcis
+        vers des fonctionnalités annexes. Catégories réutilise categoriesFragment ci-dessus, déjà
+        déclaré — seules les 2 destinations suivantes sont nouvelles pour ce bloc.
+    -->
+    <fragment
+        android:id="@+id/allUtilitiesFragment"
+        android:name="com.arzikina.ne.presentation.utilities.AllUtilitiesFragment"
+        android:label="@string/all_utilities_title"
+        tools:layout="@layout/fragment_all_utilities" />
+
+    <!--
+        Placeholder "en cours de développement" (voir LoansFragment) : aucun modèle de données
+        pour l'instant, uniquement la navigation — à remplacer par le vrai écran plus tard sans
+        changer cet id ni son point d'entrée depuis le Dashboard/"Tous les utilitaires".
+    -->
+    <fragment
+        android:id="@+id/loansFragment"
+        android:name="com.arzikina.ne.presentation.utilities.LoansFragment"
+        android:label="@string/utility_loans_title"
+        tools:layout="@layout/fragment_loans" />
+
+    <!--
+        Première UI réelle pour BackupViewModel (voir presentation/settings/BackupFragment,
+        présent depuis l'étape Sauvegarde en version Compose mais resté sans écran depuis la
+        reconstruction XML/Views — voir settingsFragment ci-dessus, resté un simple placeholder).
+    -->
+    <fragment
+        android:id="@+id/backupFragment"
+        android:name="com.arzikina.ne.presentation.settings.BackupFragment"
+        android:label="@string/utility_backup_title"
+        tools:layout="@layout/fragment_backup" />
+
     <fragment
         android:id="@+id/securityQuestionFragment"
         android:name="com.arzikina.ne.presentation.profile.SecurityQuestionUpdateFragment"

@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Écran "Tous les utilitaires", ouvert depuis "Voir tout" sur le bloc Utilitaires du Dashboard
+    (voir fragment_dashboard.xml). Structure posée dès cette étape (Toolbar + RecyclerView
+    verticale) ; son contenu réel (adapter, liste complète des utilitaires) sera branché dans une
+    étape dédiée suivante — voir AllUtilitiesFragment.
+-->
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="?attr/colorSurface">
+
+    <com.google.android.material.appbar.MaterialToolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:background="?attr/colorSurface"
+        app:layout_constraintTop_toTopOf="parent"
+        app:navigationIcon="@drawable/ic_arrow_back_24"
+        app:title="@string/all_utilities_title"
+        app:titleTextColor="?attr/colorOnSurface" />
+
+    <!--
+        Grille (pas une simple liste verticale) : même item que le bloc horizontal du Dashboard
+        (voir item_utility_tile.xml/UtilityTileAdapter, réutilisés à l'identique — seul le
+        LayoutManager change), plutôt qu'une liste de lignes façon item_more_menu.xml. Cohérent
+        avec l'esthétique "tuiles" du bloc Utilitaires, et s'agrandit naturellement (plus de
+        lignes) au fur et à mesure que de nouveaux utilitaires sont ajoutés à UtilityCatalog,
+        sans jamais changer cette structure — même principe que categoryGrid sur
+        fragment_transaction_form.xml (GridLayoutManager, spanCount fixe).
+    -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/allUtilitiesList"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:clipToPadding="false"
+        android:paddingVertical="@dimen/spacing_s"
+        app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/toolbar"
+        app:spanCount="4"
+        tools:itemCount="8"
+        tools:listitem="@layout/item_utility_tile" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

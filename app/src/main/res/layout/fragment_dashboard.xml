@@ -395,6 +395,67 @@
         </com.google.android.material.card.MaterialCardView>
 
         <!--
+            Bloc Utilitaires : raccourcis vers des fonctionnalités annexes (Catégories,
+            Prêts/Emprunts, Sauvegarde...), voir presentation/utilities/UtilityItem et
+            DashboardFragment.utilityItems(). Placé ici (juste avant Budget, après
+            Revenus/Dépenses) sur demande explicite ; RecyclerView HORIZONTALE (pas une grille)
+            pour rester compacte au-dessus du bloc Budget, et pour accueillir de futurs
+            utilitaires sans jamais changer cette structure (voir "Voir tout" ci-dessous, qui
+            ouvre la liste complète en grille).
+        -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/spacing_l"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <TextView
+                style="@style/TextAppearance.Material3.TitleMedium"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="5dp"
+                android:layout_weight="1"
+                android:text="@string/dashboard_utilities_title"
+                android:textColor="?attr/colorOnSurface" />
+
+            <TextView
+                android:id="@+id/utilitiesSeeAll"
+                style="@style/TextAppearance.Material3.LabelLarge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:clickable="true"
+                android:focusable="true"
+                android:padding="@dimen/spacing_xs"
+                android:text="@string/dashboard_utilities_see_all"
+                android:textColor="?attr/colorPrimary" />
+
+        </LinearLayout>
+
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/spacing_s"
+            app:cardBackgroundColor="@color/arzikina_postcart_background"
+            app:cardCornerRadius="@dimen/corner_radius_medium"
+            app:cardElevation="0dp">
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/utilitiesList"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginVertical="@dimen/spacing_xs"
+                android:clipToPadding="false"
+                android:orientation="horizontal"
+                android:overScrollMode="never"
+                android:theme="@style/ThemeOverlay.Arzikina.OnBalanceCard"
+                tools:itemCount="3"
+                tools:listitem="@layout/item_utility_tile" />
+
+        </com.google.android.material.card.MaterialCardView>
+
+        <!--
             Aperçu Budget : met en avant le budget le plus urgent (voir
             DashboardViewModel.featuredBudget) avec sa barre de progression.
             "Voir tout" mène à l'onglet Budget, qui liste tous les budgets.

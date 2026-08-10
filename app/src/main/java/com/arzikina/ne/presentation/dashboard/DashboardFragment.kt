@@ -20,6 +20,8 @@ import com.arzikina.ne.domain.model.CurrencyAmount
 import com.arzikina.ne.presentation.accounts.AccountCardGradient
 import com.arzikina.ne.presentation.budget.BudgetAdapter
 import com.arzikina.ne.presentation.budget.BudgetUiItem
+import com.arzikina.ne.presentation.utilities.UtilityCatalog
+import com.arzikina.ne.presentation.utilities.UtilityTileAdapter
 import com.arzikina.ne.util.AppResult
 import com.arzikina.ne.util.Constants
 import com.arzikina.ne.util.Money
@@ -48,6 +50,14 @@ class DashboardFragment : Fragment(R.layout.fragment_dashboard) {
      */
     private var isBalanceHidden = false
     private var latestBalances: List<CurrencyAmount> = emptyList()
+
+    /** [UtilityCatalog.all] en intégralité pour l'instant (voir sa doc : le Dashboard affichera
+     * une sélection restreinte plutôt que la totalité une fois le catalogue plus grand). Même
+     * instance d'adapter réutilisée pour toute la durée de vie de la vue, comme
+     * [recentTransactionsAdapter] ci-dessus. */
+    private val utilitiesAdapter = UtilityTileAdapter(UtilityCatalog.all()) { item ->
+        findNavController().navigate(item.destinationId)
+    }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -90,6 +100,12 @@ class DashboardFragment : Fragment(R.layout.fragment_dashboard) {
 
         viewBinding.categoriesShortcut.setOnClickListener {
             findNavController().navigate(R.id.categoriesFragment)
+        }
+        viewBinding.utilitiesList.layoutManager =
+            LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
+        viewBinding.utilitiesList.adapter = utilitiesAdapter
+        viewBinding.utilitiesSeeAll.setOnClickListener {
+            findNavController().navigate(R.id.allUtilitiesFragment)
         }
         viewBinding.balanceCard.setOnClickListener {
             // accountsFromDashboardFragment (pas accountsFragment) : voir sa doc dans

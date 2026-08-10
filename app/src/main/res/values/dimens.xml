@@ -20,6 +20,13 @@
     <dimen name="icon_size_bottom_nav">24dp</dimen>
     <dimen name="icon_size_default">24dp</dimen>
     <dimen name="icon_size_large">40dp</dimen>
+    <!-- Grande icône décorative des écrans "placeholder" (voir fragment_loans.xml). -->
+    <dimen name="icon_size_xlarge">64dp</dimen>
+
+    <!-- Largeur fixe d'une tuile du bloc Utilitaires (voir item_utility_tile.xml) : garantit un
+         alignement régulier en défilement horizontal (Dashboard) ET en grille ("Tous les
+         utilitaires"), et un retour à la ligne du titre prévisible sur petit écran. -->
+    <dimen name="utility_tile_width">84dp</dimen>
 
     <!-- Élévation -->
     <dimen name="elevation_card">1dp</dimen>
