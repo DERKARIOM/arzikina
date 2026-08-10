@@ -5,8 +5,8 @@ import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.view.ViewCompat
+import androidx.navigation.NavController
 import androidx.navigation.fragment.NavHostFragment
-import androidx.navigation.ui.setupWithNavController
 import com.arzikina.ne.databinding.ActivityMainBinding
 import com.arzikina.ne.domain.model.ThemeMode
 import com.arzikina.ne.domain.repository.SessionManager
@@ -68,7 +68,7 @@ class MainActivity : AppCompatActivity() {
         }
         SystemBars.updateStatusBarIconAppearance(this, forceLightIcons = startDestinationId == R.id.dashboardFragment)
 
-        binding.bottomNavigation.setupWithNavController(navController)
+        setUpBottomNavigation(navController)
 
         // Désactive la pastille d'indicateur actif dessinée par défaut par Material
         // (un aplat arrondi derrière l'icône) : la sélection ne doit se traduire que
@@ -98,6 +98,53 @@ class MainActivity : AppCompatActivity() {
                 this,
                 forceLightIcons = destination.id == R.id.dashboardFragment
             )
+            // Ne surligne un item de la Bottom Navigation QUE si la destination courante EST
+            // littéralement l'un des 5 onglets (voir TAB_DESTINATION_IDS) : un écran secondaire
+            // (formulaire, détail, Budget/Catégories/Paramètres depuis "Autre"...) laisse
+            // volontairement l'onglet déjà sélectionné en surbrillance, sans qu'aucun ne
+            // corresponde à sa propre destination (voir aussi accountsFromDashboardFragment
+            // dans nav_graph.xml, qui exploite déjà ce principe pour le raccourci du Dashboard).
+            if (destination.id in TAB_DESTINATION_IDS) {
+                binding.bottomNavigation.menu.findItem(destination.id)?.isChecked = true
+            }
+        }
+    }
+
+    /**
+     * Câblage MANUEL de la Bottom Navigation (plutôt que
+     * `BottomNavigationView.setupWithNavController`, voir git history) : ce dernier s'appuie sur
+     * `popUpTo(startDestination, saveState = true)` + `restoreState = true` pour mémoriser la
+     * position de chaque onglet quitté — mécanisme qui s'est révélé peu fiable ici (retour sur
+     * l'onglet Accueil parfois bloqué après être passé par un autre onglet). Cette version
+     * renonce délibérément à cette mémorisation par onglet : changer d'onglet revient TOUJOURS à
+     * l'écran racine de cet onglet (jamais à un écran secondaire ou une position de défilement
+     * laissés avant de le quitter), au bénéfice d'un comportement simple et garanti.
+     */
+    private fun setUpBottomNavigation(navController: NavController) {
+        binding.bottomNavigation.setOnItemSelectedListener { item ->
+            navigateToTab(navController, item.itemId)
+            true
+        }
+    }
+
+    /**
+     * Vide systématiquement tout ce qui a été empilé au-dessus de l'onglet Accueil avant de
+     * rejoindre l'onglet demandé — aucune dépendance à `saveState`/`restoreState`, uniquement
+     * `popBackStack`/`navigate` classiques, dont le comportement est simple et prévisible.
+     *
+     * `R.id.dashboardFragment` en dur (PAS `navController.graph.startDestinationId`) : ce dernier
+     * ne vaut `dashboardFragment` qu'à l'inflation du graphe (voir [resolveStartDestination]) — un
+     * utilisateur qui se connecte EN COURS DE SESSION (voir `LoginFragment`/`RegisterFragment`,
+     * qui naviguent vers le Dashboard sans jamais rappeler `setStartDestination`) laisserait cette
+     * valeur bloquée sur `loginFragment` pour le reste du processus, ce qui ferait échouer
+     * `popBackStack` (id absent de la pile) à chaque changement d'onglet. `dashboardFragment` EST
+     * l'onglet Accueil, indépendamment de la façon dont l'utilisateur est arrivé sur l'app.
+     */
+    private fun navigateToTab(navController: NavController, tabId: Int) {
+        if (navController.currentDestination?.id == tabId) return
+        navController.popBackStack(R.id.dashboardFragment, false)
+        if (tabId != R.id.dashboardFragment) {
+            navController.navigate(tabId)
         }
     }
 
@@ -137,5 +184,14 @@ class MainActivity : AppCompatActivity() {
     private companion object {
         /** Destinations sans Bottom Navigation ni onglet correspondant (voir plus haut). */
         val AUTH_DESTINATION_IDS = setOf(R.id.loginFragment, R.id.registerFragment, R.id.forgotPasswordFragment)
+
+        /** Les 5 onglets, mêmes id que menu/bottom_nav_menu.xml (voir sa doc et nav_graph.xml). */
+        val TAB_DESTINATION_IDS = setOf(
+            R.id.dashboardFragment,
+            R.id.accountsFragment,
+            R.id.transactionsFragment,
+            R.id.statisticsFragment,
+            R.id.moreFragment
+        )
     }
 }

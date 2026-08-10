@@ -127,6 +127,25 @@
         android:label="@string/accounts_title"
         tools:layout="@layout/fragment_accounts" />
 
+    <!--
+        Destination JUMELLE de accountsFragment (même Fragment, id différent) : atteinte
+        UNIQUEMENT via le raccourci "solde total" du Dashboard (voir DashboardFragment.kt).
+        Nécessaire car accountsFragment est aussi l'id de l'onglet "Compte" de la Bottom
+        Navigation (voir menu/bottom_nav_menu.xml) — NavigationUI.setupWithNavController
+        (MainActivity.kt) coche automatiquement l'onglet dont l'id correspond à la
+        destination courante, quel que soit le chemin emprunté pour l'atteindre. Sans cette
+        destination séparée, cliquer sur le solde total depuis le Dashboard faisait passer
+        la sélection de la Bottom Navigation sur "Compte" alors qu'on n'a pas quitté le
+        contexte "Accueil". Comme cet id n'apparaît dans aucun item du menu, aucun onglet
+        n'est reciblé et "Accueil" reste sélectionné. À réutiliser pour tout futur raccourci
+        similaire (une destination-onglet atteinte en accès direct depuis un autre onglet).
+    -->
+    <fragment
+        android:id="@+id/accountsFromDashboardFragment"
+        android:name="com.arzikina.ne.presentation.accounts.AccountsFragment"
+        android:label="@string/accounts_title"
+        tools:layout="@layout/fragment_accounts" />
+
     <fragment
         android:id="@+id/accountFormFragment"
         android:name="com.arzikina.ne.presentation.accounts.AccountFormFragment"

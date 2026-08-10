@@ -92,7 +92,11 @@ class DashboardFragment : Fragment(R.layout.fragment_dashboard) {
             findNavController().navigate(R.id.categoriesFragment)
         }
         viewBinding.balanceCard.setOnClickListener {
-            findNavController().navigate(R.id.accountsFragment)
+            // accountsFromDashboardFragment (pas accountsFragment) : voir sa doc dans
+            // nav_graph.xml — évite que ce raccourci fasse basculer la sélection de la
+            // Bottom Navigation sur l'onglet "Compte" alors qu'on reste dans le contexte
+            // "Accueil".
+            findNavController().navigate(R.id.accountsFromDashboardFragment)
         }
         viewBinding.toggleBalanceVisibility.setOnClickListener {
             isBalanceHidden = !isBalanceHidden
