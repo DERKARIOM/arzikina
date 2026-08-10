@@ -1,4 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+    Refonte visuelle alignée sur fragment_transaction_form.xml : mêmes champs
+    et comportements qu'avant (voir AccountFormFragment), simplement
+    réorganisés en "postcards" sombres (MaterialCardView, fond
+    @color/arzikina_postcart_background, ThemeOverlay.Arzikina.OnBalanceCard)
+    plutôt qu'en TextInputLayout nus les uns sous les autres — pour une
+    apparence cohérente avec le formulaire de transaction.
+-->
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
@@ -13,6 +21,7 @@
         android:background="?attr/colorSurface"
         app:layout_constraintTop_toTopOf="parent"
         app:navigationIcon="@drawable/ic_arrow_back_24"
+        app:titleCentered="true"
         app:titleTextColor="?attr/colorOnSurface" />
 
     <androidx.core.widget.NestedScrollView
@@ -31,196 +40,322 @@
             android:orientation="vertical"
             android:padding="@dimen/spacing_m">
 
-            <com.google.android.material.textfield.TextInputLayout
-                android:id="@+id/nameLayout"
-                style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+            <!--
+                Nom : postcard simple (même principe que descriptionCard sur
+                fragment_transaction_form.xml) — style OutlinedBox conservé pour
+                l'animation du label flottant, mais sans son propre contour
+                (boxStrokeWidth=0) pour éviter un double cadre une fois posé sur
+                le fond sombre de la carte.
+            -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/nameCard"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="@string/account_form_name_label">
-
-                <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/nameInput"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:inputType="text"
-                    android:maxLines="1" />
-
-            </com.google.android.material.textfield.TextInputLayout>
-
-            <com.google.android.material.textfield.TextInputLayout
-                android:id="@+id/typeLayout"
-                style="@style/Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/spacing_l"
-                android:hint="@string/account_form_type_label">
-
-                <com.google.android.material.textfield.MaterialAutoCompleteTextView
-                    android:id="@+id/typeInput"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:inputType="none" />
-
-            </com.google.android.material.textfield.TextInputLayout>
-
-            <TextView
-                style="@style/TextAppearance.Material3.LabelLarge"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/spacing_l"
-                android:text="@string/account_form_icon_label"
-                android:textColor="?attr/colorOnSurfaceVariant" />
-
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/iconPicker"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/spacing_s"
-                android:clipToPadding="false"
-                android:orientation="horizontal"
-                android:overScrollMode="never" />
-
-            <TextView
-                style="@style/TextAppearance.Material3.LabelLarge"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/spacing_l"
-                android:text="@string/account_form_color_label"
-                android:textColor="?attr/colorOnSurfaceVariant" />
-
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/colorPicker"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/spacing_s"
-                android:clipToPadding="false"
-                android:orientation="horizontal"
-                android:overScrollMode="never" />
-
-            <com.google.android.material.textfield.TextInputLayout
-                android:id="@+id/currencyLayout"
-                style="@style/Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/spacing_l"
-                android:hint="@string/account_form_currency_label">
-
-                <com.google.android.material.textfield.MaterialAutoCompleteTextView
-                    android:id="@+id/currencyInput"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:inputType="none" />
-
-            </com.google.android.material.textfield.TextInputLayout>
-
-            <com.google.android.material.textfield.TextInputLayout
-                android:id="@+id/balanceLayout"
-                style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/spacing_m"
-                android:hint="@string/account_form_balance_label">
-
-                <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/balanceInput"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:inputType="numberDecimal"
-                    android:maxLines="1" />
-
-            </com.google.android.material.textfield.TextInputLayout>
-
-            <!-- Visible uniquement pour AccountType.CREDIT_CARD (voir AccountFormFragment.render) -->
-            <LinearLayout
-                android:id="@+id/creditCardFieldsGroup"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:visibility="gone"
-                tools:visibility="visible">
-
-                <TextView
-                    style="@style/TextAppearance.Material3.LabelLarge"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="@dimen/spacing_l"
-                    android:text="@string/account_form_card_section_label"
-                    android:textColor="?attr/colorOnSurfaceVariant" />
+                android:theme="@style/ThemeOverlay.Arzikina.OnBalanceCard"
+                app:cardBackgroundColor="@color/arzikina_postcart_background"
+                app:cardCornerRadius="@dimen/corner_radius_medium"
+                app:cardElevation="@dimen/elevation_raised">
 
                 <com.google.android.material.textfield.TextInputLayout
-                    android:id="@+id/cardNumberLayout"
+                    android:id="@+id/nameLayout"
                     style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="@dimen/spacing_m"
-                    android:hint="@string/account_form_card_number_label"
-                    app:helperTextEnabled="true">
+                    android:layout_margin="@dimen/spacing_xs"
+                    android:hint="@string/account_form_name_label"
+                    app:boxStrokeWidth="0dp"
+                    app:boxStrokeWidthFocused="0dp">
 
                     <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/cardNumberInput"
+                        android:id="@+id/nameInput"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:hint="1234 5678 9012 3456"
-                        android:inputType="number"
-                        android:maxLength="19"
+                        android:inputType="text"
                         android:maxLines="1" />
 
                 </com.google.android.material.textfield.TextInputLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!--
+                Type : menu déroulant fermé, même traitement que typeCard sur
+                fragment_transaction_form.xml (ExposedDropdownMenu sans contour propre).
+            -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/typeCard"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_l"
+                android:theme="@style/ThemeOverlay.Arzikina.OnBalanceCard"
+                app:cardBackgroundColor="@color/arzikina_postcart_background"
+                app:cardCornerRadius="@dimen/corner_radius_medium"
+                app:cardElevation="@dimen/elevation_raised">
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/typeLayout"
+                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="@dimen/spacing_xs"
+                    android:hint="@string/account_form_type_label"
+                    app:boxStrokeWidth="0dp"
+                    app:boxStrokeWidthFocused="0dp">
+
+                    <com.google.android.material.textfield.MaterialAutoCompleteTextView
+                        android:id="@+id/typeInput"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="none" />
+
+                </com.google.android.material.textfield.TextInputLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!--
+                Apparence (icône + couleur) : même principe que categoryCard sur
+                fragment_transaction_form.xml (label + sélecteur horizontal), les
+                deux réunis dans une seule postcard plutôt que deux cartes
+                séparées — ils forment un seul réglage visuel ("à quoi ressemble
+                ce compte") aux yeux de l'utilisateur.
+            -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/appearanceCard"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_l"
+                android:theme="@style/ThemeOverlay.Arzikina.OnBalanceCard"
+                app:cardBackgroundColor="@color/arzikina_postcart_background"
+                app:cardCornerRadius="@dimen/corner_radius_medium"
+                app:cardElevation="@dimen/elevation_raised">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal">
+                    android:orientation="vertical"
+                    android:padding="@dimen/spacing_m">
 
-                    <com.google.android.material.textfield.TextInputLayout
-                        android:id="@+id/cardExpiryLayout"
-                        style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
-                        android:layout_width="0dp"
+                    <TextView
+                        style="@style/TextAppearance.Material3.TitleSmall"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="@dimen/spacing_m"
-                        android:layout_marginEnd="@dimen/spacing_s"
-                        android:layout_weight="1"
-                        android:hint="@string/account_form_card_expiry_label">
+                        android:text="@string/account_form_icon_label"
+                        android:textColor="?attr/colorOnSurface" />
 
-                        <com.google.android.material.textfield.TextInputEditText
-                            android:id="@+id/cardExpiryInput"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:hint="MM/AA"
-                            android:inputType="number"
-                            android:maxLength="5"
-                            android:maxLines="1" />
-
-                    </com.google.android.material.textfield.TextInputLayout>
-
-                    <com.google.android.material.textfield.TextInputLayout
-                        android:id="@+id/cardCvvLayout"
-                        style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
-                        android:layout_width="0dp"
+                    <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/iconPicker"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="@dimen/spacing_m"
-                        android:layout_marginStart="@dimen/spacing_s"
-                        android:layout_weight="1"
-                        android:hint="@string/account_form_card_cvv_label">
+                        android:layout_marginTop="@dimen/spacing_s"
+                        android:clipToPadding="false"
+                        android:orientation="horizontal"
+                        android:overScrollMode="never" />
 
-                        <com.google.android.material.textfield.TextInputEditText
-                            android:id="@+id/cardCvvInput"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:inputType="numberPassword"
-                            android:maxLength="4"
-                            android:maxLines="1" />
+                    <TextView
+                        style="@style/TextAppearance.Material3.TitleSmall"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/spacing_l"
+                        android:text="@string/account_form_color_label"
+                        android:textColor="?attr/colorOnSurface" />
 
-                    </com.google.android.material.textfield.TextInputLayout>
+                    <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/colorPicker"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/spacing_s"
+                        android:clipToPadding="false"
+                        android:orientation="horizontal"
+                        android:overScrollMode="never" />
 
                 </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
 
-            </LinearLayout>
+            <!--
+                Devise : même traitement que typeCard ci-dessus (ExposedDropdownMenu).
+            -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/currencyCard"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_l"
+                android:theme="@style/ThemeOverlay.Arzikina.OnBalanceCard"
+                app:cardBackgroundColor="@color/arzikina_postcart_background"
+                app:cardCornerRadius="@dimen/corner_radius_medium"
+                app:cardElevation="@dimen/elevation_raised">
 
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/currencyLayout"
+                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="@dimen/spacing_xs"
+                    android:hint="@string/account_form_currency_label"
+                    app:boxStrokeWidth="0dp"
+                    app:boxStrokeWidthFocused="0dp">
+
+                    <com.google.android.material.textfield.MaterialAutoCompleteTextView
+                        android:id="@+id/currencyInput"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="none" />
+
+                </com.google.android.material.textfield.TextInputLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!--
+                Solde initial : même traitement que nameCard ci-dessus (OutlinedBox simple).
+            -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/balanceCard"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_l"
+                android:theme="@style/ThemeOverlay.Arzikina.OnBalanceCard"
+                app:cardBackgroundColor="@color/arzikina_postcart_background"
+                app:cardCornerRadius="@dimen/corner_radius_medium"
+                app:cardElevation="@dimen/elevation_raised">
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/balanceLayout"
+                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="@dimen/spacing_xs"
+                    android:hint="@string/account_form_balance_label"
+                    app:boxStrokeWidth="0dp"
+                    app:boxStrokeWidthFocused="0dp">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/balanceInput"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="numberDecimal"
+                        android:maxLines="1" />
+
+                </com.google.android.material.textfield.TextInputLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!--
+                Carte de crédit : visible uniquement pour AccountType.CREDIT_CARD (voir
+                AccountFormFragment.render). L'id creditCardFieldsGroup porte maintenant
+                directement la postcard (auparavant sur le LinearLayout interne) : sa visibilité
+                se pilote exactement de la même façon côté Kotlin (View.VISIBLE/View.GONE), aucun
+                changement de comportement, seulement de conteneur visuel.
+            -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/creditCardFieldsGroup"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_l"
+                android:theme="@style/ThemeOverlay.Arzikina.OnBalanceCard"
+                android:visibility="gone"
+                app:cardBackgroundColor="@color/arzikina_postcart_background"
+                app:cardCornerRadius="@dimen/corner_radius_medium"
+                app:cardElevation="@dimen/elevation_raised"
+                tools:visibility="visible">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="@dimen/spacing_m">
+
+                    <TextView
+                        style="@style/TextAppearance.Material3.TitleSmall"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/account_form_card_section_label"
+                        android:textColor="?attr/colorOnSurface" />
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:id="@+id/cardNumberLayout"
+                        style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/spacing_m"
+                        android:hint="@string/account_form_card_number_label"
+                        app:boxStrokeWidth="0dp"
+                        app:boxStrokeWidthFocused="0dp"
+                        app:helperTextEnabled="true">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/cardNumberInput"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:hint="1234 5678 9012 3456"
+                            android:inputType="number"
+                            android:maxLength="19"
+                            android:maxLines="1" />
+
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal">
+
+                        <com.google.android.material.textfield.TextInputLayout
+                            android:id="@+id/cardExpiryLayout"
+                            style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/spacing_m"
+                            android:layout_marginEnd="@dimen/spacing_s"
+                            android:layout_weight="1"
+                            android:hint="@string/account_form_card_expiry_label"
+                            app:boxStrokeWidth="0dp"
+                            app:boxStrokeWidthFocused="0dp">
+
+                            <com.google.android.material.textfield.TextInputEditText
+                                android:id="@+id/cardExpiryInput"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:hint="MM/AA"
+                                android:inputType="number"
+                                android:maxLength="5"
+                                android:maxLines="1" />
+
+                        </com.google.android.material.textfield.TextInputLayout>
+
+                        <com.google.android.material.textfield.TextInputLayout
+                            android:id="@+id/cardCvvLayout"
+                            style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/spacing_m"
+                            android:layout_marginStart="@dimen/spacing_s"
+                            android:layout_weight="1"
+                            android:hint="@string/account_form_card_cvv_label"
+                            app:boxStrokeWidth="0dp"
+                            app:boxStrokeWidthFocused="0dp">
+
+                            <com.google.android.material.textfield.TextInputEditText
+                                android:id="@+id/cardCvvInput"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:inputType="numberPassword"
+                                android:maxLength="4"
+                                android:maxLines="1" />
+
+                        </com.google.android.material.textfield.TextInputLayout>
+
+                    </LinearLayout>
+
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!--
+                Bouton Enregistrer : style Material par défaut CONSERVÉ (pas
+                @drawable/forme_radius_10dp comme sur fragment_transaction_form.xml — ce
+                drawable est rempli avec @color/arzikina_background, blanc en thème clair,
+                ce qui rendrait le texte blanc du bouton illisible ; voir le message envoyé à
+                l'utilisateur, qui signale ce bug préexistant plutôt que de le reproduire ici).
+                Pas de bouton Supprimer ici (déjà dans le menu "⋮" de la Toolbar, voir
+                AccountFormFragment.setUpToolbar), contrairement au formulaire de transaction.
+            -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/saveButton"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:textColor="@color/white"
+                android:layout_height="56dp"
                 android:layout_marginTop="@dimen/spacing_l"
                 android:text="@string/action_save" />
 
