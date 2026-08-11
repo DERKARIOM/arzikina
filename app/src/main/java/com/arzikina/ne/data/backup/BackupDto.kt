@@ -23,7 +23,13 @@ data class BackupPayload(
     val categories: List<CategoryDto>,
     val transactions: List<TransactionDto>,
     val budgets: List<BudgetDto>,
-    val savingsGoals: List<SavingsGoalDto>
+    val savingsGoals: List<SavingsGoalDto>,
+    /** Ajoutés après coup (voir `PersonEntity`/`LoanEntity`/`LoanPaymentEntity`) : listes vides
+     * par défaut pour rester compatible avec les fichiers exportés avant leur existence — un
+     * ancien fichier restauré ne recrée simplement aucun prêt/emprunt, sans erreur. */
+    val persons: List<PersonDto> = emptyList(),
+    val loans: List<LoanDto> = emptyList(),
+    val loanPayments: List<LoanPaymentDto> = emptyList()
 )
 
 @Serializable
@@ -108,5 +114,49 @@ data class SavingsGoalDto(
     val currentAmount: Long,
     val currencyCode: String,
     val deadline: Long? = null,
+    val createdAt: Long
+)
+
+@Serializable
+data class PersonDto(
+    val id: Long,
+    val name: String,
+    val phone: String? = null,
+    val createdAt: Long
+)
+
+@Serializable
+data class LoanDto(
+    val id: Long,
+    val personId: Long,
+    val accountId: Long,
+    val type: String,
+    val amount: Long,
+    val amountRepaid: Long,
+    val remainingAmount: Long,
+    val startDate: Long,
+    val dueDate: Long,
+    val reason: String,
+    val reasonCustomText: String? = null,
+    val repaymentMode: String,
+    val description: String,
+    val status: String,
+    val createdAt: Long,
+    val updatedAt: Long,
+    /** Voir `LoanEntity.transactionId` : id de la transaction de décaissement, réexportée telle
+     * quelle — `TransactionDto` conserve aussi l'`id` d'origine (voir plus haut), donc cette
+     * référence reste valide après import (voir l'ordre d'insertion dans `BackupRepositoryImpl`). */
+    val transactionId: Long
+)
+
+@Serializable
+data class LoanPaymentDto(
+    val id: Long,
+    val loanId: Long,
+    val accountId: Long,
+    val amount: Long,
+    val date: Long,
+    val note: String,
+    val transactionId: Long,
     val createdAt: Long
 )

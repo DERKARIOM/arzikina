@@ -275,6 +275,18 @@
     </fragment>
 
     <!--
+        Statistiques Prêts/Emprunts (voir presentation/utilities/loans/LoanStatisticsFragment),
+        atteint depuis l'action dédiée de la Toolbar de loansFragment. Pas d'argument : agrège
+        l'ensemble des prêts/emprunts de l'utilisateur, même raisonnement que loanFormFragment
+        ci-dessus (toujours la même vue, pas d'entité précise à cibler).
+    -->
+    <fragment
+        android:id="@+id/loanStatisticsFragment"
+        android:name="com.arzikina.ne.presentation.utilities.loans.LoanStatisticsFragment"
+        android:label="@string/loan_statistics_title"
+        tools:layout="@layout/fragment_loan_statistics" />
+
+    <!--
         Première UI réelle pour BackupViewModel (voir presentation/settings/BackupFragment,
         présent depuis l'étape Sauvegarde en version Compose mais resté sans écran depuis la
         reconstruction XML/Views — voir settingsFragment ci-dessus, resté un simple placeholder).

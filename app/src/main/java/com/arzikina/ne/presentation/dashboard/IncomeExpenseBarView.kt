@@ -63,7 +63,7 @@ class IncomeExpenseBarView @JvmOverloads constructor(
         val top = height - barHeight
         barRect.set(left, top, left + width, height.toFloat())
         paint.color = color
-        val radius = width / 2f
+        val radius = width / 4f
         canvas.drawRoundRect(barRect, radius, radius, paint)
     }
 

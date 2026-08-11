@@ -18,6 +18,7 @@ import com.arzikina.ne.presentation.components.ConfirmDialogs
 import com.arzikina.ne.presentation.components.NavAnimations
 import com.arzikina.ne.util.AppResult
 import com.arzikina.ne.util.Money
+import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 
@@ -43,6 +44,11 @@ class LoanDetailFragment : Fragment(R.layout.fragment_loan_detail) {
     /** Dernier état connu, pour [confirmDelete] (même raisonnement que
      * `AccountDetailFragment.confirmDelete`, qui lit `viewModel.uiState.value` directement). */
     private var latestUiState: LoanDetailUiState? = null
+
+    /** Évite de déclencher [findNavController.navigateUp] plusieurs fois si [AppResult.Error]
+     * est émis à répétition (voir [render]) : le prêt/emprunt affiché a été supprimé depuis un
+     * autre écran (ex. `LoansFragment`) pendant que celui-ci restait ouvert. */
+    private var hasNavigatedAwayOnError = false
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -81,6 +87,19 @@ class LoanDetailFragment : Fragment(R.layout.fragment_loan_detail) {
     }
 
     private fun render(state: AppResult<LoanDetailUiState>) {
+        val binding = binding ?: return
+        // Le prêt/emprunt affiché a été supprimé depuis un autre écran (voir la doc de
+        // [LoanDetailViewModel.uiState], `AppResult.Error("Prêt/emprunt introuvable")`) : sans ce
+        // guard, l'écran resterait figé avec le dernier état connu au lieu de prévenir l'utilisateur
+        // et de revenir en arrière.
+        if (state is AppResult.Error) {
+            if (!hasNavigatedAwayOnError) {
+                hasNavigatedAwayOnError = true
+                Snackbar.make(binding.root, R.string.loan_detail_not_found_message, Snackbar.LENGTH_SHORT).show()
+                findNavController().navigateUp()
+            }
+            return
+        }
         if (state !is AppResult.Success) return
         val uiState = state.data
         latestUiState = uiState

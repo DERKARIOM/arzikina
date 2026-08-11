@@ -1,7 +1,12 @@
 package com.arzikina.ne.data.repository
 
+import androidx.room.withTransaction
 import com.arzikina.ne.data.local.dao.AccountDao
 import com.arzikina.ne.data.local.dao.CardSecretDao
+import com.arzikina.ne.data.local.dao.LoanDao
+import com.arzikina.ne.data.local.dao.LoanPaymentDao
+import com.arzikina.ne.data.local.dao.TransactionDao
+import com.arzikina.ne.data.local.database.ArzikinaDatabase
 import com.arzikina.ne.data.local.entity.CardSecretEntity
 import com.arzikina.ne.data.mapper.toDomain
 import com.arzikina.ne.data.mapper.toEntity
@@ -9,6 +14,7 @@ import com.arzikina.ne.data.security.CardCipher
 import com.arzikina.ne.di.IoDispatcher
 import com.arzikina.ne.domain.model.Account
 import com.arzikina.ne.domain.model.CardSecrets
+import com.arzikina.ne.domain.model.computeLoanStatus
 import com.arzikina.ne.domain.repository.AccountRepository
 import com.arzikina.ne.domain.repository.SessionManager
 import kotlinx.coroutines.CoroutineDispatcher
@@ -33,8 +39,12 @@ import javax.inject.Inject
  * Voir [SessionManager] pour le raisonnement de cette séparation.
  */
 class AccountRepositoryImpl @Inject constructor(
+    private val database: ArzikinaDatabase,
     private val accountDao: AccountDao,
     private val cardSecretDao: CardSecretDao,
+    private val loanDao: LoanDao,
+    private val loanPaymentDao: LoanPaymentDao,
+    private val transactionDao: TransactionDao,
     private val sessionManager: SessionManager,
     @IoDispatcher private val ioDispatcher: CoroutineDispatcher
 ) : AccountRepository {
@@ -58,8 +68,59 @@ class AccountRepositoryImpl @Inject constructor(
         if (account.id != 0L) account.id else generatedId
     }
 
-    override suspend fun deleteAccount(id: Long) =
-        withContext(ioDispatcher) { accountDao.deleteById(id, requireCurrentUserId()) }
+    /**
+     * Supprime un compte. `accountId` est en `CASCADE` sur `loans` ET `loan_payments` (voir
+     * [com.arzikina.ne.data.local.entity.LoanEntity]/[com.arzikina.ne.data.local.entity.LoanPaymentEntity]) :
+     * cette suppression peut donc emporter des prêts/emprunts et des remboursements avec elle.
+     * Nettoie explicitement ce que la cascade SQLite seule laisserait incohérent, dans la MÊME
+     * transaction Room que la suppression elle-même :
+     * 1. Prêts/emprunts dont CE compte est le compte PRINCIPAL : ils disparaissent en cascade —
+     *    leurs transactions liées (décaissement + remboursements, même sur un AUTRE compte encore
+     *    existant) doivent être supprimées explicitement, sinon elles deviennent orphelines
+     *    (aucun prêt/versement ne les référence plus, mais elles restent visibles dans "Transactions").
+     * 2. Remboursements enregistrés SUR ce compte pour un prêt/emprunt dont le compte principal est
+     *    DIFFÉRENT : la ligne `loan_payments` disparaît en cascade sans que le prêt parent ne soit
+     *    averti — son montant remboursé/solde restant/statut doivent être recalculés AVANT, sinon
+     *    le prêt reste figé avec un montant remboursé qui ne correspond plus à aucun versement réel.
+     *
+     * Duplique volontairement une partie de la logique de [com.arzikina.ne.data.repository.LoanRepositoryImpl.deleteLoan]/
+     * `.deletePayment` plutôt que d'en dépendre : un repository ne doit pas dépendre d'un autre
+     * repository pour rester libre de composer plusieurs DAO dans une seule transaction Room (voir
+     * la doc de `LoanRepositoryImpl`).
+     */
+    override suspend fun deleteAccount(id: Long) = withContext(ioDispatcher) {
+        val userId = requireCurrentUserId()
+        database.withTransaction {
+            loanDao.getAllForAccount(id, userId).forEach { loan ->
+                loanPaymentDao.getAllForLoan(loan.id, userId).forEach { payment ->
+                    transactionDao.deleteById(payment.transactionId, userId)
+                }
+                transactionDao.deleteById(loan.transactionId, userId)
+            }
+
+            loanPaymentDao.getAllForAccount(id, userId).forEach { payment ->
+                val loan = loanDao.getById(payment.loanId, userId) ?: return@forEach
+                // Déjà traité ci-dessus (le prêt lui-même disparaît en cascade avec ce compte) :
+                // pas besoin de le recalculer, il n'existera plus.
+                if (loan.accountId == id) return@forEach
+
+                transactionDao.deleteById(payment.transactionId, userId)
+                val now = System.currentTimeMillis()
+                val newAmountRepaid = (loan.amountRepaid - payment.amount).coerceAtLeast(0L)
+                val newStatus = computeLoanStatus(loan.amount, newAmountRepaid, loan.startDate, loan.dueDate, now)
+                loanDao.upsert(
+                    loan.copy(
+                        amountRepaid = newAmountRepaid,
+                        remainingAmount = loan.amount - newAmountRepaid,
+                        status = newStatus,
+                        updatedAt = now
+                    )
+                )
+            }
+
+            accountDao.deleteById(id, userId)
+        }
+    }
 
     override suspend fun saveCardSecrets(accountId: Long, fullNumber: String, cvv: String) {
         withContext(ioDispatcher) {

@@ -9,6 +9,9 @@ import com.arzikina.ne.data.backup.toEntity
 import com.arzikina.ne.data.local.dao.AccountDao
 import com.arzikina.ne.data.local.dao.BudgetDao
 import com.arzikina.ne.data.local.dao.CategoryDao
+import com.arzikina.ne.data.local.dao.LoanDao
+import com.arzikina.ne.data.local.dao.LoanPaymentDao
+import com.arzikina.ne.data.local.dao.PersonDao
 import com.arzikina.ne.data.local.dao.SavingsGoalDao
 import com.arzikina.ne.data.local.dao.TransactionDao
 import com.arzikina.ne.data.local.database.ArzikinaDatabase
@@ -43,9 +46,13 @@ import javax.inject.Inject
  * une seule transaction Room ([ArzikinaDatabase.withTransaction]) : soit
  * tout réussit, soit la base reste inchangée en cas d'erreur (fichier
  * corrompu, coupure en cours de route...). L'ordre de suppression/insertion
- * respecte les clés étrangères (voir [TransactionEntity][com.arzikina.ne.data.local.entity.TransactionEntity]
- * et [BudgetEntity][com.arzikina.ne.data.local.entity.BudgetEntity] pour le
- * détail des contraintes).
+ * respecte les clés étrangères (voir [TransactionEntity][com.arzikina.ne.data.local.entity.TransactionEntity],
+ * [BudgetEntity][com.arzikina.ne.data.local.entity.BudgetEntity],
+ * [LoanEntity][com.arzikina.ne.data.local.entity.LoanEntity] et
+ * [LoanPaymentEntity][com.arzikina.ne.data.local.entity.LoanPaymentEntity] pour le
+ * détail des contraintes) : personnes/prêts/remboursements font désormais partie
+ * intégrante de la sauvegarde (voir `BackupPayload`) — les exclure aurait signifié
+ * perdre tout l'historique Prêts/Emprunts à chaque restauration.
  *
  * Limite connue (voir `data/backup/BackupMappers`) : cette restauration
  * réutilise les `id` du fichier de sauvegarde, ce qui n'est fiable que
@@ -59,6 +66,9 @@ class BackupRepositoryImpl @Inject constructor(
     private val transactionDao: TransactionDao,
     private val budgetDao: BudgetDao,
     private val savingsGoalDao: SavingsGoalDao,
+    private val personDao: PersonDao,
+    private val loanDao: LoanDao,
+    private val loanPaymentDao: LoanPaymentDao,
     private val userPreferencesRepository: UserPreferencesRepository,
     private val sessionManager: SessionManager,
     @IoDispatcher private val ioDispatcher: CoroutineDispatcher
@@ -77,6 +87,9 @@ class BackupRepositoryImpl @Inject constructor(
             val transactions = transactionDao.observeAllForUser(userId).first()
             val budgets = budgetDao.observeAllForUser(userId).first()
             val savingsGoals = savingsGoalDao.observeAllForUser(userId).first()
+            val persons = personDao.observeAllForUser(userId).first()
+            val loans = loanDao.observeAllForUser(userId).first()
+            val loanPayments = loans.flatMap { loanPaymentDao.getAllForLoan(it.id, userId) }
             val preferences = userPreferencesRepository.observePreferences().first()
 
             val payload = BackupPayload(
@@ -86,7 +99,10 @@ class BackupRepositoryImpl @Inject constructor(
                 categories = categories.map { it.toDto() },
                 transactions = transactions.map { it.toDto() },
                 budgets = budgets.map { it.toDto() },
-                savingsGoals = savingsGoals.map { it.toDto() }
+                savingsGoals = savingsGoals.map { it.toDto() },
+                persons = persons.map { it.toDto() },
+                loans = loans.map { it.toDto() },
+                loanPayments = loanPayments.map { it.toDto() }
             )
 
             outputStream.use { stream ->
@@ -98,7 +114,8 @@ class BackupRepositoryImpl @Inject constructor(
                 categoriesCount = categories.size,
                 transactionsCount = transactions.size,
                 budgetsCount = budgets.size,
-                savingsGoalsCount = savingsGoals.size
+                savingsGoalsCount = savingsGoals.size,
+                loansCount = loans.size
             )
         }
 
@@ -113,22 +130,31 @@ class BackupRepositoryImpl @Inject constructor(
             val userId = requireCurrentUserId()
 
             database.withTransaction {
-                // Ordre de suppression : les tables dépendantes d'abord (contraintes de clé étrangère).
+                // Ordre de suppression : les tables dépendantes d'abord (contraintes de clé
+                // étrangère) — loan_payments/loans avant persons/accounts dont ils dépendent.
                 // Scopé à l'utilisateur courant : ne touche jamais aux données d'un autre compte.
+                loanPaymentDao.deleteAllForUser(userId)
+                loanDao.deleteAllForUser(userId)
                 transactionDao.deleteAllForUser(userId)
                 budgetDao.deleteAllForUser(userId)
+                personDao.deleteAllForUser(userId)
                 categoryDao.deleteAllForUser(userId)
                 accountDao.deleteAllForUser(userId)
                 savingsGoalDao.deleteAllForUser(userId)
 
-                // Ordre d'insertion : les tables référencées d'abord. Le fichier n'a jamais
+                // Ordre d'insertion : les tables référencées d'abord (accounts/categories/persons
+                // avant transactions, transactions avant loans/loan_payments qui y font référence
+                // via transactionId — voir LoanEntity/LoanPaymentEntity). Le fichier n'a jamais
                 // connu d'utilisateur (voir BackupMappers) : il est assigné ici à celui
                 // actuellement connecté, qu'il ait ou non exporté ce fichier lui-même.
                 accountDao.insertAll(payload.accounts.map { it.toEntity(userId) })
                 categoryDao.insertAll(payload.categories.map { it.toEntity(userId) })
+                personDao.insertAll(payload.persons.map { it.toEntity(userId) })
                 savingsGoalDao.insertAll(payload.savingsGoals.map { it.toEntity(userId) })
                 transactionDao.insertAll(payload.transactions.map { it.toEntity(userId) })
                 budgetDao.insertAll(payload.budgets.map { it.toEntity(userId) })
+                loanDao.insertAll(payload.loans.map { it.toEntity(userId) })
+                loanPaymentDao.insertAll(payload.loanPayments.map { it.toEntity(userId) })
             }
 
             val restoredPreferences = payload.preferences.toDomain()
@@ -140,7 +166,8 @@ class BackupRepositoryImpl @Inject constructor(
                 categoriesCount = payload.categories.size,
                 transactionsCount = payload.transactions.size,
                 budgetsCount = payload.budgets.size,
-                savingsGoalsCount = payload.savingsGoals.size
+                savingsGoalsCount = payload.savingsGoals.size,
+                loansCount = payload.loans.size
             )
         }
 

@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.arzikina.ne.domain.model.Loan
 import com.arzikina.ne.domain.model.LoanPayment
+import com.arzikina.ne.domain.model.computeLoanStatus
 import com.arzikina.ne.domain.repository.AccountRepository
 import com.arzikina.ne.domain.repository.LoanRepository
 import com.arzikina.ne.domain.repository.PersonRepository
@@ -60,7 +61,18 @@ class LoanDetailViewModel @Inject constructor(
         accountRepository.observeAccounts(),
         loanRepository.observePayments(loanId)
     ) { loans, persons, accounts, payments ->
-        val loan = loans.find { it.id == loanId } ?: return@combine null
+        val storedLoan = loans.find { it.id == loanId } ?: return@combine null
+        // Voir la doc de `computeLoanStatus` : recalculé à l'affichage plutôt que de faire
+        // confiance à `Loan.status` persisté, qui peut être périmé par le simple écoulement du temps.
+        val loan = storedLoan.copy(
+            status = computeLoanStatus(
+                amount = storedLoan.amount,
+                amountRepaid = storedLoan.amountRepaid,
+                startDate = storedLoan.startDate,
+                dueDate = storedLoan.dueDate,
+                nowEpochMillis = System.currentTimeMillis()
+            )
+        )
         LoanDetailUiState(
             loan = loan,
             personName = persons.find { it.id == loan.personId }?.name.orEmpty(),

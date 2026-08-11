@@ -7,6 +7,7 @@ import com.arzikina.ne.domain.model.CurrencyAmount
 import com.arzikina.ne.domain.model.Loan
 import com.arzikina.ne.domain.model.LoanStatus
 import com.arzikina.ne.domain.model.LoanType
+import com.arzikina.ne.domain.model.computeLoanStatus
 import com.arzikina.ne.domain.repository.AccountRepository
 import com.arzikina.ne.domain.repository.LoanRepository
 import com.arzikina.ne.domain.repository.PersonRepository
@@ -98,12 +99,15 @@ class LoanStatisticsViewModel @Inject constructor(
 
     /** [count]/[totalCount] plutôt qu'un ordre fixe : les statuts absents (aucun prêt/emprunt dans
      * cet état) sont omis, comme [computeCategoryBreakdown] omet les catégories sans dépense sur
-     * l'écran Statistiques général. */
+     * l'écran Statistiques général. Statut recalculé via [computeLoanStatus] (voir sa doc) plutôt
+     * que [Loan.status] persisté, qui peut être périmé par le simple écoulement du temps — sinon
+     * un prêt en retard depuis longtemps continuerait à compter comme "En cours" ici. */
     private fun computeStatusBreakdown(loans: List<Loan>): List<LoanStatusBreakdownItem> {
         val totalCount = loans.size
         if (totalCount == 0) return emptyList()
+        val now = System.currentTimeMillis()
         return loans
-            .groupBy { it.status }
+            .groupBy { computeLoanStatus(it.amount, it.amountRepaid, it.startDate, it.dueDate, now) }
             .map { (status, group) -> LoanStatusBreakdownItem(status, group.size, group.size.toFloat() / totalCount.toFloat()) }
             .sortedByDescending { it.count }
     }

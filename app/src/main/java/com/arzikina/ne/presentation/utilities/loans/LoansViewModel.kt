@@ -7,6 +7,7 @@ import com.arzikina.ne.domain.model.CurrencyAmount
 import com.arzikina.ne.domain.model.Loan
 import com.arzikina.ne.domain.model.LoanStatus
 import com.arzikina.ne.domain.model.LoanType
+import com.arzikina.ne.domain.model.computeLoanStatus
 import com.arzikina.ne.domain.repository.AccountRepository
 import com.arzikina.ne.domain.repository.LoanRepository
 import com.arzikina.ne.domain.repository.PersonRepository
@@ -94,12 +95,19 @@ class LoansViewModel @Inject constructor(
         val personNamesById = persons.associate { it.id to it.name }
         val accountsById = accounts.associateBy { it.id }
         val normalizedQuery = filters.query.trim()
+        // Voir la doc de `computeLoanStatus` : recalculé à CHAQUE affichage plutôt que de faire
+        // confiance à `Loan.status` (persisté, peut être périmé par le simple écoulement du temps
+        // — ex. un prêt en retard depuis hier qui n'a connu aucune écriture depuis).
+        val now = System.currentTimeMillis()
+        val liveStatusById = loans.associate {
+            it.id to computeLoanStatus(it.amount, it.amountRepaid, it.startDate, it.dueDate, now)
+        }
 
         // Actifs (En cours/En retard/À venir) affichés avant les remboursés, comme sur la
         // maquette ; puis par échéance croissante — LoanDao fournit déjà cet ordre secondaire.
         val items = loans
-            .sortedBy { it.status == LoanStatus.REPAID }
-            .map { loan -> loan.toListItem(personNamesById, accountsById) }
+            .sortedBy { liveStatusById.getValue(it.id) == LoanStatus.REPAID }
+            .map { loan -> loan.toListItem(personNamesById, accountsById, liveStatusById.getValue(loan.id)) }
             .filter { item -> matchesType(item.type, filters.type) }
             .filter { item -> matchesStatus(item.status, filters.status) }
             .filter { item -> matchesQuery(item, normalizedQuery) }
@@ -172,12 +180,13 @@ class LoansViewModel @Inject constructor(
 
     private fun Loan.toListItem(
         personNamesById: Map<Long, String>,
-        accountsById: Map<Long, Account>
+        accountsById: Map<Long, Account>,
+        liveStatus: LoanStatus
     ) = LoanListItem(
         id = id,
         personName = personNamesById[personId].orEmpty(),
         type = type,
-        status = status,
+        status = liveStatus,
         title = description,
         amountMinor = amount,
         amountRepaidMinor = amountRepaid,

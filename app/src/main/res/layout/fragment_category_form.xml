@@ -38,6 +38,7 @@
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/typeExpense"
+                    android:textColor="@color/white"
                     style="?attr/materialButtonOutlinedStyle"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
@@ -48,6 +49,7 @@
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/typeIncome"
+                    android:textColor="@color/white"
                     style="?attr/materialButtonOutlinedStyle"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
@@ -110,6 +112,8 @@
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/saveButton"
+                android:textColor="@color/white"
+                android:background="@drawable/forme_radius_10dp"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/spacing_l"

@@ -50,6 +50,11 @@ import javax.inject.Inject
  */
 data class LoanPaymentFormState(
     val isLoaded: Boolean = false,
+    /** `true` si [loanId] ne correspond à aucun prêt/emprunt existant (ex. supprimé depuis un
+     * autre écran pendant que ce formulaire restait ouvert, voir [LoanPaymentFormViewModel.init]) —
+     * sans ce champ, le bouton d'enregistrement resterait désactivé indéfiniment (`isLoaded` ne
+     * devenant jamais `true`) sans aucune explication pour l'utilisateur. */
+    val notFound: Boolean = false,
     val loanTitle: String = "",
     val personName: String = "",
     val loanType: LoanType = LoanType.LENT,
@@ -97,7 +102,11 @@ class LoanPaymentFormViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
-            val loan = loanRepository.getLoan(loanId) ?: return@launch
+            val loan = loanRepository.getLoan(loanId)
+            if (loan == null) {
+                _formState.update { it.copy(notFound = true) }
+                return@launch
+            }
             val person = personRepository.getPerson(loan.personId)
             val account = accountRepository.getAccount(loan.accountId)
             _formState.update {
@@ -132,6 +141,8 @@ class LoanPaymentFormViewModel @Inject constructor(
 
     fun save() {
         val state = _formState.value
+        // Garde anti double-soumission : voir `LoanFormViewModel.save` pour le même raisonnement.
+        if (state.isSaving) return
         val accountError = if (state.accountId == 0L) "Choisis un compte" else null
         val amountMinor = Money.parseToMinorUnits(state.amountInput)
         val amountError = when {

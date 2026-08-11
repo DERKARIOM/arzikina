@@ -28,8 +28,8 @@
     <string name="settings_backup_description">Exporte toutes tes données (comptes, catégories, transactions, budgets, objectifs) dans un fichier, ou restaure une sauvegarde précédente.</string>
     <string name="settings_backup_export_action">Exporter</string>
     <string name="settings_backup_import_action">Importer</string>
-    <string name="settings_backup_export_success">Export réussi : %1$d comptes, %2$d catégories, %3$d transactions, %4$d budgets, %5$d objectifs.</string>
-    <string name="settings_backup_import_success">Importation réussie : %1$d comptes, %2$d catégories, %3$d transactions, %4$d budgets, %5$d objectifs.</string>
+    <string name="settings_backup_export_success">Export réussi : %1$d comptes, %2$d catégories, %3$d transactions, %4$d budgets, %5$d objectifs, %6$d prêts/emprunts.</string>
+    <string name="settings_backup_import_success">Importation réussie : %1$d comptes, %2$d catégories, %3$d transactions, %4$d budgets, %5$d objectifs, %6$d prêts/emprunts.</string>
     <string name="settings_backup_error_prefix">Échec :</string>
     <string name="settings_backup_import_confirm_title">Remplacer toutes les données ?</string>
     <string name="settings_backup_import_confirm_message">L\'importation remplace définitivement toutes les données actuelles (comptes, catégories, transactions, budgets, objectifs) par celles du fichier choisi. Cette action est irréversible.</string>
@@ -257,7 +257,7 @@
     <!-- Numéro décoratif de la carte virtuelle (voir DashboardViewModel.cardNumberLastDigits) :
          %s = les 4 derniers chiffres, dérivés de l'identifiant utilisateur, jamais un vrai
          numéro de carte bancaire. -->
-    <string name="dashboard_card_number_format">•••• •••• •••• %s</string>
+    <string name="dashboard_card_number_format">•••• •••• •••• 2026</string>
     <string name="dashboard_balance_hide_action">Masquer le solde</string>
     <string name="dashboard_balance_show_action">Afficher le solde</string>
     <!-- Contenu accessible de la carte Solde, cliquable pour ouvrir le détail par compte. -->
@@ -280,8 +280,8 @@
     -->
     <string name="dashboard_utilities_title">Utilitaires</string>
     <string name="dashboard_utilities_see_all">Voir tout</string>
-    <string name="utility_loans_title">Prêts / Emprunts</string>
-    <string name="utility_backup_title">Sauvegarder / Restaurer</string>
+    <string name="utility_loans_title">Emprunts</string>
+    <string name="utility_backup_title">Sauvegarder</string>
     <string name="all_utilities_title">Tous les utilitaires</string>
     <!-- Écran "en cours de développement" (voir LoansFragment) : générique, réutilisable pour
          tout futur utilitaire pas encore implémenté. -->
@@ -382,6 +382,7 @@
     <string name="loan_detail_add_payment_action">Enregistrer un remboursement</string>
     <string name="loan_detail_delete_title">Supprimer ce prêt / emprunt ?</string>
     <string name="loan_detail_delete_message">Supprimer « %1$s » ? Cette action est irréversible et supprimera aussi les transactions associées (décaissement et remboursements).</string>
+    <string name="loan_detail_not_found_message">Ce prêt/emprunt n\'existe plus.</string>
 
     <!-- Prêts / Emprunts — formulaire d'enregistrement d'un remboursement
          (voir presentation/utilities/loans/LoanPaymentFormFragment). -->
@@ -393,6 +394,7 @@
     <string name="loan_payment_form_note_placeholder">Ajoute une note (facultatif)</string>
     <string name="loan_payment_form_save_action">Enregistrer</string>
     <string name="loan_payment_form_saved_message">Remboursement enregistré.</string>
+    <string name="loan_payment_form_currency_mismatch_warning">Ce compte n\'a pas la même devise que le prêt/emprunt : le montant sera enregistré tel quel, sans conversion.</string>
     <string name="loan_payment_delete_title">Supprimer ce remboursement ?</string>
     <string name="loan_payment_delete_message">Supprimer ce remboursement de %1$s ? Cette action est irréversible et supprimera aussi la transaction associée.</string>
 
@@ -401,6 +403,18 @@
     <string name="loans_filter_all">Tous</string>
     <string name="loans_no_results_title">Aucun résultat</string>
     <string name="loans_no_results_message">Aucun prêt ou emprunt ne correspond à ta recherche.</string>
+
+    <!-- Prêts / Emprunts — écran Statistiques (voir presentation/utilities/loans/LoanStatisticsFragment). -->
+    <string name="loan_statistics_title">Statistiques</string>
+    <string name="loan_statistics_totals_lent_label">Total prêté</string>
+    <string name="loan_statistics_totals_borrowed_label">Total emprunté</string>
+    <string name="loan_statistics_totals_repaid_received_label">Remboursements reçus</string>
+    <string name="loan_statistics_totals_repaid_paid_label">Remboursements versés</string>
+    <string name="loan_statistics_status_title">Répartition par statut</string>
+    <string name="loan_statistics_status_empty">Aucun prêt ou emprunt à répartir pour le moment.</string>
+    <string name="loan_statistics_status_count">%1$d · %2$d %%</string>
+    <string name="loan_statistics_persons_title">Par personne</string>
+    <string name="loan_statistics_persons_empty">Aucun solde à afficher : tout est soldé, ou aucun prêt/emprunt n\'a encore été enregistré.</string>
 
     <!-- Formulaire d'ajout d'un prêt/emprunt, en 2 pages (voir LoanFormFragment/LoanFormViewModel). -->
     <string name="loan_form_title_step1">Ajouter un prêt / emprunt</string>

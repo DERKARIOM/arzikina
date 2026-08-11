@@ -22,6 +22,14 @@ interface LoanPaymentDao {
     @Query("SELECT * FROM loan_payments WHERE loanId = :loanId AND userId = :userId")
     suspend fun getAllForLoan(loanId: Long, userId: Long): List<LoanPaymentEntity>
 
+    /** Lecture ponctuelle (hors `Flow`) : utilisée par `AccountRepositoryImpl.deleteAccount` pour
+     * repérer les remboursements enregistrés sur CE compte alors que le prêt/emprunt parent utilise
+     * un compte DIFFÉRENT (voir `LoanPaymentEntity.accountId`, indépendant de `LoanEntity.accountId`)
+     * — leur suppression en cascade laisserait le prêt parent avec un montant remboursé/statut
+     * périmés si son montant n'était pas recalculé avant. */
+    @Query("SELECT * FROM loan_payments WHERE accountId = :accountId AND userId = :userId")
+    suspend fun getAllForAccount(accountId: Long, userId: Long): List<LoanPaymentEntity>
+
     /** Retourne l'id de la ligne insérée, ou -1 en cas de mise à jour (voir `AccountDao.upsert`). */
     @Upsert
     suspend fun upsert(payment: LoanPaymentEntity): Long

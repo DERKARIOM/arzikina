@@ -52,6 +52,11 @@ vico = "3.2.2"
 # Listes (RecyclerView)
 recyclerview = "1.4.0"
 
+# Tests (voir la section [libraries] plus bas pour le détail de chaque usage :
+# JVM pur pour les ViewModels, instrumentés pour Room)
+mockk = "1.14.11"
+turbine = "1.2.1"
+
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
@@ -100,6 +105,21 @@ coil = { group = "io.coil-kt.coil3", name = "coil", version.ref = "coil" }
 
 # Vico (graphiques statistiques), variante Views (pas de Compose)
 vico-views = { group = "com.patrykandpatrick.vico", name = "views", version.ref = "vico" }
+
+# Tests unitaires JVM (src/test) : ViewModels des prêts/emprunts (voir Étape "Tests et correction
+# des bugs" du plan de développement). kotlinx-coroutines-test pour piloter les coroutines/StateFlow
+# de façon déterministe, MockK pour de faux LoanRepository/PersonRepository/AccountRepository (des
+# interfaces, jamais leurs implémentations Room — voir la doc de chaque *RepositoryImpl), Turbine
+# pour collecter les émissions de StateFlow sans boilerplate manuel.
+kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "kotlinxCoroutines" }
+mockk = { group = "io.mockk", name = "mockk", version.ref = "mockk" }
+mockk-android = { group = "io.mockk", name = "mockk-android", version.ref = "mockk" }
+turbine = { group = "app.cash.turbine", name = "turbine", version.ref = "turbine" }
+
+# Tests instrumentés (src/androidTest) : Room a besoin d'une vraie implémentation SQLite (absente
+# d'un JVM de bureau) — LoanRepositoryImpl est donc testé avec une base Room EN MÉMOIRE tournant
+# réellement sur l'appareil/l'émulateur, voir `androidx.room.Room.inMemoryDatabaseBuilder`.
+androidx-room-testing = { group = "androidx.room", name = "room-testing", version.ref = "room" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

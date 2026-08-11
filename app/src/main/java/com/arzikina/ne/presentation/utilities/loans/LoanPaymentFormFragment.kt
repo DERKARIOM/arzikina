@@ -48,6 +48,11 @@ class LoanPaymentFormFragment : Fragment(R.layout.fragment_loan_payment_form) {
     private var latestAccounts: List<Account> = emptyList()
     private var latestAccountBalances: Map<Long, Long> = emptyMap()
 
+    /** Voir `LoanDetailFragment.hasNavigatedAwayOnError` pour le même raisonnement (évite de
+     * déclencher [findNavController.navigateUp] plusieurs fois si [LoanPaymentFormState.notFound]
+     * reste `true` sur plusieurs émissions). */
+    private var hasNavigatedAwayOnNotFound = false
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         val viewBinding = FragmentLoanPaymentFormBinding.bind(view)
@@ -123,6 +128,15 @@ class LoanPaymentFormFragment : Fragment(R.layout.fragment_loan_payment_form) {
         latestAccounts = data.accounts
         latestAccountBalances = data.accountBalances
 
+        if (state.notFound) {
+            if (!hasNavigatedAwayOnNotFound) {
+                hasNavigatedAwayOnNotFound = true
+                Snackbar.make(binding.root, R.string.loan_detail_not_found_message, Snackbar.LENGTH_SHORT).show()
+                findNavController().navigateUp()
+            }
+            return
+        }
+
         binding.primaryActionButton.isEnabled = state.isLoaded && !state.isSaving
         if (!state.isLoaded) return
 
@@ -141,6 +155,10 @@ class LoanPaymentFormFragment : Fragment(R.layout.fragment_loan_payment_form) {
         bindAccountField(binding, selectedAccount)
         binding.accountErrorText.text = state.accountError
         binding.accountErrorText.visibility = if (state.accountError != null) View.VISIBLE else View.GONE
+        // Avertissement non bloquant (voir la doc de LoanPaymentFormState.amountInput) : le montant
+        // saisi est toujours interprété dans la devise DU PRÊT, jamais convertie.
+        val hasCurrencyMismatch = selectedAccount != null && selectedAccount.currencyCode != state.loanCurrencyCode
+        binding.currencyMismatchWarningText.visibility = if (hasCurrencyMismatch) View.VISIBLE else View.GONE
 
         if (binding.amountInput.text?.toString() != state.amountInput) {
             binding.amountInput.setText(state.amountInput)

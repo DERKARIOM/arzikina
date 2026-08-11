@@ -160,6 +160,21 @@
                 tools:text="Choisis un compte"
                 tools:visibility="visible" />
 
+            <!-- Avertissement (pas une erreur bloquante) : le montant saisi ci-dessous est
+                 toujours interprété dans la devise DU PRÊT (voir la doc de
+                 LoanPaymentFormState.amountInput), sans aucune conversion — un compte de
+                 règlement d'une autre devise écrirait donc ce montant tel quel dans son solde. -->
+            <TextView
+                android:id="@+id/currencyMismatchWarningText"
+                style="@style/TextAppearance.Material3.BodySmall"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:text="@string/loan_payment_form_currency_mismatch_warning"
+                android:textColor="@color/warning_amber"
+                android:visibility="gone"
+                tools:visibility="visible" />
+
             <!-- Montant : devise fixe = celle du prêt (voir la doc de LoanPaymentFormState.amountInput),
                  pas celle du compte de règlement sélectionné ci-dessus. -->
             <com.google.android.material.card.MaterialCardView

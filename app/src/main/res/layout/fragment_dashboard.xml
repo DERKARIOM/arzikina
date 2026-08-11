@@ -221,7 +221,7 @@
                         android:textColor="@color/arzikina_on_balance_card"
                         app:layout_constraintStart_toStartOf="parent"
                         app:layout_constraintTop_toBottomOf="@id/balanceValue"
-                        tools:text="•••• •••• •••• 4238" />
+                        tools:text="•••• •••• •••• 2026" />
 
                     <!-- Titulaire (bas-gauche) et badge app (bas-droite), même disposition que item_account.xml. -->
                     <TextView

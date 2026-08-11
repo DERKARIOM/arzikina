@@ -105,6 +105,7 @@ class BackupFragment : Fragment(R.layout.fragment_backup) {
         result.categoriesCount,
         result.transactionsCount,
         result.budgetsCount,
-        result.savingsGoalsCount
+        result.savingsGoalsCount,
+        result.loansCount
     )
 }

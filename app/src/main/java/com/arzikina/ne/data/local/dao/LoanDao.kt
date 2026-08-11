@@ -27,6 +27,13 @@ interface LoanDao {
     @Query("SELECT * FROM loans WHERE personId = :personId AND userId = :userId")
     suspend fun getAllForPerson(personId: Long, userId: Long): List<LoanEntity>
 
+    /** Lecture ponctuelle (hors `Flow`) : utilisée par `AccountRepositoryImpl.deleteAccount` pour
+     * nettoyer les transactions liées (décaissement + remboursements, même sur un autre compte)
+     * AVANT que la suppression du compte ne cascade sur ces prêts/emprunts (voir
+     * `LoanEntity.accountId`, `CASCADE`). */
+    @Query("SELECT * FROM loans WHERE accountId = :accountId AND userId = :userId")
+    suspend fun getAllForAccount(accountId: Long, userId: Long): List<LoanEntity>
+
     /** Retourne l'id de la ligne insérée, ou -1 en cas de mise à jour (voir `AccountDao.upsert`). */
     @Upsert
     suspend fun upsert(loan: LoanEntity): Long

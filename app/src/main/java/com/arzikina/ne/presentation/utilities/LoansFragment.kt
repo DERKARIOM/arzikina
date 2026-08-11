@@ -57,11 +57,16 @@ class LoansFragment : Fragment(R.layout.fragment_loans) {
 
         viewBinding.toolbar.setNavigationOnClickListener { findNavController().navigateUp() }
         viewBinding.toolbar.setOnMenuItemClickListener { item ->
-            if (item.itemId == R.id.action_toggle_filters) {
-                toggleFiltersPanel(viewBinding)
-                true
-            } else {
-                false
+            when (item.itemId) {
+                R.id.action_toggle_filters -> {
+                    toggleFiltersPanel(viewBinding)
+                    true
+                }
+                R.id.action_view_statistics -> {
+                    navigateToStatistics()
+                    true
+                }
+                else -> false
             }
         }
         viewBinding.loansList.layoutManager = LinearLayoutManager(requireContext())
@@ -130,6 +135,9 @@ class LoansFragment : Fragment(R.layout.fragment_loans) {
 
         binding.searchLayout.visibility = if (hasAnyLoans) View.VISIBLE else View.GONE
         binding.toolbar.menu.findItem(R.id.action_toggle_filters)?.isVisible = hasAnyLoans
+        // Une répartition/un classement vides n'auraient rien à montrer (voir LoanStatisticsFragment) :
+        // même raisonnement que pour "Filtres" ci-dessus.
+        binding.toolbar.menu.findItem(R.id.action_view_statistics)?.isVisible = hasAnyLoans
         if (!hasAnyLoans) binding.filtersPanel.visibility = View.GONE
 
         binding.addLoanButton.visibility = if (hasAnyLoans) View.VISIBLE else View.GONE
@@ -189,5 +197,9 @@ class LoansFragment : Fragment(R.layout.fragment_loans) {
 
     private fun navigateToLoanDetail(item: LoanListItem) {
         findNavController().navigate(R.id.loanDetailFragment, bundleOf("loanId" to item.id), NavAnimations.fade)
+    }
+
+    private fun navigateToStatistics() {
+        findNavController().navigate(R.id.loanStatisticsFragment, null, NavAnimations.fade)
     }
 }

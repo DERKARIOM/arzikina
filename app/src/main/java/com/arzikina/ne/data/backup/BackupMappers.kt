@@ -3,13 +3,20 @@ package com.arzikina.ne.data.backup
 import com.arzikina.ne.data.local.entity.AccountEntity
 import com.arzikina.ne.data.local.entity.BudgetEntity
 import com.arzikina.ne.data.local.entity.CategoryEntity
+import com.arzikina.ne.data.local.entity.LoanEntity
+import com.arzikina.ne.data.local.entity.LoanPaymentEntity
+import com.arzikina.ne.data.local.entity.PersonEntity
 import com.arzikina.ne.data.local.entity.SavingsGoalEntity
 import com.arzikina.ne.data.local.entity.TransactionEntity
 import com.arzikina.ne.domain.model.AccountIcon
 import com.arzikina.ne.domain.model.AccountType
 import com.arzikina.ne.domain.model.BudgetPeriod
 import com.arzikina.ne.domain.model.CategoryIcon
+import com.arzikina.ne.domain.model.LoanReason
+import com.arzikina.ne.domain.model.LoanStatus
+import com.arzikina.ne.domain.model.LoanType
 import com.arzikina.ne.domain.model.PaymentMethod
+import com.arzikina.ne.domain.model.RepaymentMode
 import com.arzikina.ne.domain.model.ThemeMode
 import com.arzikina.ne.domain.model.TransactionType
 import com.arzikina.ne.domain.model.UserPreferences
@@ -158,6 +165,85 @@ fun SavingsGoalDto.toEntity(userId: Long) = SavingsGoalEntity(
     currentAmount = currentAmount,
     currencyCode = currencyCode,
     deadline = deadline,
+    createdAt = createdAt
+)
+
+fun PersonEntity.toDto() = PersonDto(
+    id = id,
+    name = name,
+    phone = phone,
+    createdAt = createdAt
+)
+
+fun PersonDto.toEntity(userId: Long) = PersonEntity(
+    id = id,
+    userId = userId,
+    name = name,
+    phone = phone,
+    createdAt = createdAt
+)
+
+fun LoanEntity.toDto() = LoanDto(
+    id = id,
+    personId = personId,
+    accountId = accountId,
+    type = type.name,
+    amount = amount,
+    amountRepaid = amountRepaid,
+    remainingAmount = remainingAmount,
+    startDate = startDate,
+    dueDate = dueDate,
+    reason = reason.name,
+    reasonCustomText = reasonCustomText,
+    repaymentMode = repaymentMode.name,
+    description = description,
+    status = status.name,
+    createdAt = createdAt,
+    updatedAt = updatedAt,
+    transactionId = transactionId
+)
+
+fun LoanDto.toEntity(userId: Long) = LoanEntity(
+    id = id,
+    userId = userId,
+    personId = personId,
+    accountId = accountId,
+    type = runCatching { LoanType.valueOf(type) }.getOrDefault(LoanType.LENT),
+    amount = amount,
+    amountRepaid = amountRepaid,
+    remainingAmount = remainingAmount,
+    startDate = startDate,
+    dueDate = dueDate,
+    reason = runCatching { LoanReason.valueOf(reason) }.getOrDefault(LoanReason.OTHER),
+    reasonCustomText = reasonCustomText,
+    repaymentMode = runCatching { RepaymentMode.valueOf(repaymentMode) }.getOrDefault(RepaymentMode.SINGLE),
+    description = description,
+    status = runCatching { LoanStatus.valueOf(status) }.getOrDefault(LoanStatus.ONGOING),
+    createdAt = createdAt,
+    updatedAt = updatedAt,
+    transactionId = transactionId
+)
+
+fun LoanPaymentEntity.toDto() = LoanPaymentDto(
+    id = id,
+    loanId = loanId,
+    accountId = accountId,
+    amount = amount,
+    date = date,
+    note = note,
+    transactionId = transactionId,
+    createdAt = createdAt
+)
+
+fun LoanPaymentDto.toEntity(userId: Long) = LoanPaymentEntity(
+    id = id,
+    userId = userId,
+    loanId = loanId,
+    accountId = accountId,
+    amount = amount,
+    date = date,
+    note = note,
+    transactionId = transactionId,
     createdAt = createdAt
 )
 

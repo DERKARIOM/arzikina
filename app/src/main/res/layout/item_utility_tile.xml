@@ -24,13 +24,10 @@
 
     <ImageView
         android:id="@+id/utilityIcon"
-        android:layout_width="@dimen/icon_size_large"
-        android:layout_height="@dimen/icon_size_large"
-        android:background="@drawable/bg_icon_rounded_square"
-        android:backgroundTint="?attr/colorPrimary"
+        android:layout_width="60dp"
+        android:layout_height="60dp"
         android:contentDescription="@null"
         android:padding="@dimen/spacing_s"
-        app:tint="@android:color/white"
         tools:ignore="ContentDescription"
         tools:src="@drawable/ic_label_24" />
 
@@ -39,6 +36,7 @@
         style="@style/TextAppearance.Material3.LabelSmall"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:textSize="10dp"
         android:layout_marginTop="@dimen/spacing_xs"
         android:ellipsize="end"
         android:gravity="center"

@@ -11,5 +11,6 @@ data class BackupResult(
     val categoriesCount: Int,
     val transactionsCount: Int,
     val budgetsCount: Int,
-    val savingsGoalsCount: Int
+    val savingsGoalsCount: Int,
+    val loansCount: Int = 0
 )

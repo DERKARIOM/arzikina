@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Ligne du classement "Par personne" (voir LoanPersonBalanceAdapter, écran Statistiques
+    Prêts/Emprunts) : avatar + nom (même fonctions pures que item_loan.xml, personAvatarInitial/
+    personAvatarColorArgb) + solde net coloré (vert si la personne doit de l'argent à
+    l'utilisateur, rouge dans le cas inverse — voir la doc de LoanPersonBalanceItem.netAmountMinor).
+-->
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:paddingVertical="@dimen/spacing_xs">
+
+    <TextView
+        android:id="@+id/personAvatar"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:background="@drawable/bg_icon_circle"
+        android:gravity="center"
+        android:textColor="@android:color/white"
+        android:textSize="12sp"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:backgroundTint="#16A34A"
+        tools:text="A" />
+
+    <TextView
+        android:id="@+id/personName"
+        style="@style/TextAppearance.Material3.BodyMedium"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/spacing_s"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:textColor="?attr/colorOnSurface"
+        app:layout_constraintEnd_toStartOf="@id/netAmountValue"
+        app:layout_constraintStart_toEndOf="@id/personAvatar"
+        app:layout_constraintTop_toTopOf="@id/personAvatar"
+        app:layout_constraintBottom_toBottomOf="@id/personAvatar"
+        tools:text="Aminata Diallo" />
+
+    <TextView
+        android:id="@+id/netAmountValue"
+        style="@style/TextAppearance.Material3.BodyMedium"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toBottomOf="@id/personAvatar"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="@id/personAvatar"
+        tools:text="+50 000 F CFA"
+        tools:textColor="#16A34A" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

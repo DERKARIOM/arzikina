@@ -254,6 +254,7 @@ class LoanFormFragment : Fragment(R.layout.fragment_loan_form) {
         if (binding.firstPaymentDateInput.text?.toString() != formatDate(state.firstPaymentDateMillis)) {
             binding.firstPaymentDateInput.setText(formatDate(state.firstPaymentDateMillis))
         }
+        binding.firstPaymentDateLayout.error = state.firstPaymentDateError
     }
 
     private fun renderTypeCard(card: MaterialCardView, isSelected: Boolean, @ColorRes selectedColorRes: Int) {

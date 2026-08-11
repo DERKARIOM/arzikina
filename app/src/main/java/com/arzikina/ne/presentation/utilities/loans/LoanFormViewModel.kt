@@ -64,6 +64,7 @@ data class LoanFormState(
     val amountError: String? = null,
     val dueDateError: String? = null,
     val firstPaymentAmountError: String? = null,
+    val firstPaymentDateError: String? = null,
     val isSaving: Boolean = false
 )
 
@@ -143,7 +144,7 @@ class LoanFormViewModel @Inject constructor(
     }
 
     fun onFirstPaymentDateChange(millis: Long) {
-        _formState.update { it.copy(firstPaymentDateMillis = millis) }
+        _formState.update { it.copy(firstPaymentDateMillis = millis, firstPaymentDateError = null) }
     }
 
     /** Valide la page 1 (type/personne/compte/montant/dates) ; avance à la page 2 si tout est
@@ -182,6 +183,10 @@ class LoanFormViewModel @Inject constructor(
 
     fun save() {
         val state = _formState.value
+        // Garde anti double-soumission : `isSaving` ne se répercute dans l'UI (bouton désactivé)
+        // qu'une fois l'état recomposé — un double-tap rapide pourrait sinon invoquer `save()` deux
+        // fois avant ce recalcul et créer un prêt/emprunt en double.
+        if (state.isSaving) return
         // Déjà validé par goToStep2 pour atteindre cette page ; re-vérifié par sécurité (l'état
         // n'est normalement plus modifiable entre-temps, la page 1 n'étant plus affichée).
         val amountMinor = Money.parseToMinorUnits(state.amountInput) ?: return
@@ -195,6 +200,10 @@ class LoanFormViewModel @Inject constructor(
             }
             if (parsed > amountMinor) {
                 _formState.update { it.copy(firstPaymentAmountError = "Ne peut pas dépasser le montant total") }
+                return
+            }
+            if (state.firstPaymentDateMillis < state.startDateMillis) {
+                _formState.update { it.copy(firstPaymentDateError = "Ne peut pas être avant la date de début") }
                 return
             }
             firstPaymentMinor = parsed

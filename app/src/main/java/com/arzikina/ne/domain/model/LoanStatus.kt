@@ -1,5 +1,8 @@
 package com.arzikina.ne.domain.model
 
+import java.time.Instant
+import java.time.ZoneId
+
 /**
  * Statut d'un [Loan] — TOUJOURS recalculé (voir [computeLoanStatus]), jamais saisi
  * manuellement, mais PERSISTÉ (dénormalisé) sur [Loan.status] pour permettre des requêtes SQL
@@ -32,6 +35,11 @@ enum class LoanStatus {
  * [com.arzikina.ne.util.CardInputFormatter]. [REPAID] est vérifié EN PREMIER : un prêt totalement
  * remboursé reste [REPAID] même si sa date d'échéance est dépassée (le retard n'a plus de sens
  * une fois la dette éteinte).
+ *
+ * Recalculée à CHAQUE affichage (voir les écrans `presentation/utilities/loans`), pas seulement à
+ * l'écriture : sinon un prêt qui franchit son échéance sans aucune action utilisateur resterait
+ * affiché [ONGOING] indéfiniment, la valeur persistée sur [Loan.status] ne servant alors qu'à
+ * accélérer des requêtes SQL filtrées (voir la doc de [LoanStatus]).
  */
 fun computeLoanStatus(
     amount: Long,
@@ -42,6 +50,21 @@ fun computeLoanStatus(
 ): LoanStatus = when {
     amountRepaid >= amount -> LoanStatus.REPAID
     nowEpochMillis < startDate -> LoanStatus.UPCOMING
-    nowEpochMillis > dueDate -> LoanStatus.OVERDUE
+    isPastDueDay(dueDate, nowEpochMillis) -> LoanStatus.OVERDUE
     else -> LoanStatus.ONGOING
+}
+
+/**
+ * Compare des JOURS calendaires, pas des millisecondes brutes : un prêt reste [LoanStatus.ONGOING]
+ * pendant toute la journée de son échéance et ne devient [LoanStatus.OVERDUE] qu'à partir du
+ * lendemain. Sans cette distinction, un prêt échéant "aujourd'hui" s'afficherait en retard dès
+ * 00h01 le jour même (voir [Loan.dueDate], normalisée à minuit local à la saisie — voir
+ * `LoanFormFragment.showDatePicker`), ce qui serait incohérent avec [LoanStatus.UPCOMING] qui, lui,
+ * traite déjà le jour de [Loan.startDate] comme débuté.
+ */
+private fun isPastDueDay(dueDate: Long, nowEpochMillis: Long): Boolean {
+    val zone = ZoneId.systemDefault()
+    val dueDay = Instant.ofEpochMilli(dueDate).atZone(zone).toLocalDate()
+    val today = Instant.ofEpochMilli(nowEpochMillis).atZone(zone).toLocalDate()
+    return today.isAfter(dueDay)
 }

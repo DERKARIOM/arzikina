@@ -17,17 +17,17 @@ import com.arzikina.ne.R
 object UtilityCatalog {
     fun all(): List<UtilityItem> = listOf(
         UtilityItem(
-            iconRes = R.drawable.ic_label_24,
+            iconRes = R.drawable.categorie,
             titleRes = R.string.more_menu_categories,
             destinationId = R.id.categoriesFragment
         ),
         UtilityItem(
-            iconRes = R.drawable.ic_loan_24,
+            iconRes = R.drawable.dette,
             titleRes = R.string.utility_loans_title,
             destinationId = R.id.loansFragment
         ),
         UtilityItem(
-            iconRes = R.drawable.ic_cloud_backup_24,
+            iconRes = R.drawable.cloud,
             titleRes = R.string.utility_backup_title,
             destinationId = R.id.backupFragment
         )
