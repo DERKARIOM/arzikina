@@ -2,9 +2,13 @@ package com.arzikina.ne
 
 import android.os.Bundle
 import android.view.View
+import android.view.ViewGroup
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.view.ViewCompat
+import androidx.core.widget.NestedScrollView
+import androidx.fragment.app.Fragment
+import androidx.fragment.app.FragmentManager
 import androidx.navigation.NavController
 import androidx.navigation.fragment.NavHostFragment
 import com.arzikina.ne.databinding.ActivityMainBinding
@@ -44,6 +48,7 @@ class MainActivity : AppCompatActivity() {
 
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        setUpKeyboardAwareScrolling()
 
         val navHostFragment = supportFragmentManager
             .findFragmentById(R.id.navHostFragment) as NavHostFragment
@@ -146,6 +151,53 @@ class MainActivity : AppCompatActivity() {
         if (tabId != R.id.dashboardFragment) {
             navController.navigate(tabId)
         }
+    }
+
+    /**
+     * Correction GLOBALE du recouvrement par le clavier virtuel (voir instructions projet, "ne pas
+     * devoir ajouter manuellement une correction différente dans chaque Fragment") : un seul hook,
+     * posé ici une fois pour toutes, s'applique automatiquement à CHAQUE Fragment affiché — actuel
+     * ou futur — sans qu'aucun d'eux n'ait à s'en soucier.
+     *
+     * `recursive = true` est indispensable : les Fragments de destination (`LoansFragment`,
+     * `LoanFormFragment`, etc., voir `nav_graph.xml`) ne sont PAS des enfants directs de
+     * [supportFragmentManager], mais du `childFragmentManager` interne du [NavHostFragment] —
+     * sans ce paramètre, le callback ne se déclencherait que pour le `NavHostFragment` lui-même.
+     *
+     * Pour chaque Fragment dont la vue vient d'être créée, recherche son [NestedScrollView] (voir
+     * [findNestedScrollView]) et lui applique [SystemBars.applyImeAwarePadding] — voir sa doc pour
+     * le raisonnement complet. Les écrans sans [NestedScrollView] (listes/`RecyclerView` sans champ
+     * de saisie, voir `fragment_accounts.xml`, `fragment_more.xml`...) ne sont pas concernés : la
+     * recherche n'y trouve simplement rien, sans effet de bord.
+     */
+    private fun setUpKeyboardAwareScrolling() {
+        supportFragmentManager.registerFragmentLifecycleCallbacks(
+            object : FragmentManager.FragmentLifecycleCallbacks() {
+                override fun onFragmentViewCreated(
+                    fm: FragmentManager,
+                    f: Fragment,
+                    v: View,
+                    savedInstanceState: Bundle?
+                ) {
+                    findNestedScrollView(v)?.let { SystemBars.applyImeAwarePadding(it) }
+                }
+            },
+            /* recursive = */ true
+        )
+    }
+
+    /** Parcours en profondeur du premier [NestedScrollView] rencontré (racine de [view] elle-même,
+     * voir `fragment_dashboard.xml`, ou l'un de ses descendants, cas de la quasi-totalité des
+     * formulaires — voir `SystemBars.applyImeAwarePadding`). `null` si l'écran n'en contient
+     * aucun. */
+    private fun findNestedScrollView(view: View): NestedScrollView? {
+        if (view is NestedScrollView) return view
+        if (view is ViewGroup) {
+            for (i in 0 until view.childCount) {
+                findNestedScrollView(view.getChildAt(i))?.let { return it }
+            }
+        }
+        return null
     }
 
     /**

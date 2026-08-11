@@ -12,11 +12,22 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.Arzikina">
+        <!--
+            windowSoftInputMode="adjustResize" : bonne pratique standard, mais À ELLE SEULE
+            INSUFFISANTE ici — l'app est en edge-to-edge (voir util/SystemBars.kt,
+            WindowCompat.setDecorFitsSystemWindows(window, false)), et Android cesse alors de
+            redimensionner automatiquement le contenu selon le clavier, quelle que soit la valeur
+            de cet attribut (comportement documenté officiellement). La correction réelle consiste
+            à consommer manuellement l'inset WindowInsetsCompat.Type.ime() — voir
+            SystemBars.applyImeAwarePadding(), appliqué automatiquement à chaque écran par
+            MainActivity (registerFragmentLifecycleCallbacks), aucune configuration par Fragment.
+        -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
             android:label="@string/app_name"
-            android:theme="@style/Theme.Arzikina">
+            android:theme="@style/Theme.Arzikina"
+            android:windowSoftInputMode="adjustResize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 

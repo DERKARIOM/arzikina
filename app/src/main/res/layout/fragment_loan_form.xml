@@ -35,12 +35,22 @@
         app:layout_constraintTop_toTopOf="@id/toolbar"
         tools:text="1/2" />
 
+    <!--
+        NestedScrollView occupant tout l'espace sous le Toolbar (voir MainActivity, qui applique un
+        padding bas dynamique = inset clavier sur ce NestedScrollView, détecté automatiquement via
+        `registerFragmentLifecycleCallbacks` — voir sa doc). `primaryActionButton` fait maintenant
+        partie du contenu défilant (dernier enfant, voir plus bas) plutôt que d'être épinglé en bas
+        du ConstraintLayout : sans ce changement, le clavier l'aurait masqué sans qu'aucun padding ne
+        puisse s'appliquer à une vue hors du scroll — harmonisé avec les 10 autres formulaires de
+        l'app (voir `fragment_transaction_form.xml`/`fragment_account_form.xml`), qui suivent déjà
+        ce pattern.
+    -->
     <androidx.core.widget.NestedScrollView
         android:id="@+id/scrollContainer"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:fillViewport="true"
-        app:layout_constraintBottom_toTopOf="@id/primaryActionButton"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/toolbar">
@@ -649,16 +659,17 @@
 
             </LinearLayout>
 
+            <!-- Toujours visible, quelle que soit la page affichée (voir la doc plus haut) : reste
+                 le dernier élément du contenu défilant, sous page1 OU page2 selon l'étape. -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/primaryActionButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_l"
+                android:text="@string/loan_form_next_action" />
+
         </LinearLayout>
 
     </androidx.core.widget.NestedScrollView>
-
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/primaryActionButton"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_margin="@dimen/spacing_m"
-        android:text="@string/loan_form_next_action"
-        app:layout_constraintBottom_toBottomOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

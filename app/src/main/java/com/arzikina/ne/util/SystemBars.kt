@@ -3,11 +3,13 @@ package com.arzikina.ne.util
 import android.app.Activity
 import android.content.res.Configuration
 import android.graphics.Color
+import android.graphics.Rect
 import android.view.View
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updatePadding
+import androidx.core.widget.NestedScrollView
 
 /**
  * Gestion centralisée des barres système (barre de statut, barre de
@@ -128,6 +130,54 @@ object SystemBars {
         ViewCompat.setOnApplyWindowInsetsListener(bottomInsetView) { view, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             view.updatePadding(bottom = systemBars.bottom)
+            insets
+        }
+    }
+
+    /**
+     * Applique un padding bas DYNAMIQUE, égal à la hauteur du clavier virtuel (inset IME), sur
+     * [scrollView] — afin que son dernier contenu (et le bouton d'action principal, désormais
+     * TOUJOURS placé À L'INTÉRIEUR du scroll dans tous les formulaires de l'app, voir
+     * `fragment_loan_form.xml`/`fragment_loan_payment_form.xml` pour les deux derniers écrans
+     * harmonisés en ce sens) reste atteignable au-dessus du clavier plutôt que masqué derrière.
+     *
+     * Appelée automatiquement, pour CHAQUE écran, par [com.arzikina.ne.MainActivity] (voir
+     * `registerFragmentLifecycleCallbacks`, qui détecte lui-même le [NestedScrollView] de chaque
+     * Fragment affiché) : aucun Fragment n'a besoin d'appeler cette fonction lui-même, ni
+     * aujourd'hui ni pour un futur écran — c'est la correction globale demandée (voir instructions
+     * projet, "ne pas devoir ajouter manuellement une correction différente dans chaque Fragment").
+     *
+     * Nécessaire MALGRÉ `android:windowSoftInputMode="adjustResize"` (voir AndroidManifest.xml) :
+     * une fois l'app en edge-to-edge (voir [configure]), Android cesse de redimensionner
+     * automatiquement le contenu selon le clavier, quelle que soit la valeur de cet attribut
+     * (comportement documenté officiellement) — seule la consommation manuelle de
+     * `WindowInsetsCompat.Type.ime()` fonctionne encore, exactement ce que fait cette fonction.
+     *
+     * [scrollView] reçoit son propre listener d'insets, INDÉPENDANT de celui posé par
+     * [applyInsets] sur le conteneur de navigation partagé (voir sa doc, "un seul listener actif
+     * par vue") : ce sont deux vues distinctes, donc aucun risque d'écrasement mutuel.
+     * Volontairement limité à `Type.ime()` (jamais `systemBars()`) : le bas de l'écran est déjà
+     * pris en charge ailleurs (padding du conteneur de navigation si la Bottom Navigation est
+     * masquée, ou par la Bottom Navigation elle-même sinon, voir [applyInsets]) — additionner aussi
+     * `systemBars()` ici doublerait cet espacement.
+     *
+     * Fait aussi défiler automatiquement le champ actuellement focus au-dessus du clavier dès que
+     * celui-ci apparaît (`requestRectangleOnScreen`), plutôt que de compter uniquement sur le
+     * défilement automatique intégré de [NestedScrollView] au moment du focus initial.
+     */
+    fun applyImeAwarePadding(scrollView: NestedScrollView) {
+        val initialPaddingBottom = scrollView.paddingBottom
+        scrollView.clipToPadding = false
+        ViewCompat.setOnApplyWindowInsetsListener(scrollView) { view, insets ->
+            val imeBottom = insets.getInsets(WindowInsetsCompat.Type.ime()).bottom
+            view.updatePadding(bottom = initialPaddingBottom + imeBottom)
+            if (imeBottom > 0) {
+                view.post {
+                    view.findFocus()?.let { focusedView ->
+                        focusedView.requestRectangleOnScreen(Rect(0, 0, focusedView.width, focusedView.height), false)
+                    }
+                }
+            }
             insets
         }
     }
