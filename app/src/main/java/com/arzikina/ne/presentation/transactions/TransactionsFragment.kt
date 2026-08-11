@@ -133,11 +133,13 @@ class TransactionsFragment : Fragment(R.layout.fragment_transactions) {
     }
 
     private fun setUpDropdowns(binding: FragmentTransactionsBinding) {
-        binding.accountFilterInput.setOnItemClickListener { _, _, position, _ ->
+        binding.accountFilterField.dropdownLayout.hint = getString(R.string.transaction_form_account_label)
+        binding.accountFilterField.dropdownInput.setOnItemClickListener { _, _, position, _ ->
             val accountId = if (position == 0) null else latestAccounts.getOrNull(position - 1)?.id
             viewModel.onAccountFilterChange(accountId)
         }
-        binding.categoryFilterInput.setOnItemClickListener { _, _, position, _ ->
+        binding.categoryFilterField.dropdownLayout.hint = getString(R.string.transaction_form_category_label)
+        binding.categoryFilterField.dropdownInput.setOnItemClickListener { _, _, position, _ ->
             val categoryId = if (position == 0) null else latestCategories.getOrNull(position - 1)?.id
             viewModel.onCategoryFilterChange(categoryId)
         }
@@ -181,19 +183,19 @@ class TransactionsFragment : Fragment(R.layout.fragment_transactions) {
         }
 
         val accountLabels = listOf(getString(R.string.transactions_filter_all_accounts)) + accounts.map { it.name }
-        binding.accountFilterInput.setSimpleItems(accountLabels.toTypedArray())
+        binding.accountFilterField.dropdownInput.setSimpleItems(accountLabels.toTypedArray())
         val accountLabel = accounts.firstOrNull { it.id == filters.accountId }?.name
             ?: getString(R.string.transactions_filter_all_accounts)
-        if (binding.accountFilterInput.text?.toString() != accountLabel) {
-            binding.accountFilterInput.setText(accountLabel, false)
+        if (binding.accountFilterField.dropdownInput.text?.toString() != accountLabel) {
+            binding.accountFilterField.dropdownInput.setText(accountLabel, false)
         }
 
         val categoryLabels = listOf(getString(R.string.transactions_filter_all_categories)) + categories.map { it.name }
-        binding.categoryFilterInput.setSimpleItems(categoryLabels.toTypedArray())
+        binding.categoryFilterField.dropdownInput.setSimpleItems(categoryLabels.toTypedArray())
         val categoryLabel = categories.firstOrNull { it.id == filters.categoryId }?.name
             ?: getString(R.string.transactions_filter_all_categories)
-        if (binding.categoryFilterInput.text?.toString() != categoryLabel) {
-            binding.categoryFilterInput.setText(categoryLabel, false)
+        if (binding.categoryFilterField.dropdownInput.text?.toString() != categoryLabel) {
+            binding.categoryFilterField.dropdownInput.setText(categoryLabel, false)
         }
 
         binding.resetFiltersButton.visibility = if (filters.hasActiveFilters) View.VISIBLE else View.GONE

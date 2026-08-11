@@ -87,15 +87,17 @@ class BudgetFormFragment : Fragment(R.layout.fragment_budget_form) {
     }
 
     private fun setUpCategoryDropdown(binding: FragmentBudgetFormBinding) {
-        binding.categoryInput.setOnItemClickListener { _, _, position, _ ->
+        binding.categoryField.dropdownLayout.hint = getString(R.string.budget_form_category_label)
+        binding.categoryField.dropdownInput.setOnItemClickListener { _, _, position, _ ->
             latestCategories.getOrNull(position)?.let { viewModel.onCategoryChange(it.id) }
         }
     }
 
     private fun setUpCurrencyDropdown(binding: FragmentBudgetFormBinding) {
+        binding.currencyField.dropdownLayout.hint = getString(R.string.account_form_currency_label)
         val labels = SupportedCurrency.entries.map { "${it.displayName} (${it.symbol})" }
-        binding.currencyInput.setSimpleItems(labels.toTypedArray())
-        binding.currencyInput.setOnItemClickListener { _, _, position, _ ->
+        binding.currencyField.dropdownInput.setSimpleItems(labels.toTypedArray())
+        binding.currencyField.dropdownInput.setOnItemClickListener { _, _, position, _ ->
             viewModel.onCurrencyChange(SupportedCurrency.entries[position].code)
         }
     }
@@ -119,15 +121,15 @@ class BudgetFormFragment : Fragment(R.layout.fragment_budget_form) {
         latestCategories = categories
 
         val canPickCategory = categories.isNotEmpty()
-        binding.categoryLayout.isEnabled = canPickCategory
+        binding.categoryField.dropdownLayout.isEnabled = canPickCategory
         binding.noCategoriesHint.visibility = if (canPickCategory) View.GONE else View.VISIBLE
 
-        binding.categoryInput.setSimpleItems(categories.map { it.name }.toTypedArray())
+        binding.categoryField.dropdownInput.setSimpleItems(categories.map { it.name }.toTypedArray())
         val categoryLabel = categories.firstOrNull { it.id == state.categoryId }?.name.orEmpty()
-        if (binding.categoryInput.text?.toString() != categoryLabel) {
-            binding.categoryInput.setText(categoryLabel, false)
+        if (binding.categoryField.dropdownInput.text?.toString() != categoryLabel) {
+            binding.categoryField.dropdownInput.setText(categoryLabel, false)
         }
-        binding.categoryLayout.error = state.categoryError
+        binding.categoryField.dropdownLayout.error = state.categoryError
 
         val expectedPeriodButtonId = if (state.period == BudgetPeriod.WEEKLY) R.id.periodWeekly else R.id.periodMonthly
         if (binding.periodGroup.checkedButtonId != expectedPeriodButtonId) {
@@ -142,8 +144,8 @@ class BudgetFormFragment : Fragment(R.layout.fragment_budget_form) {
         val currencyLabel = SupportedCurrency.entries.firstOrNull { it.code == state.currencyCode }
             ?.let { "${it.displayName} (${it.symbol})" }
             .orEmpty()
-        if (binding.currencyInput.text?.toString() != currencyLabel) {
-            binding.currencyInput.setText(currencyLabel, false)
+        if (binding.currencyField.dropdownInput.text?.toString() != currencyLabel) {
+            binding.currencyField.dropdownInput.setText(currencyLabel, false)
         }
     }
 

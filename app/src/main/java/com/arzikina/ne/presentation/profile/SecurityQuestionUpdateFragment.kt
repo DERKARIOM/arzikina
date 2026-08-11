@@ -55,10 +55,11 @@ class SecurityQuestionUpdateFragment : Fragment(R.layout.fragment_security_quest
         }
         viewBinding.submitButton.setOnClickListener { viewModel.submit() }
 
-        viewBinding.securityQuestionInput.setSimpleItems(
+        viewBinding.securityQuestionField.dropdownLayout.hint = getString(R.string.register_security_question_label)
+        viewBinding.securityQuestionField.dropdownInput.setSimpleItems(
             SECURITY_QUESTIONS.map { getString(it.displayTextRes()) }.toTypedArray()
         )
-        viewBinding.securityQuestionInput.setOnItemClickListener { _, _, position, _ ->
+        viewBinding.securityQuestionField.dropdownInput.setOnItemClickListener { _, _, position, _ ->
             viewModel.onSecurityQuestionChange(SECURITY_QUESTIONS[position])
         }
 
@@ -84,8 +85,8 @@ class SecurityQuestionUpdateFragment : Fragment(R.layout.fragment_security_quest
         binding.currentPasswordLayout.error = state.currentPasswordError?.let { getString(it) }
 
         val questionLabel = getString(state.securityQuestion.displayTextRes())
-        if (binding.securityQuestionInput.text?.toString() != questionLabel) {
-            binding.securityQuestionInput.setText(questionLabel, false)
+        if (binding.securityQuestionField.dropdownInput.text?.toString() != questionLabel) {
+            binding.securityQuestionField.dropdownInput.setText(questionLabel, false)
         }
 
         if (binding.securityAnswerInput.text?.toString() != state.securityAnswer) {

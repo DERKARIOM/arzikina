@@ -96,6 +96,19 @@
     </style>
 
     <!--
+        Style partagé pour tout champ "menu déroulant" posé sur une postcard (voir
+        item_dropdown_field.xml) : centralise le retrait du contour propre à OutlinedBox
+        (boxStrokeWidth=0), pour éviter un double cadre "boîte dans la boîte" une fois posé sur le
+        fond sombre de la carte — même raisonnement que nameLayout/balanceLayout sur
+        fragment_account_form.xml, mais factorisé ici pour ne plus le répéter à chaque champ
+        déroulant (voir "harmonisation des Spinner", instructions projet).
+    -->
+    <style name="Widget.Arzikina.TextInputLayout.ExposedDropdownMenu.PostCard" parent="Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu">
+        <item name="boxStrokeWidth">0dp</item>
+        <item name="boxStrokeWidthFocused">0dp</item>
+    </style>
+
+    <!--
         Taille du libellé de la Bottom Navigation (voir activity_main.xml,
         app:itemTextAppearanceActive/Inactive) : plus petite que la taille
         Material3 par défaut, pour rester discrète sous l'icône avec 5 onglets

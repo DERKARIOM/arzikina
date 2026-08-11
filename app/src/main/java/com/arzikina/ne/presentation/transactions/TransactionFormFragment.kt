@@ -155,9 +155,10 @@ class TransactionFormFragment : Fragment(R.layout.fragment_transaction_form) {
      * dans le menu (Dépense, Revenu, Transfert).
      */
     private fun setUpTypeDropdown(binding: FragmentTransactionFormBinding) {
+        binding.typeField.dropdownLayout.hint = getString(R.string.transaction_form_type_label)
         val labels = TYPE_OPTIONS.map { (_, labelRes) -> getString(labelRes) }
-        binding.typeInput.setSimpleItems(labels.toTypedArray())
-        binding.typeInput.setOnItemClickListener { _, _, position, _ ->
+        binding.typeField.dropdownInput.setSimpleItems(labels.toTypedArray())
+        binding.typeField.dropdownInput.setOnItemClickListener { _, _, position, _ ->
             viewModel.onTypeChange(TYPE_OPTIONS[position].first)
         }
     }
@@ -221,10 +222,11 @@ class TransactionFormFragment : Fragment(R.layout.fragment_transaction_form) {
      * champ à `null`, les suivants correspondent 1-à-1 à [PaymentMethod.entries].
      */
     private fun setUpPaymentMethodDropdown(binding: FragmentTransactionFormBinding) {
+        binding.paymentMethodField.dropdownLayout.hint = getString(R.string.transaction_form_payment_method_label)
         val labels = listOf(getString(R.string.transaction_form_payment_method_none)) +
             PaymentMethod.entries.map { getString(it.displayTextRes()) }
-        binding.paymentMethodInput.setSimpleItems(labels.toTypedArray())
-        binding.paymentMethodInput.setOnItemClickListener { _, _, position, _ ->
+        binding.paymentMethodField.dropdownInput.setSimpleItems(labels.toTypedArray())
+        binding.paymentMethodField.dropdownInput.setOnItemClickListener { _, _, position, _ ->
             val method = PaymentMethod.entries.getOrNull(position - 1)
             viewModel.onPaymentMethodChange(method)
         }
@@ -306,8 +308,8 @@ class TransactionFormFragment : Fragment(R.layout.fragment_transaction_form) {
         binding.loanLinkedBanner.visibility = if (isLoanLinked) View.VISIBLE else View.GONE
         binding.amountInput.isEnabled = !isLoanLinked
         binding.descriptionInput.isEnabled = !isLoanLinked
-        binding.typeInput.isEnabled = !isLoanLinked
-        binding.paymentMethodInput.isEnabled = !isLoanLinked
+        binding.typeField.dropdownInput.isEnabled = !isLoanLinked
+        binding.paymentMethodField.dropdownInput.isEnabled = !isLoanLinked
         binding.deleteButton.visibility = if (viewModel.isEditMode && !isLoanLinked) View.VISIBLE else View.GONE
 
         renderType(binding, state.type)
@@ -331,15 +333,15 @@ class TransactionFormFragment : Fragment(R.layout.fragment_transaction_form) {
 
         val paymentMethodLabel = state.paymentMethod?.let { getString(it.displayTextRes()) }
             ?: getString(R.string.transaction_form_payment_method_none)
-        if (binding.paymentMethodInput.text?.toString() != paymentMethodLabel) {
-            binding.paymentMethodInput.setText(paymentMethodLabel, false)
+        if (binding.paymentMethodField.dropdownInput.text?.toString() != paymentMethodLabel) {
+            binding.paymentMethodField.dropdownInput.setText(paymentMethodLabel, false)
         }
     }
 
     private fun renderType(binding: FragmentTransactionFormBinding, type: TransactionType) {
         val label = getString(TYPE_OPTIONS.first { (optionType, _) -> optionType == type }.second)
-        if (binding.typeInput.text?.toString() != label) {
-            binding.typeInput.setText(label, false)
+        if (binding.typeField.dropdownInput.text?.toString() != label) {
+            binding.typeField.dropdownInput.setText(label, false)
         }
     }
 

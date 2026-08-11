@@ -104,10 +104,11 @@ class RegisterFragment : Fragment(R.layout.fragment_register) {
         // Liste FERMÉE (voir SecurityQuestion) : champ non-éditable
         // (android:inputType="none"), un simple sélecteur parmi les libellés
         // ci-dessous, jamais de saisie libre.
-        binding.securityQuestionInput.setSimpleItems(
+        binding.securityQuestionField.dropdownLayout.hint = getString(R.string.register_security_question_label)
+        binding.securityQuestionField.dropdownInput.setSimpleItems(
             SECURITY_QUESTIONS.map { getString(it.displayTextRes()) }.toTypedArray()
         )
-        binding.securityQuestionInput.setOnItemClickListener { _, _, position, _ ->
+        binding.securityQuestionField.dropdownInput.setOnItemClickListener { _, _, position, _ ->
             viewModel.onSecurityQuestionChange(SECURITY_QUESTIONS[position])
         }
     }
@@ -135,8 +136,8 @@ class RegisterFragment : Fragment(R.layout.fragment_register) {
         binding.confirmPasswordLayout.error = state.confirmPasswordError?.let { getString(it) }
 
         val questionLabel = getString(state.securityQuestion.displayTextRes())
-        if (binding.securityQuestionInput.text?.toString() != questionLabel) {
-            binding.securityQuestionInput.setText(questionLabel, false)
+        if (binding.securityQuestionField.dropdownInput.text?.toString() != questionLabel) {
+            binding.securityQuestionField.dropdownInput.setText(questionLabel, false)
         }
         if (binding.securityAnswerInput.text?.toString() != state.securityAnswer) {
             binding.securityAnswerInput.setText(state.securityAnswer)

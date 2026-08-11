@@ -95,24 +95,10 @@
                 app:cardCornerRadius="@dimen/corner_radius_medium"
                 app:cardElevation="@dimen/elevation_raised">
 
-                <com.google.android.material.textfield.TextInputLayout
-                    android:id="@+id/typeLayout"
-                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_margin="@dimen/spacing_xs"
-                    android:hint="@string/transaction_form_type_label"
-                    app:boxStrokeWidth="0dp"
-                    app:boxStrokeWidthFocused="0dp">
+                <include
+                    android:id="@+id/typeField"
+                    layout="@layout/item_dropdown_field" />
 
-                    <com.google.android.material.textfield.MaterialAutoCompleteTextView
-                        android:id="@+id/typeInput"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:inputType="none"
-                        tools:text="Dépense" />
-
-                </com.google.android.material.textfield.TextInputLayout>
             </com.google.android.material.card.MaterialCardView>
 
             <!--
@@ -535,23 +521,25 @@
                 <!--
                     Optionnel ("si applicable") : liste fermée avec un premier
                     choix "Non précisé" qui remet le champ à `null` (voir
-                    TransactionFormFragment.setUpDropdowns).
+                    TransactionFormFragment.setUpDropdowns). Postcard — voir
+                    item_dropdown_field.xml ("harmonisation des Spinner") : auparavant seul champ
+                    déroulant nu (sans carte) de cet écran.
                 -->
-                <com.google.android.material.textfield.TextInputLayout
-                    android:id="@+id/paymentMethodLayout"
-                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/paymentMethodCard"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="@dimen/spacing_m"
-                    android:hint="@string/transaction_form_payment_method_label">
+                    android:theme="@style/ThemeOverlay.Arzikina.OnBalanceCard"
+                    app:cardBackgroundColor="@color/arzikina_postcart_background"
+                    app:cardCornerRadius="@dimen/corner_radius_medium"
+                    app:cardElevation="@dimen/elevation_raised">
 
-                    <com.google.android.material.textfield.MaterialAutoCompleteTextView
-                        android:id="@+id/paymentMethodInput"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:inputType="none" />
+                    <include
+                        android:id="@+id/paymentMethodField"
+                        layout="@layout/item_dropdown_field" />
 
-                </com.google.android.material.textfield.TextInputLayout>
+                </com.google.android.material.card.MaterialCardView>
 
             </LinearLayout>
 

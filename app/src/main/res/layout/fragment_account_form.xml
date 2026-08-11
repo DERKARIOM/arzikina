@@ -77,8 +77,9 @@
             </com.google.android.material.card.MaterialCardView>
 
             <!--
-                Type : menu déroulant fermé, même traitement que typeCard sur
-                fragment_transaction_form.xml (ExposedDropdownMenu sans contour propre).
+                Type : menu déroulant fermé — voir item_dropdown_field.xml (composant partagé,
+                "harmonisation des Spinner"). Le hint est fixé par code
+                (AccountFormFragment.setUpTypeDropdown), voir la doc du composant.
             -->
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/typeCard"
@@ -90,23 +91,10 @@
                 app:cardCornerRadius="@dimen/corner_radius_medium"
                 app:cardElevation="@dimen/elevation_raised">
 
-                <com.google.android.material.textfield.TextInputLayout
-                    android:id="@+id/typeLayout"
-                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_margin="@dimen/spacing_xs"
-                    android:hint="@string/account_form_type_label"
-                    app:boxStrokeWidth="0dp"
-                    app:boxStrokeWidthFocused="0dp">
+                <include
+                    android:id="@+id/typeField"
+                    layout="@layout/item_dropdown_field" />
 
-                    <com.google.android.material.textfield.MaterialAutoCompleteTextView
-                        android:id="@+id/typeInput"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:inputType="none" />
-
-                </com.google.android.material.textfield.TextInputLayout>
             </com.google.android.material.card.MaterialCardView>
 
             <!--
@@ -169,7 +157,7 @@
             </com.google.android.material.card.MaterialCardView>
 
             <!--
-                Devise : même traitement que typeCard ci-dessus (ExposedDropdownMenu).
+                Devise : même traitement que typeCard ci-dessus — voir item_dropdown_field.xml.
             -->
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/currencyCard"
@@ -181,23 +169,10 @@
                 app:cardCornerRadius="@dimen/corner_radius_medium"
                 app:cardElevation="@dimen/elevation_raised">
 
-                <com.google.android.material.textfield.TextInputLayout
-                    android:id="@+id/currencyLayout"
-                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_margin="@dimen/spacing_xs"
-                    android:hint="@string/account_form_currency_label"
-                    app:boxStrokeWidth="0dp"
-                    app:boxStrokeWidthFocused="0dp">
+                <include
+                    android:id="@+id/currencyField"
+                    layout="@layout/item_dropdown_field" />
 
-                    <com.google.android.material.textfield.MaterialAutoCompleteTextView
-                        android:id="@+id/currencyInput"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:inputType="none" />
-
-                </com.google.android.material.textfield.TextInputLayout>
             </com.google.android.material.card.MaterialCardView>
 
             <!--

@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Champ "menu déroulant" réutilisable (postcard) — voir item_account_field.xml pour le même
+    principe appliqué à un sélecteur qui ouvre un dialogue plutôt qu'un menu. Centralise les
+    champs ExposedDropdownMenu de l'app (Type, Devise, Moyen de paiement, filtres Transactions,
+    Question de sécurité, Catégorie budget...), auparavant à moitié dupliqués (certains déjà
+    "postcard", d'autres nus sans carte ni style commun) — voir "harmonisation des Spinner",
+    instructions projet.
+
+    Racine = TextInputLayout directement, comme nameLayout/balanceLayout sur
+    fragment_account_form.xml : la Card mère (fond, coins arrondis, élévation) reste déclarée dans
+    chaque écran (ex. typeCard), exactement comme pour les autres champs "postcard" simples —
+    <include> ne fournit que le contenu interne, aucun nouveau pattern introduit, juste la
+    factorisation de celui qui existait déjà pour une partie des champs.
+
+    Le hint ci-dessous est un texte de repli neutre : chaque écran l'écrase par code juste après
+    inflate (binding.xxxField.dropdownLayout.hint = getString(...)), même principe que
+    item_account_field.xml pour son libellé (voir TransactionFormFragment, destinationAccountField).
+
+    Icône de gauche : volontairement absente par défaut (aucun des champs existants n'en affiche
+    aujourd'hui) — activable écran par écran via
+    binding.xxxField.dropdownLayout.setStartIconDrawable(...) si un besoin apparaît plus tard,
+    sans dupliquer ce layout ni en créer un second.
+-->
+<com.google.android.material.textfield.TextInputLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/dropdownLayout"
+    style="@style/Widget.Arzikina.TextInputLayout.ExposedDropdownMenu.PostCard"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="@dimen/spacing_xs"
+    tools:hint="Champ">
+
+    <com.google.android.material.textfield.MaterialAutoCompleteTextView
+        android:id="@+id/dropdownInput"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:inputType="none" />
+
+</com.google.android.material.textfield.TextInputLayout>

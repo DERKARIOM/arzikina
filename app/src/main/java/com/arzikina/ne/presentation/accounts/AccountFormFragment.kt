@@ -96,9 +96,10 @@ class AccountFormFragment : Fragment(R.layout.fragment_account_form) {
     /** Liste FERMÉE (même pattern que `TransactionFormFragment.setUpTypeDropdown`) : les
      * libellés viennent de [TYPE_OPTIONS], dont l'ordre pilote celui affiché dans le menu. */
     private fun setUpTypeDropdown(binding: FragmentAccountFormBinding) {
+        binding.typeField.dropdownLayout.hint = getString(R.string.account_form_type_label)
         val labels = TYPE_OPTIONS.map { getString(it.displayTextRes()) }
-        binding.typeInput.setSimpleItems(labels.toTypedArray())
-        binding.typeInput.setOnItemClickListener { _, _, position, _ ->
+        binding.typeField.dropdownInput.setSimpleItems(labels.toTypedArray())
+        binding.typeField.dropdownInput.setOnItemClickListener { _, _, position, _ ->
             viewModel.onTypeChange(TYPE_OPTIONS[position])
         }
     }
@@ -111,9 +112,10 @@ class AccountFormFragment : Fragment(R.layout.fragment_account_form) {
     }
 
     private fun setUpCurrencyDropdown(binding: FragmentAccountFormBinding) {
+        binding.currencyField.dropdownLayout.hint = getString(R.string.account_form_currency_label)
         val labels = SupportedCurrency.entries.map { "${it.displayName} (${it.symbol})" }
-        binding.currencyInput.setSimpleItems(labels.toTypedArray())
-        binding.currencyInput.setOnItemClickListener { _, _, position, _ ->
+        binding.currencyField.dropdownInput.setSimpleItems(labels.toTypedArray())
+        binding.currencyField.dropdownInput.setOnItemClickListener { _, _, position, _ ->
             viewModel.onCurrencyChange(SupportedCurrency.entries[position].code)
         }
     }
@@ -152,16 +154,16 @@ class AccountFormFragment : Fragment(R.layout.fragment_account_form) {
         val currencyLabel = SupportedCurrency.entries.firstOrNull { it.code == state.currencyCode }
             ?.let { "${it.displayName} (${it.symbol})" }
             .orEmpty()
-        if (binding.currencyInput.text?.toString() != currencyLabel) {
-            binding.currencyInput.setText(currencyLabel, false)
+        if (binding.currencyField.dropdownInput.text?.toString() != currencyLabel) {
+            binding.currencyField.dropdownInput.setText(currencyLabel, false)
         }
 
         iconPickerAdapter.setSelected(state.icon)
         colorPickerAdapter.setSelected(state.colorArgb)
 
         val typeLabel = getString(state.type.displayTextRes())
-        if (binding.typeInput.text?.toString() != typeLabel) {
-            binding.typeInput.setText(typeLabel, false)
+        if (binding.typeField.dropdownInput.text?.toString() != typeLabel) {
+            binding.typeField.dropdownInput.setText(typeLabel, false)
         }
 
         val isCreditCard = state.type == AccountType.CREDIT_CARD
