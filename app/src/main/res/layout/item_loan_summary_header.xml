@@ -24,7 +24,7 @@
             android:layout_height="wrap_content"
             android:layout_marginEnd="@dimen/spacing_s"
             android:layout_weight="1"
-            app:cardBackgroundColor="@color/loan_summary_lent_bg"
+            app:cardBackgroundColor="@color/arzikina_postcart_background"
             app:cardCornerRadius="@dimen/corner_radius_medium"
             app:cardElevation="@dimen/elevation_card">
 
@@ -83,7 +83,7 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="@dimen/spacing_s"
             android:layout_weight="1"
-            app:cardBackgroundColor="@color/loan_summary_borrowed_bg"
+            app:cardBackgroundColor="@color/arzikina_postcart_background"
             app:cardCornerRadius="@dimen/corner_radius_medium"
             app:cardElevation="@dimen/elevation_card">
 
