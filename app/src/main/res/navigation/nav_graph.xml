@@ -288,6 +288,34 @@
         tools:layout="@layout/fragment_loan_statistics" />
 
     <!--
+        Écran principal "Transactions planifiées" (voir presentation/utilities/recurring/
+        RecurringTransactionsViewModel) : cartes de résumé + trois sections À traiter/À venir/
+        Historique. Atteint depuis le bloc Utilitaires du Dashboard/"Tous les utilitaires" (voir
+        UtilityCatalog), même principe que loansFragment ci-dessus.
+    -->
+    <fragment
+        android:id="@+id/recurringTransactionsFragment"
+        android:name="com.arzikina.ne.presentation.utilities.recurring.RecurringTransactionsFragment"
+        android:label="@string/utility_recurring_transactions_title"
+        tools:layout="@layout/fragment_recurring_transactions" />
+
+    <!--
+        Création/édition d'une règle récurrente (voir presentation/utilities/recurring/
+        RecurringTransactionFormFragment). recurringTransactionId = 0L (défaut) pour une nouvelle
+        règle, même convention que budgetFormFragment/budgetId ci-dessus.
+    -->
+    <fragment
+        android:id="@+id/recurringTransactionFormFragment"
+        android:name="com.arzikina.ne.presentation.utilities.recurring.RecurringTransactionFormFragment"
+        android:label="@string/recurring_transaction_form_title_add"
+        tools:layout="@layout/fragment_recurring_transaction_form">
+        <argument
+            android:name="recurringTransactionId"
+            android:defaultValue="0L"
+            app:argType="long" />
+    </fragment>
+
+    <!--
         Première UI réelle pour BackupViewModel (voir presentation/settings/BackupFragment,
         présent depuis l'étape Sauvegarde en version Compose mais resté sans écran depuis la
         reconstruction XML/Views — voir settingsFragment ci-dessus, resté un simple placeholder).

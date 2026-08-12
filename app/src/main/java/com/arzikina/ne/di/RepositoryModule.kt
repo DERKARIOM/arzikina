@@ -7,6 +7,7 @@ import com.arzikina.ne.data.repository.BudgetRepositoryImpl
 import com.arzikina.ne.data.repository.CategoryRepositoryImpl
 import com.arzikina.ne.data.repository.LoanRepositoryImpl
 import com.arzikina.ne.data.repository.PersonRepositoryImpl
+import com.arzikina.ne.data.repository.RecurringTransactionRepositoryImpl
 import com.arzikina.ne.data.repository.SavingsGoalRepositoryImpl
 import com.arzikina.ne.data.repository.SessionManagerImpl
 import com.arzikina.ne.data.repository.TransactionRepositoryImpl
@@ -18,6 +19,7 @@ import com.arzikina.ne.domain.repository.BudgetRepository
 import com.arzikina.ne.domain.repository.CategoryRepository
 import com.arzikina.ne.domain.repository.LoanRepository
 import com.arzikina.ne.domain.repository.PersonRepository
+import com.arzikina.ne.domain.repository.RecurringTransactionRepository
 import com.arzikina.ne.domain.repository.SavingsGoalRepository
 import com.arzikina.ne.domain.repository.SessionManager
 import com.arzikina.ne.domain.repository.TransactionRepository
@@ -80,4 +82,8 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindLoanRepository(impl: LoanRepositoryImpl): LoanRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindRecurringTransactionRepository(impl: RecurringTransactionRepositoryImpl): RecurringTransactionRepository
 }

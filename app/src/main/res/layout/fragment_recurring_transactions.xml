@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Écran "Transactions planifiées" (voir presentation/utilities/recurring/RecurringTransactionsFragment).
+    Atteint depuis le bloc Utilitaires du Dashboard (voir UtilityCatalog) et l'écran "Tous les
+    utilitaires" — même principe d'accès que Prêts/Emprunts.
+
+    Une seule RecyclerView (recurringTransactionsList) pour les cartes de résumé + les trois
+    sections "À traiter"/"À venir"/"Historique" (voir RecurringTransactionsAdapter/
+    RecurringTransactionsListRow) — même raisonnement que fragment_loans.xml (une seule liste qui
+    défile en bloc, pas de recherche/filtres pour cette première version).
+-->
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="?attr/colorSurface">
+
+    <com.google.android.material.appbar.MaterialToolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:background="?attr/colorSurface"
+        app:layout_constraintTop_toTopOf="parent"
+        app:navigationIcon="@drawable/ic_arrow_back_24"
+        app:title="@string/utility_recurring_transactions_title"
+        app:titleTextColor="?attr/colorOnSurface" />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recurringTransactionsList"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:clipToPadding="false"
+        android:paddingBottom="88dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/toolbar"
+        tools:listitem="@layout/item_recurring_summary_header" />
+
+    <!-- FAB icône seule (texte vide), même convention que fragment_loans.xml. -->
+    <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
+        android:id="@+id/addRecurringTransactionButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="@dimen/spacing_m"
+        android:contentDescription="@string/recurring_transactions_add_action"
+        android:text=""
+        app:icon="@drawable/ic_add_24"
+        app:iconTint="@color/white"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- État vide : remplace la liste ET le FAB tant qu'aucune règle récurrente n'existe DU TOUT
+         (voir RecurringTransactionsFragment.render) — même structure que fragment_loans.xml. -->
+    <LinearLayout
+        android:id="@+id/emptyState"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:padding="@dimen/spacing_l"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/toolbar"
+        tools:visibility="visible">
+
+        <ImageView
+            android:layout_width="@dimen/icon_size_xlarge"
+            android:layout_height="@dimen/icon_size_xlarge"
+            android:alpha="0.6"
+            android:contentDescription="@null"
+            android:src="@drawable/ic_calendar_24"
+            app:tint="?attr/colorPrimary" />
+
+        <TextView
+            style="@style/TextAppearance.Material3.TitleMedium"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/spacing_m"
+            android:gravity="center"
+            android:text="@string/recurring_transactions_empty_title"
+            android:textColor="?attr/colorOnSurface" />
+
+        <TextView
+            style="@style/TextAppearance.Material3.BodyMedium"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/spacing_s"
+            android:gravity="center"
+            android:text="@string/recurring_transactions_empty_message"
+            android:textColor="?attr/colorOnSurfaceVariant" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/emptyAddRecurringTransactionButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/spacing_l"
+            android:text="@string/recurring_transactions_add_action"
+            app:icon="@drawable/ic_add_24" />
+
+    </LinearLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

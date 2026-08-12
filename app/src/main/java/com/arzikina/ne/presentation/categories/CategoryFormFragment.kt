@@ -17,6 +17,7 @@ import com.arzikina.ne.domain.model.TransactionType
 import com.arzikina.ne.presentation.components.ColorPickerAdapter
 import com.arzikina.ne.presentation.components.ConfirmDialogs
 import com.arzikina.ne.presentation.components.IconPickerAdapter
+import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 
@@ -119,6 +120,10 @@ class CategoryFormFragment : Fragment(R.layout.fragment_category_form) {
     private fun handleEvent(event: CategoryFormEvent) {
         when (event) {
             CategoryFormEvent.Saved, CategoryFormEvent.Deleted -> findNavController().navigateUp()
+            CategoryFormEvent.DeleteBlocked -> {
+                val binding = binding ?: return
+                Snackbar.make(binding.root, R.string.categories_delete_blocked_message, Snackbar.LENGTH_LONG).show()
+            }
         }
     }
 

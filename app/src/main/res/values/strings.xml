@@ -193,6 +193,9 @@
     <string name="categories_empty_message">Ajoute ta première catégorie pour organiser tes transactions.</string>
     <string name="categories_delete_title">Supprimer cette catégorie ?</string>
     <string name="categories_delete_message">Supprimer « %1$s » ? Cette action est irréversible.</string>
+    <!-- Voir CategoriesViewModel.deleteCategory : la base refuse la suppression d'une catégorie
+         encore utilisée par une transaction ou une transaction planifiée. -->
+    <string name="categories_delete_blocked_message">Impossible de supprimer : cette catégorie est encore utilisée par des transactions.</string>
     <string name="category_filter_all">Toutes</string>
     <string name="category_type_income">Revenu</string>
     <string name="category_type_expense">Dépense</string>
@@ -448,4 +451,86 @@
     <string name="loan_form_first_payment_date_label">Date</string>
     <string name="loan_form_save_action">Enregistrer</string>
     <string name="loan_form_saved_message">Prêt/emprunt enregistré.</string>
+
+    <!--
+        Transactions récurrentes / planifiées (voir presentation/utilities/recurring). Écran
+        principal : trois sections défilant dans une seule RecyclerView ("À traiter", "À venir",
+        "Historique"), même principe qu'une seule liste pour cartes de résumé + contenu que
+        LoansFragment (voir sa doc) — pas de recherche/filtres pour cette première version.
+        "dashboard_transaction_subtitle" (existante, "%1$s • %2$s") est réutilisée telle quelle pour
+        le sous-titre de chaque ligne, plutôt que de dupliquer un gabarit identique ici.
+    -->
+    <string name="utility_recurring_transactions_title">Planifications</string>
+    <string name="recurring_transactions_summary_pending">À traiter</string>
+    <string name="recurring_transactions_summary_upcoming">À venir</string>
+    <string name="recurring_transactions_summary_total">Total</string>
+    <string name="recurring_transactions_summary_pending_label">À enregistrer</string>
+    <string name="recurring_transactions_summary_upcoming_label">Planifiées</string>
+    <string name="recurring_transactions_summary_total_label">Récurrentes</string>
+    <string name="recurring_transactions_pending_title">À traiter</string>
+    <string name="recurring_transactions_upcoming_title">À venir</string>
+    <string name="recurring_transactions_history_title">Historique</string>
+    <string name="recurring_transactions_scheduled_date">Prévue le %s</string>
+    <string name="recurring_transactions_empty_title">Aucune transaction planifiée</string>
+    <string name="recurring_transactions_empty_message">Ajoute une transaction récurrente pour ne plus jamais oublier un revenu ou une dépense régulière.</string>
+    <string name="recurring_transactions_add_action">Ajouter une transaction planifiée</string>
+
+    <!-- Fréquences (voir domain/model/RecurringFrequency). -->
+    <string name="recurring_frequency_once">Une seule fois</string>
+    <string name="recurring_frequency_daily">Tous les jours</string>
+    <string name="recurring_frequency_weekly">Toutes les semaines</string>
+    <string name="recurring_frequency_biweekly">Toutes les 2 semaines</string>
+    <string name="recurring_frequency_monthly">Tous les mois</string>
+    <string name="recurring_frequency_quarterly">Tous les 3 mois</string>
+    <string name="recurring_frequency_semiannual">Tous les 6 mois</string>
+    <string name="recurring_frequency_yearly">Tous les ans</string>
+
+    <!-- Statuts d'une occurrence déjà traitée (voir domain/model/OccurrenceStatus), affichés dans
+         la section Historique. -->
+    <string name="recurring_occurrence_status_accepted">Enregistrée</string>
+    <string name="recurring_occurrence_status_modified">Enregistrée (modifiée)</string>
+    <string name="recurring_occurrence_status_rejected">Rejetée</string>
+
+    <!--
+        Formulaire de création/édition d'une règle récurrente (voir presentation/utilities/recurring/
+        RecurringTransactionFormFragment). "transaction_form_payment_method_label"/
+        "transaction_form_payment_method_none"/"action_save" (existantes) sont réutilisées telles
+        quelles, pas dupliquées ici.
+    -->
+    <string name="recurring_transaction_form_title_add">Nouvelle transaction planifiée</string>
+    <string name="recurring_transaction_form_title_edit">Modifier la transaction planifiée</string>
+    <string name="recurring_transaction_form_type_label">Type</string>
+    <string name="recurring_transaction_form_category_label">Catégorie</string>
+    <string name="recurring_transaction_form_amount_label">Montant</string>
+    <string name="recurring_transaction_form_description_label">Description</string>
+    <string name="recurring_transaction_form_description_placeholder">Ajoute une note (facultatif)</string>
+    <string name="recurring_transaction_form_start_date_label">Date de début</string>
+    <string name="recurring_transaction_form_end_date_toggle">Définir une date de fin</string>
+    <string name="recurring_transaction_form_end_date_label">Date de fin</string>
+    <string name="recurring_transaction_form_frequency_label">Fréquence</string>
+    <string name="recurring_transaction_form_delete_title">Supprimer cette transaction planifiée ?</string>
+    <string name="recurring_transaction_form_delete_message">Cette action est irréversible et supprimera aussi les transactions déjà enregistrées à partir de cette règle.</string>
+
+    <!--
+        Dialogue de validation en file d'attente (voir RecurringOccurrenceQueueDialogFragment) —
+        "action_save"/"action_cancel" (existantes) sont réutilisées telles quelles pour "Enregistrer"/
+        "Annuler", pas dupliquées ici.
+    -->
+    <string name="recurring_queue_title">Transaction planifiée à valider</string>
+    <string name="recurring_queue_progress">%1$d sur %2$d</string>
+    <string name="recurring_queue_account_line">Compte : %1$s</string>
+    <string name="recurring_queue_edit_action">Modifier</string>
+    <string name="recurring_queue_reject_action">Rejeter</string>
+    <string name="recurring_queue_reject_confirm_title">Rejeter cette transaction planifiée ?</string>
+    <string name="recurring_queue_reject_confirm_message">Elle ne sera plus jamais proposée et aucune transaction ne sera créée pour cette échéance.</string>
+    <!--
+        Formulaire d'édition ponctuelle ("Modifier", voir RecurringOccurrenceQueueViewModel) —
+        "recurring_transaction_form_type_label"/"_category_label"/"_amount_label"/"_description_label"/
+        "_description_placeholder" et "transaction_form_payment_method_label"/"_none" (existants)
+        sont réutilisés tels quels, pas dupliqués ici : seuls le libellé du champ date et les 2
+        actions propres à ce formulaire sont nouveaux.
+    -->
+    <string name="recurring_queue_edit_date_label">Date</string>
+    <string name="recurring_queue_confirm_edit_action">Confirmer</string>
+    <string name="recurring_queue_cancel_edit_action">Annuler</string>
 </resources>

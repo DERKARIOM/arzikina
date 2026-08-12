@@ -8,6 +8,10 @@
 
     Largeur fixe (@dimen/utility_tile_width) : alignement régulier que ce layout soit utilisé
     dans un RecyclerView horizontal (Dashboard) ou une grille (écran "Tous les utilitaires").
+
+    utilityBadge (voir UtilityItem.badgeCount/UtilityTileAdapter) : pastille de comptage optionnelle
+    superposée au coin supérieur droit de l'icône — masquée par défaut (`gone`), affichée seulement
+    quand un utilitaire a quelque chose à traiter (ex. transactions planifiées en attente).
 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -22,14 +26,40 @@
     android:orientation="vertical"
     android:paddingVertical="@dimen/spacing_s">
 
-    <ImageView
-        android:id="@+id/utilityIcon"
+    <FrameLayout
         android:layout_width="50dp"
-        android:layout_height="50dp"
-        android:contentDescription="@null"
-        android:padding="@dimen/spacing_s"
-        tools:ignore="ContentDescription"
-        tools:src="@drawable/ic_label_24" />
+        android:layout_height="50dp">
+
+        <ImageView
+            android:id="@+id/utilityIcon"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:contentDescription="@null"
+            android:padding="@dimen/spacing_s"
+            tools:ignore="ContentDescription"
+            tools:src="@drawable/ic_label_24" />
+
+        <TextView
+            android:id="@+id/utilityBadge"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="top|end"
+            android:layout_marginTop="-2dp"
+            android:layout_marginEnd="-2dp"
+            android:background="@drawable/bg_badge_circle"
+            android:gravity="center"
+            android:includeFontPadding="false"
+            android:minWidth="18dp"
+            android:minHeight="18dp"
+            android:paddingHorizontal="4dp"
+            android:textColor="@android:color/white"
+            android:textSize="10sp"
+            android:textStyle="bold"
+            android:visibility="gone"
+            tools:text="3"
+            tools:visibility="visible" />
+
+    </FrameLayout>
 
     <TextView
         android:id="@+id/utilityTitle"

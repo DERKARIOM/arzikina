@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Première ligne de la RecyclerView de l'écran "Transactions planifiées" (voir
+    RecurringTransactionsAdapter/RecurringTransactionsListRow.Header) : trois cartes de résumé
+    ("À traiter"/"À venir"/"Total"), même principe que item_loan_summary_header.xml (voir sa doc)
+    mais sans icône, à trois colonnes égales au lieu de deux.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:paddingHorizontal="@dimen/spacing_m"
+    android:paddingTop="@dimen/spacing_m">
+
+    <com.google.android.material.card.MaterialCardView
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="@dimen/spacing_xs"
+        android:layout_weight="1"
+        app:cardBackgroundColor="@color/arzikina_postcart_background"
+        app:cardCornerRadius="@dimen/corner_radius_medium"
+        app:cardElevation="@dimen/elevation_card">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="@dimen/spacing_s">
+
+            <TextView
+                style="@style/TextAppearance.Material3.BodySmall"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/recurring_transactions_summary_pending"
+                android:textColor="@color/arzikina_on_balance_card_variant" />
+
+            <TextView
+                android:id="@+id/pendingCount"
+                style="@style/TextAppearance.Material3.TitleLarge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:textColor="@android:color/white"
+                android:textStyle="bold"
+                tools:text="3" />
+
+            <TextView
+                android:id="@+id/pendingLabel"
+                style="@style/TextAppearance.Material3.LabelSmall"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_s"
+                android:background="@drawable/bg_pill_translucent_white"
+                android:paddingHorizontal="@dimen/spacing_s"
+                android:paddingVertical="3dp"
+                android:text="@string/recurring_transactions_summary_pending_label"
+                android:textColor="@android:color/white" />
+
+        </LinearLayout>
+
+    </com.google.android.material.card.MaterialCardView>
+
+    <com.google.android.material.card.MaterialCardView
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="@dimen/spacing_xs"
+        android:layout_weight="1"
+        app:cardBackgroundColor="@color/arzikina_postcart_background"
+        app:cardCornerRadius="@dimen/corner_radius_medium"
+        app:cardElevation="@dimen/elevation_card">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="@dimen/spacing_s">
+
+            <TextView
+                style="@style/TextAppearance.Material3.BodySmall"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/recurring_transactions_summary_upcoming"
+                android:textColor="@color/arzikina_on_balance_card_variant" />
+
+            <TextView
+                android:id="@+id/upcomingCount"
+                style="@style/TextAppearance.Material3.TitleLarge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:textColor="@android:color/white"
+                android:textStyle="bold"
+                tools:text="8" />
+
+            <TextView
+                android:id="@+id/upcomingLabel"
+                style="@style/TextAppearance.Material3.LabelSmall"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_s"
+                android:background="@drawable/bg_pill_translucent_white"
+                android:paddingHorizontal="@dimen/spacing_s"
+                android:paddingVertical="3dp"
+                android:text="@string/recurring_transactions_summary_upcoming_label"
+                android:textColor="@android:color/white" />
+
+        </LinearLayout>
+
+    </com.google.android.material.card.MaterialCardView>
+
+    <com.google.android.material.card.MaterialCardView
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/spacing_xs"
+        android:layout_weight="1"
+        app:cardBackgroundColor="@color/arzikina_postcart_background"
+        app:cardCornerRadius="@dimen/corner_radius_medium"
+        app:cardElevation="@dimen/elevation_card">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="@dimen/spacing_s">
+
+            <TextView
+                style="@style/TextAppearance.Material3.BodySmall"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/recurring_transactions_summary_total"
+                android:textColor="@color/arzikina_on_balance_card_variant" />
+
+            <TextView
+                android:id="@+id/totalCount"
+                style="@style/TextAppearance.Material3.TitleLarge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:textColor="@android:color/white"
+                android:textStyle="bold"
+                tools:text="11" />
+
+            <TextView
+                android:id="@+id/totalLabel"
+                style="@style/TextAppearance.Material3.LabelSmall"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_s"
+                android:background="@drawable/bg_pill_translucent_white"
+                android:paddingHorizontal="@dimen/spacing_s"
+                android:paddingVertical="3dp"
+                android:text="@string/recurring_transactions_summary_total_label"
+                android:textColor="@android:color/white" />
+
+        </LinearLayout>
+
+    </com.google.android.material.card.MaterialCardView>
+
+</LinearLayout>

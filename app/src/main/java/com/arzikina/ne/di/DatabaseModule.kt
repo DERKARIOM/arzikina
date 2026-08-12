@@ -9,6 +9,8 @@ import com.arzikina.ne.data.local.dao.CategoryDao
 import com.arzikina.ne.data.local.dao.LoanDao
 import com.arzikina.ne.data.local.dao.LoanPaymentDao
 import com.arzikina.ne.data.local.dao.PersonDao
+import com.arzikina.ne.data.local.dao.RecurringTransactionDao
+import com.arzikina.ne.data.local.dao.RecurringTransactionOccurrenceDao
 import com.arzikina.ne.data.local.dao.SavingsGoalDao
 import com.arzikina.ne.data.local.dao.TransactionDao
 import com.arzikina.ne.data.local.dao.UserDao
@@ -25,6 +27,7 @@ import com.arzikina.ne.data.local.database.MIGRATION_9_10
 import com.arzikina.ne.data.local.database.MIGRATION_10_11
 import com.arzikina.ne.data.local.database.MIGRATION_11_12
 import com.arzikina.ne.data.local.database.MIGRATION_12_13
+import com.arzikina.ne.data.local.database.MIGRATION_13_14
 import com.arzikina.ne.util.Constants
 import dagger.Module
 import dagger.Provides
@@ -57,7 +60,7 @@ object DatabaseModule {
             .addMigrations(
                 MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5,
                 MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9,
-                MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13
+                MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14
             )
             .build()
 
@@ -90,4 +93,12 @@ object DatabaseModule {
 
     @Provides
     fun provideLoanPaymentDao(database: ArzikinaDatabase): LoanPaymentDao = database.loanPaymentDao()
+
+    @Provides
+    fun provideRecurringTransactionDao(database: ArzikinaDatabase): RecurringTransactionDao =
+        database.recurringTransactionDao()
+
+    @Provides
+    fun provideRecurringTransactionOccurrenceDao(database: ArzikinaDatabase): RecurringTransactionOccurrenceDao =
+        database.recurringTransactionOccurrenceDao()
 }

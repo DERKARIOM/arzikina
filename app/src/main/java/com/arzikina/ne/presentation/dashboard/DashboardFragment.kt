@@ -53,7 +53,9 @@ class DashboardFragment : Fragment(R.layout.fragment_dashboard) {
     /** [UtilityCatalog.all] en intégralité pour l'instant (voir sa doc : le Dashboard affichera
      * une sélection restreinte plutôt que la totalité une fois le catalogue plus grand). Même
      * instance d'adapter réutilisée pour toute la durée de vie de la vue, comme
-     * [recentTransactionsAdapter] ci-dessus. */
+     * [recentTransactionsAdapter] ci-dessus — seule la pastille de comptage d'une entrée change au
+     * fil du temps, via [UtilityTileAdapter.submitItems] (voir [render]), jamais l'ensemble des
+     * entrées lui-même. */
     private val utilitiesAdapter = UtilityTileAdapter(UtilityCatalog.all()) { item ->
         findNavController().navigate(item.destinationId)
     }
@@ -173,6 +175,23 @@ class DashboardFragment : Fragment(R.layout.fragment_dashboard) {
         binding.recentTransactionsList.setVisible(hasTransactions)
         binding.recentTransactionsEmpty.setVisible(!hasTransactions)
         recentTransactionsAdapter.submitList(uiState.recentTransactions)
+
+        renderUtilities(uiState.pendingRecurringCount)
+    }
+
+    /** Reconstruit [UtilityCatalog.all] avec la pastille de comptage à jour sur l'entrée
+     * "Transactions planifiées" (voir [DashboardUiState.pendingRecurringCount]) — les 3 autres
+     * entrées gardent [com.arzikina.ne.presentation.utilities.UtilityItem.badgeCount] à `null`
+     * (masqué), voir sa doc. */
+    private fun renderUtilities(pendingRecurringCount: Int) {
+        val items = UtilityCatalog.all().map { item ->
+            if (item.destinationId == R.id.recurringTransactionsFragment) {
+                item.copy(badgeCount = pendingRecurringCount)
+            } else {
+                item
+            }
+        }
+        utilitiesAdapter.submitItems(items)
     }
 
     /**

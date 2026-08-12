@@ -8,7 +8,9 @@ import com.arzikina.ne.domain.model.CategoryIcon
 import com.arzikina.ne.domain.model.LoanReason
 import com.arzikina.ne.domain.model.LoanStatus
 import com.arzikina.ne.domain.model.LoanType
+import com.arzikina.ne.domain.model.OccurrenceStatus
 import com.arzikina.ne.domain.model.PaymentMethod
+import com.arzikina.ne.domain.model.RecurringFrequency
 import com.arzikina.ne.domain.model.RepaymentMode
 import com.arzikina.ne.domain.model.SecurityQuestion
 import com.arzikina.ne.domain.model.TransactionType
@@ -86,4 +88,16 @@ class Converters {
 
     @TypeConverter
     fun toLoanStatus(value: String): LoanStatus = LoanStatus.valueOf(value)
+
+    @TypeConverter
+    fun fromRecurringFrequency(frequency: RecurringFrequency): String = frequency.name
+
+    @TypeConverter
+    fun toRecurringFrequency(value: String): RecurringFrequency = RecurringFrequency.valueOf(value)
+
+    @TypeConverter
+    fun fromOccurrenceStatus(status: OccurrenceStatus): String = status.name
+
+    @TypeConverter
+    fun toOccurrenceStatus(value: String): OccurrenceStatus = OccurrenceStatus.valueOf(value)
 }

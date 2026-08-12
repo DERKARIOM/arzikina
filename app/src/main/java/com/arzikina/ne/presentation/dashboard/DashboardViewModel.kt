@@ -8,10 +8,12 @@ import com.arzikina.ne.domain.model.Category
 import com.arzikina.ne.domain.model.CurrencyAmount
 import com.arzikina.ne.domain.model.Transaction
 import com.arzikina.ne.domain.model.TransactionType
+import com.arzikina.ne.domain.model.User
 import com.arzikina.ne.domain.repository.AccountRepository
 import com.arzikina.ne.domain.repository.AuthRepository
 import com.arzikina.ne.domain.repository.BudgetRepository
 import com.arzikina.ne.domain.repository.CategoryRepository
+import com.arzikina.ne.domain.repository.RecurringTransactionRepository
 import com.arzikina.ne.domain.repository.SessionManager
 import com.arzikina.ne.domain.repository.TransactionRepository
 import com.arzikina.ne.presentation.accounts.computeCurrentBalances
@@ -71,7 +73,26 @@ data class DashboardUiState(
      * jamais un vrai numéro de carte bancaire, purement esthétique et stable
      * tant que l'utilisateur ne change pas.
      */
-    val cardNumberLastDigits: String
+    val cardNumberLastDigits: String,
+    /**
+     * Nombre d'occurrences `PENDING` de transactions planifiées (voir cahier des charges, section
+     * "Dashboard" — pastille de comptage sur le bloc Utilitaires). MÊME flux que "À traiter" de
+     * `RecurringTransactionsViewModel`/le dialogue de validation (voir la doc de
+     * `RecurringTransactionRepository.observePendingOccurrences`, qui anticipait déjà explicitement
+     * cet usage) : jamais recalculé séparément, juste sa taille.
+     */
+    val pendingRecurringCount: Int
+)
+
+/** Regroupe les 5 flux "historiques" du Dashboard (avant l'ajout du compteur de transactions
+ * planifiées) pour éviter de dépasser la limite de 5 arguments de `combine` — voir [DashboardViewModel.uiState],
+ * qui combine ensuite ce résultat avec `RecurringTransactionRepository.observePendingOccurrences`. */
+private data class DashboardBaseData(
+    val accounts: List<Account>,
+    val transactions: List<Transaction>,
+    val categories: List<Category>,
+    val budgets: List<Budget>,
+    val user: User?
 )
 
 @HiltViewModel
@@ -81,18 +102,25 @@ class DashboardViewModel @Inject constructor(
     categoryRepository: CategoryRepository,
     budgetRepository: BudgetRepository,
     authRepository: AuthRepository,
-    sessionManager: SessionManager
+    sessionManager: SessionManager,
+    recurringTransactionRepository: RecurringTransactionRepository
 ) : ViewModel() {
 
     val uiState: StateFlow<AppResult<DashboardUiState>> = combine(
-        accountRepository.observeAccounts(),
-        transactionRepository.observeTransactions(),
-        categoryRepository.observeCategories(),
-        budgetRepository.observeBudgets(),
-        sessionManager.observeCurrentUserId().flatMapLatest { userId ->
-            if (userId == null) flowOf(null) else authRepository.observeUser(userId)
-        }
-    ) { accounts, transactions, categories, budgets, user ->
+        combine(
+            accountRepository.observeAccounts(),
+            transactionRepository.observeTransactions(),
+            categoryRepository.observeCategories(),
+            budgetRepository.observeBudgets(),
+            sessionManager.observeCurrentUserId().flatMapLatest { userId ->
+                if (userId == null) flowOf(null) else authRepository.observeUser(userId)
+            }
+        ) { accounts, transactions, categories, budgets, user ->
+            DashboardBaseData(accounts, transactions, categories, budgets, user)
+        },
+        recurringTransactionRepository.observePendingOccurrences()
+    ) { base, pendingOccurrences ->
+        val (accounts, transactions, categories, budgets, user) = base
         val accountsById = accounts.associateBy { it.id }
         val categoriesById = categories.associateBy { it.id }
 
@@ -116,7 +144,8 @@ class DashboardViewModel @Inject constructor(
             featuredBudget = featuredBudget(budgets, categoriesById, transactions, accountsById),
             userFullName = user?.fullName.orEmpty(),
             userProfilePhotoUri = user?.profilePhotoUri,
-            cardNumberLastDigits = cardNumberLastDigits(user?.id)
+            cardNumberLastDigits = cardNumberLastDigits(user?.id),
+            pendingRecurringCount = pendingOccurrences.size
         )
     }
         .map<DashboardUiState, AppResult<DashboardUiState>> { AppResult.Success(it) }

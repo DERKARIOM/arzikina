@@ -36,6 +36,11 @@ data class CategoryFormState(
 sealed interface CategoryFormEvent {
     data object Saved : CategoryFormEvent
     data object Deleted : CategoryFormEvent
+
+    /** Voir [CategoriesEvent.DeleteBlocked] : même contrainte `NO_ACTION`, même raisonnement,
+     * juste déclenchée depuis ce second point d'entrée de suppression (le formulaire d'édition,
+     * plutôt que la liste). */
+    data object DeleteBlocked : CategoryFormEvent
 }
 
 @HiltViewModel
@@ -110,11 +115,14 @@ class CategoryFormViewModel @Inject constructor(
         }
     }
 
+    /** Voir la doc de [CategoryFormEvent.DeleteBlocked]/`CategoriesViewModel.deleteCategory` :
+     * intercepte la contrainte `NO_ACTION` plutôt que de laisser planter l'app. */
     fun delete() {
         if (!isEditMode) return
         viewModelScope.launch {
-            categoryRepository.deleteCategory(categoryId)
-            _events.emit(CategoryFormEvent.Deleted)
+            runCatching { categoryRepository.deleteCategory(categoryId) }
+                .onSuccess { _events.emit(CategoryFormEvent.Deleted) }
+                .onFailure { _events.emit(CategoryFormEvent.DeleteBlocked) }
         }
     }
 

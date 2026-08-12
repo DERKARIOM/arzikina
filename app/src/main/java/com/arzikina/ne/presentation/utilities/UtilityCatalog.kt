@@ -7,7 +7,7 @@ import com.arzikina.ne.R
  * ([com.arzikina.ne.presentation.dashboard.DashboardFragment]) et l'écran complet
  * ([AllUtilitiesFragment]) ne divergent en dupliquant chacun leur propre liste.
  *
- * Aujourd'hui les deux écrans affichent la totalité de [all] (seulement 3 entrées). Quand
+ * Aujourd'hui les deux écrans affichent la totalité de [all] (seulement 4 entrées). Quand
  * d'autres utilitaires seront ajoutés (calculateur d'intérêts, convertisseur de devises,
  * rappels...), il faudra probablement que le Dashboard n'en affiche plus qu'une sélection
  * restreinte (les plus utilisés) plutôt que la totalité — à ce moment-là, ajouter ici un
@@ -25,6 +25,11 @@ object UtilityCatalog {
             iconRes = R.drawable.investissement_24,
             titleRes = R.string.utility_loans_title,
             destinationId = R.id.loansFragment
+        ),
+        UtilityItem(
+            iconRes = R.drawable.ic_planifications,
+            titleRes = R.string.utility_recurring_transactions_title,
+            destinationId = R.id.recurringTransactionsFragment
         ),
         UtilityItem(
             iconRes = R.drawable.sauvegarde,

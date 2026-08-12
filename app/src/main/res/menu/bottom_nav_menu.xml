@@ -11,18 +11,18 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
     <item
         android:id="@+id/dashboardFragment"
-        android:icon="@drawable/ic_home_24"
+        android:icon="@drawable/maison_24"
         android:title="@string/nav_dashboard" />
     <item
         android:id="@+id/accountsFragment"
-        android:icon="@drawable/ic_account_bank_24"
+        android:icon="@drawable/comptes"
         android:title="@string/nav_accounts" />
     <item
         android:id="@+id/statisticsFragment"
-        android:icon="@drawable/ic_bar_chart_24"
+        android:icon="@drawable/rapport"
         android:title="@string/nav_statistics" />
     <item
         android:id="@+id/moreFragment"
-        android:icon="@drawable/ic_more_horiz_24"
+        android:icon="@drawable/parametres"
         android:title="@string/nav_more" />
 </menu>

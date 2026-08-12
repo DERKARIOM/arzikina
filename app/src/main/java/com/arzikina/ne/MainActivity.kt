@@ -11,13 +11,17 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
 import androidx.navigation.NavController
 import androidx.navigation.fragment.NavHostFragment
+import androidx.lifecycle.lifecycleScope
 import com.arzikina.ne.databinding.ActivityMainBinding
 import com.arzikina.ne.domain.model.ThemeMode
+import com.arzikina.ne.domain.repository.RecurringTransactionRepository
 import com.arzikina.ne.domain.repository.SessionManager
 import com.arzikina.ne.domain.repository.UserPreferencesRepository
+import com.arzikina.ne.presentation.utilities.recurring.RecurringOccurrenceQueueDialogFragment
 import com.arzikina.ne.util.SystemBars
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import javax.inject.Inject
 
@@ -38,6 +42,9 @@ class MainActivity : AppCompatActivity() {
 
     @Inject
     lateinit var sessionManager: SessionManager
+
+    @Inject
+    lateinit var recurringTransactionRepository: RecurringTransactionRepository
 
     private lateinit var binding: ActivityMainBinding
 
@@ -113,6 +120,42 @@ class MainActivity : AppCompatActivity() {
             if (destination.id in TAB_DESTINATION_IDS) {
                 binding.bottomNavigation.menu.findItem(destination.id)?.isChecked = true
             }
+        }
+
+        generateMissingRecurringOccurrences()
+    }
+
+    /**
+     * Transactions récurrentes/planifiées (voir cahier des charges, section "Détection
+     * automatique") : à CHAQUE ouverture de l'app, génère les occurrences `PENDING` des règles
+     * actives arrivées à échéance (échéance du jour ET échéances manquées, voir
+     * `RecurringTransactionRepository.generateMissingOccurrences`), puis affiche le dialogue de
+     * validation ([RecurringOccurrenceQueueDialogFragment]) s'il en résulte au moins une occurrence
+     * à traiter. Ne fait rien si aucune session n'existe (écran Connexion) —
+     * `generateMissingOccurrences`/`observePendingOccurrences` renvoient alors respectivement
+     * "aucun effet"/liste vide, voir leur doc.
+     */
+    private fun generateMissingRecurringOccurrences() {
+        lifecycleScope.launch {
+            recurringTransactionRepository.generateMissingOccurrences()
+            val hasPendingOccurrences = recurringTransactionRepository.observePendingOccurrences().first().isNotEmpty()
+            if (hasPendingOccurrences) {
+                showRecurringOccurrenceQueueIfNeeded()
+            }
+        }
+    }
+
+    /**
+     * Garde-fou anti-doublon : n'affiche le dialogue que s'il n'est pas déjà présent dans
+     * [supportFragmentManager]. Une simple rotation d'écran ne repasse jamais ici (cette fonction
+     * n'est appelée qu'une fois par [onCreate], voir [generateMissingRecurringOccurrences]) — ce
+     * garde-fou couvre uniquement le cas où [onCreate] serait relancé (ex. l'Activity a été détruite
+     * puis recréée par le système en arrière-plan) alors qu'un dialogue montré avant cette
+     * destruction a déjà été restauré automatiquement par [supportFragmentManager].
+     */
+    private fun showRecurringOccurrenceQueueIfNeeded() {
+        if (supportFragmentManager.findFragmentByTag(RECURRING_QUEUE_DIALOG_TAG) == null) {
+            RecurringOccurrenceQueueDialogFragment().show(supportFragmentManager, RECURRING_QUEUE_DIALOG_TAG)
         }
     }
 
@@ -235,6 +278,9 @@ class MainActivity : AppCompatActivity() {
     }
 
     private companion object {
+        /** Tag `FragmentManager` du dialogue de validation (voir [showRecurringOccurrenceQueueIfNeeded]). */
+        const val RECURRING_QUEUE_DIALOG_TAG = "recurring_occurrence_queue"
+
         /** Destinations sans Bottom Navigation ni onglet correspondant (voir plus haut). */
         val AUTH_DESTINATION_IDS = setOf(R.id.loginFragment, R.id.registerFragment, R.id.forgotPasswordFragment)
 

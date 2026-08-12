@@ -15,6 +15,7 @@ import com.arzikina.ne.databinding.FragmentCategoriesBinding
 import com.arzikina.ne.domain.model.Category
 import com.arzikina.ne.presentation.components.ConfirmDialogs
 import com.arzikina.ne.util.AppResult
+import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 
@@ -54,7 +55,8 @@ class CategoriesFragment : Fragment(R.layout.fragment_categories) {
 
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.uiState.collect { state -> render(state) }
+                launch { viewModel.uiState.collect { state -> render(state) } }
+                launch { viewModel.events.collect { event -> handleEvent(event) } }
             }
         }
     }
@@ -62,6 +64,14 @@ class CategoriesFragment : Fragment(R.layout.fragment_categories) {
     override fun onDestroyView() {
         super.onDestroyView()
         binding = null
+    }
+
+    private fun handleEvent(event: CategoriesEvent) {
+        val binding = binding ?: return
+        when (event) {
+            CategoriesEvent.DeleteBlocked ->
+                Snackbar.make(binding.root, R.string.categories_delete_blocked_message, Snackbar.LENGTH_LONG).show()
+        }
     }
 
     private fun render(state: AppResult<List<Category>>) {

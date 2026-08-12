@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Pastille ronde rouge de notification (voir item_utility_tile.xml, utilityBadge) — couleur FIXE
+    (@color/expense_red, "quelque chose à traiter"), même principe que le fond d'icône de cette
+    tuile (fixe, pas personnalisé par compte/catégorie) — contrairement à bg_icon_circle.xml, dont
+    la couleur réelle vient toujours du code appelant.
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="oval">
+    <solid android:color="@color/expense_red" />
+</shape>

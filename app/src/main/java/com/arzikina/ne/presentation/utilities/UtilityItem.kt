@@ -23,10 +23,16 @@ import androidx.annotation.StringRes
  * @param descriptionRes non affiché pour l'instant par [UtilityTileAdapter] (les tuiles
  * n'affichent qu'icône + titre, voir la maquette) — réservé pour un futur écran qui en aurait
  * besoin (ex. une liste détaillée), sans avoir à changer ce modèle à ce moment-là.
+ * @param badgeCount pastille de comptage optionnelle (voir cahier des charges "Gestion automatique
+ * des transactions planifiées", section Dashboard) — `null`/`0` = masquée. [UtilityCatalog.all]
+ * renvoie toujours `null` ici (catalogue statique) : c'est à l'écran appelant (voir
+ * `DashboardFragment.render`) de reconstruire la liste avec la valeur à jour pour l'entrée
+ * concernée, [UtilityTileAdapter] se contentant d'afficher ce qu'on lui donne.
  */
 data class UtilityItem(
     @DrawableRes val iconRes: Int,
     @StringRes val titleRes: Int,
     @IdRes val destinationId: Int,
-    @StringRes val descriptionRes: Int? = null
+    @StringRes val descriptionRes: Int? = null,
+    val badgeCount: Int? = null
 )

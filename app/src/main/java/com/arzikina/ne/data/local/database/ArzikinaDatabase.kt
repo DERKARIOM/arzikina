@@ -10,6 +10,8 @@ import com.arzikina.ne.data.local.dao.CategoryDao
 import com.arzikina.ne.data.local.dao.LoanDao
 import com.arzikina.ne.data.local.dao.LoanPaymentDao
 import com.arzikina.ne.data.local.dao.PersonDao
+import com.arzikina.ne.data.local.dao.RecurringTransactionDao
+import com.arzikina.ne.data.local.dao.RecurringTransactionOccurrenceDao
 import com.arzikina.ne.data.local.dao.SavingsGoalDao
 import com.arzikina.ne.data.local.dao.TransactionDao
 import com.arzikina.ne.data.local.dao.UserDao
@@ -20,6 +22,8 @@ import com.arzikina.ne.data.local.entity.CategoryEntity
 import com.arzikina.ne.data.local.entity.LoanEntity
 import com.arzikina.ne.data.local.entity.LoanPaymentEntity
 import com.arzikina.ne.data.local.entity.PersonEntity
+import com.arzikina.ne.data.local.entity.RecurringTransactionEntity
+import com.arzikina.ne.data.local.entity.RecurringTransactionOccurrenceEntity
 import com.arzikina.ne.data.local.entity.SavingsGoalEntity
 import com.arzikina.ne.data.local.entity.TransactionEntity
 import com.arzikina.ne.data.local.entity.UserEntity
@@ -62,6 +66,9 @@ import com.arzikina.ne.data.local.entity.UserEntity
  *   (voir [MIGRATION_11_12]/[CardSecretEntity]/`data/security/CardCipher`).
  * - 13 : Prêts / Emprunts, tables `persons`, `loans`, `loan_payments` (voir
  *   [MIGRATION_12_13]/[PersonEntity]/[LoanEntity]/[LoanPaymentEntity]).
+ * - 14 : Transactions récurrentes / planifiées, tables `recurring_transactions`,
+ *   `recurring_transaction_occurrences` (voir
+ *   [MIGRATION_13_14]/[RecurringTransactionEntity]/[RecurringTransactionOccurrenceEntity]).
  */
 @Database(
     entities = [
@@ -74,9 +81,11 @@ import com.arzikina.ne.data.local.entity.UserEntity
         CardSecretEntity::class,
         PersonEntity::class,
         LoanEntity::class,
-        LoanPaymentEntity::class
+        LoanPaymentEntity::class,
+        RecurringTransactionEntity::class,
+        RecurringTransactionOccurrenceEntity::class
     ],
-    version = 13,
+    version = 14,
     exportSchema = true
 )
 @TypeConverters(Converters::class)
@@ -91,4 +100,6 @@ abstract class ArzikinaDatabase : RoomDatabase() {
     abstract fun personDao(): PersonDao
     abstract fun loanDao(): LoanDao
     abstract fun loanPaymentDao(): LoanPaymentDao
+    abstract fun recurringTransactionDao(): RecurringTransactionDao
+    abstract fun recurringTransactionOccurrenceDao(): RecurringTransactionOccurrenceDao
 }

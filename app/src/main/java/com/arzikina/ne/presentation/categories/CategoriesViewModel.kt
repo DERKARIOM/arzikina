@@ -7,9 +7,12 @@ import com.arzikina.ne.domain.model.TransactionType
 import com.arzikina.ne.domain.repository.CategoryRepository
 import com.arzikina.ne.util.AppResult
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flatMapLatest
@@ -25,6 +28,13 @@ enum class CategoryFilter {
     EXPENSE
 }
 
+sealed interface CategoriesEvent {
+    /** `categoryId` en `NO_ACTION` (voir `TransactionEntity`/`RecurringTransactionEntity`) : la
+     * base refuse la suppression d'une catégorie encore référencée par une transaction ou une
+     * règle récurrente plutôt que de la supprimer en silence — voir [CategoriesViewModel.deleteCategory]. */
+    data object DeleteBlocked : CategoriesEvent
+}
+
 @HiltViewModel
 class CategoriesViewModel @Inject constructor(
     private val categoryRepository: CategoryRepository
@@ -32,6 +42,9 @@ class CategoriesViewModel @Inject constructor(
 
     private val _filter = MutableStateFlow(CategoryFilter.ALL)
     val filter: StateFlow<CategoryFilter> = _filter.asStateFlow()
+
+    private val _events = MutableSharedFlow<CategoriesEvent>()
+    val events: SharedFlow<CategoriesEvent> = _events.asSharedFlow()
 
     val uiState: StateFlow<AppResult<List<Category>>> = _filter
         .flatMapLatest { filter ->
@@ -53,9 +66,17 @@ class CategoriesViewModel @Inject constructor(
         _filter.value = newFilter
     }
 
+    /**
+     * `categoryRepository.deleteCategory` peut lever une exception SQLite (contrainte de clé
+     * étrangère `NO_ACTION`, voir la doc de [CategoriesEvent.DeleteBlocked]) si cette catégorie est
+     * encore utilisée par une transaction ou une règle récurrente — interceptée ici plutôt que de
+     * laisser planter l'app (voir la doc de `TransactionEntity.categoryId`, qui demandait déjà
+     * explicitement cette interception côté couches supérieures, jamais faite jusqu'ici).
+     */
     fun deleteCategory(id: Long) {
         viewModelScope.launch {
-            categoryRepository.deleteCategory(id)
+            runCatching { categoryRepository.deleteCategory(id) }
+                .onFailure { _events.emit(CategoriesEvent.DeleteBlocked) }
         }
     }
 }

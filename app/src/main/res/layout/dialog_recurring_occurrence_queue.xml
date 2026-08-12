@@ -1,0 +1,322 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Contenu du dialogue de validation en file d'attente des transactions planifiées (voir
+    RecurringOccurrenceQueueDialogFragment). Racine en ConstraintLayout (englobant la
+    MaterialCardView "postcard" sombre, même thème que le reste de l'app) plutôt qu'un
+    MaterialAlertDialogBuilder classique (voir ConfirmDialogs/AccountPickerDialog) : ce dialogue a un
+    état propre (file d'occurrences, ViewModel Hilt) et des actions personnalisées qui doivent
+    avancer dans la file plutôt que fermer le dialogue — incompatible avec les boutons figés d'une
+    AlertDialog standard, qui se ferment automatiquement au clic.
+
+    NestedScrollView + hauteur plafonnée : le formulaire d'édition ("Modifier", voir editSection)
+    ajoute assez de champs pour dépasser la hauteur d'un petit écran une fois le clavier ouvert.
+    `android:maxHeight` n'existe PAS sur NestedScrollView (silencieusement ignoré, contrairement à
+    TextView/ImageView qui l'implémentent) : la seule façon fiable de plafonner sa hauteur SANS sous-
+    classer la vue est de contraindre son PARENT (la CardView) via ConstraintLayout —
+    `layout_height="wrap_content"` + `layout_constrainedHeight="true"` + `layout_constraintHeight_max`
+    donne à la CardView sa taille naturelle tant qu'elle reste sous 560dp, et exactement 560dp au-delà
+    (mesure spec alors EXACTE, ce qui permet à NestedScrollView — `layout_height="match_parent"` —
+    de défiler correctement son contenu restant).
+-->
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/queueCard"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:theme="@style/ThemeOverlay.Arzikina.OnBalanceCard"
+        app:cardBackgroundColor="@color/arzikina_postcart_background"
+        app:cardCornerRadius="@dimen/corner_radius_medium"
+        app:cardElevation="@dimen/elevation_raised"
+        app:layout_constrainedHeight="true"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintHeight_max="560dp"
+        app:layout_constraintTop_toTopOf="parent">
+
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="@dimen/spacing_l">
+
+            <TextView
+                android:id="@+id/queueTitle"
+                style="@style/TextAppearance.Material3.TitleMedium"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/recurring_queue_title"
+                android:textColor="?attr/colorOnSurface"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/queueProgress"
+                style="@style/TextAppearance.Material3.BodySmall"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:textColor="?attr/colorOnSurfaceVariant"
+                tools:text="1 sur 3" />
+
+            <!--
+                Résumé en lecture (mode par défaut). Masqué pendant l'édition (voir editSection
+                ci-dessous) : ces deux modes ne sont jamais visibles en même temps.
+            -->
+            <LinearLayout
+                android:id="@+id/readSection"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <!-- Réutilise item_transaction_compact.xml (voir RecurringOccurrenceItemBinder), un
+                     troisième contexte après l'écran "Transactions planifiées" et le Dashboard. -->
+                <include
+                    android:id="@+id/occurrenceSummary"
+                    layout="@layout/item_transaction_compact"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/spacing_m" />
+
+                <TextView
+                    android:id="@+id/accountLine"
+                    style="@style/TextAppearance.Material3.BodySmall"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/spacing_xs"
+                    android:textColor="?attr/colorOnSurfaceVariant"
+                    tools:text="Compte : Orange Money" />
+
+            </LinearLayout>
+
+            <!--
+                Formulaire d'édition ponctuelle ("Modifier", voir RecurringOccurrenceQueueViewModel) —
+                masqué par défaut, affiché à la place de readSection le temps de l'édition (voir
+                RecurringOccurrenceQueueDialogFragment.render). Version compacte du même principe que
+                fragment_recurring_transaction_form.xml (dropdowns/champs harmonisés
+                item_dropdown_field/item_account_field/item_date_field), sans carte "postcard"
+                individuelle par champ ici (déjà dans la carte du dialogue).
+            -->
+            <LinearLayout
+                android:id="@+id/editSection"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_m"
+                android:orientation="vertical"
+                android:visibility="gone"
+                tools:visibility="visible">
+
+                <com.google.android.material.button.MaterialButtonToggleGroup
+                    android:id="@+id/editTypeGroup"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    app:selectionRequired="true"
+                    app:singleSelection="true">
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/editTypeExpenseButton"
+                        style="?attr/materialButtonOutlinedStyle"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:checkable="true"
+                        android:checked="true"
+                        android:text="@string/category_type_expense" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/editTypeIncomeButton"
+                        style="?attr/materialButtonOutlinedStyle"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:checkable="true"
+                        android:text="@string/category_type_income" />
+
+                </com.google.android.material.button.MaterialButtonToggleGroup>
+
+                <include
+                    android:id="@+id/editCategoryField"
+                    layout="@layout/item_dropdown_field"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/spacing_s" />
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/editAmountLayout"
+                    style="@style/Widget.Arzikina.TextInputLayout.OutlinedBox.PostCard"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/spacing_s"
+                    android:hint="@string/recurring_transaction_form_amount_label">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/editAmountInput"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="numberDecimal"
+                        android:maxLines="1" />
+
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <FrameLayout
+                    android:id="@+id/editAccountRow"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/spacing_s"
+                    android:background="?attr/selectableItemBackground"
+                    android:clickable="true"
+                    android:focusable="true">
+
+                    <include
+                        android:id="@+id/editAccountField"
+                        layout="@layout/item_account_field" />
+
+                </FrameLayout>
+
+                <TextView
+                    android:id="@+id/editAccountErrorText"
+                    style="@style/TextAppearance.Material3.BodySmall"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:textColor="@color/expense_red"
+                    android:visibility="gone"
+                    tools:text="Choisis un compte"
+                    tools:visibility="visible" />
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/editDescriptionLayout"
+                    style="@style/Widget.Arzikina.TextInputLayout.OutlinedBox.PostCard"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/spacing_s"
+                    android:hint="@string/recurring_transaction_form_description_label">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/editDescriptionInput"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="@string/recurring_transaction_form_description_placeholder"
+                        android:inputType="text"
+                        android:maxLines="2" />
+
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <include
+                    android:id="@+id/editPaymentMethodField"
+                    layout="@layout/item_dropdown_field"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/spacing_s" />
+
+                <FrameLayout
+                    android:id="@+id/editDateRow"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/spacing_s"
+                    android:background="?attr/selectableItemBackground"
+                    android:clickable="true"
+                    android:focusable="true">
+
+                    <include
+                        android:id="@+id/editDateField"
+                        layout="@layout/item_date_field" />
+
+                </FrameLayout>
+
+            </LinearLayout>
+
+            <ProgressBar
+                android:id="@+id/loadingIndicator"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_marginTop="@dimen/spacing_m"
+                android:layout_gravity="center"
+                android:visibility="gone"
+                tools:visibility="visible" />
+
+            <!-- Actions du mode lecture (voir readSection). -->
+            <LinearLayout
+                android:id="@+id/readActions"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/saveButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/spacing_l"
+                    android:text="@string/action_save" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/spacing_s"
+                    android:orientation="horizontal">
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/editButton"
+                        style="?attr/materialButtonOutlinedStyle"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginEnd="@dimen/spacing_s"
+                        android:layout_weight="1"
+                        android:text="@string/recurring_queue_edit_action" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/rejectButton"
+                        style="?attr/materialButtonOutlinedStyle"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="@string/recurring_queue_reject_action"
+                        android:textColor="@color/expense_red"
+                        app:strokeColor="@color/expense_red" />
+
+                </LinearLayout>
+
+            </LinearLayout>
+
+            <!-- Actions du mode édition (voir editSection) — masquées par défaut, en miroir. -->
+            <LinearLayout
+                android:id="@+id/editActions"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:visibility="gone"
+                tools:visibility="visible">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/cancelEditButton"
+                    style="?attr/materialButtonOutlinedStyle"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/spacing_l"
+                    android:layout_marginEnd="@dimen/spacing_s"
+                    android:layout_weight="1"
+                    android:text="@string/recurring_queue_cancel_edit_action" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/confirmEditButton"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/spacing_l"
+                    android:layout_weight="1"
+                    android:text="@string/recurring_queue_confirm_edit_action" />
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+    </androidx.core.widget.NestedScrollView>
+
+    </com.google.android.material.card.MaterialCardView>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

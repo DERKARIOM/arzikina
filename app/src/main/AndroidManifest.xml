@@ -12,6 +12,25 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.Arzikina">
+
+        <!--
+            Désactive l'initialisation automatique de WorkManager (contribuée par sa propre
+            fusion de manifeste via App Startup) : ArzikinaApplication fournit sa propre
+            Configuration (voir Configuration.Provider, HiltWorkerFactory) — les deux ensemble
+            lèveraient une IllegalStateException au démarrage ("WorkManager is already
+            initialized"). Voir la doc officielle WorkManager, "Custom Configuration".
+        -->
+        <provider
+            android:name="androidx.startup.InitializationProvider"
+            android:authorities="${applicationId}.androidx-startup"
+            android:exported="false"
+            tools:node="merge">
+            <meta-data
+                android:name="androidx.work.WorkManagerInitializer"
+                android:value="androidx.startup"
+                tools:node="remove" />
+        </provider>
+
         <!--
             windowSoftInputMode="adjustResize" : bonne pratique standard, mais À ELLE SEULE
             INSUFFISANTE ici — l'app est en edge-to-edge (voir util/SystemBars.kt,
