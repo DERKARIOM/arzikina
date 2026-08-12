@@ -112,22 +112,23 @@
                 </LinearLayout>
 
                 <!--
-                    Raccourci vers Catégories (écran secondaire, atteint aussi
-                    depuis l'onglet Autre). Comptes n'a plus de raccourci ici :
-                    c'est désormais l'onglet "Compte" de la Bottom Navigation,
-                    déjà atteignable directement. Objectifs suivra quand il
-                    sera reconstruit.
+                    Raccourci vers Paramètres (écran secondaire, atteint aussi
+                    depuis l'onglet Autre) — remplace l'ancien raccourci
+                    Catégories. Comptes n'a plus de raccourci ici : c'est
+                    désormais l'onglet "Compte" de la Bottom Navigation, déjà
+                    atteignable directement. Objectifs suivra quand il sera
+                    reconstruit.
                 -->
                 <ImageButton
-                    android:id="@+id/categoriesShortcut"
+                    android:id="@+id/settingsShortcut"
                     android:layout_width="@dimen/icon_size_large"
                     android:layout_height="@dimen/icon_size_large"
                     android:layout_marginStart="@dimen/spacing_s"
                     android:layout_marginEnd="@dimen/spacing_s"
                     android:background="?attr/selectableItemBackgroundBorderless"
-                    android:contentDescription="@string/dashboard_categories_action"
+                    android:contentDescription="@string/nav_settings"
                     android:padding="@dimen/spacing_s"
-                    android:src="@drawable/ic_category_other_24"
+                    android:src="@drawable/ic_settings_24"
                     android:tint="?attr/colorOnSurface" />
 
             </LinearLayout>

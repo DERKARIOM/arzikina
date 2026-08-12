@@ -95,8 +95,11 @@ class DashboardFragment : Fragment(R.layout.fragment_dashboard) {
         // représente le solde TOTAL, tous comptes confondus (voir BALANCE_CARD_COLOR).
         viewBinding.balanceCard.background = AccountCardGradient.create(BALANCE_CARD_COLOR)
 
-        viewBinding.categoriesShortcut.setOnClickListener {
-            findNavController().navigate(R.id.categoriesFragment)
+        // Raccourci vers Paramètres (remplace l'ancien raccourci Catégories) :
+        // réutilise la destination settingsFragment déjà existante, atteignable
+        // aussi depuis l'onglet "Autre".
+        viewBinding.settingsShortcut.setOnClickListener {
+            findNavController().navigate(R.id.settingsFragment)
         }
         viewBinding.utilitiesList.layoutManager =
             LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
