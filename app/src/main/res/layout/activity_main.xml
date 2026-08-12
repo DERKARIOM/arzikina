@@ -80,6 +80,7 @@
         android:background="?attr/colorSurface"
         app:backgroundTint="?attr/colorSurface"
         app:elevation="0dp"
+        app:itemIconSize="@dimen/icon_size_bottom_nav"
         app:itemIconTint="@color/nav_item_icon_color"
         app:itemTextAppearanceActive="@style/TextAppearance.Arzikina.BottomNavigation.Active"
         app:itemTextAppearanceInactive="@style/TextAppearance.Arzikina.BottomNavigation.Inactive"

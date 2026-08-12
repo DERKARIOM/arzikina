@@ -17,7 +17,7 @@
     <dimen name="corner_radius_extra_large">32dp</dimen>
 
     <!-- Icônes -->
-    <dimen name="icon_size_bottom_nav">24dp</dimen>
+    <dimen name="icon_size_bottom_nav">26dp</dimen>
     <dimen name="icon_size_default">24dp</dimen>
     <dimen name="icon_size_large">40dp</dimen>
     <!-- Grande icône décorative des écrans "placeholder" (voir fragment_loans.xml). -->
@@ -33,8 +33,10 @@
     <dimen name="elevation_raised">3dp</dimen>
 
     <!-- Taille du libellé de la Bottom Navigation (voir TextAppearance.Arzikina.BottomNavigation.*,
-         themes.xml), plus petite que la taille par défaut de Material3 pour rester discrète
-         sous les icônes sur 5 onglets. -->
-    <dimen name="text_size_bottom_nav_active">11sp</dimen>
-    <dimen name="text_size_bottom_nav_inactive">10sp</dimen>
+         themes.xml) : légèrement réduite par rapport à la taille par défaut de Material3, pour
+         rester discrète sous l'icône, mais un peu plus grande qu'avant (11sp/10sp) — plus lisible
+         maintenant que la Bottom Navigation ne compte plus que 4 onglets (voir bottom_nav_menu.xml),
+         avec un peu plus d'espace disponible par item. -->
+    <dimen name="text_size_bottom_nav_active">13sp</dimen>
+    <dimen name="text_size_bottom_nav_inactive">12sp</dimen>
 </resources>
