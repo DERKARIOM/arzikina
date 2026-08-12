@@ -37,17 +37,18 @@
         app:layout_constraintTop_toTopOf="parent" />
 
     <!--
-        Couture "verre dépoli" (voir bg_bottom_nav_glass_border.xml) : purement décorative, posée
-        APRÈS navHostFragment dans l'ordre du XML pour se dessiner par-dessus ses derniers pixels
-        (même principe de superposition que le "divider" de item_transaction_compact.xml), sans
-        jamais intercepter le toucher — `clickable`/`focusable` à `false` (défauts explicites) :
-        un enfant non cliquable ne consomme pas ACTION_DOWN, ConstraintLayout laisse alors la vue
-        en dessous (le contenu défilant de navHostFragment) recevoir le toucher normalement.
+        Fine bordure blanche translucide (voir bg_bottom_nav_glass_border.xml) : purement
+        décorative, posée APRÈS navHostFragment dans l'ordre du XML pour se dessiner par-dessus
+        ses derniers pixels (même principe de superposition que le "divider" de
+        item_transaction_compact.xml), sans jamais intercepter le toucher —
+        `clickable`/`focusable` à `false` (défauts explicites) : un enfant non cliquable ne
+        consomme pas ACTION_DOWN, ConstraintLayout laisse alors la vue en dessous (le contenu
+        défilant de navHostFragment) recevoir le toucher normalement.
     -->
     <View
         android:id="@+id/bottomNavGlassBorder"
         android:layout_width="0dp"
-        android:layout_height="14dp"
+        android:layout_height="1dp"
         android:background="@drawable/bg_bottom_nav_glass_border"
         android:clickable="false"
         android:focusable="false"
