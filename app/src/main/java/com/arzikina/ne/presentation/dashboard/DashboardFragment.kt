@@ -121,6 +121,17 @@ class DashboardFragment : Fragment(R.layout.fragment_dashboard) {
         viewBinding.budgetSeeAll.setOnClickListener {
             findNavController().navigate(R.id.budgetFragment)
         }
+        // transactionsFragment n'est plus un onglet (voir bottom_nav_menu.xml) : seul point
+        // d'entrée désormais, sans faire recocher aucun onglet de la Bottom Navigation (voir
+        // MainActivity.TAB_DESTINATION_IDS).
+        viewBinding.recentTransactionsSeeAll.setOnClickListener {
+            findNavController().navigate(R.id.transactionsFragment)
+        }
+        // Réutilise transactionFormFragment tel quel (même destination que le FAB de l'écran
+        // Transactions) : aucune nouvelle logique d'ajout.
+        viewBinding.recentTransactionsEmptyAction.setOnClickListener {
+            findNavController().navigate(R.id.transactionFormFragment)
+        }
         viewBinding.createBudgetAction.setOnClickListener {
             findNavController().navigate(R.id.budgetFormFragment)
         }

@@ -287,7 +287,9 @@
          tout futur utilitaire pas encore implémenté. -->
     <string name="utility_placeholder_message">Cette fonctionnalité est en cours de développement. Reviens bientôt !</string>
     <string name="dashboard_recent_transactions_title">Dernières transactions</string>
+    <string name="dashboard_recent_transactions_see_all">Voir tout</string>
     <string name="dashboard_recent_transactions_empty">Aucune transaction pour l\'instant.</string>
+    <string name="dashboard_recent_transactions_empty_action">Ajouter une transaction</string>
     <string name="dashboard_transaction_subtitle">%1$s • %2$s</string>
 
     <!-- Budgets -->

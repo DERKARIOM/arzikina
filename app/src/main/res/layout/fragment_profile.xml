@@ -74,59 +74,94 @@
                 style="@style/TextAppearance.Material3.BodyMedium"
                 tools:text="@nomdutilisateur" />
 
-            <com.google.android.material.textfield.TextInputLayout
-                android:id="@+id/fullNameLayout"
-                style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+            <!-- Postcard sur tous les champs de saisie de cet écran — voir descriptionLayout de
+                 fragment_transaction_form.xml ("harmonisation des champs de saisie"). -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/fullNameCard"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/spacing_l"
-                android:hint="@string/register_full_name_label">
+                android:theme="@style/ThemeOverlay.Arzikina.OnBalanceCard"
+                app:cardBackgroundColor="@color/arzikina_postcart_background"
+                app:cardCornerRadius="@dimen/corner_radius_medium"
+                app:cardElevation="@dimen/elevation_raised">
 
-                <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/fullNameInput"
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/fullNameLayout"
+                    style="@style/Widget.Arzikina.TextInputLayout.OutlinedBox.PostCard"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:imeOptions="actionNext"
-                    android:inputType="textPersonName"
-                    android:maxLines="1" />
+                    android:layout_margin="@dimen/spacing_xs"
+                    android:hint="@string/register_full_name_label">
 
-            </com.google.android.material.textfield.TextInputLayout>
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/fullNameInput"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:imeOptions="actionNext"
+                        android:inputType="textPersonName"
+                        android:maxLines="1" />
 
-            <com.google.android.material.textfield.TextInputLayout
-                android:id="@+id/emailLayout"
-                style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                </com.google.android.material.textfield.TextInputLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/emailCard"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/spacing_m"
-                android:hint="@string/register_email_label">
+                android:theme="@style/ThemeOverlay.Arzikina.OnBalanceCard"
+                app:cardBackgroundColor="@color/arzikina_postcart_background"
+                app:cardCornerRadius="@dimen/corner_radius_medium"
+                app:cardElevation="@dimen/elevation_raised">
 
-                <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/emailInput"
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/emailLayout"
+                    style="@style/Widget.Arzikina.TextInputLayout.OutlinedBox.PostCard"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:imeOptions="actionNext"
-                    android:inputType="textEmailAddress"
-                    android:maxLines="1" />
+                    android:layout_margin="@dimen/spacing_xs"
+                    android:hint="@string/register_email_label">
 
-            </com.google.android.material.textfield.TextInputLayout>
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/emailInput"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:imeOptions="actionNext"
+                        android:inputType="textEmailAddress"
+                        android:maxLines="1" />
 
-            <com.google.android.material.textfield.TextInputLayout
-                android:id="@+id/phoneLayout"
-                style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                </com.google.android.material.textfield.TextInputLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/phoneCard"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/spacing_m"
-                android:hint="@string/register_phone_label">
+                android:theme="@style/ThemeOverlay.Arzikina.OnBalanceCard"
+                app:cardBackgroundColor="@color/arzikina_postcart_background"
+                app:cardCornerRadius="@dimen/corner_radius_medium"
+                app:cardElevation="@dimen/elevation_raised">
 
-                <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/phoneInput"
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/phoneLayout"
+                    style="@style/Widget.Arzikina.TextInputLayout.OutlinedBox.PostCard"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:imeOptions="actionDone"
-                    android:inputType="phone"
-                    android:maxLines="1" />
+                    android:layout_margin="@dimen/spacing_xs"
+                    android:hint="@string/register_phone_label">
 
-            </com.google.android.material.textfield.TextInputLayout>
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/phoneInput"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:imeOptions="actionDone"
+                        android:inputType="phone"
+                        android:maxLines="1" />
+
+                </com.google.android.material.textfield.TextInputLayout>
+            </com.google.android.material.card.MaterialCardView>
 
             <FrameLayout
                 android:layout_width="match_parent"

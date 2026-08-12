@@ -144,14 +144,12 @@ class LoanFormFragment : Fragment(R.layout.fragment_loan_form) {
             )
         }
 
-        binding.startDateLayout.setOnClickListener { showDatePicker(R.string.loan_form_start_date_label) { viewModel.onStartDateChange(it) } }
-        binding.startDateInput.setOnClickListener { showDatePicker(R.string.loan_form_start_date_label) { viewModel.onStartDateChange(it) } }
-        binding.dueDateLayout.setOnClickListener { showDatePicker(R.string.loan_form_due_date_label) { viewModel.onDueDateChange(it) } }
-        binding.dueDateInput.setOnClickListener { showDatePicker(R.string.loan_form_due_date_label) { viewModel.onDueDateChange(it) } }
-        binding.firstPaymentDateLayout.setOnClickListener {
-            showDatePicker(R.string.loan_form_first_payment_date_label) { viewModel.onFirstPaymentDateChange(it) }
-        }
-        binding.firstPaymentDateInput.setOnClickListener {
+        binding.startDateField.dateFieldLabel.text = getString(R.string.loan_form_start_date_label)
+        binding.startDateRow.setOnClickListener { showDatePicker(R.string.loan_form_start_date_label) { viewModel.onStartDateChange(it) } }
+        binding.dueDateField.dateFieldLabel.text = getString(R.string.loan_form_due_date_label)
+        binding.dueDateRow.setOnClickListener { showDatePicker(R.string.loan_form_due_date_label) { viewModel.onDueDateChange(it) } }
+        binding.firstPaymentDateField.dateFieldLabel.text = getString(R.string.loan_form_first_payment_date_label)
+        binding.firstPaymentDateRow.setOnClickListener {
             showDatePicker(R.string.loan_form_first_payment_date_label) { viewModel.onFirstPaymentDateChange(it) }
         }
     }
@@ -213,12 +211,8 @@ class LoanFormFragment : Fragment(R.layout.fragment_loan_form) {
         binding.amountErrorText.visibility = if (state.amountError != null) View.VISIBLE else View.GONE
         binding.amountCurrencyBadge.text = selectedAccount?.let { currencySymbol(it.currencyCode) }.orEmpty()
 
-        if (binding.startDateInput.text?.toString() != formatDate(state.startDateMillis)) {
-            binding.startDateInput.setText(formatDate(state.startDateMillis))
-        }
-        if (binding.dueDateInput.text?.toString() != formatDate(state.dueDateMillis)) {
-            binding.dueDateInput.setText(formatDate(state.dueDateMillis))
-        }
+        binding.startDateField.dateFieldValue.text = formatDate(state.startDateMillis)
+        binding.dueDateField.dateFieldValue.text = formatDate(state.dueDateMillis)
         binding.dueDateErrorText.text = state.dueDateError
         binding.dueDateErrorText.visibility = if (state.dueDateError != null) View.VISIBLE else View.GONE
     }
@@ -251,10 +245,9 @@ class LoanFormFragment : Fragment(R.layout.fragment_loan_form) {
         }
         binding.firstPaymentAmountLayout.error = state.firstPaymentAmountError
 
-        if (binding.firstPaymentDateInput.text?.toString() != formatDate(state.firstPaymentDateMillis)) {
-            binding.firstPaymentDateInput.setText(formatDate(state.firstPaymentDateMillis))
-        }
-        binding.firstPaymentDateLayout.error = state.firstPaymentDateError
+        binding.firstPaymentDateField.dateFieldValue.text = formatDate(state.firstPaymentDateMillis)
+        binding.firstPaymentDateErrorText.text = state.firstPaymentDateError
+        binding.firstPaymentDateErrorText.visibility = if (state.firstPaymentDateError != null) View.VISIBLE else View.GONE
     }
 
     private fun renderTypeCard(card: MaterialCardView, isSelected: Boolean, @ColorRes selectedColorRes: Int) {

@@ -554,18 +554,43 @@
             modifié, il reste correct aussi sur l'écran Transactions (fond
             normal, sensible au thème clair/sombre là-bas).
         -->
-        <TextView
-            style="@style/TextAppearance.Material3.TitleMedium"
-            android:layout_width="wrap_content"
+        <!-- Titre + "Voir tout" (même pattern que la section Budget ci-dessus) : ouvre
+             transactionsFragment, désormais un écran secondaire atteint UNIQUEMENT depuis ici
+             (voir bottom_nav_menu.xml/MainActivity.TAB_DESTINATION_IDS — l'onglet Accueil reste
+             sélectionné). -->
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="@dimen/spacing_l"
-            android:layout_marginBottom="@dimen/spacing_s"
-            android:text="@string/dashboard_recent_transactions_title"
-            android:textColor="?attr/colorOnSurface" />
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <TextView
+                style="@style/TextAppearance.Material3.TitleMedium"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/dashboard_recent_transactions_title"
+                android:textColor="?attr/colorOnSurface" />
+
+            <TextView
+                android:id="@+id/recentTransactionsSeeAll"
+                style="@style/TextAppearance.Material3.LabelLarge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:clickable="true"
+                android:focusable="true"
+                android:padding="@dimen/spacing_xs"
+                android:text="@string/dashboard_recent_transactions_see_all"
+                android:textColor="?attr/colorPrimary" />
+
+        </LinearLayout>
 
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/spacing_s"
             app:cardBackgroundColor="@color/arzikina_postcart_background"
             app:cardCornerRadius="@dimen/corner_radius_medium"
             app:cardElevation="0dp">
@@ -577,16 +602,40 @@
                 android:orientation="vertical"
                 android:theme="@style/ThemeOverlay.Arzikina.OnBalanceCard">
 
-                <TextView
+                <!-- État vide : message + invitation à ajouter une première transaction (même
+                     pattern que budgetEmptyState/createBudgetAction ci-dessus). -->
+                <LinearLayout
                     android:id="@+id/recentTransactionsEmpty"
-                    style="@style/TextAppearance.Material3.BodyMedium"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginHorizontal="@dimen/spacing_m"
                     android:gravity="center"
-                    android:text="@string/dashboard_recent_transactions_empty"
-                    android:textColor="?attr/colorOnSurfaceVariant"
-                    android:visibility="gone" />
+                    android:orientation="vertical"
+                    android:padding="@dimen/spacing_m"
+                    android:visibility="gone"
+                    tools:visibility="visible">
+
+                    <TextView
+                        style="@style/TextAppearance.Material3.BodyMedium"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:text="@string/dashboard_recent_transactions_empty"
+                        android:textColor="?attr/colorOnSurfaceVariant" />
+
+                    <TextView
+                        android:id="@+id/recentTransactionsEmptyAction"
+                        style="@style/TextAppearance.Material3.LabelLarge"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/spacing_xs"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:padding="@dimen/spacing_xs"
+                        android:text="@string/dashboard_recent_transactions_empty_action"
+                        android:textColor="?attr/colorPrimary" />
+
+                </LinearLayout>
 
                 <androidx.recyclerview.widget.RecyclerView
                     android:id="@+id/recentTransactionsList"

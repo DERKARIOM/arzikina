@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Ligne "date" cliquable réutilisable (icône, libellé, valeur, chevron) — factorise dateTimeRow
+    de fragment_transaction_form.xml (référence visuelle pour "harmonisation des champs de
+    saisie"), désormais partagée avec les champs date du formulaire Prêt (début, échéance, premier
+    versement) et du formulaire Remboursement — auparavant des TextInputLayout en lecture seule,
+    un style différent de celui de Transaction pour le même rôle (ouvrir un MaterialDatePicker).
+
+    N'ouvre jamais le clavier : un clic sur la Card mère (déclarée par chaque écran, voir
+    dateTimeRow/startDateRow/dueDateRow/...) ouvre le sélecteur, exactement comme avant — cette
+    <include> ne fournit que le contenu interne, la Card (fond, coins arrondis, élévation,
+    clickable/focusable) reste posée par chaque écran, même principe que item_account_field.xml.
+
+    Le libellé ci-dessous est un texte de repli neutre : chaque écran l'écrase par code juste
+    après inflate (binding.xxxField.dateFieldLabel.text = getString(...)), même principe que
+    item_dropdown_field.xml pour son hint.
+-->
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:padding="@dimen/spacing_m">
+
+    <ImageView
+        android:id="@+id/dateFieldIcon"
+        android:layout_width="@dimen/icon_size_default"
+        android:layout_height="@dimen/icon_size_default"
+        android:contentDescription="@null"
+        android:src="@drawable/ic_calendar_24"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:tint="?attr/colorOnSurfaceVariant" />
+
+    <TextView
+        android:id="@+id/dateFieldLabel"
+        style="@style/TextAppearance.Material3.BodySmall"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/spacing_m"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        app:layout_constraintEnd_toStartOf="@id/dateFieldChevron"
+        app:layout_constraintStart_toEndOf="@id/dateFieldIcon"
+        app:layout_constraintTop_toTopOf="@id/dateFieldIcon"
+        tools:text="Date" />
+
+    <TextView
+        android:id="@+id/dateFieldValue"
+        style="@style/TextAppearance.Material3.TitleSmall"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/spacing_m"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:textColor="?attr/colorOnSurface"
+        app:layout_constraintEnd_toStartOf="@id/dateFieldChevron"
+        app:layout_constraintStart_toEndOf="@id/dateFieldIcon"
+        app:layout_constraintTop_toBottomOf="@id/dateFieldLabel"
+        tools:text="12/05/2025" />
+
+    <ImageView
+        android:id="@+id/dateFieldChevron"
+        android:layout_width="@dimen/icon_size_default"
+        android:layout_height="@dimen/icon_size_default"
+        android:contentDescription="@null"
+        android:src="@drawable/ic_chevron_right_24"
+        app:layout_constraintBottom_toBottomOf="@id/dateFieldIcon"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="@id/dateFieldIcon"
+        app:tint="?attr/colorOnSurfaceVariant" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

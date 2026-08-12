@@ -109,6 +109,19 @@
     </style>
 
     <!--
+        Même principe que le style ci-dessus, pour les champs de SAISIE LIBRE (texte, nombre, mot
+        de passe...) posés sur une postcard (voir nameLayout/balanceLayout sur
+        fragment_account_form.xml, descriptionLayout sur fragment_transaction_form.xml) — centralise
+        le retrait du contour propre à OutlinedBox, pour ne plus répéter
+        boxStrokeWidth/boxStrokeWidthFocused=0dp sur chaque champ ("harmonisation des champs de
+        saisie", instructions projet).
+    -->
+    <style name="Widget.Arzikina.TextInputLayout.OutlinedBox.PostCard" parent="Widget.Material3.TextInputLayout.OutlinedBox">
+        <item name="boxStrokeWidth">0dp</item>
+        <item name="boxStrokeWidthFocused">0dp</item>
+    </style>
+
+    <!--
         Taille du libellé de la Bottom Navigation (voir activity_main.xml,
         app:itemTextAppearanceActive/Inactive) : plus petite que la taille
         Material3 par défaut, pour rester discrète sous l'icône avec 5 onglets

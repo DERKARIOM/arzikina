@@ -107,8 +107,8 @@ class LoanPaymentFormFragment : Fragment(R.layout.fragment_loan_payment_form) {
                 onSelect = { account -> viewModel.onAccountSelected(account) }
             )
         }
-        binding.dateLayout.setOnClickListener { showDatePicker { viewModel.onDateChange(it) } }
-        binding.dateInput.setOnClickListener { showDatePicker { viewModel.onDateChange(it) } }
+        binding.dateField.dateFieldLabel.text = getString(R.string.loan_payment_form_date_label)
+        binding.dateRow.setOnClickListener { showDatePicker { viewModel.onDateChange(it) } }
     }
 
     private fun showDatePicker(onSelected: (Long) -> Unit) {
@@ -167,9 +167,7 @@ class LoanPaymentFormFragment : Fragment(R.layout.fragment_loan_payment_form) {
         binding.amountErrorText.visibility = if (state.amountError != null) View.VISIBLE else View.GONE
         binding.amountCurrencyBadge.text = currencySymbol(state.loanCurrencyCode)
 
-        if (binding.dateInput.text?.toString() != formatDate(state.dateMillis)) {
-            binding.dateInput.setText(formatDate(state.dateMillis))
-        }
+        binding.dateField.dateFieldValue.text = formatDate(state.dateMillis)
         if (binding.noteInput.text?.toString() != state.note) {
             binding.noteInput.setText(state.note)
         }

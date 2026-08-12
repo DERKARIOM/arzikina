@@ -30,23 +30,36 @@
             android:orientation="vertical"
             android:padding="@dimen/spacing_m">
 
-            <com.google.android.material.textfield.TextInputLayout
-                android:id="@+id/currentPasswordLayout"
-                style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+            <!-- Postcard — voir descriptionLayout de fragment_transaction_form.xml
+                 ("harmonisation des champs de saisie"). -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/currentPasswordCard"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                app:endIconMode="password_toggle"
-                android:hint="@string/profile_current_password_label">
+                android:theme="@style/ThemeOverlay.Arzikina.OnBalanceCard"
+                app:cardBackgroundColor="@color/arzikina_postcart_background"
+                app:cardCornerRadius="@dimen/corner_radius_medium"
+                app:cardElevation="@dimen/elevation_raised">
 
-                <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/currentPasswordInput"
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/currentPasswordLayout"
+                    style="@style/Widget.Arzikina.TextInputLayout.OutlinedBox.PostCard"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:imeOptions="actionNext"
-                    android:inputType="textPassword"
-                    android:maxLines="1" />
+                    android:layout_margin="@dimen/spacing_xs"
+                    app:endIconMode="password_toggle"
+                    android:hint="@string/profile_current_password_label">
 
-            </com.google.android.material.textfield.TextInputLayout>
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/currentPasswordInput"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:imeOptions="actionNext"
+                        android:inputType="textPassword"
+                        android:maxLines="1" />
+
+                </com.google.android.material.textfield.TextInputLayout>
+            </com.google.android.material.card.MaterialCardView>
 
             <!-- Postcard — voir item_dropdown_field.xml ("harmonisation des Spinner") : hint fixé
                  par code (SecurityQuestionUpdateFragment). -->
@@ -66,23 +79,34 @@
 
             </com.google.android.material.card.MaterialCardView>
 
-            <com.google.android.material.textfield.TextInputLayout
-                android:id="@+id/securityAnswerLayout"
-                style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/securityAnswerCard"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/spacing_m"
-                android:hint="@string/register_security_answer_label">
+                android:theme="@style/ThemeOverlay.Arzikina.OnBalanceCard"
+                app:cardBackgroundColor="@color/arzikina_postcart_background"
+                app:cardCornerRadius="@dimen/corner_radius_medium"
+                app:cardElevation="@dimen/elevation_raised">
 
-                <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/securityAnswerInput"
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/securityAnswerLayout"
+                    style="@style/Widget.Arzikina.TextInputLayout.OutlinedBox.PostCard"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:imeOptions="actionDone"
-                    android:inputType="text"
-                    android:maxLines="1" />
+                    android:layout_margin="@dimen/spacing_xs"
+                    android:hint="@string/register_security_answer_label">
 
-            </com.google.android.material.textfield.TextInputLayout>
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/securityAnswerInput"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:imeOptions="actionDone"
+                        android:inputType="text"
+                        android:maxLines="1" />
+
+                </com.google.android.material.textfield.TextInputLayout>
+            </com.google.android.material.card.MaterialCardView>
 
             <FrameLayout
                 android:layout_width="match_parent"

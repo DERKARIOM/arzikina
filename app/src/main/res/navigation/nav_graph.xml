@@ -6,16 +6,17 @@
     app:startDestination="@id/dashboardFragment">
 
     <!--
-        Les 5 onglets de la Bottom Navigation (Accueil, Compte, Transaction,
-        Rapports, Autre). Les identifiants (@+id/...) correspondent exactement
-        à ceux de menu/bottom_nav_menu.xml : c'est ce qui permet à
-        NavigationUI.setupWithNavController de faire le lien automatiquement
-        entre un item de menu sélectionné et sa destination.
+        Les 4 onglets de la Bottom Navigation (Accueil, Compte, Rapports,
+        Autre). Les identifiants (@+id/...) correspondent exactement à ceux
+        de menu/bottom_nav_menu.xml : MainActivity.setUpBottomNavigation s'en
+        sert pour le câblage manuel (voir MainActivity.TAB_DESTINATION_IDS).
 
-        Budget, Catégories et Paramètres restent des destinations du graphe
-        (donc atteignables par navigate()) mais ne sont plus des onglets
-        directs : on y accède depuis l'onglet "Autre" (voir
-        presentation/more/MoreFragment.kt), pour ne garder que 5 onglets.
+        Budget, Catégories, Paramètres et Transactions restent des
+        destinations du graphe (donc atteignables par navigate()) mais ne
+        sont plus des onglets directs : Budget/Catégories/Paramètres depuis
+        l'onglet "Autre" (voir presentation/more/MoreFragment.kt), Transactions
+        depuis le Dashboard ("Dernières transactions" → "Voir tout", voir
+        DashboardFragment.kt) — pour ne garder que 4 onglets.
     -->
 
     <!--

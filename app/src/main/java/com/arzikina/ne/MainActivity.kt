@@ -104,11 +104,12 @@ class MainActivity : AppCompatActivity() {
                 forceLightIcons = destination.id == R.id.dashboardFragment
             )
             // Ne surligne un item de la Bottom Navigation QUE si la destination courante EST
-            // littéralement l'un des 5 onglets (voir TAB_DESTINATION_IDS) : un écran secondaire
-            // (formulaire, détail, Budget/Catégories/Paramètres depuis "Autre"...) laisse
-            // volontairement l'onglet déjà sélectionné en surbrillance, sans qu'aucun ne
-            // corresponde à sa propre destination (voir aussi accountsFromDashboardFragment
-            // dans nav_graph.xml, qui exploite déjà ce principe pour le raccourci du Dashboard).
+            // littéralement l'un des 4 onglets (voir TAB_DESTINATION_IDS) : un écran secondaire
+            // (formulaire, détail, Budget/Catégories/Paramètres/Transactions depuis "Autre"/le
+            // Dashboard...) laisse volontairement l'onglet déjà sélectionné en surbrillance, sans
+            // qu'aucun ne corresponde à sa propre destination (voir aussi
+            // accountsFromDashboardFragment dans nav_graph.xml, qui exploite déjà ce principe
+            // pour le raccourci du Dashboard).
             if (destination.id in TAB_DESTINATION_IDS) {
                 binding.bottomNavigation.menu.findItem(destination.id)?.isChecked = true
             }
@@ -237,11 +238,12 @@ class MainActivity : AppCompatActivity() {
         /** Destinations sans Bottom Navigation ni onglet correspondant (voir plus haut). */
         val AUTH_DESTINATION_IDS = setOf(R.id.loginFragment, R.id.registerFragment, R.id.forgotPasswordFragment)
 
-        /** Les 5 onglets, mêmes id que menu/bottom_nav_menu.xml (voir sa doc et nav_graph.xml). */
+        /** Les 4 onglets, mêmes id que menu/bottom_nav_menu.xml (voir sa doc et nav_graph.xml).
+         * transactionsFragment n'en fait plus partie (voir sa doc dans bottom_nav_menu.xml) :
+         * atteint désormais depuis le Dashboard, sans jamais recocher d'onglet. */
         val TAB_DESTINATION_IDS = setOf(
             R.id.dashboardFragment,
             R.id.accountsFragment,
-            R.id.transactionsFragment,
             R.id.statisticsFragment,
             R.id.moreFragment
         )

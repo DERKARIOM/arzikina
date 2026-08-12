@@ -366,55 +366,48 @@
 
                 </com.google.android.material.card.MaterialCardView>
 
-                <!-- Dates : deux champs non focusables (voir TransactionFormFragment), ouverts via
-                     MaterialDatePicker. -->
-                <LinearLayout
+                <!-- Dates : deux lignes cliquables (voir item_date_field.xml, "harmonisation des
+                     champs de saisie" — même composant que dateTimeRow du formulaire de
+                     transaction), ouvrant un MaterialDatePicker. Empilées (auparavant côte à
+                     côte en TextInputLayout compacts) : le composant partagé est pensé pleine
+                     largeur, comme sur Transaction. -->
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/startDateRow"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="@dimen/spacing_l"
-                    android:orientation="horizontal">
+                    android:checkable="false"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:theme="@style/ThemeOverlay.Arzikina.OnBalanceCard"
+                    app:cardBackgroundColor="@color/arzikina_postcart_background"
+                    app:cardCornerRadius="@dimen/corner_radius_medium"
+                    app:cardElevation="@dimen/elevation_raised">
 
-                    <com.google.android.material.textfield.TextInputLayout
-                        android:id="@+id/startDateLayout"
-                        style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_marginEnd="@dimen/spacing_s"
-                        android:layout_weight="1"
-                        android:hint="@string/loan_form_start_date_label">
+                    <include
+                        android:id="@+id/startDateField"
+                        layout="@layout/item_date_field" />
 
-                        <com.google.android.material.textfield.TextInputEditText
-                            android:id="@+id/startDateInput"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:clickable="true"
-                            android:cursorVisible="false"
-                            android:focusable="false"
-                            tools:text="12/05/2025" />
+                </com.google.android.material.card.MaterialCardView>
 
-                    </com.google.android.material.textfield.TextInputLayout>
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/dueDateRow"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/spacing_m"
+                    android:checkable="false"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:theme="@style/ThemeOverlay.Arzikina.OnBalanceCard"
+                    app:cardBackgroundColor="@color/arzikina_postcart_background"
+                    app:cardCornerRadius="@dimen/corner_radius_medium"
+                    app:cardElevation="@dimen/elevation_raised">
 
-                    <com.google.android.material.textfield.TextInputLayout
-                        android:id="@+id/dueDateLayout"
-                        style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="@dimen/spacing_s"
-                        android:layout_weight="1"
-                        android:hint="@string/loan_form_due_date_label">
+                    <include
+                        android:id="@+id/dueDateField"
+                        layout="@layout/item_date_field" />
 
-                        <com.google.android.material.textfield.TextInputEditText
-                            android:id="@+id/dueDateInput"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:clickable="true"
-                            android:cursorVisible="false"
-                            android:focusable="false"
-                            tools:text="12/06/2025" />
-
-                    </com.google.android.material.textfield.TextInputLayout>
-
-                </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
 
                 <TextView
                     android:id="@+id/dueDateErrorText"
@@ -577,33 +570,50 @@
 
                 </com.google.android.material.card.MaterialCardView>
 
-                <com.google.android.material.textfield.TextInputLayout
-                    android:id="@+id/descriptionLayout"
-                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                <!-- Postcard — voir descriptionLayout de fragment_transaction_form.xml
+                     ("harmonisation des champs de saisie"). -->
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/descriptionCard"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="@dimen/spacing_l"
-                    android:hint="@string/loan_form_description_label">
+                    android:theme="@style/ThemeOverlay.Arzikina.OnBalanceCard"
+                    app:cardBackgroundColor="@color/arzikina_postcart_background"
+                    app:cardCornerRadius="@dimen/corner_radius_medium"
+                    app:cardElevation="@dimen/elevation_raised">
 
-                    <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/descriptionInput"
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:id="@+id/descriptionLayout"
+                        style="@style/Widget.Arzikina.TextInputLayout.OutlinedBox.PostCard"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:hint="@string/loan_form_description_placeholder"
-                        android:inputType="textMultiLine|textCapSentences"
-                        android:maxLines="3" />
+                        android:layout_margin="@dimen/spacing_xs"
+                        android:hint="@string/loan_form_description_label">
 
-                </com.google.android.material.textfield.TextInputLayout>
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/descriptionInput"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:hint="@string/loan_form_description_placeholder"
+                            android:inputType="textMultiLine|textCapSentences"
+                            android:maxLines="3" />
 
-                <!-- Premier versement (facultatif) : voir maquette, encadré distinct. -->
+                    </com.google.android.material.textfield.TextInputLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- Premier versement (facultatif) : postcard sombre comme le reste du formulaire
+                     (auparavant un encadré clair distinct) — voir "harmonisation des champs de
+                     saisie". Les couleurs des vues internes viennent déjà des attrs de thème
+                     (?attr/colorOnSurface...), ThemeOverlay.Arzikina.OnBalanceCard les adapte
+                     automatiquement, aucun changement de couleur en dur nécessaire ici. -->
                 <com.google.android.material.card.MaterialCardView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="@dimen/spacing_l"
+                    android:theme="@style/ThemeOverlay.Arzikina.OnBalanceCard"
+                    app:cardBackgroundColor="@color/arzikina_postcart_background"
                     app:cardCornerRadius="@dimen/corner_radius_medium"
-                    app:cardElevation="0dp"
-                    app:strokeColor="?attr/colorOutline"
-                    app:strokeWidth="1dp">
+                    app:cardElevation="@dimen/elevation_raised">
 
                     <LinearLayout
                         android:layout_width="match_parent"
@@ -620,7 +630,7 @@
 
                         <com.google.android.material.textfield.TextInputLayout
                             android:id="@+id/firstPaymentAmountLayout"
-                            style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                            style="@style/Widget.Arzikina.TextInputLayout.OutlinedBox.PostCard"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="@dimen/spacing_m"
@@ -634,24 +644,35 @@
 
                         </com.google.android.material.textfield.TextInputLayout>
 
-                        <com.google.android.material.textfield.TextInputLayout
-                            android:id="@+id/firstPaymentDateLayout"
-                            style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                        <!-- Ligne cliquable — voir item_date_field.xml. Pas de MaterialCardView
+                             propre ici (déjà à l'intérieur d'une postcard) : un simple conteneur
+                             avec ripple (?attr/selectableItemBackground) suffit, comme
+                             firstPaymentDateRow le fait pour toute cette section. -->
+                        <FrameLayout
+                            android:id="@+id/firstPaymentDateRow"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="@dimen/spacing_m"
-                            android:hint="@string/loan_form_first_payment_date_label">
+                            android:background="?attr/selectableItemBackground"
+                            android:clickable="true"
+                            android:focusable="true">
 
-                            <com.google.android.material.textfield.TextInputEditText
-                                android:id="@+id/firstPaymentDateInput"
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:clickable="true"
-                                android:cursorVisible="false"
-                                android:focusable="false"
-                                tools:text="12/05/2025" />
+                            <include
+                                android:id="@+id/firstPaymentDateField"
+                                layout="@layout/item_date_field" />
 
-                        </com.google.android.material.textfield.TextInputLayout>
+                        </FrameLayout>
+
+                        <TextView
+                            android:id="@+id/firstPaymentDateErrorText"
+                            style="@style/TextAppearance.Material3.BodySmall"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:textColor="@color/expense_red"
+                            android:visibility="gone"
+                            tools:text="Doit être après la date de début"
+                            tools:visibility="visible" />
 
                     </LinearLayout>
 

@@ -234,6 +234,7 @@ class TransactionFormFragment : Fragment(R.layout.fragment_transaction_form) {
 
     /** Une seule ligne cliquable (voir maquette) : la date puis l'heure s'enchaînent au lieu de deux champs séparés. */
     private fun setUpDateTime(binding: FragmentTransactionFormBinding) {
+        binding.dateTimeField.dateFieldLabel.text = getString(R.string.transaction_form_date_time_label)
         binding.dateTimeRow.setOnClickListener { if (!isLoanLinked()) showDatePicker() }
     }
 
@@ -325,7 +326,7 @@ class TransactionFormFragment : Fragment(R.layout.fragment_transaction_form) {
         renderAccountRow(binding, state, data.accounts, data.accountBalances)
         renderDestinationAccountRow(binding, state, isTransfer, data.accounts, data.accountBalances)
 
-        binding.dateTimeValue.text = formatDateTimeRowValue(state.dateTimeMillis)
+        binding.dateTimeField.dateFieldValue.text = formatDateTimeRowValue(state.dateTimeMillis)
 
         if (binding.descriptionInput.text?.toString() != state.description) {
             binding.descriptionInput.setText(state.description)

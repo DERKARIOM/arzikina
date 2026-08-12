@@ -133,7 +133,7 @@ class LoansFragment : Fragment(R.layout.fragment_loans) {
         val hasAnyLoans = uiState.summary.totalCount > 0
         val hasFilteredResults = uiState.items.isNotEmpty()
 
-        binding.searchLayout.visibility = if (hasAnyLoans) View.VISIBLE else View.GONE
+        binding.searchCard.visibility = if (hasAnyLoans) View.VISIBLE else View.GONE
         binding.toolbar.menu.findItem(R.id.action_toggle_filters)?.isVisible = hasAnyLoans
         // Une répartition/un classement vides n'auraient rien à montrer (voir LoanStatisticsFragment) :
         // même raisonnement que pour "Filtres" ci-dessus.

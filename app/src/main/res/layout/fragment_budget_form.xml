@@ -93,22 +93,35 @@
 
             </com.google.android.material.button.MaterialButtonToggleGroup>
 
-            <com.google.android.material.textfield.TextInputLayout
-                android:id="@+id/limitLayout"
-                style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+            <!-- Postcard — voir descriptionLayout de fragment_transaction_form.xml
+                 ("harmonisation des champs de saisie"). -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/limitCard"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/spacing_l"
-                android:hint="@string/budget_form_limit_label">
+                android:theme="@style/ThemeOverlay.Arzikina.OnBalanceCard"
+                app:cardBackgroundColor="@color/arzikina_postcart_background"
+                app:cardCornerRadius="@dimen/corner_radius_medium"
+                app:cardElevation="@dimen/elevation_raised">
 
-                <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/limitInput"
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/limitLayout"
+                    style="@style/Widget.Arzikina.TextInputLayout.OutlinedBox.PostCard"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:inputType="numberDecimal"
-                    android:maxLines="1" />
+                    android:layout_margin="@dimen/spacing_xs"
+                    android:hint="@string/budget_form_limit_label">
 
-            </com.google.android.material.textfield.TextInputLayout>
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/limitInput"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="numberDecimal"
+                        android:maxLines="1" />
+
+                </com.google.android.material.textfield.TextInputLayout>
+            </com.google.android.material.card.MaterialCardView>
 
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/currencyCard"

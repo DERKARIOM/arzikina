@@ -251,47 +251,64 @@
 
             </com.google.android.material.card.MaterialCardView>
 
-            <com.google.android.material.textfield.TextInputLayout
-                android:id="@+id/dateLayout"
-                style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+            <!-- Ligne cliquable — voir item_date_field.xml ("harmonisation des champs de
+                 saisie" — même composant que dateTimeRow du formulaire de transaction). -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/dateRow"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/spacing_l"
-                android:hint="@string/loan_payment_form_date_label">
+                android:checkable="false"
+                android:clickable="true"
+                android:focusable="true"
+                android:theme="@style/ThemeOverlay.Arzikina.OnBalanceCard"
+                app:cardBackgroundColor="@color/arzikina_postcart_background"
+                app:cardCornerRadius="@dimen/corner_radius_medium"
+                app:cardElevation="@dimen/elevation_raised">
 
-                <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/dateInput"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:clickable="true"
-                    android:cursorVisible="false"
-                    android:focusable="false"
-                    tools:text="12/06/2025" />
+                <include
+                    android:id="@+id/dateField"
+                    layout="@layout/item_date_field" />
 
-            </com.google.android.material.textfield.TextInputLayout>
+            </com.google.android.material.card.MaterialCardView>
 
-            <com.google.android.material.textfield.TextInputLayout
-                android:id="@+id/noteLayout"
-                style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+            <!-- Postcard — voir descriptionLayout de fragment_transaction_form.xml
+                 ("harmonisation des champs de saisie"). -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/noteCard"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/spacing_l"
-                android:hint="@string/loan_payment_form_note_label">
+                android:theme="@style/ThemeOverlay.Arzikina.OnBalanceCard"
+                app:cardBackgroundColor="@color/arzikina_postcart_background"
+                app:cardCornerRadius="@dimen/corner_radius_medium"
+                app:cardElevation="@dimen/elevation_raised">
 
-                <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/noteInput"
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/noteLayout"
+                    style="@style/Widget.Arzikina.TextInputLayout.OutlinedBox.PostCard"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:hint="@string/loan_payment_form_note_placeholder"
-                    android:inputType="textMultiLine|textCapSentences"
-                    android:maxLines="3" />
+                    android:layout_margin="@dimen/spacing_xs"
+                    android:hint="@string/loan_payment_form_note_label">
 
-            </com.google.android.material.textfield.TextInputLayout>
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/noteInput"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="@string/loan_payment_form_note_placeholder"
+                        android:inputType="textMultiLine|textCapSentences"
+                        android:maxLines="3" />
+
+                </com.google.android.material.textfield.TextInputLayout>
+            </com.google.android.material.card.MaterialCardView>
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/primaryActionButton"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:textColor="@color/white"
+                android:background="@drawable/forme_radius_10dp"
                 android:layout_marginTop="@dimen/spacing_l"
                 android:text="@string/loan_payment_form_save_action" />
 

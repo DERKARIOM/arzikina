@@ -80,6 +80,9 @@ class TransactionsFragment : Fragment(R.layout.fragment_transactions) {
     }
 
     private fun setUpToolbar(binding: FragmentTransactionsBinding) {
+        // Écran secondaire (voir bottom_nav_menu.xml) : la flèche retour ramène au Dashboard,
+        // point d'entrée unique désormais ("Dernières transactions" → "Voir tout").
+        binding.toolbar.setNavigationOnClickListener { findNavController().navigateUp() }
         binding.toolbar.setOnMenuItemClickListener { item ->
             if (item.itemId == R.id.action_toggle_filters) {
                 toggleFiltersPanel(binding)

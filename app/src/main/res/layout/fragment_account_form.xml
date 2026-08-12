@@ -58,13 +58,11 @@
 
                 <com.google.android.material.textfield.TextInputLayout
                     android:id="@+id/nameLayout"
-                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                    style="@style/Widget.Arzikina.TextInputLayout.OutlinedBox.PostCard"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_margin="@dimen/spacing_xs"
-                    android:hint="@string/account_form_name_label"
-                    app:boxStrokeWidth="0dp"
-                    app:boxStrokeWidthFocused="0dp">
+                    android:hint="@string/account_form_name_label">
 
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/nameInput"
@@ -190,13 +188,11 @@
 
                 <com.google.android.material.textfield.TextInputLayout
                     android:id="@+id/balanceLayout"
-                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                    style="@style/Widget.Arzikina.TextInputLayout.OutlinedBox.PostCard"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_margin="@dimen/spacing_xs"
-                    android:hint="@string/account_form_balance_label"
-                    app:boxStrokeWidth="0dp"
-                    app:boxStrokeWidthFocused="0dp">
+                    android:hint="@string/account_form_balance_label">
 
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/balanceInput"
@@ -242,13 +238,11 @@
 
                     <com.google.android.material.textfield.TextInputLayout
                         android:id="@+id/cardNumberLayout"
-                        style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                        style="@style/Widget.Arzikina.TextInputLayout.OutlinedBox.PostCard"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="@dimen/spacing_m"
                         android:hint="@string/account_form_card_number_label"
-                        app:boxStrokeWidth="0dp"
-                        app:boxStrokeWidthFocused="0dp"
                         app:helperTextEnabled="true">
 
                         <com.google.android.material.textfield.TextInputEditText
@@ -269,15 +263,13 @@
 
                         <com.google.android.material.textfield.TextInputLayout
                             android:id="@+id/cardExpiryLayout"
-                            style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                            style="@style/Widget.Arzikina.TextInputLayout.OutlinedBox.PostCard"
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="@dimen/spacing_m"
                             android:layout_marginEnd="@dimen/spacing_s"
                             android:layout_weight="1"
-                            android:hint="@string/account_form_card_expiry_label"
-                            app:boxStrokeWidth="0dp"
-                            app:boxStrokeWidthFocused="0dp">
+                            android:hint="@string/account_form_card_expiry_label">
 
                             <com.google.android.material.textfield.TextInputEditText
                                 android:id="@+id/cardExpiryInput"
@@ -292,15 +284,13 @@
 
                         <com.google.android.material.textfield.TextInputLayout
                             android:id="@+id/cardCvvLayout"
-                            style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                            style="@style/Widget.Arzikina.TextInputLayout.OutlinedBox.PostCard"
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="@dimen/spacing_m"
                             android:layout_marginStart="@dimen/spacing_s"
                             android:layout_weight="1"
-                            android:hint="@string/account_form_card_cvv_label"
-                            app:boxStrokeWidth="0dp"
-                            app:boxStrokeWidthFocused="0dp">
+                            android:hint="@string/account_form_card_cvv_label">
 
                             <com.google.android.material.textfield.TextInputEditText
                                 android:id="@+id/cardCvvInput"

@@ -384,6 +384,8 @@
                 TransactionFormFragment.showDatePicker) au lieu de deux champs
                 séparés.
             -->
+            <!-- Voir item_date_field.xml ("harmonisation des champs de saisie") : hint fixé par
+                 code (TransactionFormFragment). -->
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/dateTimeRow"
                 android:layout_width="match_parent"
@@ -397,60 +399,10 @@
                 app:cardCornerRadius="@dimen/corner_radius_medium"
                 app:cardElevation="@dimen/elevation_raised">
 
-                <androidx.constraintlayout.widget.ConstraintLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:padding="@dimen/spacing_m">
+                <include
+                    android:id="@+id/dateTimeField"
+                    layout="@layout/item_date_field" />
 
-                    <ImageView
-                        android:id="@+id/dateTimeIcon"
-                        android:layout_width="@dimen/icon_size_default"
-                        android:layout_height="@dimen/icon_size_default"
-                        android:contentDescription="@null"
-                        android:src="@drawable/ic_calendar_24"
-                        app:layout_constraintBottom_toBottomOf="parent"
-                        app:layout_constraintStart_toStartOf="parent"
-                        app:layout_constraintTop_toTopOf="parent"
-                        app:tint="?attr/colorOnSurfaceVariant" />
-
-                    <TextView
-                        android:id="@+id/dateTimeLabel"
-                        style="@style/TextAppearance.Material3.BodySmall"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="@dimen/spacing_m"
-                        android:text="@string/transaction_form_date_time_label"
-                        android:textColor="?attr/colorOnSurfaceVariant"
-                        app:layout_constraintEnd_toStartOf="@id/dateTimeChevron"
-                        app:layout_constraintStart_toEndOf="@id/dateTimeIcon"
-                        app:layout_constraintTop_toTopOf="@id/dateTimeIcon" />
-
-                    <TextView
-                        android:id="@+id/dateTimeValue"
-                        style="@style/TextAppearance.Material3.TitleSmall"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="@dimen/spacing_m"
-                        android:ellipsize="end"
-                        android:maxLines="1"
-                        android:textColor="?attr/colorOnSurface"
-                        app:layout_constraintEnd_toStartOf="@id/dateTimeChevron"
-                        app:layout_constraintStart_toEndOf="@id/dateTimeIcon"
-                        app:layout_constraintTop_toBottomOf="@id/dateTimeLabel"
-                        tools:text="Aujourd'hui - 08/08/2026 · 15:41" />
-
-                    <ImageView
-                        android:id="@+id/dateTimeChevron"
-                        android:layout_width="@dimen/icon_size_default"
-                        android:layout_height="@dimen/icon_size_default"
-                        android:contentDescription="@null"
-                        android:src="@drawable/ic_chevron_right_24"
-                        app:layout_constraintBottom_toBottomOf="parent"
-                        app:layout_constraintEnd_toEndOf="parent"
-                        app:layout_constraintTop_toTopOf="parent"
-                        app:tint="?attr/colorOnSurfaceVariant" />
-
-                </androidx.constraintlayout.widget.ConstraintLayout>
             </com.google.android.material.card.MaterialCardView>
 
             <!--
@@ -472,13 +424,11 @@
 
                 <com.google.android.material.textfield.TextInputLayout
                     android:id="@+id/descriptionLayout"
-                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                    style="@style/Widget.Arzikina.TextInputLayout.OutlinedBox.PostCard"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_margin="@dimen/spacing_xs"
                     android:hint="@string/transaction_form_description_label"
-                    app:boxStrokeWidth="0dp"
-                    app:boxStrokeWidthFocused="0dp"
                     app:startIconDrawable="@drawable/ic_label_24">
 
                     <com.google.android.material.textfield.TextInputEditText
