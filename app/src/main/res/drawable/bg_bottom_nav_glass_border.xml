@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Couture "verre dépoli" au-dessus de la BottomNavigationView (voir activity_main.xml,
+    bottomNavGlassBorder) : deux couches superposées plutôt qu'un vrai flou (RenderEffect
+    nécessiterait l'API 31+, hors de portée de minSdk 26 ici, et coûterait en performance pour un
+    simple filet décoratif — voir instructions projet, "ne jamais dégrader les performances").
+
+    1. Un dégradé vertical blanc → transparent (lueur douce qui s'estompe vers le contenu).
+    2. Une ligne pleine de 1dp, plus opaque, plaquée en bas (la "couture" nette, au ras de la
+       BottomNavigationView).
+-->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item>
+        <shape android:shape="rectangle">
+            <gradient
+                android:angle="90"
+                android:startColor="#26FFFFFF"
+                android:endColor="#00FFFFFF" />
+        </shape>
+    </item>
+
+    <item
+        android:gravity="bottom"
+        android:height="1dp">
+        <shape android:shape="rectangle">
+            <solid android:color="#40FFFFFF" />
+        </shape>
+    </item>
+
+</layer-list>

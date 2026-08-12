@@ -99,8 +99,14 @@ class MainActivity : AppCompatActivity() {
         // qui doit faire basculer isBottomNavHidden() : sans cet appel, le
         // listener ne serait pas rappelé).
         navController.addOnDestinationChangedListener { _, destination, _ ->
-            binding.bottomNavigation.visibility =
-                if (destination.id in AUTH_DESTINATION_IDS) View.GONE else View.VISIBLE
+            // bottomNavGlassBorder (voir activity_main.xml) toujours alignée sur bottomNavigation :
+            // sans ça, sa contrainte `bottom_toTopOf` s'effondrerait au bas de l'écran quand la
+            // Bottom Navigation passe à GONE (comportement standard ConstraintLayout pour une
+            // contrainte vers une vue GONE), affichant une lueur décorative flottante et injustifiée
+            // sur les écrans Connexion/Inscription.
+            val bottomNavVisibility = if (destination.id in AUTH_DESTINATION_IDS) View.GONE else View.VISIBLE
+            binding.bottomNavigation.visibility = bottomNavVisibility
+            binding.bottomNavGlassBorder.visibility = bottomNavVisibility
             ViewCompat.requestApplyInsets(binding.root)
             // Icônes de la status bar claires en permanence sur le Dashboard
             // (fond brun/ambré fixe qui s'étend sous elle, voir

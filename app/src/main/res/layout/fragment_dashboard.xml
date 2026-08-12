@@ -128,7 +128,7 @@
                     android:background="?attr/selectableItemBackgroundBorderless"
                     android:contentDescription="@string/nav_settings"
                     android:padding="@dimen/spacing_s"
-                    android:src="@drawable/ic_settings_24"
+                    android:src="@drawable/ic_parametres"
                     android:tint="?attr/colorOnSurface" />
 
             </LinearLayout>
