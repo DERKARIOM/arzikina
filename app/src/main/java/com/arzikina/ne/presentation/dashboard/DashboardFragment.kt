@@ -12,7 +12,6 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
-import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.arzikina.ne.R
 import com.arzikina.ne.databinding.FragmentDashboardBinding
@@ -64,16 +63,14 @@ class DashboardFragment : Fragment(R.layout.fragment_dashboard) {
         val viewBinding = FragmentDashboardBinding.bind(view)
         binding = viewBinding
 
+        // Pas de DividerItemDecoration ici : item_transaction_compact.xml (voir ce layout)
+        // porte déjà sa propre ligne de séparation fine en haut de CHAQUE ligne (vue "divider"),
+        // partagée avec GroupedTransactionsAdapter (écran Transactions/Détail du compte) — en
+        // ajouter une seconde ici aurait doublé le trait. Mêmes lignes de séparation que
+        // fragment_transactions.xml, sans rien dupliquer.
         viewBinding.recentTransactionsList.apply {
             layoutManager = LinearLayoutManager(requireContext())
             adapter = recentTransactionsAdapter
-            // Ligne fine entre chaque transaction (voir drawable/divider_on_balance_card.xml) ;
-            // pas de divider après le dernier élément (comportement par défaut de DividerItemDecoration).
-            addItemDecoration(
-                DividerItemDecoration(requireContext(), DividerItemDecoration.VERTICAL).apply {
-                    setDrawable(ContextCompat.getDrawable(requireContext(), R.drawable.divider_on_balance_card)!!)
-                }
-            )
         }
         // Le fond dégradé de l'en-tête (dashboardHeaderBackground) s'étend
         // volontairement sous la barre de statut, désormais transparente
