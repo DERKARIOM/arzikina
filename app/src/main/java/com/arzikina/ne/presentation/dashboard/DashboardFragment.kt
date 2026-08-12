@@ -132,6 +132,11 @@ class DashboardFragment : Fragment(R.layout.fragment_dashboard) {
         viewBinding.recentTransactionsEmptyAction.setOnClickListener {
             findNavController().navigate(R.id.transactionFormFragment)
         }
+        // FAB "+" — même destination, même comportement que addTransactionButton sur
+        // fragment_transactions.xml (voir TransactionsFragment.navigateToForm).
+        viewBinding.addTransactionButton.setOnClickListener {
+            findNavController().navigate(R.id.transactionFormFragment)
+        }
         viewBinding.createBudgetAction.setOnClickListener {
             findNavController().navigate(R.id.budgetFormFragment)
         }

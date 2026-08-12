@@ -1,17 +1,32 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<!--
+    Racine passée de NestedScrollView à ConstraintLayout (voir addTransactionButton plus bas) :
+    un FAB flottant fixe au-dessus du contenu défilant a besoin d'un conteneur non-scrollable pour
+    se positionner par contrainte (bas/fin), même principe que fragment_transactions.xml/
+    fragment_loans.xml.
+-->
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="?attr/colorSurface"
-    android:clipToPadding="false"
-    android:fillViewport="true">
+    android:background="?attr/colorSurface">
+
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:clipToPadding="false"
+        android:fillViewport="true"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical">
+        android:orientation="vertical"
+        android:paddingBottom="88dp">
 
         <!--
             Bloc du haut (en-tête + carte Solde) en ConstraintLayout : le fond
@@ -284,10 +299,28 @@
             la première devise de chaque liste, comme le reste du tableau de
             bord ne gère pas la conversion de change).
         -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    style="@style/TextAppearance.Material3.TitleMedium"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="5dp"
+                    android:layout_weight="1"
+                    android:text="Dépenses vs revenus"
+                    android:textColor="?attr/colorOnSurface" />
+
+
+            </LinearLayout>
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/spacing_l"
+            android:layout_marginTop="12dp"
             app:cardBackgroundColor="@color/arzikina_balance_card"
             app:cardCornerRadius="@dimen/corner_radius_large"
             app:cardElevation="0dp">
@@ -652,4 +685,21 @@
 
     </LinearLayout>
 
-</androidx.core.widget.NestedScrollView>
+    </androidx.core.widget.NestedScrollView>
+
+    <!-- Ajout d'une transaction — même FAB que fragment_transactions.xml (addTransactionButton),
+         réutilise la même destination transactionFormFragment (voir DashboardFragment.kt), aucune
+         nouvelle logique d'ajout. -->
+    <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
+        android:id="@+id/addTransactionButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="@dimen/spacing_m"
+        android:text=""
+        android:textColor="@color/white"
+        app:icon="@drawable/ic_add_24"
+        app:iconTint="@color/white"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>
