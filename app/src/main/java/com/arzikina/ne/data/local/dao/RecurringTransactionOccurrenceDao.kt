@@ -1,6 +1,7 @@
 package com.arzikina.ne.data.local.dao
 
 import androidx.room.Dao
+import androidx.room.Insert
 import androidx.room.Query
 import androidx.room.Upsert
 import com.arzikina.ne.data.local.entity.RecurringTransactionOccurrenceEntity
@@ -33,6 +34,12 @@ interface RecurringTransactionOccurrenceDao {
     @Query("SELECT * FROM recurring_transaction_occurrences WHERE userId = :userId AND status != 'PENDING' ORDER BY processedAt DESC")
     fun observeProcessedForUser(userId: Long): Flow<List<RecurringTransactionOccurrenceEntity>>
 
+    /** TOUS les statuts confondus, contrairement à [observePendingForUser]/[observeProcessedForUser] :
+     * utilisée par `BackupRepositoryImpl.exportBackup`, qui a besoin de l'historique complet d'une
+     * règle (pas seulement sa file d'attente ou son historique déjà traité pris séparément). */
+    @Query("SELECT * FROM recurring_transaction_occurrences WHERE userId = :userId")
+    fun observeAllForUser(userId: Long): Flow<List<RecurringTransactionOccurrenceEntity>>
+
     @Query("SELECT * FROM recurring_transaction_occurrences WHERE id = :id AND userId = :userId")
     suspend fun getById(id: Long, userId: Long): RecurringTransactionOccurrenceEntity?
 
@@ -56,8 +63,10 @@ interface RecurringTransactionOccurrenceDao {
     @Upsert
     suspend fun upsert(occurrence: RecurringTransactionOccurrenceEntity): Long
 
-    @Upsert
-    suspend fun insertAll(occurrences: List<RecurringTransactionOccurrenceEntity>)
+    /** Voir `AccountDao.insertAll` pour le raisonnement (`@Insert`, jamais `@Upsert` : toujours une
+     * insertion neuve avec `id = 0L` lors d'une restauration, jamais une mise à jour). */
+    @Insert
+    suspend fun insertAll(occurrences: List<RecurringTransactionOccurrenceEntity>): List<Long>
 
     @Query("DELETE FROM recurring_transaction_occurrences WHERE id = :id AND userId = :userId")
     suspend fun deleteById(id: Long, userId: Long)

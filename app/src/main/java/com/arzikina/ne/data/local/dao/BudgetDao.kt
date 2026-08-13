@@ -1,6 +1,7 @@
 package com.arzikina.ne.data.local.dao
 
 import androidx.room.Dao
+import androidx.room.Insert
 import androidx.room.Query
 import androidx.room.Upsert
 import com.arzikina.ne.data.local.entity.BudgetEntity
@@ -29,9 +30,10 @@ interface BudgetDao {
     @Upsert
     suspend fun upsert(budget: BudgetEntity)
 
-    /** Utilisé uniquement par la restauration d'une sauvegarde (remplacement complet). */
-    @Upsert
-    suspend fun insertAll(budgets: List<BudgetEntity>)
+    /** Voir `AccountDao.insertAll` pour le raisonnement (`@Insert`, jamais `@Upsert` : toujours une
+     * insertion neuve avec `id = 0L` lors d'une restauration, jamais une mise à jour). */
+    @Insert
+    suspend fun insertAll(budgets: List<BudgetEntity>): List<Long>
 
     @Query("DELETE FROM budgets WHERE id = :id AND userId = :userId")
     suspend fun deleteById(id: Long, userId: Long)

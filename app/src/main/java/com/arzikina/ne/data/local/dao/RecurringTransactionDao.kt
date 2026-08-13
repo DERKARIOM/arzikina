@@ -1,6 +1,7 @@
 package com.arzikina.ne.data.local.dao
 
 import androidx.room.Dao
+import androidx.room.Insert
 import androidx.room.Query
 import androidx.room.Upsert
 import com.arzikina.ne.data.local.entity.RecurringTransactionEntity
@@ -27,8 +28,10 @@ interface RecurringTransactionDao {
     @Upsert
     suspend fun upsert(recurringTransaction: RecurringTransactionEntity): Long
 
-    @Upsert
-    suspend fun insertAll(recurringTransactions: List<RecurringTransactionEntity>)
+    /** Voir `AccountDao.insertAll` pour le raisonnement (`@Insert`, jamais `@Upsert` : toujours une
+     * insertion neuve avec `id = 0L` lors d'une restauration, jamais une mise à jour). */
+    @Insert
+    suspend fun insertAll(recurringTransactions: List<RecurringTransactionEntity>): List<Long>
 
     /** Supprime aussi, en cascade SQLite, tout l'historique d'occurrences de cette règle (voir
      * `RecurringTransactionOccurrenceEntity`). Les transactions déjà enregistrées à partir de ses

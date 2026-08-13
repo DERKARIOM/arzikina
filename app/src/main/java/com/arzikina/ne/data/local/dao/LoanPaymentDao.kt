@@ -1,6 +1,7 @@
 package com.arzikina.ne.data.local.dao
 
 import androidx.room.Dao
+import androidx.room.Insert
 import androidx.room.Query
 import androidx.room.Upsert
 import com.arzikina.ne.data.local.entity.LoanPaymentEntity
@@ -34,8 +35,10 @@ interface LoanPaymentDao {
     @Upsert
     suspend fun upsert(payment: LoanPaymentEntity): Long
 
-    @Upsert
-    suspend fun insertAll(payments: List<LoanPaymentEntity>)
+    /** Voir `AccountDao.insertAll` pour le raisonnement (`@Insert`, jamais `@Upsert` : toujours une
+     * insertion neuve avec `id = 0L` lors d'une restauration, jamais une mise à jour). */
+    @Insert
+    suspend fun insertAll(payments: List<LoanPaymentEntity>): List<Long>
 
     /** Supprime UNIQUEMENT la ligne de remboursement — la transaction liée doit être supprimée
      * séparément par l'appelant (voir `LoanRepositoryImpl.deletePayment`). */

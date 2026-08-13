@@ -1,6 +1,7 @@
 package com.arzikina.ne.data.local.dao
 
 import androidx.room.Dao
+import androidx.room.Insert
 import androidx.room.Query
 import androidx.room.Upsert
 import com.arzikina.ne.data.local.entity.AccountEntity
@@ -30,8 +31,13 @@ interface AccountDao {
     @Upsert
     suspend fun upsert(account: AccountEntity): Long
 
-    @Upsert
-    suspend fun insertAll(accounts: List<AccountEntity>)
+    /** Utilisé UNIQUEMENT par la restauration d'une sauvegarde (`BackupRepositoryImpl`), qui force
+     * toujours `id = 0L` avant d'appeler cette méthode : `@Insert` (pas `@Upsert`) car c'est
+     * TOUJOURS une insertion neuve, jamais une mise à jour d'une ligne existante — voir la doc de
+     * tête de `BackupMappers` sur la réattribution des ids. Retourne les ids générés, dans le même
+     * ordre que [accounts], pour construire la table de correspondance ancien → nouvel id. */
+    @Insert
+    suspend fun insertAll(accounts: List<AccountEntity>): List<Long>
 
     @Query("DELETE FROM accounts WHERE id = :id AND userId = :userId")
     suspend fun deleteById(id: Long, userId: Long)

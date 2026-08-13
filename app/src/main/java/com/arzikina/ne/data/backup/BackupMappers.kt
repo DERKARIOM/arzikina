@@ -6,8 +6,11 @@ import com.arzikina.ne.data.local.entity.CategoryEntity
 import com.arzikina.ne.data.local.entity.LoanEntity
 import com.arzikina.ne.data.local.entity.LoanPaymentEntity
 import com.arzikina.ne.data.local.entity.PersonEntity
+import com.arzikina.ne.data.local.entity.RecurringTransactionEntity
+import com.arzikina.ne.data.local.entity.RecurringTransactionOccurrenceEntity
 import com.arzikina.ne.data.local.entity.SavingsGoalEntity
 import com.arzikina.ne.data.local.entity.TransactionEntity
+import com.arzikina.ne.data.local.entity.UserEntity
 import com.arzikina.ne.domain.model.AccountIcon
 import com.arzikina.ne.domain.model.AccountType
 import com.arzikina.ne.domain.model.BudgetPeriod
@@ -16,8 +19,11 @@ import com.arzikina.ne.domain.model.FeeType
 import com.arzikina.ne.domain.model.LoanReason
 import com.arzikina.ne.domain.model.LoanStatus
 import com.arzikina.ne.domain.model.LoanType
+import com.arzikina.ne.domain.model.OccurrenceStatus
 import com.arzikina.ne.domain.model.PaymentMethod
+import com.arzikina.ne.domain.model.RecurringFrequency
 import com.arzikina.ne.domain.model.RepaymentMode
+import com.arzikina.ne.domain.model.SecurityQuestion
 import com.arzikina.ne.domain.model.ThemeMode
 import com.arzikina.ne.domain.model.TransactionType
 import com.arzikina.ne.domain.model.UserPreferences
@@ -34,15 +40,16 @@ import com.arzikina.ne.domain.model.UserPreferences
  * l'utilisateur CONNECTÉ AU MOMENT DE L'IMPORT, indépendamment de qui avait
  * exporté le fichier à l'origine.
  *
- * Limite connue : ces mappers conservent l'`id` d'origine du fichier. Avec
- * plusieurs utilisateurs partageant les mêmes tables, cet `id` peut déjà
- * être utilisé par un AUTRE utilisateur, ce qui provoquerait un conflit ou
- * un écrasement de sa ligne. Cette restauration reste donc, pour l'instant,
- * fiable uniquement quand un seul utilisateur existe sur l'appareil (ce qui
- * est le cas jusqu'à la mise en place complète des écrans Connexion/Inscription).
- * À corriger avant l'ouverture réelle du multi-compte : réattribuer de
- * nouveaux `id` à l'import et faire correspondre les clés étrangères
- * (`accountId`/`categoryId`) à leur nouvelle valeur.
+ * Réattribution des ids à l'import (voir `BackupRepositoryImpl.importBackup`) : les `id` du
+ * fichier ne sont JAMAIS réutilisés tels quels — plusieurs utilisateurs partagent les mêmes
+ * tables sur un même appareil, un `id` du fichier pourrait déjà être pris par un autre. Chaque
+ * entité est donc insérée avec `id = 0L` (nouvel id généré par SQLite, qui ne réutilise jamais un
+ * id déjà attribué à quiconque dans la table), et les fonctions `XDto.remapIds(...)` ci-dessous
+ * réécrivent les clés étrangères (`accountId`, `categoryId`, `personId`, `loanId`,
+ * `transactionId`, `feeTransactionId`...) à partir de tables de correspondance ancien → nouvel id
+ * (`Map<Long, Long>`), construites au fur et à mesure des insertions, dans l'ordre de dépendance.
+ * Volontairement des fonctions PURES (aucune dépendance à Room) : testables directement sans
+ * base de données (voir l'étape "Tests unitaires" du plan de la fonctionnalité Sauvegarde).
  */
 
 fun AccountEntity.toDto() = AccountDto(
@@ -136,6 +143,38 @@ fun TransactionDto.toEntity(userId: Long) = TransactionEntity(
     feeType = feeType?.let { runCatching { FeeType.valueOf(it) }.getOrNull() }
 )
 
+/**
+ * Voir la doc de tête de ce fichier. Appelée en DEUX passes par `BackupRepositoryImpl` :
+ * - 1ère passe (avant insertion) : [feeTransactionIdMap] omis (vide par défaut) — `accountId`/
+ *   `transferAccountId`/`categoryId` sont déjà connus (comptes/catégories insérés avant les
+ *   transactions), mais [feeTransactionId] retombe forcément à `null` : la transaction de frais
+ *   qu'il désigne n'a peut-être pas encore reçu son nouvel id (elle peut être plus loin dans la
+ *   même liste). Résultat inséré tel quel.
+ * - 2ème passe (après insertion de TOUTES les transactions) : rappelée avec [newId] = l'id déjà
+ *   attribué à cette ligne et [feeTransactionIdMap] = la correspondance complète de la table —
+ *   permet de renseigner enfin [feeTransactionId] par une mise à jour ciblée (voir
+ *   `BackupRepositoryImpl`), sans jamais dupliquer la ligne.
+ *
+ * [accountId] est obligatoire sur une transaction (voir `TransactionEntity`) : `getValue` échoue
+ * bruyamment si l'id référencé est absent de [accountIdMap] (fichier corrompu) plutôt que
+ * d'insérer une transaction sans compte valide — l'échec annule tout l'import (transaction Room
+ * atomique, voir `BackupRepositoryImpl.importBackup`). Les clés étrangères optionnelles
+ * ([transferAccountId], [TransactionDto.categoryId], [TransactionDto.feeTransactionId]) retombent
+ * simplement sur `null` si absentes de leur table de correspondance.
+ */
+fun TransactionDto.remapIds(
+    newId: Long,
+    accountIdMap: Map<Long, Long>,
+    categoryIdMap: Map<Long, Long>,
+    feeTransactionIdMap: Map<Long, Long> = emptyMap()
+): TransactionDto = copy(
+    id = newId,
+    accountId = accountIdMap.getValue(accountId),
+    transferAccountId = transferAccountId?.let { accountIdMap[it] },
+    categoryId = categoryId?.let { categoryIdMap[it] },
+    feeTransactionId = feeTransactionId?.let { feeTransactionIdMap[it] }
+)
+
 fun BudgetEntity.toDto() = BudgetDto(
     id = id,
     categoryId = categoryId,
@@ -153,6 +192,13 @@ fun BudgetDto.toEntity(userId: Long) = BudgetEntity(
     limitAmount = limitAmount,
     currencyCode = currencyCode,
     createdAt = createdAt
+)
+
+/** Voir la doc de tête de ce fichier. `categoryId` obligatoire (voir `BudgetEntity`, index unique) :
+ * `getValue` échoue bruyamment si absent de [categoryIdMap] (fichier corrompu). */
+fun BudgetDto.remapIds(newId: Long, categoryIdMap: Map<Long, Long>): BudgetDto = copy(
+    id = newId,
+    categoryId = categoryIdMap.getValue(categoryId)
 )
 
 fun SavingsGoalEntity.toDto() = SavingsGoalDto(
@@ -232,6 +278,21 @@ fun LoanDto.toEntity(userId: Long) = LoanEntity(
     transactionId = transactionId
 )
 
+/** Voir la doc de tête de ce fichier. `personId`/`accountId`/`transactionId` tous obligatoires
+ * (voir `LoanEntity`) : `getValue` échoue bruyamment si l'un d'eux est absent de sa table de
+ * correspondance (fichier corrompu, ou transaction de décaissement manquante du fichier). */
+fun LoanDto.remapIds(
+    newId: Long,
+    personIdMap: Map<Long, Long>,
+    accountIdMap: Map<Long, Long>,
+    transactionIdMap: Map<Long, Long>
+): LoanDto = copy(
+    id = newId,
+    personId = personIdMap.getValue(personId),
+    accountId = accountIdMap.getValue(accountId),
+    transactionId = transactionIdMap.getValue(transactionId)
+)
+
 fun LoanPaymentEntity.toDto() = LoanPaymentDto(
     id = id,
     loanId = loanId,
@@ -255,6 +316,21 @@ fun LoanPaymentDto.toEntity(userId: Long) = LoanPaymentEntity(
     createdAt = createdAt
 )
 
+/** Voir la doc de tête de ce fichier. `loanId`/`accountId`/`transactionId` tous obligatoires (voir
+ * `LoanPaymentEntity`) : `getValue` échoue bruyamment si l'un d'eux est absent de sa table de
+ * correspondance. */
+fun LoanPaymentDto.remapIds(
+    newId: Long,
+    loanIdMap: Map<Long, Long>,
+    accountIdMap: Map<Long, Long>,
+    transactionIdMap: Map<Long, Long>
+): LoanPaymentDto = copy(
+    id = newId,
+    loanId = loanIdMap.getValue(loanId),
+    accountId = accountIdMap.getValue(accountId),
+    transactionId = transactionIdMap.getValue(transactionId)
+)
+
 fun UserPreferences.toDto() = UserPreferencesDto(
     themeMode = themeMode.name,
     currencyCode = currencyCode
@@ -263,4 +339,115 @@ fun UserPreferences.toDto() = UserPreferencesDto(
 fun UserPreferencesDto.toDomain() = UserPreferences(
     themeMode = runCatching { ThemeMode.valueOf(themeMode) }.getOrDefault(ThemeMode.SYSTEM),
     currencyCode = currencyCode
+)
+
+/**
+ * Voir la doc de tête de [UserDto] : PAS de `toEntity`, contrairement à toutes les autres DTO —
+ * cette entité n'est jamais recréée en base, seulement mise à jour en place par
+ * `BackupRepositoryImpl.importBackup` via `UserDao.restoreProfileFromBackup`. `profilePhotoUri`
+ * volontairement absent (voir [UserDto]).
+ */
+fun UserEntity.toDto() = UserDto(
+    fullName = fullName,
+    username = username,
+    email = email,
+    phoneNumber = phoneNumber,
+    passwordHash = passwordHash,
+    securityQuestion = securityQuestion.name,
+    securityAnswerHash = securityAnswerHash,
+    createdAt = createdAt
+)
+
+/** Repli sur la première question de la liste si le fichier contient une valeur inconnue/corrompue
+ * (même convention que les autres enums de ce fichier) — la réponse hachée resterait alors
+ * associée à une question affichée différente de l'originale, limite acceptée pour un cas de
+ * fichier corrompu qui ne devrait normalement jamais se produire. */
+fun UserDto.securityQuestionOrDefault(): SecurityQuestion =
+    runCatching { SecurityQuestion.valueOf(securityQuestion) }.getOrDefault(SecurityQuestion.entries.first())
+
+fun RecurringTransactionEntity.toDto() = RecurringTransactionDto(
+    id = id,
+    type = type.name,
+    amount = amount,
+    accountId = accountId,
+    categoryId = categoryId,
+    description = description,
+    paymentMethod = paymentMethod?.name,
+    startDate = startDate,
+    endDate = endDate,
+    frequency = frequency.name,
+    nextExecutionDate = nextExecutionDate,
+    isActive = isActive,
+    createdAt = createdAt,
+    updatedAt = updatedAt
+)
+
+fun RecurringTransactionDto.toEntity(userId: Long) = RecurringTransactionEntity(
+    id = id,
+    userId = userId,
+    type = runCatching { TransactionType.valueOf(type) }.getOrDefault(TransactionType.EXPENSE),
+    amount = amount,
+    accountId = accountId,
+    categoryId = categoryId,
+    description = description,
+    // `null` reste `null` (moyen de paiement non précisé) — même raisonnement que TransactionDto.toEntity.
+    paymentMethod = paymentMethod?.let { runCatching { PaymentMethod.valueOf(it) }.getOrNull() },
+    startDate = startDate,
+    endDate = endDate,
+    frequency = runCatching { RecurringFrequency.valueOf(frequency) }.getOrDefault(RecurringFrequency.MONTHLY),
+    nextExecutionDate = nextExecutionDate,
+    isActive = isActive,
+    createdAt = createdAt,
+    updatedAt = updatedAt
+)
+
+/** Voir la doc de tête de ce fichier. `accountId` obligatoire (voir `RecurringTransactionEntity`) :
+ * `getValue` échoue bruyamment si absent de [accountIdMap] (fichier corrompu). `categoryId`
+ * nullable (réservé à un futur type transfert, jamais `null` aujourd'hui en pratique) : retombe
+ * simplement sur `null` si absent de [categoryIdMap]. */
+fun RecurringTransactionDto.remapIds(
+    newId: Long,
+    accountIdMap: Map<Long, Long>,
+    categoryIdMap: Map<Long, Long>
+): RecurringTransactionDto = copy(
+    id = newId,
+    accountId = accountIdMap.getValue(accountId),
+    categoryId = categoryId?.let { categoryIdMap[it] }
+)
+
+fun RecurringTransactionOccurrenceEntity.toDto() = RecurringTransactionOccurrenceDto(
+    id = id,
+    recurringTransactionId = recurringTransactionId,
+    scheduledDate = scheduledDate,
+    status = status.name,
+    transactionId = transactionId,
+    processedAt = processedAt,
+    createdAt = createdAt
+)
+
+fun RecurringTransactionOccurrenceDto.toEntity(userId: Long) = RecurringTransactionOccurrenceEntity(
+    id = id,
+    userId = userId,
+    recurringTransactionId = recurringTransactionId,
+    scheduledDate = scheduledDate,
+    status = runCatching { OccurrenceStatus.valueOf(status) }.getOrDefault(OccurrenceStatus.PENDING),
+    transactionId = transactionId,
+    processedAt = processedAt,
+    createdAt = createdAt
+)
+
+/** Voir la doc de tête de ce fichier. `recurringTransactionId` obligatoire (voir
+ * `RecurringTransactionOccurrenceEntity`) : `getValue` échoue bruyamment si absent de
+ * [recurringTransactionIdMap] (fichier corrompu). `transactionId` nullable — `null` tant que
+ * l'occurrence reste `PENDING`/`REJECTED` (voir [RecurringTransactionOccurrenceDto]) — retombe sur
+ * `null` si absent de [transactionIdMap], au lieu d'échouer, puisqu'une occurrence `PENDING` n'a de
+ * toute façon jamais de `transactionId` à remapper. */
+fun RecurringTransactionOccurrenceDto.remapIds(
+    newId: Long,
+    recurringTransactionIdMap: Map<Long, Long>,
+    transactionIdMap: Map<Long, Long>
+): RecurringTransactionOccurrenceDto = copy(
+    id = newId,
+    recurringTransactionId = recurringTransactionIdMap.getValue(recurringTransactionId),
+    transactionId = transactionId?.let { transactionIdMap[it] }
 )

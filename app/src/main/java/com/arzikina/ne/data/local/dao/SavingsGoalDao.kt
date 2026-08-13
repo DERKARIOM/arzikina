@@ -1,6 +1,7 @@
 package com.arzikina.ne.data.local.dao
 
 import androidx.room.Dao
+import androidx.room.Insert
 import androidx.room.Query
 import androidx.room.Upsert
 import com.arzikina.ne.data.local.entity.SavingsGoalEntity
@@ -19,9 +20,10 @@ interface SavingsGoalDao {
     @Upsert
     suspend fun upsert(goal: SavingsGoalEntity)
 
-    /** Utilisé uniquement par la restauration d'une sauvegarde (remplacement complet). */
-    @Upsert
-    suspend fun insertAll(goals: List<SavingsGoalEntity>)
+    /** Voir `AccountDao.insertAll` pour le raisonnement (`@Insert`, jamais `@Upsert` : toujours une
+     * insertion neuve avec `id = 0L` lors d'une restauration, jamais une mise à jour). */
+    @Insert
+    suspend fun insertAll(goals: List<SavingsGoalEntity>): List<Long>
 
     @Query("UPDATE savings_goals SET currentAmount = currentAmount + :amountDelta WHERE id = :id AND userId = :userId")
     suspend fun addContribution(id: Long, amountDelta: Long, userId: Long)

@@ -1,6 +1,7 @@
 package com.arzikina.ne.data.local.dao
 
 import androidx.room.Dao
+import androidx.room.Insert
 import androidx.room.Query
 import androidx.room.Upsert
 import com.arzikina.ne.data.local.entity.PersonEntity
@@ -20,8 +21,10 @@ interface PersonDao {
     @Upsert
     suspend fun upsert(person: PersonEntity): Long
 
-    @Upsert
-    suspend fun insertAll(persons: List<PersonEntity>)
+    /** Voir `AccountDao.insertAll` pour le raisonnement (`@Insert`, jamais `@Upsert` : toujours une
+     * insertion neuve avec `id = 0L` lors d'une restauration, jamais une mise à jour). */
+    @Insert
+    suspend fun insertAll(persons: List<PersonEntity>): List<Long>
 
     /** Supprime aussi, en cascade SQLite, tous les prêts/emprunts de cette personne (voir
      * `LoanEntity`) — et donc leurs remboursements. Les transactions liées ne sont PAS supprimées

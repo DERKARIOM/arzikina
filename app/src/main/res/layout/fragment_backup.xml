@@ -17,7 +17,7 @@
         android:background="?attr/colorSurface"
         app:layout_constraintTop_toTopOf="parent"
         app:navigationIcon="@drawable/ic_arrow_back_24"
-        app:title="@string/utility_backup_title"
+        app:title="@string/backup_screen_title"
         app:titleTextColor="?attr/colorOnSurface" />
 
     <androidx.core.widget.NestedScrollView
@@ -53,22 +53,54 @@
 
             </com.google.android.material.card.MaterialCardView>
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/exportButton"
+            <FrameLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/spacing_l"
-                app:icon="@drawable/ic_cloud_backup_24"
-                android:text="@string/settings_backup_export_action" />
+                android:layout_marginTop="@dimen/spacing_l">
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/importButton"
-                style="?attr/materialButtonOutlinedStyle"
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/exportButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    app:icon="@drawable/ic_cloud_backup_24"
+                    android:text="@string/settings_backup_export_action" />
+
+                <com.google.android.material.progressindicator.CircularProgressIndicator
+                    android:id="@+id/exportProgressIndicator"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:layout_gravity="center"
+                    android:indeterminate="true"
+                    android:visibility="gone"
+                    app:indicatorColor="?attr/colorOnPrimary"
+                    app:trackColor="@android:color/transparent" />
+
+            </FrameLayout>
+
+            <FrameLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/spacing_m"
-                app:icon="@drawable/ic_cloud_backup_24"
-                android:text="@string/settings_backup_import_action" />
+                android:layout_marginTop="@dimen/spacing_m">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/importButton"
+                    style="?attr/materialButtonOutlinedStyle"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    app:icon="@drawable/ic_cloud_backup_24"
+                    android:text="@string/settings_backup_import_action" />
+
+                <com.google.android.material.progressindicator.CircularProgressIndicator
+                    android:id="@+id/importProgressIndicator"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:layout_gravity="center"
+                    android:indeterminate="true"
+                    android:visibility="gone"
+                    app:indicatorColor="?attr/colorPrimary"
+                    app:trackColor="@android:color/transparent" />
+
+            </FrameLayout>
 
         </LinearLayout>
 

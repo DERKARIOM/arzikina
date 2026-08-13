@@ -1,6 +1,7 @@
 package com.arzikina.ne.data.local.dao
 
 import androidx.room.Dao
+import androidx.room.Insert
 import androidx.room.Query
 import androidx.room.Upsert
 import com.arzikina.ne.data.local.entity.TransactionEntity
@@ -40,9 +41,14 @@ interface TransactionDao {
     @Upsert
     suspend fun upsert(transaction: TransactionEntity): Long
 
-    /** Utilisé uniquement par la restauration d'une sauvegarde (remplacement complet). */
-    @Upsert
-    suspend fun insertAll(transactions: List<TransactionEntity>)
+    /** Voir `AccountDao.insertAll` pour le raisonnement (`@Insert`, jamais `@Upsert` : toujours une
+     * insertion neuve avec `id = 0L` lors d'une restauration, jamais une mise à jour). Utilisé en
+     * DEUX passes par `BackupRepositoryImpl` pour la transaction de frais auto-référencée (voir
+     * `feeTransactionId`) : cette première passe insère avec `feeTransactionId = null`, une
+     * deuxième passe (`upsert` ligne à ligne) réécrit ensuite ce pointeur une fois tous les
+     * nouveaux ids connus. */
+    @Insert
+    suspend fun insertAll(transactions: List<TransactionEntity>): List<Long>
 
     @Query("DELETE FROM transactions WHERE id = :id AND userId = :userId")
     suspend fun deleteById(id: Long, userId: Long)

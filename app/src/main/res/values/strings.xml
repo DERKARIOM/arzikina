@@ -25,14 +25,18 @@
     <string name="settings_section_language">Langue</string>
     <string name="settings_language_french_only">Français uniquement pour le moment. D\'autres langues seront proposées ici.</string>
     <string name="settings_section_backup">Sauvegarde</string>
-    <string name="settings_backup_description">Exporte toutes tes données (comptes, catégories, transactions, budgets, objectifs) dans un fichier, ou restaure une sauvegarde précédente.</string>
-    <string name="settings_backup_export_action">Exporter</string>
-    <string name="settings_backup_import_action">Importer</string>
-    <string name="settings_backup_export_success">Export réussi : %1$d comptes, %2$d catégories, %3$d transactions, %4$d budgets, %5$d objectifs, %6$d prêts/emprunts.</string>
-    <string name="settings_backup_import_success">Importation réussie : %1$d comptes, %2$d catégories, %3$d transactions, %4$d budgets, %5$d objectifs, %6$d prêts/emprunts.</string>
+    <!-- Titre de la page dédiée "Sauvegarde et restauration" (barre d'outils + nav_graph), DISTINCT
+         de "utility_backup_title" — celui-ci reste court ("Sauvegarder") pour la tuile compacte du
+         bloc Utilitaires du Dashboard, comme les autres tuiles ("Emprunts", "Planifications"). -->
+    <string name="backup_screen_title">Sauvegarde et restauration</string>
+    <string name="settings_backup_description">Exporte toutes tes données (comptes, catégories, transactions, frais, budgets, objectifs d\'épargne, prêts/emprunts, transactions planifiées, profil) dans un fichier, ou restaure une sauvegarde précédente.</string>
+    <string name="settings_backup_export_action">Sauvegarder mes données</string>
+    <string name="settings_backup_import_action">Restaurer mes données</string>
+    <string name="settings_backup_export_success">Export réussi : %1$d comptes, %2$d catégories, %3$d transactions, %4$d budgets, %5$d objectifs, %6$d prêts/emprunts, %7$d transactions planifiées, %8$d occurrences.</string>
+    <string name="settings_backup_import_success">Importation réussie : %1$d comptes, %2$d catégories, %3$d transactions, %4$d budgets, %5$d objectifs, %6$d prêts/emprunts, %7$d transactions planifiées, %8$d occurrences.</string>
     <string name="settings_backup_error_prefix">Échec :</string>
     <string name="settings_backup_import_confirm_title">Remplacer toutes les données ?</string>
-    <string name="settings_backup_import_confirm_message">L\'importation remplace définitivement toutes les données actuelles (comptes, catégories, transactions, budgets, objectifs) par celles du fichier choisi. Cette action est irréversible.</string>
+    <string name="settings_backup_import_confirm_message">L\'importation remplace définitivement toutes les données actuelles (comptes, catégories, transactions, frais, budgets, objectifs d\'épargne, prêts/emprunts, transactions planifiées, profil) par celles du fichier choisi. Cette action est irréversible.</string>
     <string name="settings_backup_import_confirm_action">Remplacer</string>
     <string name="settings_section_about">À propos</string>
     <string name="settings_about_version">Arzikina — version %1$s</string>

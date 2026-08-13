@@ -61,6 +61,25 @@ class BackupFragment : Fragment(R.layout.fragment_backup) {
                 viewModel.events.collect { event -> handleEvent(event) }
             }
         }
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.uiState.collect { state -> render(viewBinding, state) }
+            }
+        }
+    }
+
+    /** Voir [BackupUiState] : un bouton en cours affiche son texte remplacé par un indicateur
+     * centré (même convention que `fragment_login.xml`/`LoginFragment`) ; l'AUTRE bouton reste
+     * visible avec son texte, mais désactivé — jamais les deux opérations en même temps. */
+    private fun render(binding: FragmentBackupBinding, state: BackupUiState) {
+        binding.exportButton.isEnabled = !state.isBusy
+        binding.exportButton.text = if (state.isExporting) "" else getString(R.string.settings_backup_export_action)
+        binding.exportProgressIndicator.visibility = if (state.isExporting) View.VISIBLE else View.GONE
+
+        binding.importButton.isEnabled = !state.isBusy
+        binding.importButton.text = if (state.isImporting) "" else getString(R.string.settings_backup_import_action)
+        binding.importProgressIndicator.visibility = if (state.isImporting) View.VISIBLE else View.GONE
     }
 
     override fun onDestroyView() {
@@ -106,6 +125,8 @@ class BackupFragment : Fragment(R.layout.fragment_backup) {
         result.transactionsCount,
         result.budgetsCount,
         result.savingsGoalsCount,
-        result.loansCount
+        result.loansCount,
+        result.recurringTransactionsCount,
+        result.occurrencesCount
     )
 }

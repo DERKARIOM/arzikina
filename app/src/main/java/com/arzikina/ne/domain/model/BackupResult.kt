@@ -12,5 +12,10 @@ data class BackupResult(
     val transactionsCount: Int,
     val budgetsCount: Int,
     val savingsGoalsCount: Int,
-    val loansCount: Int = 0
+    val loansCount: Int = 0,
+    /** Voir `RecurringTransactionDto` — nombre de RÈGLES récurrentes (pas leurs occurrences,
+     * voir [occurrencesCount] séparément), ajouté en même temps que leur prise en charge par la
+     * sauvegarde. */
+    val recurringTransactionsCount: Int = 0,
+    val occurrencesCount: Int = 0
 )

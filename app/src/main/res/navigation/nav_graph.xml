@@ -323,7 +323,7 @@
     <fragment
         android:id="@+id/backupFragment"
         android:name="com.arzikina.ne.presentation.settings.BackupFragment"
-        android:label="@string/utility_backup_title"
+        android:label="@string/backup_screen_title"
         tools:layout="@layout/fragment_backup" />
 
     <fragment
