@@ -59,7 +59,12 @@ data class AccountDto(
      */
     val cardLastFourDigits: String? = null,
     val cardExpiryMonth: Int? = null,
-    val cardExpiryYear: Int? = null
+    val cardExpiryYear: Int? = null,
+    /** Ajouté après coup (voir `domain/model/Account.isExcludedFromStatistics`) : défaut
+     * `false` pour rester compatible avec les fichiers exportés avant son existence — un
+     * ancien fichier restauré recrée des comptes tous inclus dans les statistiques,
+     * comme c'était implicitement le cas avant cette fonctionnalité. */
+    val isExcludedFromStatistics: Boolean = false
 )
 
 @Serializable

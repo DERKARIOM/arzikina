@@ -184,6 +184,16 @@
     <string name="account_form_card_number_helper_edit">Laisser vide pour conserver le numéro se terminant par %s</string>
     <string name="account_form_card_expiry_label">Expiration (MM/AA)</string>
     <string name="account_form_card_cvv_label">Code de sécurité (CVV/CVC)</string>
+    <!-- Voir excludeFromStatisticsCard (fragment_account_form.xml) et Account.isExcludedFromStatistics :
+         permet de détenir de l'argent pour le compte d'un tiers sans qu'il compte dans le patrimoine
+         personnel affiché (Dashboard, Statistiques, Budgets), tout en gardant le compte pleinement
+         fonctionnel. -->
+    <string name="account_form_exclude_statistics_label">Exclure des statistiques</string>
+    <string name="account_form_exclude_statistics_description">Ce compte reste visible et pleinement utilisable, mais son solde et ses transactions ne compteront plus dans vos statistiques personnelles (tableau de bord, revenus/dépenses, budgets). Utile pour de l\'argent géré pour le compte de quelqu\'un d\'autre.</string>
+    <!-- Indicateur discret sur la carte du compte dans la liste "Mes comptes" (voir
+         AccountCardBinder/AccountCardCreditBinder), visible uniquement si
+         Account.isExcludedFromStatistics est vrai. -->
+    <string name="accounts_excluded_from_statistics_indicator">Exclu des statistiques personnelles</string>
 
     <!-- Catégories -->
     <string name="dashboard_categories_action">Gérer mes catégories</string>

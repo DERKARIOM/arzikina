@@ -43,5 +43,9 @@ data class AccountEntity(
     /** Voir [com.arzikina.ne.domain.model.Account.cardExpiryMonth]. */
     val cardExpiryMonth: Int? = null,
     /** Voir [com.arzikina.ne.domain.model.Account.cardExpiryYear]. */
-    val cardExpiryYear: Int? = null
+    val cardExpiryYear: Int? = null,
+    /** Voir [com.arzikina.ne.domain.model.Account.isExcludedFromStatistics] — ajouté en v15 (voir
+     * `MIGRATION_14_15`). `false` par défaut : un compte existant reste inclus dans les
+     * statistiques exactement comme avant l'introduction de ce champ. */
+    val isExcludedFromStatistics: Boolean = false
 )

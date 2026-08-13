@@ -55,7 +55,8 @@ fun AccountEntity.toDto() = AccountDto(
     type = type.name,
     cardLastFourDigits = cardLastFourDigits,
     cardExpiryMonth = cardExpiryMonth,
-    cardExpiryYear = cardExpiryYear
+    cardExpiryYear = cardExpiryYear,
+    isExcludedFromStatistics = isExcludedFromStatistics
 )
 
 fun AccountDto.toEntity(userId: Long) = AccountEntity(
@@ -70,7 +71,8 @@ fun AccountDto.toEntity(userId: Long) = AccountEntity(
     type = runCatching { AccountType.valueOf(type) }.getOrDefault(AccountType.CASH),
     cardLastFourDigits = cardLastFourDigits,
     cardExpiryMonth = cardExpiryMonth,
-    cardExpiryYear = cardExpiryYear
+    cardExpiryYear = cardExpiryYear,
+    isExcludedFromStatistics = isExcludedFromStatistics
 )
 
 fun CategoryEntity.toDto() = CategoryDto(

@@ -10,6 +10,7 @@ import com.arzikina.ne.domain.repository.CategoryRepository
 import com.arzikina.ne.domain.repository.TransactionRepository
 import com.arzikina.ne.domain.repository.UserPreferencesRepository
 import com.arzikina.ne.util.AppResult
+import com.arzikina.ne.util.PersonalStatistics
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -55,6 +56,12 @@ data class StatisticsUiState(
  * prises en compte. Contrairement au tableau de bord (qui regroupe les
  * montants par devise), un graphique ne peut pas comparer plusieurs devises
  * sur un même axe sans conversion de change.
+ *
+ * Les comptes exclus des statistiques personnelles ([PersonalStatistics]) sont
+ * retirés AVANT le filtre de devise ci-dessus : cet écran n'agrège jamais un
+ * solde (seulement des revenus/dépenses par catégorie et par mois), donc aucun
+ * traitement particulier des virements n'est nécessaire ici (contrairement au
+ * Dashboard, voir [com.arzikina.ne.presentation.dashboard.DashboardViewModel]).
  */
 @HiltViewModel
 class StatisticsViewModel @Inject constructor(
@@ -71,11 +78,12 @@ class StatisticsViewModel @Inject constructor(
         userPreferencesRepository.observePreferences()
     ) { accounts, categories, transactions, preferences ->
         val categoriesById = categories.associateBy { it.id }
-        val primaryCurrencyAccountIds = accounts
+        val personalScope = PersonalStatistics.scope(accounts, transactions)
+        val primaryCurrencyAccountIds = personalScope.accounts
             .filter { it.currencyCode == preferences.currencyCode }
             .map { it.id }
             .toSet()
-        val relevantTransactions = transactions.filter { it.accountId in primaryCurrencyAccountIds }
+        val relevantTransactions = personalScope.transactions.filter { it.accountId in primaryCurrencyAccountIds }
 
         StatisticsUiState(
             currencyCode = preferences.currencyCode,

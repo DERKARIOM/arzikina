@@ -52,6 +52,11 @@ data class AccountFormState(
      * juste la couleur) — voir [save], puisqu'ils ne sont jamais conservés en base.
      */
     val existingCardLastFourDigits: String? = null,
+    /**
+     * Voir [Account.isExcludedFromStatistics] — `false` par défaut, y compris pour un NOUVEAU
+     * compte (un compte compte dans les statistiques personnelles sauf choix explicite contraire).
+     */
+    val isExcludedFromStatistics: Boolean = false,
     val nameError: String? = null,
     val balanceError: String? = null,
     val cardNumberError: String? = null,
@@ -114,7 +119,8 @@ class AccountFormViewModel @Inject constructor(
                             } else {
                                 ""
                             },
-                            existingCardLastFourDigits = account.cardLastFourDigits
+                            existingCardLastFourDigits = account.cardLastFourDigits,
+                            isExcludedFromStatistics = account.isExcludedFromStatistics
                         )
                     }
                 }
@@ -166,6 +172,10 @@ class AccountFormViewModel @Inject constructor(
 
     fun onCardCvvChange(value: String) {
         _formState.update { it.copy(cardCvvInput = CardInputFormatter.cvvDigits(value), cardCvvError = null) }
+    }
+
+    fun onExcludedFromStatisticsChange(value: Boolean) {
+        _formState.update { it.copy(isExcludedFromStatistics = value) }
     }
 
     fun save() {
@@ -234,7 +244,8 @@ class AccountFormViewModel @Inject constructor(
                     type = state.type,
                     cardLastFourDigits = cardLastFourDigits,
                     cardExpiryMonth = cardExpiryMonth,
-                    cardExpiryYear = cardExpiryYear
+                    cardExpiryYear = cardExpiryYear,
+                    isExcludedFromStatistics = state.isExcludedFromStatistics
                 )
             )
             if (hasNewCardSecrets) {

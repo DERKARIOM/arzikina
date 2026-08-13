@@ -60,6 +60,7 @@ class AccountFormFragment : Fragment(R.layout.fragment_account_form) {
         setUpPickers(viewBinding)
         setUpCurrencyDropdown(viewBinding)
         setUpInputs(viewBinding)
+        setUpExcludeFromStatisticsSwitch(viewBinding)
 
         viewBinding.saveButton.setOnClickListener { viewModel.save() }
 
@@ -138,6 +139,12 @@ class AccountFormFragment : Fragment(R.layout.fragment_account_form) {
         }
     }
 
+    private fun setUpExcludeFromStatisticsSwitch(binding: FragmentAccountFormBinding) {
+        binding.excludeFromStatisticsSwitch.setOnCheckedChangeListener { _, isChecked ->
+            viewModel.onExcludedFromStatisticsChange(isChecked)
+        }
+    }
+
     private fun render(state: AccountFormState) {
         val binding = binding ?: return
 
@@ -160,6 +167,10 @@ class AccountFormFragment : Fragment(R.layout.fragment_account_form) {
 
         iconPickerAdapter.setSelected(state.icon)
         colorPickerAdapter.setSelected(state.colorArgb)
+
+        if (binding.excludeFromStatisticsSwitch.isChecked != state.isExcludedFromStatistics) {
+            binding.excludeFromStatisticsSwitch.isChecked = state.isExcludedFromStatistics
+        }
 
         val typeLabel = getString(state.type.displayTextRes())
         if (binding.typeField.dropdownInput.text?.toString() != typeLabel) {

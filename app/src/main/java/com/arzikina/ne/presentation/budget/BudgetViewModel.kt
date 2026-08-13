@@ -8,6 +8,7 @@ import com.arzikina.ne.domain.repository.CategoryRepository
 import com.arzikina.ne.domain.repository.TransactionRepository
 import com.arzikina.ne.util.AppResult
 import com.arzikina.ne.util.BudgetProgress
+import com.arzikina.ne.util.PersonalStatistics
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -25,6 +26,12 @@ import javax.inject.Inject
  * La progression n'est jamais stockée en base : elle est recalculée à chaque
  * changement de transaction via [BudgetProgress], partagé avec l'aperçu
  * Budget du tableau de bord (voir [com.arzikina.ne.presentation.dashboard.DashboardViewModel]).
+ *
+ * Un [com.arzikina.ne.domain.model.Budget] n'a aujourd'hui aucun lien vers un compte précis
+ * (pas de champ `accountId` — uniquement `categoryId` + période) : TOUS les budgets excluent donc
+ * par défaut les transactions des comptes exclus des statistiques ([PersonalStatistics]), sans
+ * exception possible pour l'instant. Un futur rattachement explicite budget↔compte nécessiterait
+ * sa propre évolution du modèle de données.
  */
 @HiltViewModel
 class BudgetViewModel @Inject constructor(
@@ -42,9 +49,10 @@ class BudgetViewModel @Inject constructor(
     ) { budgets, categories, accounts, transactions ->
         val categoriesById = categories.associateBy { it.id }
         val accountsById = accounts.associateBy { it.id }
+        val personalScope = PersonalStatistics.scope(accounts, transactions)
 
         budgets.map { budget ->
-            val result = BudgetProgress.compute(budget, transactions, accountsById)
+            val result = BudgetProgress.compute(budget, personalScope.transactions, accountsById)
             BudgetUiItem(
                 budget = budget,
                 category = categoriesById[budget.categoryId],

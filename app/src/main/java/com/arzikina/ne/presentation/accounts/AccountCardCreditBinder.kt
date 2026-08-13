@@ -65,6 +65,10 @@ object AccountCardCreditBinder {
             context.getString(R.string.account_card_masked_cvv)
         }
 
+        // Même indicateur discret que AccountCardBinder (voir sa doc), GONE par défaut.
+        binding.exclusionIndicator.visibility =
+            if (account.isExcludedFromStatistics) View.VISIBLE else View.GONE
+
         if (showVisibilityToggle) {
             binding.cardVisibilityToggle.visibility = View.VISIBLE
             binding.cardVisibilityToggle.setImageResource(

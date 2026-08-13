@@ -1,6 +1,7 @@
 package com.arzikina.ne.presentation.accounts
 
 import android.content.res.ColorStateList
+import android.view.View
 import com.arzikina.ne.databinding.ItemAccountBinding
 import com.arzikina.ne.domain.model.Account
 import com.arzikina.ne.domain.model.CurrencyAmount
@@ -26,5 +27,10 @@ object AccountCardBinder {
         binding.accountName.text = account.name
         binding.accountType.text = context.getString(account.icon.displayTextRes())
         binding.accountBalance.text = Money.format(CurrencyAmount(account.currencyCode, currentBalance))
+
+        // Voir Account.isExcludedFromStatistics / item_account.xml (exclusionIndicator) : seul
+        // indicateur visuel de cette fonctionnalité dans la liste, GONE par défaut.
+        binding.exclusionIndicator.visibility =
+            if (account.isExcludedFromStatistics) View.VISIBLE else View.GONE
     }
 }

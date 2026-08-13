@@ -21,6 +21,7 @@ import com.arzikina.ne.presentation.budget.BudgetUiItem
 import com.arzikina.ne.presentation.transactions.TransactionUiItem
 import com.arzikina.ne.util.AppResult
 import com.arzikina.ne.util.BudgetProgress
+import com.arzikina.ne.util.PersonalStatistics
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -123,16 +124,21 @@ class DashboardViewModel @Inject constructor(
         val (accounts, transactions, categories, budgets, user) = base
         val accountsById = accounts.associateBy { it.id }
         val categoriesById = categories.associateBy { it.id }
+        // Périmètre "statistiques personnelles" (voir PersonalStatistics) : SEUL endroit du
+        // Dashboard qui teste `isExcludedFromStatistics`, indirectement via ce filtre centralisé.
+        val personalScope = PersonalStatistics.scope(accounts, transactions)
 
         val currentMonth = YearMonth.now()
-        val monthlyTransactions = transactions.filter { transaction ->
+        val monthlyPersonalTransactions = personalScope.transactions.filter { transaction ->
             YearMonth.from(transaction.dateAsZonedDateTime()) == currentMonth
         }
 
         DashboardUiState(
-            balances = computeBalances(accounts, transactions),
-            monthlyIncome = sumByAccountCurrency(monthlyTransactions, TransactionType.INCOME, accountsById),
-            monthlyExpense = sumByAccountCurrency(monthlyTransactions, TransactionType.EXPENSE, accountsById),
+            balances = computeBalances(accounts, transactions, personalScope.accounts),
+            monthlyIncome = sumByAccountCurrency(monthlyPersonalTransactions, TransactionType.INCOME, accountsById),
+            monthlyExpense = sumByAccountCurrency(monthlyPersonalTransactions, TransactionType.EXPENSE, accountsById),
+            // Flux d'activité brut, PAS une statistique agrégée : continue d'afficher les
+            // transactions de TOUS les comptes, exclus ou non (voir cahier des charges).
             recentTransactions = transactions.take(RECENT_TRANSACTIONS_LIMIT).map { transaction ->
                 TransactionUiItem(
                     transaction = transaction,
@@ -141,7 +147,7 @@ class DashboardViewModel @Inject constructor(
                     category = transaction.categoryId?.let { categoriesById[it] }
                 )
             },
-            featuredBudget = featuredBudget(budgets, categoriesById, transactions, accountsById),
+            featuredBudget = featuredBudget(budgets, categoriesById, personalScope.transactions, accountsById),
             userFullName = user?.fullName.orEmpty(),
             userProfilePhotoUri = user?.profilePhotoUri,
             cardNumberLastDigits = cardNumberLastDigits(user?.id),
@@ -157,13 +163,24 @@ class DashboardViewModel @Inject constructor(
         )
 
     /**
-     * Solde de chaque compte (voir [computeCurrentBalances], qui gère aussi
-     * le crédit du compte destination d'un transfert), regroupé par devise
+     * Solde total PERSONNEL (comptes exclus des statistiques non comptés), regroupé par devise
      * (voir [CurrencyAmount]).
+     *
+     * Le solde de CHAQUE compte est calculé via [computeCurrentBalances] sur la totalité des
+     * comptes/transactions ([allAccounts]/[allTransactions], jamais filtrés) : un virement
+     * touchant un compte exclu doit rester exact des DEUX côtés (débit et crédit), y compris pour
+     * le compte inclus concerné. Seule la SOMME finale ne parcourt que [includedAccounts] (voir
+     * [PersonalStatistics]) — filtrer les comptes à additionner plutôt que les transactions en
+     * amont évite de fausser le solde réel d'un compte inclus qui aurait reçu un virement d'un
+     * compte exclu (ou l'inverse).
      */
-    private fun computeBalances(accounts: List<Account>, transactions: List<Transaction>): List<CurrencyAmount> {
-        val balancesByAccount = computeCurrentBalances(accounts, transactions)
-        return accounts
+    private fun computeBalances(
+        allAccounts: List<Account>,
+        allTransactions: List<Transaction>,
+        includedAccounts: List<Account>
+    ): List<CurrencyAmount> {
+        val balancesByAccount = computeCurrentBalances(allAccounts, allTransactions)
+        return includedAccounts
             .groupBy { it.currencyCode }
             .map { (currencyCode, accountsInCurrency) ->
                 val total = accountsInCurrency.sumOf { account -> balancesByAccount[account.id] ?: account.initialBalance }

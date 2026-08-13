@@ -64,6 +64,25 @@
             app:layout_constraintTop_toTopOf="@id/cardChip"
             tools:text="150 000 F CFA" />
 
+        <!--
+            Même indicateur discret que item_account.xml (voir sa doc) — position identique
+            (juste devant le solde) pour un comportement uniforme entre les deux types de carte.
+        -->
+        <ImageView
+            android:id="@+id/exclusionIndicator"
+            android:layout_width="16dp"
+            android:layout_height="16dp"
+            android:layout_marginEnd="@dimen/spacing_xs"
+            android:alpha="0.85"
+            android:contentDescription="@string/accounts_excluded_from_statistics_indicator"
+            android:src="@drawable/ic_visibility_off_24"
+            android:visibility="gone"
+            app:layout_constraintBottom_toBottomOf="@id/accountBalance"
+            app:layout_constraintEnd_toStartOf="@id/accountBalance"
+            app:layout_constraintTop_toTopOf="@id/accountBalance"
+            app:tint="@android:color/white"
+            tools:visibility="visible" />
+
         <TextView
             android:id="@+id/accountName"
             style="@style/TextAppearance.Material3.TitleMedium"

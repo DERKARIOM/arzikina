@@ -110,6 +110,27 @@
             app:layout_constraintTop_toTopOf="parent"
             tools:text="150 000 F CFA" />
 
+        <!--
+            Indicateur discret "compte exclu des statistiques" (voir Account.isExcludedFromStatistics) :
+            GONE par défaut, affiché juste devant le solde par AccountCardBinder — emplacement
+            volontaire pour associer visuellement l'icône au chiffre qu'elle concerne, sans ajouter
+            de bandeau ni toucher aux contraintes existantes d'accountBalance.
+        -->
+        <ImageView
+            android:id="@+id/exclusionIndicator"
+            android:layout_width="16dp"
+            android:layout_height="16dp"
+            android:layout_marginEnd="@dimen/spacing_xs"
+            android:alpha="0.85"
+            android:contentDescription="@string/accounts_excluded_from_statistics_indicator"
+            android:src="@drawable/ic_visibility_off_24"
+            android:visibility="gone"
+            app:layout_constraintBottom_toBottomOf="@id/accountBalance"
+            app:layout_constraintEnd_toStartOf="@id/accountBalance"
+            app:layout_constraintTop_toTopOf="@id/accountBalance"
+            app:tint="@android:color/white"
+            tools:visibility="visible" />
+
         <TextView
             android:id="@+id/cardBadge"
             style="@style/TextAppearance.Material3.LabelMedium"

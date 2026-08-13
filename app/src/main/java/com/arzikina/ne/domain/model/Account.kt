@@ -21,6 +21,14 @@ package com.arzikina.ne.domain.model
  * @param cardExpiryMonth, @param cardExpiryYear date d'expiration de la
  * carte (mois 1-12, année sur 4 chiffres) ; `null` sauf pour
  * [AccountType.CREDIT_CARD].
+ * @param isExcludedFromStatistics quand `true`, ce compte reste pleinement
+ * fonctionnel (visible, solde réel affiché, transactions normales) mais son
+ * solde et ses transactions ne comptent dans AUCUNE statistique personnelle
+ * (solde total du Dashboard, revenus/dépenses, répartition par catégorie,
+ * évolution, budgets...) — utile pour de l'argent détenu pour le compte
+ * d'un tiers. Voir [com.arzikina.ne.util.PersonalStatistics], point
+ * d'entrée UNIQUE de ce filtrage : aucun autre endroit du code ne doit
+ * tester ce champ directement. `false` par défaut.
  */
 data class Account(
     val id: Long = 0L,
@@ -33,5 +41,6 @@ data class Account(
     val type: AccountType = AccountType.CASH,
     val cardLastFourDigits: String? = null,
     val cardExpiryMonth: Int? = null,
-    val cardExpiryYear: Int? = null
+    val cardExpiryYear: Int? = null,
+    val isExcludedFromStatistics: Boolean = false
 )

@@ -69,6 +69,8 @@ import com.arzikina.ne.data.local.entity.UserEntity
  * - 14 : Transactions récurrentes / planifiées, tables `recurring_transactions`,
  *   `recurring_transaction_occurrences` (voir
  *   [MIGRATION_13_14]/[RecurringTransactionEntity]/[RecurringTransactionOccurrenceEntity]).
+ * - 15 : Exclusion d'un compte des statistiques personnelles (`isExcludedFromStatistics`
+ *   sur `accounts` — voir [MIGRATION_14_15]).
  */
 @Database(
     entities = [
@@ -85,7 +87,7 @@ import com.arzikina.ne.data.local.entity.UserEntity
         RecurringTransactionEntity::class,
         RecurringTransactionOccurrenceEntity::class
     ],
-    version = 14,
+    version = 15,
     exportSchema = true
 )
 @TypeConverters(Converters::class)
