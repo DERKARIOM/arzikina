@@ -192,14 +192,14 @@ class LoansFragment : Fragment(R.layout.fragment_loans) {
     }
 
     private fun navigateToLoanForm() {
-        findNavController().navigate(R.id.loanFormFragment, null, NavAnimations.fade)
+        findNavController().navigate(R.id.loanFormFragment, null, NavAnimations.push)
     }
 
     private fun navigateToLoanDetail(item: LoanListItem) {
-        findNavController().navigate(R.id.loanDetailFragment, bundleOf("loanId" to item.id), NavAnimations.fade)
+        findNavController().navigate(R.id.loanDetailFragment, bundleOf("loanId" to item.id), NavAnimations.push)
     }
 
     private fun navigateToStatistics() {
-        findNavController().navigate(R.id.loanStatisticsFragment, null, NavAnimations.fade)
+        findNavController().navigate(R.id.loanStatisticsFragment, null, NavAnimations.push)
     }
 }

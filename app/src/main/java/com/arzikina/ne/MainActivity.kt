@@ -17,6 +17,7 @@ import com.arzikina.ne.domain.model.ThemeMode
 import com.arzikina.ne.domain.repository.RecurringTransactionRepository
 import com.arzikina.ne.domain.repository.SessionManager
 import com.arzikina.ne.domain.repository.UserPreferencesRepository
+import com.arzikina.ne.presentation.components.NavAnimations
 import com.arzikina.ne.presentation.utilities.recurring.RecurringOccurrenceQueueDialogFragment
 import com.arzikina.ne.util.SystemBars
 import dagger.hilt.android.AndroidEntryPoint
@@ -194,12 +195,22 @@ class MainActivity : AppCompatActivity() {
      * valeur bloquée sur `loginFragment` pour le reste du processus, ce qui ferait échouer
      * `popBackStack` (id absent de la pile) à chaque changement d'onglet. `dashboardFragment` EST
      * l'onglet Accueil, indépendamment de la façon dont l'utilisateur est arrivé sur l'app.
+     *
+     * [NavAnimations.tabSwitch] (fondu enchaîné, sans glissement — voir sa doc) est passé au
+     * `navigate(tabId, ...)` : c'est CETTE destination qui porte l'animation, dans les deux sens
+     * — à l'aller (`enterAnim`/`exitAnim`) comme au retour vers Accueil déclenché par
+     * `popBackStack` juste au-dessus (`popEnterAnim`/`popExitAnim`), Navigation Component
+     * appliquant systématiquement les animations déclarées lors du `navigate()` d'origine d'une
+     * destination, y compris quand elle est ensuite dépilée. Le retour direct à Accueil
+     * (`tabId == dashboardFragment`, sans appel à `navigate`) n'a pas besoin d'animation dédiée :
+     * il ne fait que rejouer le `popExitAnim`/`popEnterAnim` déjà déclaré par le dernier onglet
+     * quitté.
      */
     private fun navigateToTab(navController: NavController, tabId: Int) {
         if (navController.currentDestination?.id == tabId) return
         navController.popBackStack(R.id.dashboardFragment, false)
         if (tabId != R.id.dashboardFragment) {
-            navController.navigate(tabId)
+            navController.navigate(tabId, null, NavAnimations.tabSwitch)
         }
     }
 

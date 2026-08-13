@@ -15,6 +15,7 @@ import com.arzikina.ne.R
 import com.arzikina.ne.databinding.FragmentTransactionsBinding
 import com.arzikina.ne.domain.model.Account
 import com.arzikina.ne.domain.model.Category
+import com.arzikina.ne.presentation.components.NavAnimations
 import com.arzikina.ne.util.AppResult
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.combine
@@ -205,6 +206,6 @@ class TransactionsFragment : Fragment(R.layout.fragment_transactions) {
     }
 
     private fun navigateToForm(transactionId: Long) {
-        findNavController().navigate(R.id.transactionFormFragment, bundleOf("transactionId" to transactionId))
+        findNavController().navigate(R.id.transactionFormFragment, bundleOf("transactionId" to transactionId), NavAnimations.push)
     }
 }

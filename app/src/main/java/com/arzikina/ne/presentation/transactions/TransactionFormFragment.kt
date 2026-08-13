@@ -610,7 +610,7 @@ class TransactionFormFragment : Fragment(R.layout.fragment_transaction_form) {
     }
 
     private fun navigateToNewCategory() {
-        findNavController().navigate(R.id.categoryFormFragment, bundleOf("categoryId" to 0L))
+        findNavController().navigate(R.id.categoryFormFragment, bundleOf("categoryId" to 0L), NavAnimations.push)
     }
 
     /** Voir la doc de `TransactionFormState.linkedLoanId` : accès synchrone utilisé par les
@@ -621,14 +621,15 @@ class TransactionFormFragment : Fragment(R.layout.fragment_transaction_form) {
     /** `popUpTo` retire ce formulaire de la pile de retour (voir [TransactionFormEvent.LoanLinked]) :
      * revenir en arrière depuis "Détail du prêt/emprunt" doit ramener à l'écran d'où cette
      * transaction a été ouverte (Transactions/Détail de compte), pas à ce formulaire bloqué. Même
-     * animation de fondu que [NavAnimations.fade], reconstruite ici pour y ajouter `popUpTo` (objet
-     * partagé volontairement minimal, voir sa doc). */
+     * animation que [NavAnimations.push], reconstruite ici pour y ajouter `popUpTo` (objet partagé
+     * volontairement minimal, voir sa doc — `NavOptions` ne permet pas de partir d'options
+     * existantes pour n'en modifier qu'une partie). */
     private fun navigateToLoanDetail(loanId: Long) {
         val options = NavOptions.Builder()
-            .setEnterAnim(R.anim.fade_in)
-            .setExitAnim(R.anim.fade_out)
-            .setPopEnterAnim(R.anim.fade_in)
-            .setPopExitAnim(R.anim.fade_out)
+            .setEnterAnim(R.anim.slide_enter)
+            .setExitAnim(R.anim.slide_exit)
+            .setPopEnterAnim(R.anim.slide_pop_enter)
+            .setPopExitAnim(R.anim.slide_pop_exit)
             .setPopUpTo(R.id.transactionFormFragment, inclusive = true)
             .build()
         findNavController().navigate(R.id.loanDetailFragment, bundleOf("loanId" to loanId), options)

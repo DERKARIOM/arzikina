@@ -14,6 +14,7 @@ import com.arzikina.ne.R
 import com.arzikina.ne.databinding.FragmentCategoriesBinding
 import com.arzikina.ne.domain.model.Category
 import com.arzikina.ne.presentation.components.ConfirmDialogs
+import com.arzikina.ne.presentation.components.NavAnimations
 import com.arzikina.ne.util.AppResult
 import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
@@ -94,6 +95,6 @@ class CategoriesFragment : Fragment(R.layout.fragment_categories) {
     }
 
     private fun navigateToForm(categoryId: Long) {
-        findNavController().navigate(R.id.categoryFormFragment, bundleOf("categoryId" to categoryId))
+        findNavController().navigate(R.id.categoryFormFragment, bundleOf("categoryId" to categoryId), NavAnimations.push)
     }
 }

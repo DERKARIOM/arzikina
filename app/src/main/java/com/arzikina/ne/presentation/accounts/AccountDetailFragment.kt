@@ -207,19 +207,21 @@ class AccountDetailFragment : Fragment(R.layout.fragment_account_detail) {
     private fun navigateToTransactionForm(item: TransactionUiItem) {
         findNavController().navigate(
             R.id.transactionFormFragment,
-            bundleOf("transactionId" to item.transaction.id)
+            bundleOf("transactionId" to item.transaction.id),
+            NavAnimations.push
         )
     }
 
     private fun navigateToNewTransactionForm() {
         findNavController().navigate(
             R.id.transactionFormFragment,
-            bundleOf("transactionId" to 0L, "presetAccountId" to viewModel.accountId)
+            bundleOf("transactionId" to 0L, "presetAccountId" to viewModel.accountId),
+            NavAnimations.push
         )
     }
 
     private fun navigateToEditForm() {
-        findNavController().navigate(R.id.accountFormFragment, bundleOf("accountId" to viewModel.accountId), NavAnimations.fade)
+        findNavController().navigate(R.id.accountFormFragment, bundleOf("accountId" to viewModel.accountId), NavAnimations.push)
     }
 
     private fun confirmDelete() {

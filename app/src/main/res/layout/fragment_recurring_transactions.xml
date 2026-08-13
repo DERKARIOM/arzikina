@@ -97,6 +97,8 @@
             android:id="@+id/emptyAddRecurringTransactionButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:textColor="@color/white"
+            android:background="@drawable/forme_radius_10dp"
             android:layout_marginTop="@dimen/spacing_l"
             android:text="@string/recurring_transactions_add_action"
             app:icon="@drawable/ic_add_24" />

@@ -7,6 +7,7 @@ import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.arzikina.ne.R
 import com.arzikina.ne.databinding.FragmentMoreBinding
+import com.arzikina.ne.presentation.components.NavAnimations
 
 /**
  * Onglet "Autre" de la Bottom Navigation : regroupe les destinations qui ne
@@ -30,7 +31,7 @@ class MoreFragment : Fragment(R.layout.fragment_more) {
         binding = viewBinding
 
         val adapter = MoreMenuAdapter(menuItems()) { item ->
-            findNavController().navigate(item.destinationId)
+            findNavController().navigate(item.destinationId, null, NavAnimations.push)
         }
         viewBinding.moreMenuList.layoutManager = LinearLayoutManager(requireContext())
         viewBinding.moreMenuList.adapter = adapter

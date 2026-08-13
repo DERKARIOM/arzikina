@@ -13,6 +13,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.arzikina.ne.R
 import com.arzikina.ne.databinding.FragmentBudgetBinding
 import com.arzikina.ne.presentation.components.ConfirmDialogs
+import com.arzikina.ne.presentation.components.NavAnimations
 import com.arzikina.ne.util.AppResult
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
@@ -73,6 +74,6 @@ class BudgetFragment : Fragment(R.layout.fragment_budget) {
     }
 
     private fun navigateToForm(budgetId: Long) {
-        findNavController().navigate(R.id.budgetFormFragment, bundleOf("budgetId" to budgetId))
+        findNavController().navigate(R.id.budgetFormFragment, bundleOf("budgetId" to budgetId), NavAnimations.push)
     }
 }

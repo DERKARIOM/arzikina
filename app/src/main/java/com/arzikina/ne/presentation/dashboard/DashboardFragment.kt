@@ -19,6 +19,7 @@ import com.arzikina.ne.domain.model.CurrencyAmount
 import com.arzikina.ne.presentation.accounts.AccountCardGradient
 import com.arzikina.ne.presentation.budget.BudgetAdapter
 import com.arzikina.ne.presentation.budget.BudgetUiItem
+import com.arzikina.ne.presentation.components.NavAnimations
 import com.arzikina.ne.presentation.utilities.UtilityCatalog
 import com.arzikina.ne.presentation.utilities.UtilityTileAdapter
 import com.arzikina.ne.util.AppResult
@@ -57,7 +58,7 @@ class DashboardFragment : Fragment(R.layout.fragment_dashboard) {
      * fil du temps, via [UtilityTileAdapter.submitItems] (voir [render]), jamais l'ensemble des
      * entrées lui-même. */
     private val utilitiesAdapter = UtilityTileAdapter(UtilityCatalog.all()) { item ->
-        findNavController().navigate(item.destinationId)
+        findNavController().navigate(item.destinationId, null, NavAnimations.push)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -101,46 +102,46 @@ class DashboardFragment : Fragment(R.layout.fragment_dashboard) {
         // réutilise la destination settingsFragment déjà existante, atteignable
         // aussi depuis l'onglet "Autre".
         viewBinding.settingsShortcut.setOnClickListener {
-            findNavController().navigate(R.id.settingsFragment)
+            findNavController().navigate(R.id.settingsFragment, null, NavAnimations.push)
         }
         viewBinding.utilitiesList.layoutManager =
             LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
         viewBinding.utilitiesList.adapter = utilitiesAdapter
         viewBinding.utilitiesSeeAll.setOnClickListener {
-            findNavController().navigate(R.id.allUtilitiesFragment)
+            findNavController().navigate(R.id.allUtilitiesFragment, null, NavAnimations.push)
         }
         viewBinding.balanceCard.setOnClickListener {
             // accountsFromDashboardFragment (pas accountsFragment) : voir sa doc dans
             // nav_graph.xml — évite que ce raccourci fasse basculer la sélection de la
             // Bottom Navigation sur l'onglet "Compte" alors qu'on reste dans le contexte
             // "Accueil".
-            findNavController().navigate(R.id.accountsFromDashboardFragment)
+            findNavController().navigate(R.id.accountsFromDashboardFragment, null, NavAnimations.push)
         }
         viewBinding.toggleBalanceVisibility.setOnClickListener {
             isBalanceHidden = !isBalanceHidden
             renderBalanceText()
         }
         viewBinding.budgetSeeAll.setOnClickListener {
-            findNavController().navigate(R.id.budgetFragment)
+            findNavController().navigate(R.id.budgetFragment, null, NavAnimations.push)
         }
         // transactionsFragment n'est plus un onglet (voir bottom_nav_menu.xml) : seul point
         // d'entrée désormais, sans faire recocher aucun onglet de la Bottom Navigation (voir
         // MainActivity.TAB_DESTINATION_IDS).
         viewBinding.recentTransactionsSeeAll.setOnClickListener {
-            findNavController().navigate(R.id.transactionsFragment)
+            findNavController().navigate(R.id.transactionsFragment, null, NavAnimations.push)
         }
         // Réutilise transactionFormFragment tel quel (même destination que le FAB de l'écran
         // Transactions) : aucune nouvelle logique d'ajout.
         viewBinding.recentTransactionsEmptyAction.setOnClickListener {
-            findNavController().navigate(R.id.transactionFormFragment)
+            findNavController().navigate(R.id.transactionFormFragment, null, NavAnimations.push)
         }
         // FAB "+" — même destination, même comportement que addTransactionButton sur
         // fragment_transactions.xml (voir TransactionsFragment.navigateToForm).
         viewBinding.addTransactionButton.setOnClickListener {
-            findNavController().navigate(R.id.transactionFormFragment)
+            findNavController().navigate(R.id.transactionFormFragment, null, NavAnimations.push)
         }
         viewBinding.createBudgetAction.setOnClickListener {
-            findNavController().navigate(R.id.budgetFormFragment)
+            findNavController().navigate(R.id.budgetFormFragment, null, NavAnimations.push)
         }
         // Pas d'action de suppression depuis cet aperçu (voir item_budget.xml, réutilisé
         // tel quel avec BudgetAdapter.ViewHolder pour ne pas dupliquer son rendu).
@@ -206,7 +207,7 @@ class DashboardFragment : Fragment(R.layout.fragment_dashboard) {
         if (item != null) {
             BudgetAdapter.ViewHolder(binding.budgetPreview).bind(
                 item = item,
-                onClick = { findNavController().navigate(R.id.budgetFragment) },
+                onClick = { findNavController().navigate(R.id.budgetFragment, null, NavAnimations.push) },
                 onDeleteClick = {}
             )
         }

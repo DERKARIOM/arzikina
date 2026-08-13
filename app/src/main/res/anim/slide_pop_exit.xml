@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Symétrique de slide_exit.xml pour le retour : l'écran quitté (celui d'où on revient) part
+     vers la droite en s'estompant, direction inverse de l'aller (slide_exit.xml part vers la
+     gauche). -->
+<set xmlns:android="http://schemas.android.com/apk/res/android"
+    android:interpolator="@android:interpolator/fast_out_slow_in">
+    <alpha
+        android:duration="180"
+        android:fromAlpha="1.0"
+        android:toAlpha="0.0" />
+    <translate
+        android:duration="180"
+        android:fromXDelta="0%p"
+        android:toXDelta="8%p" />
+</set>

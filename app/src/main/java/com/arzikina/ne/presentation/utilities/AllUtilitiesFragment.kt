@@ -6,6 +6,7 @@ import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import com.arzikina.ne.R
 import com.arzikina.ne.databinding.FragmentAllUtilitiesBinding
+import com.arzikina.ne.presentation.components.NavAnimations
 
 /**
  * Écran "Tous les utilitaires" (voir "Voir tout" sur le bloc Utilitaires du Dashboard).
@@ -28,7 +29,7 @@ class AllUtilitiesFragment : Fragment(R.layout.fragment_all_utilities) {
         viewBinding.toolbar.setNavigationOnClickListener { findNavController().navigateUp() }
 
         viewBinding.allUtilitiesList.adapter = UtilityTileAdapter(UtilityCatalog.all()) { item ->
-            findNavController().navigate(item.destinationId)
+            findNavController().navigate(item.destinationId, null, NavAnimations.push)
         }
     }
 

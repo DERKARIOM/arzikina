@@ -146,6 +146,6 @@ class LoanDetailFragment : Fragment(R.layout.fragment_loan_detail) {
     }
 
     private fun navigateToPaymentForm() {
-        findNavController().navigate(R.id.loanPaymentFormFragment, bundleOf("loanId" to viewModel.loanId), NavAnimations.fade)
+        findNavController().navigate(R.id.loanPaymentFormFragment, bundleOf("loanId" to viewModel.loanId), NavAnimations.push)
     }
 }

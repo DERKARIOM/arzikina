@@ -11,6 +11,7 @@ import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.arzikina.ne.R
 import com.arzikina.ne.databinding.FragmentRecurringTransactionsBinding
+import com.arzikina.ne.presentation.components.NavAnimations
 import com.arzikina.ne.util.AppResult
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
@@ -101,6 +102,6 @@ class RecurringTransactionsFragment : Fragment(R.layout.fragment_recurring_trans
         // Toujours en création (recurringTransactionId par défaut = 0L, voir nav_graph.xml) : le tap
         // sur une ligne existante pour l'éditer arrive à une étape suivante du plan de développement
         // (voir cahier des charges), distincte de ce bouton d'ajout.
-        findNavController().navigate(R.id.recurringTransactionFormFragment)
+        findNavController().navigate(R.id.recurringTransactionFormFragment, null, NavAnimations.push)
     }
 }

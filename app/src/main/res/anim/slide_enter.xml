@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Navigation hiérarchique (liste → détail/formulaire) : la nouvelle destination apparaît en
+     glissant légèrement depuis la droite tout en s'estompant en fondu — voir
+     presentation/components/NavAnimations.kt (NavAnimations.push) pour le raisonnement complet.
+     8%p (relatif au parent) : un déplacement discret, pas un slide plein écran. -->
+<set xmlns:android="http://schemas.android.com/apk/res/android"
+    android:interpolator="@android:interpolator/fast_out_slow_in">
+    <alpha
+        android:duration="220"
+        android:fromAlpha="0.0"
+        android:toAlpha="1.0" />
+    <translate
+        android:duration="220"
+        android:fromXDelta="8%p"
+        android:toXDelta="0%p" />
+</set>

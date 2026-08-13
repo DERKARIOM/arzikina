@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Pendant de slide_enter.xml : l'écran quitté (navigation vers l'avant) recule légèrement vers
+     la gauche en s'estompant, donnant l'impression que la nouvelle destination le recouvre par la
+     droite plutôt qu'un simple remplacement instantané. Durée plus courte que l'entrée (180 vs
+     220ms) : l'écran qui part doit disparaître discrètement, sans retenir l'attention. -->
+<set xmlns:android="http://schemas.android.com/apk/res/android"
+    android:interpolator="@android:interpolator/fast_out_slow_in">
+    <alpha
+        android:duration="180"
+        android:fromAlpha="1.0"
+        android:toAlpha="0.0" />
+    <translate
+        android:duration="180"
+        android:fromXDelta="0%p"
+        android:toXDelta="-8%p" />
+</set>

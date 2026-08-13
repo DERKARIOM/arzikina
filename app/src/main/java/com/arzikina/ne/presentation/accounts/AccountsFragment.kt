@@ -66,7 +66,7 @@ class AccountsFragment : Fragment(R.layout.fragment_accounts) {
     }
 
     private fun navigateToForm(accountId: Long) {
-        findNavController().navigate(R.id.accountFormFragment, bundleOf("accountId" to accountId), NavAnimations.fade)
+        findNavController().navigate(R.id.accountFormFragment, bundleOf("accountId" to accountId), NavAnimations.push)
     }
 
     /**
@@ -75,6 +75,6 @@ class AccountsFragment : Fragment(R.layout.fragment_accounts) {
      * un compte se fait dorénavant depuis le menu "⋮" de cet écran détail.
      */
     private fun navigateToDetail(accountId: Long) {
-        findNavController().navigate(R.id.accountDetailFragment, bundleOf("accountId" to accountId), NavAnimations.fade)
+        findNavController().navigate(R.id.accountDetailFragment, bundleOf("accountId" to accountId), NavAnimations.push)
     }
 }

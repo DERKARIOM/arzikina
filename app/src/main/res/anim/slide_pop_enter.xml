@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Symétrique de slide_enter.xml pour le retour (bouton système/`popBackStack`) : l'écran
+     précédent réapparaît en glissant depuis la gauche (direction inverse de l'aller), suggérant
+     qu'on revient en arrière dans la hiérarchie plutôt qu'on avance. -->
+<set xmlns:android="http://schemas.android.com/apk/res/android"
+    android:interpolator="@android:interpolator/fast_out_slow_in">
+    <alpha
+        android:duration="220"
+        android:fromAlpha="0.0"
+        android:toAlpha="1.0" />
+    <translate
+        android:duration="220"
+        android:fromXDelta="-8%p"
+        android:toXDelta="0%p" />
+</set>
