@@ -21,6 +21,7 @@ import com.arzikina.ne.databinding.ItemAccountFieldBinding
 import com.arzikina.ne.domain.model.Account
 import com.arzikina.ne.domain.model.Category
 import com.arzikina.ne.domain.model.CurrencyAmount
+import com.arzikina.ne.domain.model.FeeType
 import com.arzikina.ne.domain.model.PaymentMethod
 import com.arzikina.ne.domain.model.SupportedCurrency
 import com.arzikina.ne.domain.model.TransactionType
@@ -28,6 +29,7 @@ import com.arzikina.ne.presentation.accounts.AccountIconMapper
 import com.arzikina.ne.presentation.components.AccountPickerDialog
 import com.arzikina.ne.presentation.components.ConfirmDialogs
 import com.arzikina.ne.presentation.components.NavAnimations
+import com.arzikina.ne.util.Constants
 import com.arzikina.ne.util.Money
 import com.google.android.material.datepicker.MaterialDatePicker
 import com.google.android.material.timepicker.MaterialTimePicker
@@ -86,6 +88,8 @@ class TransactionFormFragment : Fragment(R.layout.fragment_transaction_form) {
         // chaque render(), une seule fois ici suffit.
         viewBinding.destinationAccountField.accountFieldLabel.text =
             getString(R.string.transaction_form_destination_account_label)
+        viewBinding.feeAccountField.accountFieldLabel.text =
+            getString(R.string.transaction_form_fee_account_label)
 
         setUpToolbar(viewBinding)
         setUpTypeDropdown(viewBinding)
@@ -97,6 +101,10 @@ class TransactionFormFragment : Fragment(R.layout.fragment_transaction_form) {
         setUpDateTime(viewBinding)
         setUpInputs(viewBinding)
         setUpMoreDetailsToggle(viewBinding)
+        setUpFeeSwitch(viewBinding)
+        setUpFeeTypeDropdown(viewBinding)
+        setUpFeeAccountRow(viewBinding)
+        setUpFeeInputs(viewBinding)
 
         viewBinding.saveButton.setOnClickListener { viewModel.save() }
         viewBinding.deleteButton.setOnClickListener { confirmDelete() }
@@ -256,6 +264,47 @@ class TransactionFormFragment : Fragment(R.layout.fragment_transaction_form) {
         }
     }
 
+    private fun setUpFeeSwitch(binding: FragmentTransactionFormBinding) {
+        binding.addFeeSwitch.setOnCheckedChangeListener { _, isChecked ->
+            if (!isLoanLinked()) viewModel.onHasFeeToggle(isChecked)
+        }
+    }
+
+    /** Liste FERMÉE (même pattern que [setUpPaymentMethodDropdown]) : les libellés viennent de
+     * [FeeType.entries], dans leur ordre de déclaration. */
+    private fun setUpFeeTypeDropdown(binding: FragmentTransactionFormBinding) {
+        binding.feeTypeField.dropdownLayout.hint = getString(R.string.transaction_form_fee_type_label)
+        val labels = FeeType.entries.map { getString(it.displayTextRes()) }
+        binding.feeTypeField.dropdownInput.setSimpleItems(labels.toTypedArray())
+        binding.feeTypeField.dropdownInput.setOnItemClickListener { _, _, position, _ ->
+            viewModel.onFeeTypeChange(FeeType.entries[position])
+        }
+    }
+
+    /** Pas d'exclusion (contrairement à [setUpAccountRow]/[setUpDestinationAccountRow]) : le
+     * compte des frais peut être identique au compte source ou destination, ou un compte tiers
+     * (voir cahier des charges, section "Compte utilisé pour les frais"). */
+    private fun setUpFeeAccountRow(binding: FragmentTransactionFormBinding) {
+        binding.feeAccountRow.setOnClickListener {
+            if (isLoanLinked()) return@setOnClickListener
+            AccountPickerDialog.show(
+                context = requireContext(),
+                accounts = latestAccounts,
+                balanceFor = { account -> viewModel.accountBalances.value[account.id] ?: account.initialBalance },
+                onSelect = { account -> viewModel.onFeeAccountChange(account.id) }
+            )
+        }
+    }
+
+    private fun setUpFeeInputs(binding: FragmentTransactionFormBinding) {
+        binding.feeAmountInput.doAfterTextChanged { text ->
+            viewModel.onFeeAmountChange(text?.toString().orEmpty())
+        }
+        binding.feeDescriptionInput.doAfterTextChanged { text ->
+            viewModel.onFeeDescriptionChange(text?.toString().orEmpty())
+        }
+    }
+
     private fun showDatePicker() {
         val currentDate = Instant.ofEpochMilli(viewModel.formState.value.dateTimeMillis)
             .atZone(ZoneId.systemDefault())
@@ -311,10 +360,15 @@ class TransactionFormFragment : Fragment(R.layout.fragment_transaction_form) {
         binding.descriptionInput.isEnabled = !isLoanLinked
         binding.typeField.dropdownInput.isEnabled = !isLoanLinked
         binding.paymentMethodField.dropdownInput.isEnabled = !isLoanLinked
+        binding.addFeeSwitch.isEnabled = !isLoanLinked
+        binding.feeAmountInput.isEnabled = !isLoanLinked
+        binding.feeTypeField.dropdownInput.isEnabled = !isLoanLinked
+        binding.feeDescriptionInput.isEnabled = !isLoanLinked
         binding.deleteButton.visibility = if (viewModel.isEditMode && !isLoanLinked) View.VISIBLE else View.GONE
 
         renderType(binding, state.type)
         renderAmount(binding, state, data.accounts, data.accountBalances)
+        renderFee(binding, state, data.accounts, data.accountBalances)
 
         // Une catégorie n'a pas de sens pour un transfert (voir TransactionType.TRANSFER) :
         // toute la carte disparaît plutôt que de la vider, pour ne pas laisser un bloc vide.
@@ -375,6 +429,74 @@ class TransactionFormFragment : Fragment(R.layout.fragment_transaction_form) {
         binding.amountCurrencyBadge.text = selectedAccount?.let {
             SupportedCurrency.entries.firstOrNull { currency -> currency.code == it.currencyCode }?.symbol ?: it.currencyCode
         }.orEmpty()
+    }
+
+    /**
+     * Section "Frais supplémentaires" (voir [TransactionFormViewModel.onHasFeeToggle]) : Switch,
+     * champs révélés ([FragmentTransactionFormBinding.feeDetailsCard]/[FragmentTransactionFormBinding.feeAccountRow])
+     * et résumé dynamique (voir [renderFeeSummary]).
+     */
+    private fun renderFee(
+        binding: FragmentTransactionFormBinding,
+        state: TransactionFormState,
+        accounts: List<Account>,
+        accountBalances: Map<Long, Long>
+    ) {
+        if (binding.addFeeSwitch.isChecked != state.hasFee) {
+            binding.addFeeSwitch.isChecked = state.hasFee
+        }
+        val feeVisibility = if (state.hasFee) View.VISIBLE else View.GONE
+        binding.feeDetailsCard.visibility = feeVisibility
+        binding.feeAccountRow.visibility = feeVisibility
+        if (!state.hasFee) {
+            binding.feeAccountErrorText.visibility = View.GONE
+            return
+        }
+
+        if (binding.feeAmountInput.text?.toString() != state.feeAmountInput) {
+            binding.feeAmountInput.setText(state.feeAmountInput)
+        }
+        binding.feeAmountErrorText.text = state.feeAmountError
+        binding.feeAmountErrorText.visibility = if (state.feeAmountError != null) View.VISIBLE else View.GONE
+
+        val feeTypeLabel = getString(state.feeType.displayTextRes())
+        if (binding.feeTypeField.dropdownInput.text?.toString() != feeTypeLabel) {
+            binding.feeTypeField.dropdownInput.setText(feeTypeLabel, false)
+        }
+
+        if (binding.feeDescriptionInput.text?.toString() != state.feeDescriptionInput) {
+            binding.feeDescriptionInput.setText(state.feeDescriptionInput)
+        }
+
+        bindAccountField(binding.feeAccountField, accounts.firstOrNull { it.id == state.feeAccountId }, accountBalances)
+        binding.feeAccountErrorText.text = state.feeAccountError
+        binding.feeAccountErrorText.visibility = if (state.feeAccountError != null) View.VISIBLE else View.GONE
+
+        renderFeeSummary(binding, state, accounts)
+    }
+
+    /**
+     * Montant / Frais / Total(ou Revenu net), recalculé à chaque frappe (voir cahier des charges,
+     * "le calcul doit être dynamique"). Dépense/Transfert : coût total = montant + frais. Revenu :
+     * montant net REÇU = montant - frais (jamais négatif à l'affichage, une saisie de frais
+     * supérieurs au montant reste par ailleurs bloquée par [TransactionFormViewModel.save] ?
+     * non — volontairement PAS bloquée ici : rien dans le cahier des charges ne l'interdit, un
+     * "revenu net" à 0 reste un résultat valide et compréhensible plutôt qu'une erreur bloquante).
+     */
+    private fun renderFeeSummary(binding: FragmentTransactionFormBinding, state: TransactionFormState, accounts: List<Account>) {
+        val currencyCode = accounts.firstOrNull { it.id == state.accountId }?.currencyCode ?: Constants.DEFAULT_CURRENCY_CODE
+        val amountMinor = Money.parseToMinorUnits(state.amountInput) ?: 0L
+        val feeMinor = Money.parseToMinorUnits(state.feeAmountInput) ?: 0L
+
+        binding.feeSummaryAmountValue.text = Money.format(CurrencyAmount(currencyCode, amountMinor))
+        binding.feeSummaryFeeValue.text = Money.format(CurrencyAmount(currencyCode, feeMinor))
+
+        val isIncome = state.type == TransactionType.INCOME
+        val totalMinor = if (isIncome) (amountMinor - feeMinor).coerceAtLeast(0L) else amountMinor + feeMinor
+        binding.feeSummaryTotalLabel.text = getString(
+            if (isIncome) R.string.transaction_form_fee_summary_net_label else R.string.transaction_form_fee_summary_total_label
+        )
+        binding.feeSummaryTotalValue.text = Money.format(CurrencyAmount(currencyCode, totalMinor))
     }
 
     private fun renderCategoryGrid() {

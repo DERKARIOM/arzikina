@@ -12,6 +12,7 @@ import com.arzikina.ne.domain.model.AccountIcon
 import com.arzikina.ne.domain.model.AccountType
 import com.arzikina.ne.domain.model.BudgetPeriod
 import com.arzikina.ne.domain.model.CategoryIcon
+import com.arzikina.ne.domain.model.FeeType
 import com.arzikina.ne.domain.model.LoanReason
 import com.arzikina.ne.domain.model.LoanStatus
 import com.arzikina.ne.domain.model.LoanType
@@ -107,7 +108,9 @@ fun TransactionEntity.toDto() = TransactionDto(
     latitude = latitude,
     longitude = longitude,
     paymentMethod = paymentMethod?.name,
-    createdAt = createdAt
+    createdAt = createdAt,
+    feeTransactionId = feeTransactionId,
+    feeType = feeType?.name
 )
 
 fun TransactionDto.toEntity(userId: Long) = TransactionEntity(
@@ -127,7 +130,10 @@ fun TransactionDto.toEntity(userId: Long) = TransactionEntity(
     // qui retombent sur une valeur par défaut) : un moyen de paiement non
     // précisé dans le fichier doit rester non précisé après import.
     paymentMethod = paymentMethod?.let { runCatching { PaymentMethod.valueOf(it) }.getOrNull() },
-    createdAt = createdAt
+    createdAt = createdAt,
+    feeTransactionId = feeTransactionId,
+    // Même raisonnement que paymentMethod ci-dessus : `null` reste `null`, pas de valeur de repli.
+    feeType = feeType?.let { runCatching { FeeType.valueOf(it) }.getOrNull() }
 )
 
 fun BudgetEntity.toDto() = BudgetDto(

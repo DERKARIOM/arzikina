@@ -27,11 +27,19 @@ import com.arzikina.ne.domain.model.Transaction
  * [com.arzikina.ne.presentation.accounts.AccountDetailViewModel] et
  * [TransactionsViewModel]), pas déductible de [transaction] seul puisque
  * celle-ci ne porte pas la notion de "compte consulté".
+ * @param feeAmount montant (unités mineures) de la transaction de frais liée (voir
+ * [Transaction.feeTransactionId]), `null` si cette transaction n'a pas de frais. Résolu par
+ * l'écran qui construit cet item via une recherche dans la liste complète des transactions —
+ * jamais stocké sur [Transaction] elle-même (voir [feeTransactionIds]). Sert uniquement à
+ * afficher l'indicateur discret "+ Frais X" ([TransactionItemBinder]) ; jamais utilisé pour un
+ * calcul de solde (voir `computeCurrentBalances`, qui lit directement la transaction de frais
+ * comme n'importe quelle autre transaction).
  */
 data class TransactionUiItem(
     val transaction: Transaction,
     val account: Account?,
     val category: Category?,
     val runningBalance: Long? = null,
-    val isTransferReceived: Boolean = false
+    val isTransferReceived: Boolean = false,
+    val feeAmount: Long? = null
 )

@@ -19,6 +19,7 @@ import com.arzikina.ne.domain.repository.TransactionRepository
 import com.arzikina.ne.presentation.accounts.computeCurrentBalances
 import com.arzikina.ne.presentation.budget.BudgetUiItem
 import com.arzikina.ne.presentation.transactions.TransactionUiItem
+import com.arzikina.ne.presentation.transactions.feeTransactionIds
 import com.arzikina.ne.util.AppResult
 import com.arzikina.ne.util.BudgetProgress
 import com.arzikina.ne.util.PersonalStatistics
@@ -138,14 +139,25 @@ class DashboardViewModel @Inject constructor(
             monthlyIncome = sumByAccountCurrency(monthlyPersonalTransactions, TransactionType.INCOME, accountsById),
             monthlyExpense = sumByAccountCurrency(monthlyPersonalTransactions, TransactionType.EXPENSE, accountsById),
             // Flux d'activité brut, PAS une statistique agrégée : continue d'afficher les
-            // transactions de TOUS les comptes, exclus ou non (voir cahier des charges).
-            recentTransactions = transactions.take(RECENT_TRANSACTIONS_LIMIT).map { transaction ->
-                TransactionUiItem(
-                    transaction = transaction,
-                    account = accountsById[transaction.accountId],
-                    // categoryId est `null` pour un transfert (voir TransactionType.TRANSFER).
-                    category = transaction.categoryId?.let { categoriesById[it] }
-                )
+            // transactions de TOUS les comptes, exclus ou non (voir cahier des charges). Une
+            // transaction de frais liée n'apparaît en revanche jamais comme sa propre ligne (voir
+            // feeTransactionIds) — exclue AVANT take() pour ne jamais réduire ces 5 lignes à moins
+            // de 5 vraies transactions.
+            recentTransactions = run {
+                val transactionsById = transactions.associateBy { it.id }
+                val feeTransactionIds = transactions.feeTransactionIds()
+                transactions
+                    .filter { it.id !in feeTransactionIds }
+                    .take(RECENT_TRANSACTIONS_LIMIT)
+                    .map { transaction ->
+                        TransactionUiItem(
+                            transaction = transaction,
+                            account = accountsById[transaction.accountId],
+                            // categoryId est `null` pour un transfert (voir TransactionType.TRANSFER).
+                            category = transaction.categoryId?.let { categoriesById[it] },
+                            feeAmount = transaction.feeTransactionId?.let { transactionsById[it]?.amount }
+                        )
+                    }
             },
             featuredBudget = featuredBudget(budgets, categoriesById, personalScope.transactions, accountsById),
             userFullName = user?.fullName.orEmpty(),

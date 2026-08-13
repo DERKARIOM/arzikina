@@ -223,6 +223,229 @@
             </com.google.android.material.card.MaterialCardView>
 
             <!--
+                Frais supplémentaires (cahier des charges "Gestion des frais supplémentaires sur
+                les transactions") : Switch qui révèle une postcard, même principe que
+                endDateSwitch/endDateCard sur fragment_recurring_transaction_form.xml.
+            -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_l"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    style="@style/TextAppearance.Material3.BodyMedium"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/transaction_form_add_fee_toggle"
+                    android:textColor="?attr/colorOnSurface" />
+
+                <com.google.android.material.materialswitch.MaterialSwitch
+                    android:id="@+id/addFeeSwitch"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" />
+
+            </LinearLayout>
+
+            <!--
+                Montant des frais, type, description, et résumé Montant/Frais/Total(ou Revenu net)
+                — voir TransactionFormFragment.renderFeeSummary pour le calcul dynamique. Masquée
+                tant que addFeeSwitch n'est pas activé.
+            -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/feeDetailsCard"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_s"
+                android:theme="@style/ThemeOverlay.Arzikina.OnBalanceCard"
+                android:visibility="gone"
+                app:cardBackgroundColor="@color/arzikina_postcart_background"
+                app:cardCornerRadius="@dimen/corner_radius_medium"
+                app:cardElevation="@dimen/elevation_raised"
+                tools:visibility="visible">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="@dimen/spacing_m">
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:id="@+id/feeAmountLayout"
+                        style="@style/Widget.Arzikina.TextInputLayout.OutlinedBox.PostCard"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="@string/transaction_form_fee_amount_label">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/feeAmountInput"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:inputType="numberDecimal"
+                            android:maxLines="1" />
+
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <TextView
+                        android:id="@+id/feeAmountErrorText"
+                        style="@style/TextAppearance.Material3.BodySmall"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:textColor="@color/expense_red"
+                        android:visibility="gone"
+                        tools:text="Montant des frais invalide"
+                        tools:visibility="visible" />
+
+                    <include
+                        android:id="@+id/feeTypeField"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/spacing_m"
+                        layout="@layout/item_dropdown_field" />
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:id="@+id/feeDescriptionLayout"
+                        style="@style/Widget.Arzikina.TextInputLayout.OutlinedBox.PostCard"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/spacing_m"
+                        android:hint="@string/transaction_form_fee_description_label">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/feeDescriptionInput"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:inputType="textCapSentences"
+                            android:maxLines="2" />
+
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <!-- Résumé dynamique (voir point 2 du cahier des charges) : recalculé à
+                         chaque frappe sur le montant ou les frais (TransactionFormFragment.render). -->
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginTop="@dimen/spacing_m"
+                        android:alpha="0.15"
+                        android:background="?attr/colorOnSurface" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/spacing_s"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            style="@style/TextAppearance.Material3.BodyMedium"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="@string/transaction_form_fee_summary_amount_label"
+                            android:textColor="?attr/colorOnSurfaceVariant" />
+
+                        <TextView
+                            android:id="@+id/feeSummaryAmountValue"
+                            style="@style/TextAppearance.Material3.BodyMedium"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textColor="?attr/colorOnSurface"
+                            tools:text="50 000 F CFA" />
+
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            style="@style/TextAppearance.Material3.BodyMedium"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="@string/transaction_form_fee_summary_fee_label"
+                            android:textColor="?attr/colorOnSurfaceVariant" />
+
+                        <TextView
+                            android:id="@+id/feeSummaryFeeValue"
+                            style="@style/TextAppearance.Material3.BodyMedium"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textColor="?attr/colorOnSurface"
+                            tools:text="500 F CFA" />
+
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/spacing_s"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:id="@+id/feeSummaryTotalLabel"
+                            style="@style/TextAppearance.Material3.TitleSmall"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:textColor="?attr/colorOnSurface"
+                            tools:text="@string/transaction_form_fee_summary_total_label" />
+
+                        <TextView
+                            android:id="@+id/feeSummaryTotalValue"
+                            style="@style/TextAppearance.Material3.TitleSmall"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textColor="?attr/colorOnSurface"
+                            tools:text="50 500 F CFA" />
+
+                    </LinearLayout>
+
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!--
+                Compte utilisé pour les frais : même composant que accountRow/destinationAccountRow
+                (item_account_field.xml), par défaut le compte source (voir
+                TransactionFormViewModel.onHasFeeToggle/onAccountChange).
+            -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/feeAccountRow"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_m"
+                android:checkable="false"
+                android:clickable="true"
+                android:focusable="true"
+                android:theme="@style/ThemeOverlay.Arzikina.OnBalanceCard"
+                android:visibility="gone"
+                app:cardBackgroundColor="@color/arzikina_postcart_background"
+                app:cardCornerRadius="@dimen/corner_radius_medium"
+                app:cardElevation="@dimen/elevation_raised"
+                tools:visibility="visible">
+
+                <include
+                    android:id="@+id/feeAccountField"
+                    layout="@layout/item_account_field" />
+
+            </com.google.android.material.card.MaterialCardView>
+
+            <TextView
+                android:id="@+id/feeAccountErrorText"
+                style="@style/TextAppearance.Material3.BodySmall"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:textColor="@color/expense_red"
+                android:visibility="gone"
+                tools:text="Choisis un compte pour les frais"
+                tools:visibility="visible" />
+
+            <!--
                 Catégorie : grille au lieu d'un menu déroulant. "Voir tout"
                 bascule entre les catégories les plus courantes et la liste
                 complète, purement local à l'écran (voir

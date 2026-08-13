@@ -5,6 +5,7 @@ import com.arzikina.ne.domain.model.AccountIcon
 import com.arzikina.ne.domain.model.AccountType
 import com.arzikina.ne.domain.model.BudgetPeriod
 import com.arzikina.ne.domain.model.CategoryIcon
+import com.arzikina.ne.domain.model.FeeType
 import com.arzikina.ne.domain.model.LoanReason
 import com.arzikina.ne.domain.model.LoanStatus
 import com.arzikina.ne.domain.model.LoanType
@@ -100,4 +101,11 @@ class Converters {
 
     @TypeConverter
     fun toOccurrenceStatus(value: String): OccurrenceStatus = OccurrenceStatus.valueOf(value)
+
+    /** Nullable (même raisonnement que [PaymentMethod] ci-dessus) : voir [FeeType]. */
+    @TypeConverter
+    fun fromFeeType(type: FeeType?): String? = type?.name
+
+    @TypeConverter
+    fun toFeeType(value: String?): FeeType? = value?.let { FeeType.valueOf(it) }
 }

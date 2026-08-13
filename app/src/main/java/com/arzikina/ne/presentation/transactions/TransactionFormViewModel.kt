@@ -5,8 +5,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.arzikina.ne.domain.model.Account
 import com.arzikina.ne.domain.model.Category
+import com.arzikina.ne.domain.model.FeeCategoryNames
+import com.arzikina.ne.domain.model.FeeType
 import com.arzikina.ne.domain.model.PaymentMethod
 import com.arzikina.ne.domain.model.Transaction
+import com.arzikina.ne.domain.model.TransactionFee
 import com.arzikina.ne.domain.model.TransactionType
 import com.arzikina.ne.domain.model.LoanCategoryNames
 import com.arzikina.ne.domain.repository.AccountRepository
@@ -65,6 +68,21 @@ data class TransactionFormState(
     val accountError: String? = null,
     val categoryError: String? = null,
     val transferAccountError: String? = null,
+    /** Voir cahier des charges "Gestion des frais supplémentaires sur les transactions" —
+     * `false` par défaut, y compris pour une nouvelle transaction. Révèle [feeAmountInput]/
+     * [feeType]/[feeAccountId]/[feeDescriptionInput] dans le formulaire. */
+    val hasFee: Boolean = false,
+    val feeAmountInput: String = "",
+    val feeType: FeeType = FeeType.TRANSFER,
+    /** Même convention "0L = non choisi" que [accountId] — mais synchronisé automatiquement sur
+     * [accountId] tant que [isFeeAccountAutoFilled] vaut `true` (voir [onAccountChange]/
+     * [onHasFeeToggle]) : "par défaut le compte source" (cahier des charges), modifiable
+     * explicitement ensuite. */
+    val feeAccountId: Long = 0L,
+    val isFeeAccountAutoFilled: Boolean = true,
+    val feeDescriptionInput: String = "",
+    val feeAmountError: String? = null,
+    val feeAccountError: String? = null,
     /**
      * Non-`null` uniquement en modification, une fois [LoanRepository.findLoanIdForTransaction]
      * résolu (voir [TransactionFormViewModel.init]) : id du prêt/emprunt dont cette transaction est
@@ -115,12 +133,16 @@ class TransactionFormViewModel @Inject constructor(
      * catégories normales partout ailleurs (listes de transactions, détail de compte, catégories),
      * mais ne doivent pas être choisissables ici pour une transaction manuelle — voir la doc de
      * [TransactionFormState.linkedLoanId] pour le raisonnement complet côté synchronisation.
+     *
+     * Exclut de la même façon la catégorie système "Frais et commissions" ([FeeCategoryNames]) :
+     * elle n'est jamais choisie manuellement, seulement affectée automatiquement à la transaction
+     * de frais auto-générée (voir `TransactionRepositoryImpl`).
      */
     val categories: StateFlow<List<Category>> = _formState
         .map { it.type }
         .distinctUntilChanged()
         .flatMapLatest { type -> categoryRepository.observeCategoriesByType(type) }
-        .map { categories -> categories.filterNot { it.name in LoanCategoryNames.ALL } }
+        .map { categories -> categories.filterNot { it.name in LoanCategoryNames.ALL || it.name in FeeCategoryNames.ALL } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     /**
@@ -160,6 +182,22 @@ class TransactionFormViewModel @Inject constructor(
                     val loanId = loanRepository.findLoanIdForTransaction(transactionId)
                     if (loanId != null) {
                         _formState.update { it.copy(linkedLoanId = loanId) }
+                    }
+                    // Frais liés (voir Transaction.feeTransactionId) : chargés séparément, après
+                    // l'état principal, pour la même raison que linkedLoanId ci-dessus.
+                    transaction.feeTransactionId?.let { feeTransactionId ->
+                        transactionRepository.getTransaction(feeTransactionId)?.let { feeTransaction ->
+                            _formState.update {
+                                it.copy(
+                                    hasFee = true,
+                                    feeAmountInput = Money.formatMajorUnits(feeTransaction.amount),
+                                    feeType = feeTransaction.feeType ?: FeeType.OTHER,
+                                    feeAccountId = feeTransaction.accountId,
+                                    isFeeAccountAutoFilled = feeTransaction.accountId == transaction.accountId,
+                                    feeDescriptionInput = feeTransaction.description
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -219,7 +257,19 @@ class TransactionFormViewModel @Inject constructor(
     }
 
     fun onAccountChange(accountId: Long) {
-        _formState.update { autoFillTransferDescription(it.copy(accountId = accountId, accountError = null)) }
+        _formState.update { state ->
+            autoFillTransferDescription(
+                state.copy(
+                    accountId = accountId,
+                    accountError = null,
+                    // Le compte des frais suit le compte source tant qu'il n'a pas été choisi
+                    // explicitement (voir la doc de TransactionFormState.feeAccountId) — "par
+                    // défaut le compte source", cahier des charges section "Compte utilisé pour
+                    // les frais".
+                    feeAccountId = if (state.isFeeAccountAutoFilled) accountId else state.feeAccountId
+                )
+            )
+        }
     }
 
     fun onTransferAccountChange(accountId: Long) {
@@ -228,6 +278,42 @@ class TransactionFormViewModel @Inject constructor(
 
     fun onCategoryChange(categoryId: Long) {
         _formState.update { it.copy(categoryId = categoryId, categoryError = null) }
+    }
+
+    /**
+     * Active/désactive la section "Frais supplémentaires" (voir [TransactionFormState.hasFee]).
+     * À l'activation, préremplit [TransactionFormState.feeAccountId] avec le compte source
+     * actuel s'il n'a encore jamais été choisi (première activation) — voir la doc de
+     * [TransactionFormState.feeAccountId].
+     */
+    fun onHasFeeToggle(enabled: Boolean) {
+        _formState.update { state ->
+            state.copy(
+                hasFee = enabled,
+                feeAccountId = if (enabled && state.feeAccountId == 0L) state.accountId else state.feeAccountId,
+                feeAmountError = null,
+                feeAccountError = null
+            )
+        }
+    }
+
+    fun onFeeAmountChange(value: String) {
+        _formState.update { it.copy(feeAmountInput = value, feeAmountError = null) }
+    }
+
+    fun onFeeTypeChange(type: FeeType) {
+        _formState.update { it.copy(feeType = type) }
+    }
+
+    /** Choix EXPLICITE d'un compte pour les frais (sélecteur de compte du formulaire) : arrête
+     * définitivement la synchronisation automatique avec le compte source (voir
+     * [onAccountChange]), même si l'utilisateur choisit ensuite exactement le même compte. */
+    fun onFeeAccountChange(accountId: Long) {
+        _formState.update { it.copy(feeAccountId = accountId, isFeeAccountAutoFilled = false, feeAccountError = null) }
+    }
+
+    fun onFeeDescriptionChange(value: String) {
+        _formState.update { it.copy(feeDescriptionInput = value) }
     }
 
     fun onDescriptionChange(value: String) {
@@ -314,7 +400,32 @@ class TransactionFormViewModel @Inject constructor(
             return
         }
 
+        var feeAmountMinor: Long? = null
+        if (state.hasFee) {
+            feeAmountMinor = Money.parseToMinorUnits(state.feeAmountInput)
+            if (feeAmountMinor == null || feeAmountMinor <= 0L) {
+                _formState.update { it.copy(feeAmountError = "Montant des frais invalide") }
+                return
+            }
+            if (state.feeAccountId == 0L) {
+                _formState.update { it.copy(feeAccountError = "Choisis un compte pour les frais") }
+                return
+            }
+        }
+
         val isTransfer = state.type == TransactionType.TRANSFER
+        // `!!` sûr : feeAmountMinor n'est non-null QUE si state.hasFee (voir validation ci-dessus).
+        val fee = if (state.hasFee) {
+            TransactionFee(
+                amount = feeAmountMinor!!,
+                accountId = state.feeAccountId,
+                type = state.feeType,
+                description = state.feeDescriptionInput.trim()
+            )
+        } else {
+            null
+        }
+
         viewModelScope.launch {
             transactionRepository.saveTransaction(
                 Transaction(
@@ -330,7 +441,8 @@ class TransactionFormViewModel @Inject constructor(
                     description = state.description.trim(),
                     paymentMethod = state.paymentMethod,
                     createdAt = state.createdAt ?: System.currentTimeMillis()
-                )
+                ),
+                fee = fee
             )
             _events.emit(TransactionFormEvent.Saved)
         }

@@ -4,6 +4,7 @@ import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
+import com.arzikina.ne.domain.model.FeeType
 import com.arzikina.ne.domain.model.PaymentMethod
 import com.arzikina.ne.domain.model.TransactionType
 
@@ -32,6 +33,15 @@ import com.arzikina.ne.domain.model.TransactionType
  * SQL vers `users`, domaine non concerné). Redondant avec la propriété du
  * compte/de la catégorie référencés (qui appartiennent déjà à un seul
  * utilisateur), mais explicite ici pour un filtrage direct sans jointure.
+ *
+ * `feeTransactionId` (voir [com.arzikina.ne.domain.model.Transaction.feeTransactionId]) :
+ * volontairement SANS `ForeignKey` (contrairement à `accountId`/`transferAccountId`) — une FK
+ * exigerait de recréer entièrement cette table (SQLite ne sait pas ajouter de FK à une table
+ * existante par `ALTER TABLE`, voir [MIGRATION_9_10]), pour un lien secondaire entre deux lignes
+ * de la MÊME table. La cohérence (création/modification/suppression conjointes des deux lignes)
+ * est garantie au niveau applicatif par `TransactionRepositoryImpl`, dans le même esprit que la
+ * suppression en cascade déjà gérée à la main pour les comptes/prêts (voir
+ * `AccountRepositoryImpl.deleteAccount`).
  */
 @Entity(
     tableName = "transactions",
@@ -74,5 +84,10 @@ data class TransactionEntity(
     val longitude: Double?,
     /** Voir [com.arzikina.ne.domain.model.Transaction.paymentMethod] : `NULL` = non précisé. */
     val paymentMethod: PaymentMethod?,
-    val createdAt: Long
+    val createdAt: Long,
+    /** Voir [com.arzikina.ne.domain.model.Transaction.feeTransactionId] et la doc de tête de
+     * cette classe (pas de `ForeignKey`, cascade gérée par le repository). */
+    val feeTransactionId: Long? = null,
+    /** Voir [com.arzikina.ne.domain.model.Transaction.feeType]. */
+    val feeType: FeeType? = null
 )

@@ -6,7 +6,7 @@ import com.arzikina.ne.data.local.dao.LoanDao
 import com.arzikina.ne.data.local.dao.LoanPaymentDao
 import com.arzikina.ne.data.local.dao.TransactionDao
 import com.arzikina.ne.data.local.database.ArzikinaDatabase
-import com.arzikina.ne.data.local.database.DefaultCategories
+import com.arzikina.ne.data.local.database.SystemCategoryResolver
 import com.arzikina.ne.data.local.entity.CategoryEntity
 import com.arzikina.ne.data.mapper.toDomain
 import com.arzikina.ne.data.mapper.toEntity
@@ -215,20 +215,15 @@ class LoanRepositoryImpl @Inject constructor(
     }
 
     /**
-     * Retrouve l'une des 4 catégories par défaut Prêts/Emprunts par son nom exact (voir
-     * `CategoryDao.getFirstByNameForUser`), et la RECRÉE silencieusement si l'utilisateur l'a
-     * supprimée entre-temps — un prêt/emprunt ne peut pas fonctionner sans catégorie (voir
-     * [com.arzikina.ne.domain.model.Transaction.categoryId], toujours renseignée pour un revenu ou
-     * une dépense). Réutilise [DefaultCategories.seed] comme unique source de vérité pour la
-     * couleur/l'icône/le type de la catégorie recréée, plutôt que de les dupliquer ici.
+     * Retrouve l'une des 4 catégories par défaut Prêts/Emprunts par son nom exact, et la RECRÉE
+     * silencieusement si l'utilisateur l'a supprimée entre-temps — un prêt/emprunt ne peut pas
+     * fonctionner sans catégorie (voir [com.arzikina.ne.domain.model.Transaction.categoryId],
+     * toujours renseignée pour un revenu ou une dépense). Délègue à [SystemCategoryResolver],
+     * partagé avec `TransactionRepositoryImpl` (fonctionnalité Frais) : comportement inchangé,
+     * seule la logique commune a été extraite pour ne pas la dupliquer.
      */
-    private suspend fun resolveLoanCategory(name: String, userId: Long): CategoryEntity {
-        categoryDao.getFirstByNameForUser(name, userId)?.let { return it }
-        val template = DefaultCategories.seed(System.currentTimeMillis(), userId).first { it.name == name }
-        categoryDao.upsert(template)
-        return categoryDao.getFirstByNameForUser(name, userId)
-            ?: error("Impossible de recréer la catégorie par défaut \"$name\".")
-    }
+    private suspend fun resolveLoanCategory(name: String, userId: Long): CategoryEntity =
+        SystemCategoryResolver.resolve(categoryDao, name, userId)
 
     private fun disbursementTransactionType(loanType: LoanType): TransactionType =
         if (loanType == LoanType.LENT) TransactionType.EXPENSE else TransactionType.INCOME

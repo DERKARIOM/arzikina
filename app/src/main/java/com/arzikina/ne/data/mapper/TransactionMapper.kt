@@ -16,7 +16,9 @@ fun TransactionEntity.toDomain(): Transaction = Transaction(
     latitude = latitude,
     longitude = longitude,
     paymentMethod = paymentMethod,
-    createdAt = createdAt
+    createdAt = createdAt,
+    feeTransactionId = feeTransactionId,
+    feeType = feeType
 )
 
 /** [userId] : fourni par le repository, jamais par l'appelant. */
@@ -34,5 +36,7 @@ fun Transaction.toEntity(userId: Long): TransactionEntity = TransactionEntity(
     latitude = latitude,
     longitude = longitude,
     paymentMethod = paymentMethod,
-    createdAt = createdAt
+    createdAt = createdAt,
+    feeTransactionId = feeTransactionId,
+    feeType = feeType
 )

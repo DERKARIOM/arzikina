@@ -16,6 +16,24 @@ interface TransactionDao {
     @Query("SELECT * FROM transactions WHERE id = :id AND userId = :userId")
     suspend fun getById(id: Long, userId: Long): TransactionEntity?
 
+    /** Utilisé par `AccountRepositoryImpl.deleteAccount` pour anticiper la cascade SQL sur
+     * `accountId` (voir `TransactionEntity`) avant de supprimer le compte. */
+    @Query("SELECT * FROM transactions WHERE accountId = :accountId AND userId = :userId")
+    suspend fun getAllForAccount(accountId: Long, userId: Long): List<TransactionEntity>
+
+    /** Même besoin que [getAllForAccount], côté `transferAccountId` (compte DESTINATION d'un
+     * virement, voir `TransactionEntity.transferAccountId`) — également en `CASCADE`. */
+    @Query("SELECT * FROM transactions WHERE transferAccountId = :accountId AND userId = :userId")
+    suspend fun getAllForTransferAccount(accountId: Long, userId: Long): List<TransactionEntity>
+
+    /** Neutralise un pointeur `feeTransactionId` devenu mort : voir `AccountRepositoryImpl.deleteAccount`,
+     * appelé quand la transaction de frais désignée par [feeTransactionId] est sur le point de
+     * disparaître en cascade (compte des frais supprimé) alors que la transaction PARENTE (celle
+     * qui porte ce pointeur) survit, potentiellement sur un compte différent. Sans `ForeignKey`
+     * sur cette colonne (voir `TransactionEntity`), SQLite ne le ferait jamais lui-même. */
+    @Query("UPDATE transactions SET feeTransactionId = NULL WHERE feeTransactionId = :feeTransactionId AND userId = :userId")
+    suspend fun clearFeeTransactionReference(feeTransactionId: Long, userId: Long)
+
     /** Retourne l'id de la ligne insérée, ou -1 en cas de mise à jour (voir `AccountDao.upsert`) —
      * nécessaire pour lier une transaction générée automatiquement à un `Loan`/`LoanPayment`
      * (voir `data/repository/LoanRepositoryImpl`). */

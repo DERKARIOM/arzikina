@@ -98,7 +98,14 @@ data class TransactionDto(
     /** Ajouté après coup (voir `domain/model/PaymentMethod`) : défaut `null`
      * pour rester compatible avec les fichiers exportés avant son existence. */
     val paymentMethod: String? = null,
-    val createdAt: Long
+    val createdAt: Long,
+    /** Ajouté après coup (voir `domain/model/Transaction.feeTransactionId`) : défaut `null` pour
+     * rester compatible avec les fichiers exportés avant son existence. L'id d'origine étant
+     * conservé tel quel à la restauration (voir la doc de tête de `BackupMappers`), ce pointeur
+     * reste valide après import : les deux lignes liées sont restaurées avec les mêmes ids. */
+    val feeTransactionId: Long? = null,
+    /** Voir `domain/model/Transaction.feeType`/`FeeType`. */
+    val feeType: String? = null
 )
 
 @Serializable

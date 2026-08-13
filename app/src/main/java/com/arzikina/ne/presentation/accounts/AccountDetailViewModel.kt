@@ -13,6 +13,7 @@ import com.arzikina.ne.domain.repository.TransactionRepository
 import com.arzikina.ne.presentation.transactions.TransactionDaySection
 import com.arzikina.ne.presentation.transactions.TransactionUiItem
 import com.arzikina.ne.presentation.transactions.computeRunningBalances
+import com.arzikina.ne.presentation.transactions.feeTransactionIds
 import com.arzikina.ne.presentation.transactions.groupByDay
 import com.arzikina.ne.util.AppResult
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -71,6 +72,9 @@ class AccountDetailViewModel @Inject constructor(
 
         // Un transfert dont ce compte est la DESTINATION doit apparaître ici aussi (voir
         // TransactionType.TRANSFER) : accountId seul ne couvre que la jambe "source".
+        // Inclut volontairement les transactions de frais de CE compte (voir feeTransactionIds
+        // plus bas) : elles doivent compter dans le solde, seule leur LIGNE d'affichage est
+        // filtrée ensuite.
         val accountTransactions = transactions.filter { it.accountId == accountId || it.transferAccountId == accountId }
         // `accountTransactions` suffit ici (pas besoin de la liste complète) : pour chaque
         // transfert filtré, computeCurrentBalances/computeRunningBalances savent déjà créditer
@@ -78,17 +82,25 @@ class AccountDetailViewModel @Inject constructor(
         val currentBalance = computeCurrentBalances(listOf(account), accountTransactions)[account.id] ?: account.initialBalance
         val runningBalances = computeRunningBalances(accountTransactions, listOf(account))
 
-        val items = accountTransactions.map { transaction ->
-            val isTransferReceived = transaction.transferAccountId == accountId
-            TransactionUiItem(
-                transaction = transaction,
-                account = account,
-                // categoryId est `null` pour un transfert (voir TransactionType.TRANSFER).
-                category = transaction.categoryId?.let { categoriesById[it] },
-                runningBalance = runningBalances[transaction.id to accountId],
-                isTransferReceived = isTransferReceived
-            )
-        }
+        // Recherche du montant des frais liés sur TOUTE la liste (transactions, pas
+        // accountTransactions) : le compte des frais d'une transaction de ce compte peut être un
+        // AUTRE compte (voir feeTransactionIds).
+        val transactionsById = transactions.associateBy { it.id }
+        val feeTransactionIds = transactions.feeTransactionIds()
+        val items = accountTransactions
+            .filter { transaction -> transaction.id !in feeTransactionIds }
+            .map { transaction ->
+                val isTransferReceived = transaction.transferAccountId == accountId
+                TransactionUiItem(
+                    transaction = transaction,
+                    account = account,
+                    // categoryId est `null` pour un transfert (voir TransactionType.TRANSFER).
+                    category = transaction.categoryId?.let { categoriesById[it] },
+                    runningBalance = runningBalances[transaction.id to accountId],
+                    isTransferReceived = isTransferReceived,
+                    feeAmount = transaction.feeTransactionId?.let { transactionsById[it]?.amount }
+                )
+            }
 
         AccountDetailUiState(
             account = account,

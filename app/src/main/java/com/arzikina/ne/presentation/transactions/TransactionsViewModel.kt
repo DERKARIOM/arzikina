@@ -98,13 +98,21 @@ class TransactionsViewModel @Inject constructor(
     ) { transactions, accounts, categories, filters ->
         val accountsById = accounts.associateBy { it.id }
         val categoriesById = categories.associateBy { it.id }
+        val transactionsById = transactions.associateBy { it.id }
         val today = LocalDate.now()
         val normalizedQuery = filters.query.trim()
-        // Sur les transactions NON filtrées : voir computeRunningBalances.
+        // Sur les transactions NON filtrées : voir computeRunningBalances. La transaction de
+        // frais liée reste incluse ici (c'est une transaction ordinaire pour le calcul de solde,
+        // voir feeTransactionIds) — seule la construction des LIGNES l'exclut plus bas.
         val runningBalances = computeRunningBalances(transactions, accounts)
+        // Une transaction de frais ne doit jamais apparaître comme sa propre ligne (voir
+        // feeTransactionIds) : seule la transaction PARENTE porte un indicateur discret
+        // ([TransactionUiItem.feeAmount], voir TransactionItemBinder).
+        val feeTransactionIds = transactions.feeTransactionIds()
 
         transactions
             .asSequence()
+            .filter { transaction -> transaction.id !in feeTransactionIds }
             .map { transaction ->
                 // Par défaut, un transfert est affiché du point de vue de son compte SOURCE (une
                 // seule ligne dans la liste globale non filtrée). Quand l'utilisateur filtre
@@ -126,7 +134,8 @@ class TransactionsViewModel @Inject constructor(
                     // categoryId est `null` pour un transfert (voir TransactionType.TRANSFER).
                     category = transaction.categoryId?.let { categoriesById[it] },
                     runningBalance = runningBalances[transaction.id to perspectiveAccountId],
-                    isTransferReceived = isTransferReceived
+                    isTransferReceived = isTransferReceived,
+                    feeAmount = transaction.feeTransactionId?.let { transactionsById[it]?.amount }
                 )
             }
             .filter { item -> matchesType(item.transaction.type, filters.type) }

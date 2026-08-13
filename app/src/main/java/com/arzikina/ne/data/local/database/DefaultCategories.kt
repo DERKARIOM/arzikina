@@ -2,6 +2,7 @@ package com.arzikina.ne.data.local.database
 
 import com.arzikina.ne.data.local.entity.CategoryEntity
 import com.arzikina.ne.domain.model.CategoryIcon
+import com.arzikina.ne.domain.model.FeeCategoryNames
 import com.arzikina.ne.domain.model.LoanCategoryNames
 import com.arzikina.ne.domain.model.TransactionType
 
@@ -48,7 +49,11 @@ internal object DefaultCategories {
         category(LOAN_DISBURSEMENT_LENT_NAME, CategoryIcon.LOAN, 0xFF16A34AL, TransactionType.EXPENSE, now, userId),
         category(LOAN_REPAYMENT_LENT_NAME, CategoryIcon.LOAN, 0xFF16A34AL, TransactionType.INCOME, now, userId),
         category(LOAN_DISBURSEMENT_BORROWED_NAME, CategoryIcon.LOAN, 0xFFDC2626L, TransactionType.INCOME, now, userId),
-        category(LOAN_REPAYMENT_BORROWED_NAME, CategoryIcon.LOAN, 0xFFDC2626L, TransactionType.EXPENSE, now, userId)
+        category(LOAN_REPAYMENT_BORROWED_NAME, CategoryIcon.LOAN, 0xFFDC2626L, TransactionType.EXPENSE, now, userId),
+
+        // Frais et commissions (voir domain/model/FeeCategoryNames) : catégorie système unique,
+        // toujours une dépense (voir sa doc — pas de jambe "revenu" symétrique comme les prêts).
+        category(FeeCategoryNames.FEES, CategoryIcon.FEE, 0xFF92400EL, TransactionType.EXPENSE, now, userId)
     )
 
     private fun category(

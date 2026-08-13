@@ -104,5 +104,20 @@ object TransactionItemBinder {
         } else {
             binding.runningBalance.visibility = View.GONE
         }
+
+        // Indicateur discret "+ Frais X" (voir TransactionUiItem.feeAmount) : devise du compte
+        // affiché sur CETTE ligne, comme pour "amount"/"runningBalance" juste au-dessus — un frais
+        // payé depuis un compte tiers reste rare et, si son compte est dans une devise différente,
+        // ce compromis d'affichage reste préférable à une recherche supplémentaire du compte réel
+        // des frais rien que pour cet indicateur secondaire.
+        if (item.feeAmount != null && amountCurrency != null) {
+            binding.feeIndicator.visibility = View.VISIBLE
+            binding.feeIndicator.text = context.getString(
+                R.string.transaction_fee_indicator,
+                Money.format(CurrencyAmount(amountCurrency, item.feeAmount))
+            )
+        } else {
+            binding.feeIndicator.visibility = View.GONE
+        }
     }
 }

@@ -28,6 +28,16 @@ package com.arzikina.ne.domain.model
  * compris pour toutes les transactions enregistrées avant l'introduction de
  * ce champ.
  * @param id 0L tant que la transaction n'a pas encore été enregistrée en base.
+ * @param feeTransactionId présent UNIQUEMENT sur une transaction "principale" qui a des frais
+ * supplémentaires (voir cahier des charges "Gestion des frais") : pointe vers une AUTRE
+ * [Transaction] auto-générée (type [TransactionType.EXPENSE], compte = celui choisi pour les
+ * frais, catégorie système "Frais et commissions", montant = le montant des frais) plutôt que de
+ * porter le montant/la description des frais directement sur cette transaction — voir
+ * `TransactionRepositoryImpl` pour l'écriture conjointe des deux lignes. `null` pour une
+ * transaction normale ET pour une transaction de frais elle-même (pas de chaînage).
+ * @param feeType présent UNIQUEMENT sur la transaction DE FRAIS pointée par [feeTransactionId]
+ * d'une autre transaction (voir [FeeType]) ; `null` partout ailleurs, y compris sur la transaction
+ * principale qui la référence.
  */
 data class Transaction(
     val id: Long = 0L,
@@ -42,7 +52,9 @@ data class Transaction(
     val latitude: Double? = null,
     val longitude: Double? = null,
     val paymentMethod: PaymentMethod? = null,
-    val createdAt: Long
+    val createdAt: Long,
+    val feeTransactionId: Long? = null,
+    val feeType: FeeType? = null
 )
 
 /**

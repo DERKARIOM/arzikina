@@ -71,6 +71,8 @@ import com.arzikina.ne.data.local.entity.UserEntity
  *   [MIGRATION_13_14]/[RecurringTransactionEntity]/[RecurringTransactionOccurrenceEntity]).
  * - 15 : Exclusion d'un compte des statistiques personnelles (`isExcludedFromStatistics`
  *   sur `accounts` — voir [MIGRATION_14_15]).
+ * - 16 : Frais supplémentaires sur une transaction (`feeTransactionId`, `feeType` sur
+ *   `transactions` — voir [MIGRATION_15_16]).
  */
 @Database(
     entities = [
@@ -87,7 +89,7 @@ import com.arzikina.ne.data.local.entity.UserEntity
         RecurringTransactionEntity::class,
         RecurringTransactionOccurrenceEntity::class
     ],
-    version = 15,
+    version = 16,
     exportSchema = true
 )
 @TypeConverters(Converters::class)

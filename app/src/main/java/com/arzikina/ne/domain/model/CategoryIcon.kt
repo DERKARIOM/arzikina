@@ -19,5 +19,8 @@ enum class CategoryIcon {
     OTHER,
     /** Ajouté pour les catégories par défaut Prêts/Emprunts (voir `DefaultCategories`) — simple
      * valeur d'enum stockée en texte (voir `Converters`), aucune migration Room nécessaire. */
-    LOAN
+    LOAN,
+    /** Ajouté pour la catégorie système "Frais et commissions" (voir `FeeCategoryNames`,
+     * `DefaultCategories`) — même raisonnement que [LOAN], aucune migration Room nécessaire. */
+    FEE
 }

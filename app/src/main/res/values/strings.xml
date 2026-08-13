@@ -250,6 +250,31 @@
     <string name="payment_method_mobile_money">Mobile Money</string>
     <string name="payment_method_bank_transfer">Virement bancaire</string>
     <string name="payment_method_other">Autre</string>
+
+    <!-- Frais supplémentaires (voir TransactionFormViewModel.TransactionFormState.hasFee et
+         TransactionFee) -->
+    <string name="transaction_form_add_fee_toggle">Ajouter des frais</string>
+    <string name="transaction_form_fee_amount_label">Montant des frais</string>
+    <string name="transaction_form_fee_type_label">Type de frais</string>
+    <string name="transaction_form_fee_description_label">Description des frais (facultatif)</string>
+    <string name="transaction_form_fee_account_label">Compte pour les frais</string>
+    <string name="transaction_form_fee_summary_amount_label">Montant</string>
+    <string name="transaction_form_fee_summary_fee_label">Frais</string>
+    <!-- Dépense/Transfert : la ligne "Total" = montant + frais (coût total). -->
+    <string name="transaction_form_fee_summary_total_label">Total</string>
+    <!-- Revenu : la ligne devient "Revenu net" = montant - frais (voir cahier des charges,
+         section "Cas des revenus"), jamais "Total" qui suggérerait une addition. -->
+    <string name="transaction_form_fee_summary_net_label">Revenu net</string>
+    <string name="fee_type_transfer">Frais de transfert</string>
+    <string name="fee_type_bank">Frais bancaires</string>
+    <string name="fee_type_commission">Commission</string>
+    <string name="fee_type_service">Frais de service</string>
+    <string name="fee_type_other">Autre</string>
+
+    <!-- Indicateur discret sur la ligne de la transaction PARENTE quand elle a des frais liés
+         (voir Transaction.feeTransactionId, TransactionItemBinder) — jamais affiché pour la
+         transaction de frais elle-même, qui n'apparaît jamais comme sa propre ligne. -->
+    <string name="transaction_fee_indicator">+ Frais %1$s</string>
     <string name="transaction_uncategorized">Sans catégorie</string>
     <string name="transaction_unknown_account">Compte inconnu</string>
     <!-- Catégorie affichée pour TransactionType.TRANSFER (qui n'a pas de vraie Category, voir Transaction.categoryId). -->

@@ -82,6 +82,18 @@ class AccountRepositoryImpl @Inject constructor(
      *    DIFFÉRENT : la ligne `loan_payments` disparaît en cascade sans que le prêt parent ne soit
      *    averti — son montant remboursé/solde restant/statut doivent être recalculés AVANT, sinon
      *    le prêt reste figé avec un montant remboursé qui ne correspond plus à aucun versement réel.
+     * 3. Transactions liées à des FRAIS (voir [com.arzikina.ne.domain.model.Transaction.feeTransactionId]),
+     *    dans les deux sens, pour toute transaction sur le point de disparaître en cascade sur ce
+     *    compte (`accountId` OU `transferAccountId`, voir [cleanUpFeeLinksBeforeAccountCascade]) :
+     *    - elle est elle-même une transaction PARENTE avec des frais liés sur un AUTRE compte
+     *      (survivant) : sa transaction de frais doit disparaître avec elle, comme le ferait
+     *      [com.arzikina.ne.data.repository.TransactionRepositoryImpl.deleteTransaction] pour une
+     *      suppression explicite — sinon cette ligne de frais devient orpheline et réapparaît comme
+     *      une transaction "Frais et commissions" ordinaire, sans lien avec rien.
+     *    - elle est elle-même une transaction de FRAIS référencée par une transaction PARENTE sur
+     *      un AUTRE compte (survivante) : le pointeur `feeTransactionId` de cette dernière
+     *      deviendrait mort (SQLite ne le sait pas, cette colonne n'a volontairement pas de
+     *      `ForeignKey`, voir `TransactionEntity`) — neutralisé au lieu d'être laissé pendant.
      *
      * Duplique volontairement une partie de la logique de [com.arzikina.ne.data.repository.LoanRepositoryImpl.deleteLoan]/
      * `.deletePayment` plutôt que d'en dépendre : un repository ne doit pas dépendre d'un autre
@@ -91,6 +103,8 @@ class AccountRepositoryImpl @Inject constructor(
     override suspend fun deleteAccount(id: Long) = withContext(ioDispatcher) {
         val userId = requireCurrentUserId()
         database.withTransaction {
+            cleanUpFeeLinksBeforeAccountCascade(id, userId)
+
             loanDao.getAllForAccount(id, userId).forEach { loan ->
                 loanPaymentDao.getAllForLoan(loan.id, userId).forEach { payment ->
                     transactionDao.deleteById(payment.transactionId, userId)
@@ -119,6 +133,37 @@ class AccountRepositoryImpl @Inject constructor(
             }
 
             accountDao.deleteById(id, userId)
+        }
+    }
+
+    /**
+     * Voir le point 3 de la doc de [deleteAccount]. Rassemble toute transaction sur le point de
+     * disparaître en cascade à cause de CE compte — `accountId` (compte principal) ET
+     * `transferAccountId` (compte destination d'un virement, voir `TransactionEntity`), dédupliquée
+     * par id (les deux colonnes ne peuvent normalement pas désigner le même compte pour une même
+     * ligne) — et neutralise les deux sens du lien de frais AVANT que `accountDao.deleteById` ne
+     * déclenche la cascade SQL.
+     */
+    private suspend fun cleanUpFeeLinksBeforeAccountCascade(accountId: Long, userId: Long) {
+        val disappearing = (
+            transactionDao.getAllForAccount(accountId, userId) +
+                transactionDao.getAllForTransferAccount(accountId, userId)
+            ).distinctBy { it.id }
+        val disappearingIds = disappearing.map { it.id }.toSet()
+
+        disappearing.forEach { transaction ->
+            // Cette transaction est elle-même PARENTE de frais sur un AUTRE compte (survivant) :
+            // sa transaction de frais doit disparaître avec elle. Si cette dernière disparaît de
+            // toute façon dans ce même lot (déjà dans `disappearingIds`), rien à faire de plus.
+            transaction.feeTransactionId?.let { feeTransactionId ->
+                if (feeTransactionId !in disappearingIds) {
+                    transactionDao.deleteById(feeTransactionId, userId)
+                }
+            }
+            // Cette transaction est peut-être elle-même une ligne de FRAIS référencée par une
+            // transaction PARENTE survivante ailleurs : neutraliser ce pointeur avant qu'il ne
+            // devienne mort.
+            transactionDao.clearFeeTransactionReference(transaction.id, userId)
         }
     }
 
