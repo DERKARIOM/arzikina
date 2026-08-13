@@ -62,6 +62,8 @@
                     android:id="@+id/exportButton"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:textColor="@color/white"
+                    android:background="@drawable/forme_radius_10dp"
                     app:icon="@drawable/ic_cloud_backup_24"
                     android:text="@string/settings_backup_export_action" />
 
@@ -84,9 +86,10 @@
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/importButton"
-                    style="?attr/materialButtonOutlinedStyle"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:background="@drawable/forme_radius_10dp"
+                    app:backgroundTint="@color/arzikina_postcart_background"
                     app:icon="@drawable/ic_cloud_backup_24"
                     android:text="@string/settings_backup_import_action" />
 
