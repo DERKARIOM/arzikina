@@ -14,6 +14,7 @@ import androidx.navigation.fragment.findNavController
 import coil3.load
 import com.arzikina.ne.R
 import com.arzikina.ne.databinding.FragmentProfileBinding
+import com.arzikina.ne.presentation.components.NavAnimations
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
@@ -58,13 +59,13 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
         viewBinding.changePasswordRow.menuIcon.setImageResource(R.drawable.ic_lock_24)
         viewBinding.changePasswordRow.menuTitle.setText(R.string.profile_change_password_action)
         viewBinding.changePasswordRow.root.setOnClickListener {
-            findNavController().navigate(R.id.changePasswordFragment)
+            findNavController().navigate(R.id.changePasswordFragment, null, NavAnimations.push)
         }
 
         viewBinding.securityQuestionRow.menuIcon.setImageResource(R.drawable.ic_help_24)
         viewBinding.securityQuestionRow.menuTitle.setText(R.string.profile_security_question_action)
         viewBinding.securityQuestionRow.root.setOnClickListener {
-            findNavController().navigate(R.id.securityQuestionFragment)
+            findNavController().navigate(R.id.securityQuestionFragment, null, NavAnimations.push)
         }
 
         viewBinding.logoutButton.setOnClickListener { confirmLogout() }
@@ -125,7 +126,14 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
                 binding?.let { Snackbar.make(it.root, R.string.profile_success_message, Snackbar.LENGTH_SHORT).show() }
             }
             ProfileEvent.LoggedOut -> {
-                val options = NavOptions.Builder().setPopUpTo(R.id.nav_graph, true).build()
+                // Même raisonnement que LoginFragment.handleEvent(LoginEvent.LoggedIn) : fondu
+                // (pas glissement), basculement de contexte pair vers l'écran de connexion plutôt
+                // que descente hiérarchique — voir sa doc pour le détail complet.
+                val options = NavOptions.Builder()
+                    .setEnterAnim(R.anim.fade_in)
+                    .setExitAnim(R.anim.fade_out)
+                    .setPopUpTo(R.id.nav_graph, true)
+                    .build()
                 findNavController().navigate(R.id.loginFragment, null, options)
             }
             is ProfileEvent.ShowError -> {

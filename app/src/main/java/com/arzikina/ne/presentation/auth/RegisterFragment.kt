@@ -153,7 +153,14 @@ class RegisterFragment : Fragment(R.layout.fragment_register) {
     private fun handleEvent(event: RegisterEvent) {
         when (event) {
             RegisterEvent.Registered -> {
-                val options = NavOptions.Builder().setPopUpTo(R.id.nav_graph, true).build()
+                // Même raisonnement que LoginFragment.handleEvent(LoginEvent.LoggedIn) : fondu
+                // (pas glissement), basculement de contexte pair vers l'application plutôt que
+                // descente hiérarchique — voir sa doc pour le détail complet.
+                val options = NavOptions.Builder()
+                    .setEnterAnim(R.anim.fade_in)
+                    .setExitAnim(R.anim.fade_out)
+                    .setPopUpTo(R.id.nav_graph, true)
+                    .build()
                 findNavController().navigate(R.id.dashboardFragment, null, options)
             }
             is RegisterEvent.ShowError -> {

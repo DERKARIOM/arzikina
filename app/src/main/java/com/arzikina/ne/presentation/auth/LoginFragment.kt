@@ -13,6 +13,7 @@ import androidx.navigation.NavOptions
 import androidx.navigation.fragment.findNavController
 import com.arzikina.ne.R
 import com.arzikina.ne.databinding.FragmentLoginBinding
+import com.arzikina.ne.presentation.components.NavAnimations
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 
@@ -52,10 +53,10 @@ class LoginFragment : Fragment(R.layout.fragment_login) {
         }
         viewBinding.loginButton.setOnClickListener { viewModel.submit() }
         viewBinding.registerActionText.setOnClickListener {
-            findNavController().navigate(R.id.registerFragment)
+            findNavController().navigate(R.id.registerFragment, null, NavAnimations.push)
         }
         viewBinding.forgotPasswordActionText.setOnClickListener {
-            findNavController().navigate(R.id.forgotPasswordFragment)
+            findNavController().navigate(R.id.forgotPasswordFragment, null, NavAnimations.push)
         }
 
         viewLifecycleOwner.lifecycleScope.launch {
@@ -106,7 +107,17 @@ class LoginFragment : Fragment(R.layout.fragment_login) {
     private fun handleEvent(event: LoginEvent) {
         when (event) {
             LoginEvent.LoggedIn -> {
-                val options = NavOptions.Builder().setPopUpTo(R.id.nav_graph, true).build()
+                // Fondu, pas glissement (même raisonnement que NavAnimations.tabSwitch, voir sa
+                // doc) : cette navigation ne descend pas dans une hiérarchie, elle REMPLACE tout
+                // le graphe (`popUpTo(nav_graph, true)`) — un basculement de contexte pair (écran
+                // de connexion → application), pas parent/enfant. `popEnterAnim`/`popExitAnim`
+                // inutiles ici : `popUpTo` vide toute la pile, il n'y a plus rien vers quoi
+                // revenir en arrière depuis le Dashboard.
+                val options = NavOptions.Builder()
+                    .setEnterAnim(R.anim.fade_in)
+                    .setExitAnim(R.anim.fade_out)
+                    .setPopUpTo(R.id.nav_graph, true)
+                    .build()
                 findNavController().navigate(R.id.dashboardFragment, null, options)
             }
         }
