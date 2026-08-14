@@ -15,4 +15,7 @@ interface UserPreferencesRepository {
     fun observePreferences(): Flow<UserPreferences>
     suspend fun setThemeMode(mode: ThemeMode)
     suspend fun setCurrencyCode(currencyCode: String)
+
+    /** Voir [UserPreferences.biometricLockEnabled] : réglage par appareil, pas par compte. */
+    suspend fun setBiometricLockEnabled(enabled: Boolean)
 }

@@ -3,6 +3,7 @@ package com.arzikina.ne.di
 import com.arzikina.ne.data.repository.AccountRepositoryImpl
 import com.arzikina.ne.data.repository.AuthRepositoryImpl
 import com.arzikina.ne.data.repository.BackupRepositoryImpl
+import com.arzikina.ne.data.security.BiometricAuthenticatorImpl
 import com.arzikina.ne.data.repository.BudgetRepositoryImpl
 import com.arzikina.ne.data.repository.CategoryRepositoryImpl
 import com.arzikina.ne.data.repository.LoanRepositoryImpl
@@ -15,6 +16,7 @@ import com.arzikina.ne.data.repository.UserPreferencesRepositoryImpl
 import com.arzikina.ne.domain.repository.AccountRepository
 import com.arzikina.ne.domain.repository.AuthRepository
 import com.arzikina.ne.domain.repository.BackupRepository
+import com.arzikina.ne.domain.repository.BiometricAuthenticator
 import com.arzikina.ne.domain.repository.BudgetRepository
 import com.arzikina.ne.domain.repository.CategoryRepository
 import com.arzikina.ne.domain.repository.LoanRepository
@@ -86,4 +88,8 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindRecurringTransactionRepository(impl: RecurringTransactionRepositoryImpl): RecurringTransactionRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindBiometricAuthenticator(impl: BiometricAuthenticatorImpl): BiometricAuthenticator
 }

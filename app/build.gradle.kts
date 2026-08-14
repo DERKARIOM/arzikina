@@ -79,6 +79,10 @@ dependencies {
     // Préférences utilisateur (thème, devise, langue)
     implementation(libs.androidx.datastore.preferences)
 
+    // Authentification biométrique (verrouillage à l'ouverture, actions sensibles — voir
+    // domain/repository/BiometricAuthenticator.kt et data/security/BiometricAuthenticatorImpl.kt)
+    implementation(libs.androidx.biometric)
+
     // Tâches d'arrière-plan (rappels, sauvegardes automatiques futures)
     implementation(libs.androidx.work.runtime.ktx)
 

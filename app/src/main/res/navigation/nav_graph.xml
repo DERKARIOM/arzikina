@@ -45,6 +45,19 @@
         android:label="@string/forgot_password_title"
         tools:layout="@layout/fragment_forgot_password" />
 
+    <!--
+        Verrou biométrique à l'ouverture (voir MainActivity.resolveStartDestination) : retourné
+        comme startDestination À LA PLACE de dashboardFragment quand une session existe déjà ET que
+        UserPreferences.biometricLockEnabled est actif ET que la biométrie est disponible sur
+        l'appareil au moment du lancement. Même traitement que loginFragment/registerFragment ci-
+        dessus (Bottom Navigation masquée, voir MainActivity.AUTH_DESTINATION_IDS).
+    -->
+    <fragment
+        android:id="@+id/biometricLockFragment"
+        android:name="com.arzikina.ne.presentation.security.BiometricLockFragment"
+        android:label="@string/biometric_lock_title"
+        tools:layout="@layout/fragment_biometric_lock" />
+
     <fragment
         android:id="@+id/dashboardFragment"
         android:name="com.arzikina.ne.presentation.dashboard.DashboardFragment"

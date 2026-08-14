@@ -2,6 +2,7 @@ package com.arzikina.ne.data.repository
 
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.arzikina.ne.domain.model.ThemeMode
@@ -30,6 +31,10 @@ class UserPreferencesRepositoryImpl @Inject constructor(
     private object Keys {
         val THEME_MODE = stringPreferencesKey("theme_mode")
         val CURRENCY_CODE = stringPreferencesKey("currency_code")
+
+        /** Voir [UserPreferences.biometricLockEnabled] : réglage par appareil (cette clé DataStore
+         * n'est pas scopée par utilisateur), volontairement absente de tout couple userId/clé. */
+        val BIOMETRIC_LOCK_ENABLED = booleanPreferencesKey("biometric_lock_enabled")
     }
 
     override fun observePreferences(): Flow<UserPreferences> =
@@ -38,7 +43,12 @@ class UserPreferencesRepositoryImpl @Inject constructor(
                 ?.let { runCatching { ThemeMode.valueOf(it) }.getOrNull() }
                 ?: ThemeMode.SYSTEM
             val currencyCode = preferences[Keys.CURRENCY_CODE] ?: Constants.DEFAULT_CURRENCY_CODE
-            UserPreferences(themeMode = themeMode, currencyCode = currencyCode)
+            val biometricLockEnabled = preferences[Keys.BIOMETRIC_LOCK_ENABLED] ?: false
+            UserPreferences(
+                themeMode = themeMode,
+                currencyCode = currencyCode,
+                biometricLockEnabled = biometricLockEnabled
+            )
         }
 
     override suspend fun setThemeMode(mode: ThemeMode) {
@@ -47,5 +57,9 @@ class UserPreferencesRepositoryImpl @Inject constructor(
 
     override suspend fun setCurrencyCode(currencyCode: String) {
         dataStore.edit { it[Keys.CURRENCY_CODE] = currencyCode }
+    }
+
+    override suspend fun setBiometricLockEnabled(enabled: Boolean) {
+        dataStore.edit { it[Keys.BIOMETRIC_LOCK_ENABLED] = enabled }
     }
 }

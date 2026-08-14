@@ -6,7 +6,9 @@ import androidx.lifecycle.viewModelScope
 import com.arzikina.ne.R
 import com.arzikina.ne.domain.model.AuthResult
 import com.arzikina.ne.domain.repository.AuthRepository
+import com.arzikina.ne.domain.repository.BiometricAuthenticator
 import com.arzikina.ne.domain.repository.SessionManager
+import com.arzikina.ne.domain.repository.UserPreferencesRepository
 import com.arzikina.ne.util.AuthValidator
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -48,14 +50,31 @@ sealed interface ProfileEvent {
     data class ShowError(@StringRes val messageRes: Int) : ProfileEvent
 }
 
+/**
+ * [isAvailable] résolu UNE SEULE FOIS au chargement de l'écran (voir [init]) — contrairement à
+ * [isEnabled], qui reste observé en continu (voir [UserPreferencesRepository.observePreferences]) :
+ * le matériel biométrique de l'appareil ne change pas pendant qu'un utilisateur reste sur cet
+ * écran, alors que le réglage lui-même doit rester réactif comme le reste des préférences de l'app
+ * (voir [com.arzikina.ne.presentation.settings.SettingsViewModel] pour le même principe).
+ */
+data class BiometricLockUiState(
+    val isAvailable: Boolean = false,
+    val isEnabled: Boolean = false
+)
+
 @HiltViewModel
 class ProfileViewModel @Inject constructor(
     private val authRepository: AuthRepository,
-    private val sessionManager: SessionManager
+    private val sessionManager: SessionManager,
+    private val userPreferencesRepository: UserPreferencesRepository,
+    private val biometricAuthenticator: BiometricAuthenticator
 ) : ViewModel() {
 
     private val _formState = MutableStateFlow(ProfileFormState())
     val formState: StateFlow<ProfileFormState> = _formState.asStateFlow()
+
+    private val _biometricLockState = MutableStateFlow(BiometricLockUiState())
+    val biometricLockState: StateFlow<BiometricLockUiState> = _biometricLockState.asStateFlow()
 
     private val _events = MutableSharedFlow<ProfileEvent>()
     val events: SharedFlow<ProfileEvent> = _events.asSharedFlow()
@@ -78,6 +97,27 @@ class ProfileViewModel @Inject constructor(
                     )
                 }
             }
+        }
+        viewModelScope.launch {
+            val available = biometricAuthenticator.isAvailable()
+            _biometricLockState.update { it.copy(isAvailable = available) }
+        }
+        viewModelScope.launch {
+            userPreferencesRepository.observePreferences().collect { preferences ->
+                _biometricLockState.update { it.copy(isEnabled = preferences.biometricLockEnabled) }
+            }
+        }
+    }
+
+    /**
+     * Aucune vérification biométrique n'est demandée pour ACTIVER ou DÉSACTIVER ce réglage
+     * lui-même (contrairement à son usage une fois activé) : la session locale déjà active suffit
+     * à prouver que la personne devant l'appareil est autorisée à changer ses propres préférences
+     * — voir la doctrine de [BiometricAuthenticator], "en complément d'une session déjà active".
+     */
+    fun onBiometricLockToggle(enabled: Boolean) {
+        viewModelScope.launch {
+            userPreferencesRepository.setBiometricLockEnabled(enabled)
         }
     }
 

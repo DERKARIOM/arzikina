@@ -122,9 +122,31 @@
     <string name="profile_success_message">Profil mis à jour.</string>
     <string name="profile_change_password_action">Changer le mot de passe</string>
     <string name="profile_security_question_action">Modifier la question de sécurité</string>
+    <string name="profile_biometric_lock_label">Verrouillage biométrique</string>
+    <string name="profile_biometric_lock_description">Demande ton empreinte digitale à l\'ouverture d\'Arzikina et pour certaines actions sensibles (révéler une carte, sauvegarder/restaurer tes données).</string>
+    <string name="profile_biometric_lock_unavailable_description">Indisponible : aucun capteur biométrique compatible, ou aucune empreinte enregistrée sur cet appareil.</string>
     <string name="profile_logout_action">Se déconnecter</string>
     <string name="profile_logout_confirm_title">Se déconnecter ?</string>
     <string name="profile_logout_confirm_message">Tu devras te reconnecter avec ton mot de passe pour accéder à nouveau à tes données. Aucune donnée n\'est supprimée.</string>
+
+    <!-- Textes du système d'exploitation (BiometricPrompt) — voir data/security/BiometricAuthenticatorImpl.kt.
+         Un seul jeu de textes générique réutilisé pour les 3 déclenchements (ouverture de l'app,
+         révélation carte/CVV, export/import de sauvegarde) : le sous-titre reste volontairement
+         vague plutôt que dupliqué 3 fois, le contexte étant déjà clair pour l'utilisateur au moment
+         où le prompt apparaît. -->
+    <string name="biometric_prompt_title">Vérification biométrique</string>
+    <string name="biometric_prompt_subtitle">Confirme ton identité avec ton empreinte digitale</string>
+    <string name="biometric_prompt_negative_button">Annuler</string>
+
+    <!-- Écran de verrouillage à l'ouverture (voir presentation/security/BiometricLockFragment.kt). -->
+    <string name="biometric_lock_title">Verrouillage biométrique</string>
+    <string name="biometric_lock_subtitle">Utilise ton empreinte digitale pour accéder à Arzikina</string>
+    <string name="biometric_lock_retry_action">Réessayer</string>
+    <!-- Échappatoire volontaire si l'empreinte échoue de façon répétée ou irrécupérable (capteur
+         désactivé entre-temps, verrouillage biométrique système après trop d'essais...) : ramène
+         à l'écran Connexion, où le mot de passe reste toujours utilisable — voir la doctrine de
+         BiometricAuthenticator, "en complément d'une session active", jamais un blocage total. -->
+    <string name="biometric_lock_logout_action">Se déconnecter et utiliser mon mot de passe</string>
     <!-- Partagé entre "Changer le mot de passe" et "Modifier la question de sécurité" : même champ, même signification dans les deux écrans. -->
     <string name="profile_current_password_label">Mot de passe actuel</string>
     <string name="profile_error_current_password_incorrect">Mot de passe actuel incorrect</string>

@@ -68,11 +68,16 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
             findNavController().navigate(R.id.securityQuestionFragment, null, NavAnimations.push)
         }
 
+        viewBinding.biometricLockSwitch.setOnCheckedChangeListener { _, isChecked ->
+            viewModel.onBiometricLockToggle(isChecked)
+        }
+
         viewBinding.logoutButton.setOnClickListener { confirmLogout() }
 
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch { viewModel.formState.collect { state -> render(state) } }
+                launch { viewModel.biometricLockState.collect { state -> renderBiometricLock(state) } }
                 launch { viewModel.events.collect { event -> handleEvent(event) } }
             }
         }
@@ -118,6 +123,25 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
         binding.saveButton.isEnabled = !state.isSaving
         binding.saveButton.text = if (state.isSaving) "" else getString(R.string.profile_save_action)
         binding.progressIndicator.visibility = if (state.isSaving) View.VISIBLE else View.GONE
+    }
+
+    /** Le switch reste visible mais désactivé (jamais masqué) si la biométrie est indisponible sur
+     * l'appareil : le réglage ne disparaît pas silencieusement, un texte explique pourquoi il est
+     * grisé (voir [R.string.profile_biometric_lock_unavailable_description]). */
+    private fun renderBiometricLock(state: BiometricLockUiState) {
+        val binding = binding ?: return
+
+        binding.biometricLockSwitch.isEnabled = state.isAvailable
+        if (binding.biometricLockSwitch.isChecked != state.isEnabled) {
+            binding.biometricLockSwitch.isChecked = state.isEnabled
+        }
+        binding.biometricLockDescription.text = getString(
+            if (state.isAvailable) {
+                R.string.profile_biometric_lock_description
+            } else {
+                R.string.profile_biometric_lock_unavailable_description
+            }
+        )
     }
 
     private fun handleEvent(event: ProfileEvent) {

@@ -42,6 +42,14 @@ data class BackupPayload(
     val recurringTransactionOccurrences: List<RecurringTransactionOccurrenceDto> = emptyList()
 )
 
+/**
+ * PAS de champ pour `UserPreferences.biometricLockEnabled` (voir sa doc) : c'est un réglage PAR
+ * APPAREIL, jamais lié à un compte. L'inclure ici ferait qu'une restauration sur un NOUVEL
+ * appareil imposerait un verrou biométrique choisi sur un autre téléphone — potentiellement sans
+ * capteur biométrique enrôlé sur celui-ci, ce qui bloquerait l'ouverture de l'app au prochain
+ * lancement (voir `MainActivity.resolveStartDestination`). `toDomain()` retombe donc sur la
+ * valeur par défaut (`false`) à chaque restauration, quel que soit le réglage du fichier source.
+ */
 @Serializable
 data class UserPreferencesDto(
     val themeMode: String,

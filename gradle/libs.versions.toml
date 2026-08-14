@@ -31,6 +31,12 @@ ksp = "2.3.9"
 room = "2.8.4"
 datastorePreferences = "1.2.1"
 
+# Sécurité (authentification biométrique). 1.1.0 est la dernière version STABLE — les lignes
+# 1.4.0-alpha* embarquent des API expérimentales et un risque de conflit compileSdk comparable à
+# coreKtx/lifecycleRuntimeKtx ci-dessus ; 1.1.0 est éprouvée et suffisante pour BiometricPrompt +
+# BiometricManager (voir data/security/BiometricAuthenticatorImpl.kt).
+biometric = "1.1.0"
+
 # Navigation
 navigation = "2.9.7"
 
@@ -85,6 +91,9 @@ androidx-room-compiler = { group = "androidx.room", name = "room-compiler", vers
 
 # DataStore
 androidx-datastore-preferences = { group = "androidx.datastore", name = "datastore-preferences", version.ref = "datastorePreferences" }
+
+# Sécurité (BiometricPrompt / BiometricManager)
+androidx-biometric = { group = "androidx.biometric", name = "biometric", version.ref = "biometric" }
 
 # Navigation (Views / Fragments)
 androidx-navigation-fragment-ktx = { group = "androidx.navigation", name = "navigation-fragment-ktx", version.ref = "navigation" }

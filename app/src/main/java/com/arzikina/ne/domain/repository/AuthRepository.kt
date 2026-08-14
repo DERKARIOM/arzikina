@@ -16,10 +16,10 @@ import kotlinx.coroutines.flow.Flow
  * REST...) ne changera pas cette interface — donc pas le reste de
  * l'application, qui ne dépend que d'elle.
  *
- * Deux points d'extension prévus mais NON implémentés aujourd'hui (voir leurs
- * KDoc respectives pour le raisonnement) : [SocialAuthRepository] pour une
- * future connexion Google/Apple/Facebook, et [BiometricAuthenticator] pour un
- * verrou biométrique optionnel en complément d'une session déjà active.
+ * Deux points d'extension prévus dès la conception (voir leurs KDoc respectives) :
+ * [SocialAuthRepository] pour une future connexion Google/Apple/Facebook (NON implémenté
+ * aujourd'hui), et [BiometricAuthenticator] pour un verrou biométrique optionnel en complément
+ * d'une session déjà active (implémenté, voir [com.arzikina.ne.data.security.BiometricAuthenticatorImpl]).
  *
  * Les méthodes prennent des mots de passe en clair (`rawPassword`) : c'est
  * la SEULE couche autorisée à les manipuler ainsi, le temps de les hacher

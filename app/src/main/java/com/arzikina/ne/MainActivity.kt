@@ -14,6 +14,7 @@ import androidx.navigation.fragment.NavHostFragment
 import androidx.lifecycle.lifecycleScope
 import com.arzikina.ne.databinding.ActivityMainBinding
 import com.arzikina.ne.domain.model.ThemeMode
+import com.arzikina.ne.domain.repository.BiometricAuthenticator
 import com.arzikina.ne.domain.repository.RecurringTransactionRepository
 import com.arzikina.ne.domain.repository.SessionManager
 import com.arzikina.ne.domain.repository.UserPreferencesRepository
@@ -46,6 +47,9 @@ class MainActivity : AppCompatActivity() {
 
     @Inject
     lateinit var recurringTransactionRepository: RecurringTransactionRepository
+
+    @Inject
+    lateinit var biometricAuthenticator: BiometricAuthenticator
 
     private lateinit var binding: ActivityMainBinding
 
@@ -262,15 +266,30 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * Lecture bloquante ponctuelle de la session locale (DataStore, source
-     * locale, quasi instantanée — même justification que
-     * [applyStoredThemeMode] ci-dessous) : AVANT le premier affichage, pour
-     * ne jamais montrer un Dashboard puis rediriger vers Connexion (ou
-     * l'inverse) une fois l'app déjà visible.
+     * Lecture bloquante ponctuelle de la session locale ET du réglage de verrouillage biométrique
+     * (DataStore, source locale, quasi instantanée — même justification que [applyStoredThemeMode]
+     * ci-dessous) : AVANT le premier affichage, pour ne jamais montrer le Dashboard puis rediriger
+     * vers le verrou (ou l'inverse) une fois l'app déjà visible.
+     *
+     * Trois cas :
+     * - pas de session → `loginFragment`, comme avant (le réglage biométrique n'a aucun sens sans
+     *   session à protéger) ;
+     * - session + verrou activé ET biométrie disponible MAINTENANT sur l'appareil → `biometricLockFragment`
+     *   (voir sa doc) ;
+     * - session + (verrou désactivé OU biométrie indisponible) → `dashboardFragment` directement,
+     *   comme avant. Le cas "activé mais indisponible" est volontaire : si l'utilisateur a
+     *   désenrôlé ses empreintes ou désactivé le capteur dans les réglages système DEPUIS
+     *   qu'il a activé ce réglage dans Arzikina, bloquer l'accès à l'app serait un verrou dont on
+     *   ne peut plus jamais sortir sans passer par "Se déconnecter" — préférer laisser passer
+     *   plutôt que de dépendre uniquement de cette échappatoire à chaque lancement.
      */
-    private fun resolveStartDestination(): Int {
-        val hasSession = runBlocking { sessionManager.getCurrentUserIdOnce() != null }
-        return if (hasSession) R.id.dashboardFragment else R.id.loginFragment
+    private fun resolveStartDestination(): Int = runBlocking {
+        val hasSession = sessionManager.getCurrentUserIdOnce() != null
+        if (!hasSession) return@runBlocking R.id.loginFragment
+
+        val biometricLockEnabled = userPreferencesRepository.observePreferences().first().biometricLockEnabled
+        val biometricLockRequired = biometricLockEnabled && biometricAuthenticator.isAvailable()
+        if (biometricLockRequired) R.id.biometricLockFragment else R.id.dashboardFragment
     }
 
     /**
@@ -298,8 +317,15 @@ class MainActivity : AppCompatActivity() {
         /** Tag `FragmentManager` du dialogue de validation (voir [showRecurringOccurrenceQueueIfNeeded]). */
         const val RECURRING_QUEUE_DIALOG_TAG = "recurring_occurrence_queue"
 
-        /** Destinations sans Bottom Navigation ni onglet correspondant (voir plus haut). */
-        val AUTH_DESTINATION_IDS = setOf(R.id.loginFragment, R.id.registerFragment, R.id.forgotPasswordFragment)
+        /** Destinations sans Bottom Navigation ni onglet correspondant (voir plus haut).
+         * `biometricLockFragment` y figure pour la même raison que les 3 écrans d'authentification :
+         * un écran plein cadre, sans contexte d'onglet pertinent. */
+        val AUTH_DESTINATION_IDS = setOf(
+            R.id.loginFragment,
+            R.id.registerFragment,
+            R.id.forgotPasswordFragment,
+            R.id.biometricLockFragment
+        )
 
         /** Les 4 onglets, mêmes id que menu/bottom_nav_menu.xml (voir sa doc et nav_graph.xml).
          * transactionsFragment n'en fait plus partie (voir sa doc dans bottom_nav_menu.xml) :
