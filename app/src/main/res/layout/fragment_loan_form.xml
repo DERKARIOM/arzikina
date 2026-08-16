@@ -84,7 +84,7 @@
                     <com.google.android.material.card.MaterialCardView
                         android:id="@+id/typeLentCard"
                         android:layout_width="0dp"
-                        android:layout_height="wrap_content"
+                        android:layout_height="match_parent"
                         android:layout_marginEnd="@dimen/spacing_s"
                         android:layout_weight="1"
                         android:checkable="true"
@@ -130,7 +130,7 @@
                     <com.google.android.material.card.MaterialCardView
                         android:id="@+id/typeBorrowedCard"
                         android:layout_width="0dp"
-                        android:layout_height="wrap_content"
+                        android:layout_height="match_parent"
                         android:layout_marginStart="@dimen/spacing_s"
                         android:layout_weight="1"
                         android:checkable="true"
@@ -329,6 +329,7 @@
                             android:background="@drawable/bg_chip_on_balance_card"
                             android:paddingHorizontal="@dimen/spacing_s"
                             android:paddingVertical="4dp"
+                            android:visibility="gone"
                             android:textColor="?attr/colorOnSurfaceVariant"
                             app:layout_constraintEnd_toEndOf="parent"
                             app:layout_constraintTop_toTopOf="parent"
@@ -685,6 +686,8 @@
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/primaryActionButton"
                 android:layout_width="match_parent"
+                android:background="@drawable/forme_radius_10dp"
+                android:textColor="@color/white"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/spacing_l"
                 android:text="@string/loan_form_next_action" />
