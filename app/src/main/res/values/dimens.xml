@@ -14,7 +14,7 @@
     <dimen name="corner_radius_small">12dp</dimen>
     <dimen name="corner_radius_medium">16dp</dimen>
     <dimen name="corner_radius_large">10dp</dimen>
-    <dimen name="corner_radius_extra_large">32dp</dimen>
+    <dimen name="corner_radius_extra_large">10dp</dimen>
 
     <!-- Icônes -->
     <dimen name="icon_size_bottom_nav">26dp</dimen>

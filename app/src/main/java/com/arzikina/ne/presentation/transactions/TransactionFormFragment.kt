@@ -6,6 +6,7 @@ import android.transition.AutoTransition
 import android.transition.TransitionManager
 import android.view.View
 import androidx.core.content.ContextCompat
+import androidx.core.graphics.drawable.DrawableCompat
 import androidx.core.os.bundleOf
 import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.Fragment
@@ -31,6 +32,7 @@ import com.arzikina.ne.presentation.components.ConfirmDialogs
 import com.arzikina.ne.presentation.components.NavAnimations
 import com.arzikina.ne.util.Constants
 import com.arzikina.ne.util.Money
+import com.google.android.material.color.MaterialColors
 import com.google.android.material.datepicker.MaterialDatePicker
 import com.google.android.material.timepicker.MaterialTimePicker
 import com.google.android.material.timepicker.TimeFormat
@@ -146,6 +148,17 @@ class TransactionFormFragment : Fragment(R.layout.fragment_transaction_form) {
         )
         binding.toolbar.setNavigationOnClickListener { findNavController().navigateUp() }
         binding.toolbar.inflateMenu(R.menu.transaction_form_menu)
+
+        // app:iconTint sur MaterialToolbar ne s'applique pas de façon fiable aux icônes
+        // de menu selon la version de Material Components : on tinte l'icône "✓"
+        // directement ici pour qu'elle suive ?attr/colorOnSurface (blanc en dark mode,
+        // sombre en light mode), comme le titre de la Toolbar.
+        val onSurfaceColor = MaterialColors.getColor(binding.toolbar, com.google.android.material.R.attr.colorOnSurface)
+        binding.toolbar.menu.findItem(R.id.action_save_transaction)?.icon = binding.toolbar.menu
+            .findItem(R.id.action_save_transaction)?.icon?.let { icon ->
+                DrawableCompat.wrap(icon.mutate()).apply { DrawableCompat.setTint(this, onSurfaceColor) }
+            }
+
         binding.toolbar.setOnMenuItemClickListener { item ->
             if (item.itemId == R.id.action_save_transaction) {
                 viewModel.save()
