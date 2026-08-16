@@ -55,8 +55,10 @@
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/typeExpenseButton"
+                    app:cornerRadius="10dp"
                     style="?attr/materialButtonOutlinedStyle"
                     android:layout_width="0dp"
+                    android:textColor="@color/white"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:checkable="true"
@@ -66,9 +68,11 @@
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/typeIncomeButton"
                     style="?attr/materialButtonOutlinedStyle"
+                    app:cornerRadius="10dp"
                     android:layout_width="0dp"
+                    android:textColor="@color/white"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
+                    android:layout_weight="1"e
                     android:checkable="true"
                     android:text="@string/category_type_income" />
 
@@ -266,7 +270,9 @@
                 <com.google.android.material.materialswitch.MaterialSwitch
                     android:id="@+id/endDateSwitch"
                     android:layout_width="wrap_content"
-                    android:layout_height="wrap_content" />
+                    android:layout_height="wrap_content"
+                    app:thumbTint="@color/switch_thumb_tint"
+                    app:trackTint="@color/switch_track_tint"/>
 
             </LinearLayout>
 
@@ -314,12 +320,15 @@
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/saveButton"
                 android:layout_width="match_parent"
+                android:textColor="@color/white"
+                android:background="@drawable/forme_radius_10dp"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/spacing_l"
                 android:text="@string/action_save" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/deleteButton"
+                app:cornerRadius="10dp"
                 style="?attr/materialButtonOutlinedStyle"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
