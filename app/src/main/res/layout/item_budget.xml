@@ -71,6 +71,8 @@
         app:layout_constraintTop_toBottomOf="@id/categoryIcon"
         app:trackCornerRadius="4dp"
         app:trackThickness="8dp"
+        app:indicatorColor="@color/arzikina_primary"
+        app:trackColor="?attr/colorSurfaceVariant"
         tools:progress="60" />
 
     <!--
@@ -78,6 +80,11 @@
         cours (voir DatePeriods.currentPeriodEnd, BudgetAdapter.kt). Couleur
         neutre par défaut, expense_red si la période se termine bientôt (voir
         BudgetAdapter.EXPIRATION_WARNING_THRESHOLD_DAYS).
+
+        remainingLabel partage désormais cette même ligne (aligné sur
+        expirationIcon en haut/bas, comme expirationLabel) et colle à
+        l'extrémité droite (app:layout_constraintEnd_toEndOf="parent") au
+        lieu d'être placé en dessous sur sa propre ligne.
     -->
     <ImageView
         android:id="@+id/expirationIcon"
@@ -105,9 +112,9 @@
         style="@style/TextAppearance.Material3.BodySmall"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="@dimen/spacing_xs"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/expirationIcon"
+        app:layout_constraintBottom_toBottomOf="@id/expirationIcon"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="@id/expirationIcon"
         tools:text="Restant : 48 000 F CFA" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
