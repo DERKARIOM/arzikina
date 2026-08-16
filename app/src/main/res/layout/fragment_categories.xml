@@ -30,6 +30,7 @@
         <com.google.android.material.button.MaterialButton
             android:id="@+id/filterAll"
             android:textColor="@color/white"
+            app:cornerRadius="10dp"
             style="?attr/materialButtonOutlinedStyle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -39,6 +40,7 @@
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/filterExpense"
+            app:cornerRadius="10dp"
             style="?attr/materialButtonOutlinedStyle"
             android:textColor="@color/white"
             android:layout_width="wrap_content"
@@ -49,6 +51,7 @@
         <com.google.android.material.button.MaterialButton
             android:id="@+id/filterIncome"
             style="?attr/materialButtonOutlinedStyle"
+            app:cornerRadius="10dp"
             android:textColor="@color/white"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
