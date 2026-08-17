@@ -12,19 +12,19 @@
 
     <ImageView
         android:id="@+id/fingerprintIcon"
-        android:layout_width="72dp"
-        android:layout_height="72dp"
+        android:layout_width="100dp"
+        android:layout_height="100dp"
         android:background="@drawable/bg_icon_circle"
-        android:backgroundTint="?attr/colorPrimary"
+
         android:contentDescription="@null"
         android:padding="@dimen/spacing_m"
-        android:src="@drawable/ic_fingerprint_24"
+        android:src="@drawable/arzikina_logo"
         app:layout_constraintBottom_toTopOf="@id/titleText"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_chainStyle="packed"
-        app:tint="@android:color/white" />
+        />
 
     <TextView
         android:id="@+id/titleText"
@@ -44,7 +44,7 @@
         style="@style/TextAppearance.Material3.BodyMedium"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="@dimen/spacing_s"
+        android:layout_marginTop="15dp"
         android:gravity="center"
         android:paddingHorizontal="@dimen/spacing_xl"
         android:text="@string/biometric_lock_subtitle"
@@ -59,8 +59,10 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginHorizontal="@dimen/spacing_xl"
-        android:layout_marginTop="@dimen/spacing_l"
+        android:layout_marginTop="30dp"
         android:text="@string/biometric_lock_retry_action"
+        android:background="@drawable/forme_radius_10dp"
+        android:textColor="@color/white"
         app:layout_constraintBottom_toTopOf="@id/logoutAction"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -71,7 +73,7 @@
         style="@style/TextAppearance.Material3.LabelLarge"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="@dimen/spacing_m"
+        android:layout_marginTop="20dp"
         android:background="?attr/selectableItemBackground"
         android:clickable="true"
         android:focusable="true"
