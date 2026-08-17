@@ -82,7 +82,17 @@ data class AccountDto(
      * `false` pour rester compatible avec les fichiers exportés avant son existence — un
      * ancien fichier restauré recrée des comptes tous inclus dans les statistiques,
      * comme c'était implicitement le cas avant cette fonctionnalité. */
-    val isExcludedFromStatistics: Boolean = false
+    val isExcludedFromStatistics: Boolean = false,
+    /**
+     * Ajouté après coup (voir `domain/model/Account.mobileMoneyPackageName`) : défaut `null`
+     * pour rester compatible avec les fichiers exportés avant son existence. INCLUS
+     * volontairement dans la sauvegarde (contrairement à `UserPreferences.biometricLockEnabled`,
+     * exclu lui — voir sa doc) : un simple nom de package Android n'a aucune conséquence de
+     * sécurité à restaurer sur un nouvel appareil. Si l'application associée n'y est pas
+     * installée, l'écran de détail affiche simplement "Application non installée" (voir
+     * `MobileMoneyAppUiState.NotInstalled`) — jamais considéré comme une erreur de restauration.
+     */
+    val mobileMoneyPackageName: String? = null
 )
 
 @Serializable

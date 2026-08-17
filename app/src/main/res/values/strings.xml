@@ -221,6 +221,46 @@
          Account.isExcludedFromStatistics est vrai. -->
     <string name="accounts_excluded_from_statistics_indicator">Exclu des statistiques personnelles</string>
 
+    <!-- Mobile Money : association d'un compte à son application Android (voir
+         mobileMoneyFieldsGroup, fragment_account_form.xml, et Account.mobileMoneyPackageName).
+         Visible uniquement pour AccountType.MOBILE_MONEY. -->
+    <string name="account_form_mobile_money_section_label">Application Mobile Money</string>
+    <string name="account_form_mobile_money_package_label">Package Android</string>
+    <string name="account_form_mobile_money_package_description">Entrez le nom du package Android de l\'application Mobile Money à ouvrir, ou sélectionnez-la dans la liste des applications installées.</string>
+    <string name="account_form_mobile_money_select_app_action">Sélectionner une application</string>
+    <!-- Nom lisible de l'application détectée pour le package actuellement saisi (voir
+         AccountFormViewModel, résolu en direct via PackageManager) — %s est ce nom, ex. "Airtel Money". -->
+    <string name="account_form_mobile_money_detected_app">Application détectée : %s</string>
+
+    <!-- Sélecteur d'application externe (voir ExternalAppPickerDialog), réutilisé par le
+         formulaire de compte Mobile Money. -->
+    <string name="external_app_picker_title">Applications disponibles</string>
+    <string name="external_app_picker_search_hint">Rechercher une application</string>
+    <string name="external_app_picker_empty">Aucune application trouvée</string>
+
+    <!-- Écran de détail, carte "application Mobile Money" (voir mobileMoneyAppCard,
+         fragment_account_detail.xml, et AccountDetailViewModel.MobileMoneyAppUiState). -->
+    <string name="account_detail_mobile_money_open_action">Ouvrir %s</string>
+    <string name="account_detail_mobile_money_configure_action">Configurer l\'application</string>
+    <string name="account_detail_mobile_money_not_installed_label">Application non installée</string>
+    <string name="account_detail_mobile_money_not_configured_label">Aucune application configurée</string>
+    <string name="account_detail_mobile_money_not_installed_description">Le package %s n\'est associé à aucune application installée sur cet appareil.</string>
+    <!-- Dialogue "action Modifier le package", commun aux deux cas limites ci-dessous (voir
+         ConfirmDialogs, réutilisé tel quel : bouton négatif "Annuler" déjà fourni par défaut). -->
+    <string name="account_detail_mobile_money_edit_package_action">Modifier le package</string>
+
+    <!-- Cas limite : compte associé à un package d'une application désinstallée depuis (voir
+         cahier des charges section 7) — le bouton reste visible (voir MobileMoneyAppUiState.NotInstalled)
+         mais son clic ouvre ce dialogue plutôt que de naviguer directement. -->
+    <string name="account_detail_mobile_money_not_installed_dialog_title">Application non installée</string>
+    <string name="account_detail_mobile_money_not_installed_dialog_message">L\'application associée à ce compte n\'est pas installée sur cet appareil.</string>
+
+    <!-- Cas limite : package invalide OU application installée mais sans activité de lancement
+         (voir cahier des charges section 8 et 17) — AccountDetailEvent.MobileMoneyLaunchFailed,
+         émis quand ExternalAppLauncher.launch() échoue malgré un état "Installed". -->
+    <string name="account_detail_mobile_money_launch_failed_dialog_title">Impossible d\'ouvrir l\'application</string>
+    <string name="account_detail_mobile_money_launch_failed_dialog_message">Vérifiez le nom du package Android associé à ce compte.</string>
+
     <!-- Catégories -->
     <string name="dashboard_categories_action">Gérer mes catégories</string>
     <string name="categories_title">Mes catégories</string>

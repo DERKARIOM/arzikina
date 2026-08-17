@@ -64,7 +64,8 @@ fun AccountEntity.toDto() = AccountDto(
     cardLastFourDigits = cardLastFourDigits,
     cardExpiryMonth = cardExpiryMonth,
     cardExpiryYear = cardExpiryYear,
-    isExcludedFromStatistics = isExcludedFromStatistics
+    isExcludedFromStatistics = isExcludedFromStatistics,
+    mobileMoneyPackageName = mobileMoneyPackageName
 )
 
 fun AccountDto.toEntity(userId: Long) = AccountEntity(
@@ -80,7 +81,8 @@ fun AccountDto.toEntity(userId: Long) = AccountEntity(
     cardLastFourDigits = cardLastFourDigits,
     cardExpiryMonth = cardExpiryMonth,
     cardExpiryYear = cardExpiryYear,
-    isExcludedFromStatistics = isExcludedFromStatistics
+    isExcludedFromStatistics = isExcludedFromStatistics,
+    mobileMoneyPackageName = mobileMoneyPackageName
 )
 
 fun CategoryEntity.toDto() = CategoryDto(

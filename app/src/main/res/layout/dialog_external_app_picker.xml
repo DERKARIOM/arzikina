@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Contenu du dialogue de sélection d'application externe (voir ExternalAppPickerDialog),
+    ouvert depuis fragment_account_form.xml (bouton "Sélectionner une application"). Recherche en
+    tête (filtrage CLIENT, voir ExternalAppPickerDialog — la liste complète des applications
+    détectées vient d'ExternalAppLauncher.listLaunchableApps, potentiellement une centaine
+    d'entrées sur certains téléphones, d'où l'intérêt du filtre) ; RecyclerView à hauteur fixe
+    (plutôt que wrap_content, qui tenterait de mesurer une liste non bornée) pour un dialogue de
+    taille stable indépendamment du nombre de résultats.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingHorizontal="@dimen/spacing_m">
+
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/searchLayout"
+        style="@style/Widget.Arzikina.TextInputLayout.OutlinedBox.PostCard"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/spacing_s"
+        android:hint="@string/external_app_picker_search_hint"
+        app:endIconMode="clear_text"
+        app:startIconDrawable="@drawable/ic_search_24">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/searchInput"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="text"
+            android:maxLines="1" />
+
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/appsList"
+        android:layout_width="match_parent"
+        android:layout_height="360dp"
+        android:layout_marginTop="@dimen/spacing_s"
+        android:layout_marginBottom="@dimen/spacing_s"
+        android:clipToPadding="false"
+        android:overScrollMode="never"
+        tools:listitem="@layout/item_external_app_picker" />
+
+    <TextView
+        android:id="@+id/emptyState"
+        style="@style/TextAppearance.Material3.BodyMedium"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="@dimen/spacing_l"
+        android:gravity="center"
+        android:text="@string/external_app_picker_empty"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        android:visibility="gone" />
+
+</LinearLayout>

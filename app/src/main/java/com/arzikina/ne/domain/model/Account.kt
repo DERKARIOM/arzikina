@@ -29,6 +29,13 @@ package com.arzikina.ne.domain.model
  * d'un tiers. Voir [com.arzikina.ne.util.PersonalStatistics], point
  * d'entrée UNIQUE de ce filtrage : aucun autre endroit du code ne doit
  * tester ce champ directement. `false` par défaut.
+ * @param mobileMoneyPackageName nom du package Android de l'application Mobile Money associée
+ * (ex. `com.airtel.money`), `null` tant qu'aucune n'est configurée ; `null` sauf pour
+ * [AccountType.MOBILE_MONEY] — voir `presentation/accounts/AccountFormViewModel.save`, qui
+ * force `null` pour tout autre type (aucune donnée orpheline si l'utilisateur change le type
+ * d'un compte après coup). Simple donnée technique (nom de package), jamais interprétée comme
+ * autre chose qu'une chaîne à passer à `PackageManager`/`Intent` — voir
+ * `util/external/ExternalAppLauncher`.
  */
 data class Account(
     val id: Long = 0L,
@@ -42,5 +49,6 @@ data class Account(
     val cardLastFourDigits: String? = null,
     val cardExpiryMonth: Int? = null,
     val cardExpiryYear: Int? = null,
-    val isExcludedFromStatistics: Boolean = false
+    val isExcludedFromStatistics: Boolean = false,
+    val mobileMoneyPackageName: String? = null
 )

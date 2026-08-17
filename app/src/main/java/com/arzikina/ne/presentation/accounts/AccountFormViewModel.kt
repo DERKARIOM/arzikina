@@ -3,6 +3,7 @@ package com.arzikina.ne.presentation.accounts
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.arzikina.ne.di.IoDispatcher
 import com.arzikina.ne.domain.model.Account
 import com.arzikina.ne.domain.model.AccountIcon
 import com.arzikina.ne.domain.model.AccountType
@@ -10,7 +11,10 @@ import com.arzikina.ne.domain.repository.AccountRepository
 import com.arzikina.ne.util.CardInputFormatter
 import com.arzikina.ne.util.Constants
 import com.arzikina.ne.util.Money
+import com.arzikina.ne.util.external.ExternalAppInfo
+import com.arzikina.ne.util.external.ExternalAppLauncher
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -19,6 +23,7 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.time.YearMonth
 import javax.inject.Inject
 
@@ -57,6 +62,20 @@ data class AccountFormState(
      * compte (un compte compte dans les statistiques personnelles sauf choix explicite contraire).
      */
     val isExcludedFromStatistics: Boolean = false,
+    /** Sans objet hors [AccountType.MOBILE_MONEY] (voir [AccountFormFragment], qui masque sa
+     * section) — voir [Account.mobileMoneyPackageName]. */
+    val mobileMoneyPackageNameInput: String = "",
+    /**
+     * Nom lisible de l'application correspondant à [mobileMoneyPackageNameInput], résolu EN
+     * DIRECT via [ExternalAppLauncher] à chaque changement du champ (voir
+     * [AccountFormViewModel.onMobileMoneyPackageNameChange]) — `null` si le package est vide,
+     * invalide, ou ne correspond à aucune application installée sur CET appareil. Purement
+     * informatif (aide affichée sous le champ, voir cahier des charges section 10 : "ne pas
+     * afficher uniquement le package") : jamais persisté, jamais utilisé pour valider la saisie
+     * (un package valide pour un futur appareil peut très bien être introuvable ici et
+     * maintenant).
+     */
+    val mobileMoneyAppLabel: String? = null,
     val nameError: String? = null,
     val balanceError: String? = null,
     val cardNumberError: String? = null,
@@ -82,12 +101,20 @@ data class AccountFormState(
 sealed interface AccountFormEvent {
     data object Saved : AccountFormEvent
     data object Deleted : AccountFormEvent
+
+    /** Voir [AccountFormViewModel.onSelectMobileMoneyAppClicked] : [apps] est déjà résolue
+     * (interrogation PackageManager faite hors du thread principal, voir [ExternalAppLauncher])
+     * au moment où cet événement est émis — [AccountFormFragment] n'a plus qu'à l'afficher via
+     * `ExternalAppPickerDialog`. */
+    data class ShowAppPicker(val apps: List<ExternalAppInfo>) : AccountFormEvent
 }
 
 @HiltViewModel
 class AccountFormViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
-    private val accountRepository: AccountRepository
+    private val accountRepository: AccountRepository,
+    private val externalAppLauncher: ExternalAppLauncher,
+    @IoDispatcher private val ioDispatcher: CoroutineDispatcher
 ) : ViewModel() {
 
     private val accountId: Long = savedStateHandle.get<Long>(ACCOUNT_ID_ARG) ?: 0L
@@ -120,9 +147,11 @@ class AccountFormViewModel @Inject constructor(
                                 ""
                             },
                             existingCardLastFourDigits = account.cardLastFourDigits,
-                            isExcludedFromStatistics = account.isExcludedFromStatistics
+                            isExcludedFromStatistics = account.isExcludedFromStatistics,
+                            mobileMoneyPackageNameInput = account.mobileMoneyPackageName.orEmpty()
                         )
                     }
+                    account.mobileMoneyPackageName?.let { resolveMobileMoneyAppLabel(it) }
                 }
             }
         }
@@ -178,6 +207,50 @@ class AccountFormViewModel @Inject constructor(
         _formState.update { it.copy(isExcludedFromStatistics = value) }
     }
 
+    /** Saisie manuelle du package (voir cahier des charges, section 1) — [resolveMobileMoneyAppLabel]
+     * tient [AccountFormState.mobileMoneyAppLabel] à jour à chaque frappe, comme pour la
+     * sélection via [onMobileMoneyAppSelected]. */
+    fun onMobileMoneyPackageNameChange(value: String) {
+        _formState.update { it.copy(mobileMoneyPackageNameInput = value, mobileMoneyAppLabel = null) }
+        resolveMobileMoneyAppLabel(value)
+    }
+
+    /**
+     * Ouvre `ExternalAppPickerDialog` (voir [AccountFormEvent.ShowAppPicker]) avec la liste des
+     * applications détectées — [ExternalAppLauncher.listLaunchableApps] interroge
+     * `PackageManager` pour potentiellement une centaine d'applications, d'où le passage par
+     * [ioDispatcher] (voir section performances du projet : jamais de travail I/O-bound sur le
+     * thread principal, même si `PackageManager` n'est techniquement pas un accès disque/réseau).
+     */
+    fun onSelectMobileMoneyAppClicked() {
+        viewModelScope.launch {
+            val apps = withContext(ioDispatcher) { externalAppLauncher.listLaunchableApps() }
+            _events.emit(AccountFormEvent.ShowAppPicker(apps))
+        }
+    }
+
+    /** Résultat du sélecteur : le nom lisible est déjà connu (voir [ExternalAppInfo.label]), pas
+     * besoin de re-résoudre via [resolveMobileMoneyAppLabel]. */
+    fun onMobileMoneyAppSelected(app: ExternalAppInfo) {
+        _formState.update { it.copy(mobileMoneyPackageNameInput = app.packageName, mobileMoneyAppLabel = app.label) }
+    }
+
+    /** Voir [AccountFormState.mobileMoneyAppLabel] — `null` sans résoudre si [packageName] est
+     * vide (évite un aller-retour PackageManager inutile pour le cas le plus fréquent, un champ
+     * pas encore rempli). */
+    private fun resolveMobileMoneyAppLabel(packageName: String) {
+        val trimmed = packageName.trim()
+        if (trimmed.isEmpty()) return
+        viewModelScope.launch {
+            val label = withContext(ioDispatcher) { externalAppLauncher.getAppInfo(trimmed)?.label }
+            // Le champ a pu changer pendant la résolution (frappe rapide) : n'applique le
+            // résultat que s'il correspond encore à la valeur ACTUELLE du champ.
+            if (_formState.value.mobileMoneyPackageNameInput.trim() == trimmed) {
+                _formState.update { it.copy(mobileMoneyAppLabel = label) }
+            }
+        }
+    }
+
     fun save() {
         val state = _formState.value
         val trimmedName = state.name.trim()
@@ -231,6 +304,17 @@ class AccountFormViewModel @Inject constructor(
         // ci-dessus) uniquement si le type est carte ET que cardNumberInput n'est pas vide.
         val hasNewCardSecrets = state.type == AccountType.CREDIT_CARD && state.cardNumberInput.isNotEmpty()
 
+        // Forcé à `null` pour tout type AUTRE que Mobile Money (voir cahier des charges, section 2 :
+        // "si l'utilisateur change le type du compte de Mobile Money vers un autre type, gérer
+        // proprement la valeur existante sans casser les données") — la saisie reste visible dans
+        // ce formulaire tant qu'on ne quitte pas l'écran (voir onTypeChange, qui ne la touche pas),
+        // mais rien d'orphelin n'est jamais persisté pour un compte qui n'est plus Mobile Money.
+        val mobileMoneyPackageName = if (state.type == AccountType.MOBILE_MONEY) {
+            state.mobileMoneyPackageNameInput.trim().ifEmpty { null }
+        } else {
+            null
+        }
+
         viewModelScope.launch {
             val savedAccountId = accountRepository.saveAccount(
                 Account(
@@ -245,7 +329,8 @@ class AccountFormViewModel @Inject constructor(
                     cardLastFourDigits = cardLastFourDigits,
                     cardExpiryMonth = cardExpiryMonth,
                     cardExpiryYear = cardExpiryYear,
-                    isExcludedFromStatistics = state.isExcludedFromStatistics
+                    isExcludedFromStatistics = state.isExcludedFromStatistics,
+                    mobileMoneyPackageName = mobileMoneyPackageName
                 )
             )
             if (hasNewCardSecrets) {

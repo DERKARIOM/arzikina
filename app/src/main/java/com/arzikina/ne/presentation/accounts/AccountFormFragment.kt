@@ -19,7 +19,9 @@ import com.arzikina.ne.domain.model.AccountType
 import com.arzikina.ne.domain.model.SupportedCurrency
 import com.arzikina.ne.presentation.components.ColorPickerAdapter
 import com.arzikina.ne.presentation.components.ConfirmDialogs
+import com.arzikina.ne.presentation.components.ExternalAppPickerDialog
 import com.arzikina.ne.presentation.components.IconPickerAdapter
+import com.arzikina.ne.util.external.ExternalAppInfo
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 
@@ -137,6 +139,12 @@ class AccountFormFragment : Fragment(R.layout.fragment_account_form) {
         binding.cardCvvInput.doAfterTextChanged { text ->
             viewModel.onCardCvvChange(text?.toString().orEmpty())
         }
+        binding.mobileMoneyPackageInput.doAfterTextChanged { text ->
+            viewModel.onMobileMoneyPackageNameChange(text?.toString().orEmpty())
+        }
+        binding.selectMobileMoneyAppButton.setOnClickListener {
+            viewModel.onSelectMobileMoneyAppClicked()
+        }
     }
 
     private fun setUpExcludeFromStatisticsSwitch(binding: FragmentAccountFormBinding) {
@@ -208,12 +216,41 @@ class AccountFormFragment : Fragment(R.layout.fragment_account_form) {
             }
             binding.cardCvvLayout.error = state.cardCvvError
         }
+
+        val isMobileMoney = state.type == AccountType.MOBILE_MONEY
+        val wasMobileMoneyFieldsVisible = binding.mobileMoneyFieldsGroup.visibility == View.VISIBLE
+        if (wasMobileMoneyFieldsVisible != isMobileMoney) {
+            TransitionManager.beginDelayedTransition(binding.formFieldsContainer, AutoTransition().setDuration(200L))
+        }
+        binding.mobileMoneyFieldsGroup.visibility = if (isMobileMoney) View.VISIBLE else View.GONE
+        if (isMobileMoney) {
+            if (binding.mobileMoneyPackageInput.text?.toString() != state.mobileMoneyPackageNameInput) {
+                binding.mobileMoneyPackageInput.setText(state.mobileMoneyPackageNameInput)
+                binding.mobileMoneyPackageInput.setSelection(state.mobileMoneyPackageNameInput.length)
+            }
+            // Voir AccountFormState.mobileMoneyAppLabel : purement informatif, jamais un message
+            // d'erreur (contrairement aux autres `.error` de ce formulaire) — un package non
+            // résolu ici reste parfaitement valide (l'application peut être installée sur
+            // l'appareil de l'utilisateur au moment où il ouvrira ce compte, pas forcément ici).
+            binding.mobileMoneyPackageLayout.helperText = state.mobileMoneyAppLabel?.let {
+                getString(R.string.account_form_mobile_money_detected_app, it)
+            }
+        }
     }
 
     private fun handleEvent(event: AccountFormEvent) {
         when (event) {
             AccountFormEvent.Saved, AccountFormEvent.Deleted -> findNavController().navigateUp()
+            is AccountFormEvent.ShowAppPicker -> showAppPicker(event.apps)
         }
+    }
+
+    private fun showAppPicker(apps: List<ExternalAppInfo>) {
+        ExternalAppPickerDialog.show(
+            context = requireContext(),
+            apps = apps,
+            onSelect = { app -> viewModel.onMobileMoneyAppSelected(app) }
+        )
     }
 
     private fun confirmDelete() {

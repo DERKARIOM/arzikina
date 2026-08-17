@@ -73,6 +73,8 @@ import com.arzikina.ne.data.local.entity.UserEntity
  *   sur `accounts` — voir [MIGRATION_14_15]).
  * - 16 : Frais supplémentaires sur une transaction (`feeTransactionId`, `feeType` sur
  *   `transactions` — voir [MIGRATION_15_16]).
+ * - 17 : Lancer l'application Mobile Money associée à un compte (`mobileMoneyPackageName` sur
+ *   `accounts` — voir [MIGRATION_16_17]).
  */
 @Database(
     entities = [
@@ -89,7 +91,7 @@ import com.arzikina.ne.data.local.entity.UserEntity
         RecurringTransactionEntity::class,
         RecurringTransactionOccurrenceEntity::class
     ],
-    version = 16,
+    version = 17,
     exportSchema = true
 )
 @TypeConverters(Converters::class)

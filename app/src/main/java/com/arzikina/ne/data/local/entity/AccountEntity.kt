@@ -47,5 +47,9 @@ data class AccountEntity(
     /** Voir [com.arzikina.ne.domain.model.Account.isExcludedFromStatistics] — ajouté en v15 (voir
      * `MIGRATION_14_15`). `false` par défaut : un compte existant reste inclus dans les
      * statistiques exactement comme avant l'introduction de ce champ. */
-    val isExcludedFromStatistics: Boolean = false
+    val isExcludedFromStatistics: Boolean = false,
+    /** Voir [com.arzikina.ne.domain.model.Account.mobileMoneyPackageName] — ajouté en v17 (voir
+     * `MIGRATION_16_17`). `null` par défaut : un compte déjà existant n'a simplement aucune
+     * application associée, exactement comme avant l'introduction de ce champ. */
+    val mobileMoneyPackageName: String? = null
 )

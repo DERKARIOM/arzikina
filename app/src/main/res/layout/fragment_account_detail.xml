@@ -66,6 +66,106 @@
         app:barrierDirection="bottom"
         app:constraint_referenced_ids="accountSummaryCard,accountSummaryCreditCard" />
 
+    <!--
+        Mobile Money uniquement (voir AccountDetailFragment.renderMobileMoneyAppCard) : jamais
+        visible en même temps que accountSummaryCreditCard (types mutuellement exclusifs), donc
+        ancrée directement sous accountSummaryCard plutôt que summaryBarrier — pas d'ambiguïté à
+        résoudre puisque accountSummaryCreditCard est TOUJOURS masquée quand ce compte s'affiche.
+    -->
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/mobileMoneyAppCard"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/spacing_m"
+        android:layout_marginHorizontal="@dimen/spacing_m"
+        android:theme="@style/ThemeOverlay.Arzikina.OnBalanceCard"
+        android:visibility="gone"
+        app:cardBackgroundColor="@color/arzikina_postcart_background"
+        app:cardCornerRadius="@dimen/corner_radius_medium"
+        app:cardElevation="@dimen/elevation_raised"
+        app:layout_constraintTop_toBottomOf="@id/accountSummaryCard"
+        tools:visibility="visible">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="@dimen/spacing_m">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <ImageView
+                    android:id="@+id/mobileMoneyAppIcon"
+                    android:layout_width="@dimen/icon_size_large"
+                    android:layout_height="@dimen/icon_size_large"
+                    android:contentDescription="@null"
+                    tools:src="@drawable/ic_account_mobile_money_24" />
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="@dimen/spacing_m"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/mobileMoneyAppLabel"
+                        style="@style/TextAppearance.Material3.TitleSmall"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:ellipsize="end"
+                        android:maxLines="1"
+                        android:textColor="?attr/colorOnSurface"
+                        tools:text="Airtel Money" />
+
+                    <TextView
+                        android:id="@+id/mobileMoneyAppDescription"
+                        style="@style/TextAppearance.Material3.BodySmall"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:ellipsize="end"
+                        android:maxLines="2"
+                        android:textColor="?attr/colorOnSurfaceVariant"
+                        android:visibility="gone"
+                        tools:text="Le package com.exemple n'est associé à aucune application installée." />
+
+                </LinearLayout>
+            </LinearLayout>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/mobileMoneyAppActionButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_m"
+                app:icon="@drawable/ic_open_in_new_24"
+                tools:text="@string/account_detail_mobile_money_configure_action" />
+
+        </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
+
+    <!--
+        Référence mobileMoneyAppCard EN PLUS de summaryBarrier (pas directement
+        accountSummaryCard/accountSummaryCreditCard, déjà couverts par summaryBarrier).
+        `barrierAllowsGoneWidgets="false"` est OBLIGATOIRE ici : son défaut (`true`) ferait quand
+        même compter mobileMoneyAppCard dans le calcul même GONE (position "fantôme" à hauteur 0,
+        mais toujours décalée de son propre layout_marginTop) — decalant cette Barrier de 16dp vers
+        le bas pour TOUS les comptes non-Mobile-Money. Avec `false`, une vue GONE référencée est
+        entièrement ignorée : cette Barrier retombe exactement sur summaryBarrier quand
+        mobileMoneyAppCard est masquée — aucune régression de layout pour les autres types de
+        compte.
+    -->
+    <androidx.constraintlayout.widget.Barrier
+        android:id="@+id/contentTopBarrier"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:barrierAllowsGoneWidgets="false"
+        app:barrierDirection="bottom"
+        app:constraint_referenced_ids="summaryBarrier,mobileMoneyAppCard" />
+
     <TextView
         android:id="@+id/emptyState"
         style="@style/TextAppearance.Material3.BodyMedium"
@@ -79,7 +179,7 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/summaryBarrier" />
+        app:layout_constraintTop_toBottomOf="@id/contentTopBarrier" />
 
     <!--
         Même traitement "postcard" par jour que l'écran Transactions (voir
@@ -96,7 +196,7 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/summaryBarrier"
+        app:layout_constraintTop_toBottomOf="@id/contentTopBarrier"
         tools:listitem="@layout/item_transaction_compact" />
 
     <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton

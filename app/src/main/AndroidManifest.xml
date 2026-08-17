@@ -2,6 +2,26 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <!--
+        Visibilité des packages (Android 11+, voir util/external/ExternalAppLauncher) : SEULE
+        déclaration nécessaire pour la fonctionnalité "Lancer l'application Mobile Money depuis un
+        compte" — rend visibles TOUTES les applications ayant une icône de lancement (même filtre
+        qu'un launcher système), ce qui suffit à la fois pour détecter les applications
+        installées dans le sélecteur ET pour vérifier/lancer un package déjà enregistré sur un
+        compte (une application Mobile Money a nécessairement une activité de lancement).
+        Volontairement PAS la permission QUERY_ALL_PACKAGES (nécessite une justification Play
+        Store, bien plus large que ce dont cette fonctionnalité a besoin) ni une liste de packages
+        codés en dur (voir cahier des charges, section 16 : "ne pas ajouter un <queries> trop
+        large inutilement" — ce bloc est le minimum standard documenté par Android pour ce cas
+        d'usage précis).
+    -->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.LAUNCHER" />
+        </intent>
+    </queries>
+
     <application
         android:name=".ArzikinaApplication"
         android:allowBackup="true"

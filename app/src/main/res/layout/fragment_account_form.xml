@@ -372,6 +372,75 @@
             </com.google.android.material.card.MaterialCardView>
 
             <!--
+                Mobile Money : visible uniquement pour AccountType.MOBILE_MONEY (voir
+                AccountFormFragment.render, même principe que creditCardFieldsGroup ci-dessus).
+                Package Android de l'application associée, saisi manuellement OU choisi via le
+                sélecteur d'applications détectées (voir ExternalAppPickerDialog).
+            -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/mobileMoneyFieldsGroup"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_l"
+                android:theme="@style/ThemeOverlay.Arzikina.OnBalanceCard"
+                android:visibility="gone"
+                app:cardBackgroundColor="@color/arzikina_postcart_background"
+                app:cardCornerRadius="@dimen/corner_radius_medium"
+                app:cardElevation="@dimen/elevation_raised"
+                tools:visibility="visible">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="@dimen/spacing_m">
+
+                    <TextView
+                        style="@style/TextAppearance.Material3.TitleSmall"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/account_form_mobile_money_section_label"
+                        android:textColor="?attr/colorOnSurface" />
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:id="@+id/mobileMoneyPackageLayout"
+                        style="@style/Widget.Arzikina.TextInputLayout.OutlinedBox.PostCard"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/spacing_m"
+                        android:hint="@string/account_form_mobile_money_package_label"
+                        app:helperTextEnabled="true">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/mobileMoneyPackageInput"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:hint="com.exemple.mobilemoney"
+                            android:inputType="text"
+                            android:maxLines="1" />
+
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <TextView
+                        style="@style/TextAppearance.Material3.BodySmall"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/spacing_xs"
+                        android:text="@string/account_form_mobile_money_package_description"
+                        android:textColor="?attr/colorOnSurfaceVariant" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/selectMobileMoneyAppButton"
+                        style="@style/Widget.Material3.Button.OutlinedButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/spacing_m"
+                        android:text="@string/account_form_mobile_money_select_app_action" />
+
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!--
                 Bouton Enregistrer : style Material par défaut CONSERVÉ (pas
                 @drawable/forme_radius_10dp comme sur fragment_transaction_form.xml — ce
                 drawable est rempli avec @color/arzikina_background, blanc en thème clair,
