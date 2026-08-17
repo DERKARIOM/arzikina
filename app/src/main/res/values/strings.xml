@@ -25,14 +25,14 @@
     <string name="settings_theme_light">Clair</string>
     <string name="settings_theme_dark">Sombre</string>
     <string name="settings_theme_label">Thème</string>
-    <string name="settings_theme_description">Choisissez votre thème préféré</string>
+    <string name="settings_theme_description">Choisissez votre thème</string>
     <string name="settings_dialog_theme_title">Choisir le thème</string>
     <string name="settings_section_currency">Devise principale</string>
     <string name="settings_currency_description">Utilisée pour les totaux qui regroupent plusieurs comptes (statistiques). Chaque compte garde sa propre devise.</string>
     <string name="settings_currency_label">Devise</string>
     <string name="settings_dialog_currency_title">Choisir la devise</string>
     <string name="settings_section_language">Langue</string>
-    <string name="settings_language_french_only">Français uniquement pour le moment. D\'autres langues seront proposées ici.</string>
+    <string name="settings_language_french_only">Français uniquement</string>
     <string name="settings_language_value">Français</string>
 
     <!-- Section Sécurité (voir securityCard, fragment_settings.xml) : réutilise volontairement

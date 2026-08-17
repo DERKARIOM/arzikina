@@ -100,7 +100,9 @@
         android:visibility="gone"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent"
+        app:thumbTint="@color/switch_thumb_tint"
+        app:trackTint="@color/switch_track_tint"/>
 
     <androidx.constraintlayout.widget.Barrier
         android:id="@+id/trailingBarrier"

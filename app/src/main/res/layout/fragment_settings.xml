@@ -460,14 +460,12 @@
 
                     <ImageView
                         android:id="@+id/aboutLogo"
-                        android:layout_width="64dp"
-                        android:layout_height="64dp"
-                        android:background="@drawable/bg_icon_circle"
-                        android:backgroundTint="?attr/colorPrimary"
+                        android:layout_width="80dp"
+                        android:layout_height="80dp"
+                        android:backgroundTint="@color/white"
                         android:contentDescription="@null"
-                        android:padding="16dp"
-                        android:src="@drawable/ic_wallet_24"
-                        app:tint="@android:color/white" />
+                        android:src="@drawable/arzikina_logo"
+                         />
 
                     <TextView
                         style="@style/TextAppearance.Material3.TitleMedium"
