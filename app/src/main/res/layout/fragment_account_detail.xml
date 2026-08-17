@@ -134,16 +134,27 @@
                         tools:text="Le package com.exemple n'est associé à aucune application installée." />
 
                 </LinearLayout>
+
+                <!--
+                    Reste sur la ligne icône + nom (au lieu d'occuper toute la largeur en dessous) :
+                    hérite du gravity="center_vertical" du parent, donc s'aligne verticalement avec
+                    le logo et le libellé de l'application. wrap_content au lieu de match_parent pour
+                    ne pas écraser le reste de la ligne ; style IconButton car il n'y a plus la place
+                    pour du texte complet ici.
+                -->
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/mobileMoneyAppActionButton"
+                    android:layout_width="wrap_content"
+                    android:background="@drawable/forme_radius_10dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="@dimen/spacing_m"
+                    app:icon="@drawable/ic_open_in_new_24"
+                    android:paddingStart="5dp"
+                    android:textColor="@color/white"
+                    app:iconPadding="0dp"
+                    tools:text="@string/account_detail_mobile_money_configure_action" />
+
             </LinearLayout>
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/mobileMoneyAppActionButton"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/spacing_m"
-                app:icon="@drawable/ic_open_in_new_24"
-                tools:text="@string/account_detail_mobile_money_configure_action" />
-
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
 

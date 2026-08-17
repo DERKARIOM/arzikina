@@ -288,7 +288,7 @@
 
     <!-- Écran de détail, carte "application Mobile Money" (voir mobileMoneyAppCard,
          fragment_account_detail.xml, et AccountDetailViewModel.MobileMoneyAppUiState). -->
-    <string name="account_detail_mobile_money_open_action">Ouvrir %s</string>
+    <string name="account_detail_mobile_money_open_action">Ouvrir</string>
     <string name="account_detail_mobile_money_configure_action">Configurer l\'application</string>
     <string name="account_detail_mobile_money_not_installed_label">Application non installée</string>
     <string name="account_detail_mobile_money_not_configured_label">Aucune application configurée</string>
