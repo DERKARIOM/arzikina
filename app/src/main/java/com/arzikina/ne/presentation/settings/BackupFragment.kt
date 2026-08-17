@@ -13,11 +13,14 @@ import androidx.navigation.fragment.findNavController
 import com.arzikina.ne.R
 import com.arzikina.ne.databinding.FragmentBackupBinding
 import com.arzikina.ne.domain.model.BackupResult
+import com.arzikina.ne.domain.repository.BiometricAuthenticator
 import com.arzikina.ne.presentation.components.ConfirmDialogs
+import com.arzikina.ne.presentation.components.authenticateForSensitiveAction
 import com.arzikina.ne.util.Constants
 import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 /**
  * Première interface réelle pour [BackupViewModel] (voir sa doc — jusqu'ici sans aucune UI dans
@@ -28,12 +31,22 @@ import kotlinx.coroutines.launch
  * choisie via le Storage Access Framework (voir [BackupViewModel], qui documente ce découpage) —
  * jamais fermés explicitement par ce Fragment : [BackupViewModel]/[com.arzikina.ne.data.repository.BackupRepositoryImpl]
  * les referment eux-mêmes une fois la lecture/écriture terminée (voir leur `use { }`).
+ *
+ * Action sensible (voir cahier des charges, "Authentification par empreinte digitale") : export
+ * ET import exigent une authentification biométrique réussie AVANT même d'ouvrir le sélecteur de
+ * fichier système — voir [requestExport]/[requestImport] et [authenticateForSensitiveAction].
+ * Gate placé ici plutôt que dans [BackupViewModel] pour la même raison que dans
+ * [com.arzikina.ne.presentation.accounts.AccountDetailFragment] : `BiometricPrompt` exige une
+ * `FragmentActivity`, qu'un ViewModel ne doit jamais retenir.
  */
 @AndroidEntryPoint
 class BackupFragment : Fragment(R.layout.fragment_backup) {
 
     private val viewModel: BackupViewModel by viewModels()
     private var binding: FragmentBackupBinding? = null
+
+    @Inject
+    lateinit var biometricAuthenticator: BiometricAuthenticator
 
     private val exportLauncher = registerForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
         uri?.let { onExportDestinationChosen(it) }
@@ -49,12 +62,8 @@ class BackupFragment : Fragment(R.layout.fragment_backup) {
         binding = viewBinding
 
         viewBinding.toolbar.setNavigationOnClickListener { findNavController().navigateUp() }
-        viewBinding.exportButton.setOnClickListener {
-            exportLauncher.launch(Constants.DEFAULT_BACKUP_FILE_NAME)
-        }
-        viewBinding.importButton.setOnClickListener {
-            importLauncher.launch(arrayOf("application/json"))
-        }
+        viewBinding.exportButton.setOnClickListener { requestExport() }
+        viewBinding.importButton.setOnClickListener { requestImport() }
 
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -85,6 +94,26 @@ class BackupFragment : Fragment(R.layout.fragment_backup) {
     override fun onDestroyView() {
         super.onDestroyView()
         binding = null
+    }
+
+    /** Authentifie D'ABORD, puis n'ouvre le sélecteur système d'enregistrement QU'en cas de succès
+     * (voir la doc de classe) — jamais l'inverse : inutile de laisser choisir un fichier pour une
+     * opération qui sera de toute façon refusée. */
+    private fun requestExport() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            if (authenticateForSensitiveAction(biometricAuthenticator)) {
+                exportLauncher.launch(Constants.DEFAULT_BACKUP_FILE_NAME)
+            }
+        }
+    }
+
+    /** Même principe que [requestExport], pour l'import. */
+    private fun requestImport() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            if (authenticateForSensitiveAction(biometricAuthenticator)) {
+                importLauncher.launch(arrayOf("application/json"))
+            }
+        }
     }
 
     private fun onExportDestinationChosen(uri: Uri) {

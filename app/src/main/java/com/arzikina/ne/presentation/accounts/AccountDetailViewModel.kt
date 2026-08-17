@@ -136,13 +136,22 @@ class AccountDetailViewModel @Inject constructor(
 
     private var autoHideJob: Job? = null
 
-    /** Bascule masqué <-> révélé. Ignoré si un compte classique appelle ceci par erreur : il n'y a
-     * simplement jamais de secret enregistré pour lui, [revealCardSecrets] renverra `null`. */
-    fun toggleCardSecrets() {
-        if (_cardSecrets.value != null) {
-            hideCardSecrets()
-            return
-        }
+    /**
+     * Déchiffre et affiche le secret. Ignoré si un compte classique appelle ceci par erreur : il
+     * n'y a simplement jamais de secret enregistré pour lui, [AccountRepository.revealCardSecrets]
+     * renverra `null`.
+     *
+     * Volontairement DÉPOURVU de toute vérification biométrique ici (contrairement à ce que son
+     * ancien nom `toggleCardSecrets` — bascule masqué/révélé — laissait supposer) : le
+     * `BiometricPrompt` a besoin d'une `FragmentActivity` (voir la doc de
+     * [com.arzikina.ne.domain.repository.BiometricAuthenticator]) qu'un ViewModel ne doit jamais
+     * retenir. C'est donc [com.arzikina.ne.presentation.accounts.AccountDetailFragment] qui
+     * authentifie D'ABORD (biométrie disponible et réussie), puis appelle cette fonction
+     * uniquement en cas de succès — jamais l'inverse. Le nom reflète maintenant qu'il ne fait plus
+     * QUE révéler (la bascule vers le masquage, elle, ne nécessite aucune authentification et
+     * reste gérée directement par le Fragment via [hideCardSecrets]).
+     */
+    fun revealCardSecrets() {
         autoHideJob?.cancel()
         viewModelScope.launch {
             _cardSecrets.value = accountRepository.revealCardSecrets(accountId)

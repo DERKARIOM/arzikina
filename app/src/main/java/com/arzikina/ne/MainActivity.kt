@@ -1,10 +1,12 @@
 package com.arzikina.ne
 
 import android.os.Bundle
+import android.os.SystemClock
 import android.view.View
 import android.view.ViewGroup
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
+import androidx.core.os.bundleOf
 import androidx.core.view.ViewCompat
 import androidx.core.widget.NestedScrollView
 import androidx.fragment.app.Fragment
@@ -19,6 +21,7 @@ import com.arzikina.ne.domain.repository.RecurringTransactionRepository
 import com.arzikina.ne.domain.repository.SessionManager
 import com.arzikina.ne.domain.repository.UserPreferencesRepository
 import com.arzikina.ne.presentation.components.NavAnimations
+import com.arzikina.ne.presentation.security.BiometricLockFragment
 import com.arzikina.ne.presentation.utilities.recurring.RecurringOccurrenceQueueDialogFragment
 import com.arzikina.ne.util.SystemBars
 import dagger.hilt.android.AndroidEntryPoint
@@ -52,6 +55,17 @@ class MainActivity : AppCompatActivity() {
     lateinit var biometricAuthenticator: BiometricAuthenticator
 
     private lateinit var binding: ActivityMainBinding
+    private lateinit var navController: NavController
+
+    /** Voir le listener posé dans [onCreate] : garantit une génération unique par processus,
+     * jamais par-dessus [R.id.biometricLockFragment] (voir sa doc pour le risque évité). */
+    private var hasGeneratedMissingRecurringOccurrences = false
+
+    /** Voir [onStop]/[checkBiometricReentryLock] : horodatage du dernier passage en arrière-plan
+     * RÉEL (pas une simple rotation d'écran), `null` tant qu'aucun ne s'est encore produit — ce qui
+     * garde le tout premier [onStart] (lancement à froid) sans effet, déjà couvert par
+     * [resolveStartDestination]. */
+    private var backgroundedAtElapsedRealtime: Long? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -64,7 +78,7 @@ class MainActivity : AppCompatActivity() {
 
         val navHostFragment = supportFragmentManager
             .findFragmentById(R.id.navHostFragment) as NavHostFragment
-        val navController = navHostFragment.navController
+        navController = navHostFragment.navController
 
         // navController doit exister AVANT cet appel : isTopInsetTransparent
         // interroge navController.currentDestination à chaque distribution
@@ -131,20 +145,106 @@ class MainActivity : AppCompatActivity() {
             if (destination.id in TAB_DESTINATION_IDS) {
                 binding.bottomNavigation.menu.findItem(destination.id)?.isChecked = true
             }
+            // Déclenché depuis CE listener (jamais inconditionnellement en fin de onCreate) :
+            // `addOnDestinationChangedListener` est rappelé immédiatement pour la destination
+            // courante dès son enregistrement, PUIS à chaque changement — c'est ce qui
+            // permet de générer les occurrences (et d'afficher leur dialogue de validation)
+            // seulement une fois le Dashboard réellement atteint, jamais par-dessus
+            // `biometricLockFragment`. Sans ce garde-fou, le dialogue s'affichait par-dessus
+            // l'écran de verrouillage AVANT toute vérification biométrique (montants/catégories
+            // visibles et transactions validables sans authentification) — un contournement total
+            // du verrou. `hasGeneratedMissingRecurringOccurrences` évite de relancer la génération
+            // à chaque retour sur l'onglet Accueil (voir [navigateToTab]).
+            if (destination.id == R.id.dashboardFragment && !hasGeneratedMissingRecurringOccurrences) {
+                hasGeneratedMissingRecurringOccurrences = true
+                generateMissingRecurringOccurrences()
+            }
         }
+    }
 
-        generateMissingRecurringOccurrences()
+    /**
+     * Revérification biométrique au retour au premier plan (deuxième volet du cahier des charges,
+     * en complément du verrou à l'ouverture posé par [resolveStartDestination]) — voir
+     * [checkBiometricReentryLock] pour la logique complète. Une seule Activity dans toute l'app
+     * (voir la doc de classe) : PAS besoin de `ProcessLifecycleOwner`/`lifecycle-process` — le
+     * cycle de vie de CETTE Activity suffit à lui seul à détecter "l'app quitte/revient au premier
+     * plan", ce qu'`ProcessLifecycleOwner` n'apporterait ici que comme indirection supplémentaire
+     * (il existe précisément pour distinguer ce cas dans une app MULTI-Activity, non pertinent ici).
+     */
+    override fun onStart() {
+        super.onStart()
+        checkBiometricReentryLock()
+    }
+
+    /**
+     * `isChangingConfigurations` : une simple rotation d'écran fait aussi transiter par
+     * `onStop`/`onStart` sans que l'app ait réellement quitté le premier plan — l'exclure évite de
+     * redemander une empreinte à chaque rotation. `backgroundedAtElapsedRealtime` n'est donc posé
+     * QUE pour un arrêt "réel" (app mise en arrière-plan, écran verrouillé par le système, etc.).
+     */
+    override fun onStop() {
+        super.onStop()
+        if (!isChangingConfigurations) {
+            backgroundedAtElapsedRealtime = SystemClock.elapsedRealtime()
+        }
+    }
+
+    /**
+     * Empile `biometricLockFragment` (mode `isResumeCheck`, voir sa doc) PAR-DESSUS l'écran courant
+     * si TOUTES ces conditions sont réunies :
+     * - l'app a réellement été mise en arrière-plan (voir [onStop]) et a passé au moins
+     *   [BIOMETRIC_REENTRY_GRACE_PERIOD_MILLIS] hors du premier plan — ce délai de grâce évite de
+     *   redemander une empreinte pour un aller-retour très bref (ex. sélecteur de photo de
+     *   `ProfileFragment`, export de fichier de `BackupFragment` : ces flux font brièvement quitter
+     *   MainActivity via une autre Activity système, sans que l'utilisateur ait "vraiment" quitté
+     *   Arzikina) ;
+     * - une session existe, le réglage est actif, et la biométrie est disponible MAINTENANT (mêmes
+     *   trois conditions que [resolveStartDestination], vérifiées à nouveau ici car elles ont pu
+     *   changer depuis le lancement) ;
+     * - la destination courante n'est pas déjà un écran hors-session (voir [AUTH_DESTINATION_IDS]) —
+     *   inutile de verrouiller un écran qui ne montre déjà aucune donnée protégée.
+     *
+     * `backgroundedAtElapsedRealtime` est remis à `null` dès l'entrée, AVANT la coroutine
+     * asynchrone : un second `onStart` déclenché pendant que cette vérification est encore en cours
+     * (cas limite) ne doit pas relancer une deuxième vérification concurrente.
+     */
+    private fun checkBiometricReentryLock() {
+        val backgroundedAt = backgroundedAtElapsedRealtime ?: return
+        backgroundedAtElapsedRealtime = null
+        val elapsedSinceBackground = SystemClock.elapsedRealtime() - backgroundedAt
+        if (elapsedSinceBackground < BIOMETRIC_REENTRY_GRACE_PERIOD_MILLIS) return
+        if (navController.currentDestination?.id in AUTH_DESTINATION_IDS) return
+
+        lifecycleScope.launch {
+            val hasSession = sessionManager.getCurrentUserIdOnce() != null
+            if (!hasSession) return@launch
+            val biometricLockEnabled = userPreferencesRepository.observePreferences().first().biometricLockEnabled
+            if (!biometricLockEnabled) return@launch
+            if (!biometricAuthenticator.isAvailable()) return@launch
+            // Revérifié : la coroutine ci-dessus a pu laisser le temps à l'utilisateur de naviguer
+            // (ex. se déconnecter) avant que ces `suspend fun` ne renvoient leur résultat.
+            if (navController.currentDestination?.id in AUTH_DESTINATION_IDS) return@launch
+
+            navController.navigate(
+                R.id.biometricLockFragment,
+                bundleOf(BiometricLockFragment.ARG_IS_RESUME_CHECK to true),
+                NavAnimations.push
+            )
+        }
     }
 
     /**
      * Transactions récurrentes/planifiées (voir cahier des charges, section "Détection
-     * automatique") : à CHAQUE ouverture de l'app, génère les occurrences `PENDING` des règles
-     * actives arrivées à échéance (échéance du jour ET échéances manquées, voir
-     * `RecurringTransactionRepository.generateMissingOccurrences`), puis affiche le dialogue de
-     * validation ([RecurringOccurrenceQueueDialogFragment]) s'il en résulte au moins une occurrence
-     * à traiter. Ne fait rien si aucune session n'existe (écran Connexion) —
-     * `generateMissingOccurrences`/`observePendingOccurrences` renvoient alors respectivement
-     * "aucun effet"/liste vide, voir leur doc.
+     * automatique") : génère les occurrences `PENDING` des règles actives arrivées à échéance
+     * (échéance du jour ET échéances manquées, voir `RecurringTransactionRepository.generateMissingOccurrences`),
+     * puis affiche le dialogue de validation ([RecurringOccurrenceQueueDialogFragment]) s'il en
+     * résulte au moins une occurrence à traiter.
+     *
+     * Appelée UNE SEULE FOIS par lancement, au premier accès réel au Dashboard (voir le listener
+     * dans [onCreate], `hasGeneratedMissingRecurringOccurrences`) — jamais avant, en particulier
+     * jamais par-dessus [R.id.biometricLockFragment] : le dialogue affiche des montants/catégories
+     * et permet de valider des transactions, ce qui contournerait totalement le verrou biométrique
+     * s'il apparaissait avant que l'utilisateur l'ait franchi.
      */
     private fun generateMissingRecurringOccurrences() {
         lifecycleScope.launch {
@@ -316,6 +416,10 @@ class MainActivity : AppCompatActivity() {
     private companion object {
         /** Tag `FragmentManager` du dialogue de validation (voir [showRecurringOccurrenceQueueIfNeeded]). */
         const val RECURRING_QUEUE_DIALOG_TAG = "recurring_occurrence_queue"
+
+        /** Voir [checkBiometricReentryLock] : délai de grâce sous lequel un aller-retour hors de
+         * l'app (sélecteur de photo/fichier système, etc.) ne redemande PAS d'empreinte. */
+        const val BIOMETRIC_REENTRY_GRACE_PERIOD_MILLIS = 30_000L
 
         /** Destinations sans Bottom Navigation ni onglet correspondant (voir plus haut).
          * `biometricLockFragment` y figure pour la même raison que les 3 écrans d'authentification :

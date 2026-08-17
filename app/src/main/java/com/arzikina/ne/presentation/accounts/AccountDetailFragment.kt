@@ -15,14 +15,17 @@ import com.arzikina.ne.R
 import com.arzikina.ne.databinding.FragmentAccountDetailBinding
 import com.arzikina.ne.domain.model.AccountType
 import com.arzikina.ne.domain.model.CardSecrets
+import com.arzikina.ne.domain.repository.BiometricAuthenticator
 import com.arzikina.ne.presentation.components.ConfirmDialogs
 import com.arzikina.ne.presentation.components.NavAnimations
+import com.arzikina.ne.presentation.components.authenticateForSensitiveAction
 import com.arzikina.ne.presentation.transactions.GroupedTransactionsAdapter
 import com.arzikina.ne.presentation.transactions.TransactionUiItem
 import com.arzikina.ne.presentation.transactions.toListRows
 import com.arzikina.ne.util.AppResult
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 /**
  * Transactions d'UN compte, groupées par jour — atteint en cliquant sur un
@@ -35,6 +38,14 @@ class AccountDetailFragment : Fragment(R.layout.fragment_account_detail) {
 
     private val viewModel: AccountDetailViewModel by viewModels()
     private var binding: FragmentAccountDetailBinding? = null
+
+    /**
+     * Injecté par CHAMP (jamais via [AccountDetailViewModel], voir sa doc sur
+     * [AccountDetailViewModel.revealCardSecrets]) : `authenticate()` a besoin de CETTE
+     * `FragmentActivity` précise (`requireActivity()`), qu'un ViewModel ne doit jamais retenir.
+     */
+    @Inject
+    lateinit var biometricAuthenticator: BiometricAuthenticator
     /**
      * Aucune suppression de transaction depuis cette liste (ni ailleurs dans
      * l'app désormais, voir [GroupedTransactionsAdapter]) : elle se fait
@@ -174,8 +185,29 @@ class AccountDetailFragment : Fragment(R.layout.fragment_account_detail) {
             cardHolderName = uiState.cardHolderName,
             revealedSecrets = latestCardSecrets,
             showVisibilityToggle = true,
-            onToggleVisibility = { viewModel.toggleCardSecrets() }
+            onToggleVisibility = { onCardSecretsToggleClicked() }
         )
+    }
+
+    /**
+     * Masquer ne demande jamais d'authentification (aucune donnée à protéger dans ce sens) ;
+     * révéler exige d'abord une authentification biométrique réussie (voir section sécurité,
+     * "action sensible : révéler numéro de carte / CVV") — [viewModel].[AccountDetailViewModel.revealCardSecrets]
+     * n'est appelé QU'en cas de succès, jamais avant.
+     *
+     * Voir [authenticateForSensitiveAction] (gate partagé avec `BackupFragment`) pour le
+     * comportement de repli si aucun matériel biométrique n'est disponible/enrôlé.
+     */
+    private fun onCardSecretsToggleClicked() {
+        if (latestCardSecrets != null) {
+            viewModel.hideCardSecrets()
+            return
+        }
+        viewLifecycleOwner.lifecycleScope.launch {
+            if (authenticateForSensitiveAction(biometricAuthenticator)) {
+                viewModel.revealCardSecrets()
+            }
+        }
     }
 
     /**

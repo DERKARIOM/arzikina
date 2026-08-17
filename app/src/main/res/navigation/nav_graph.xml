@@ -46,17 +46,27 @@
         tools:layout="@layout/fragment_forgot_password" />
 
     <!--
-        Verrou biométrique à l'ouverture (voir MainActivity.resolveStartDestination) : retourné
-        comme startDestination À LA PLACE de dashboardFragment quand une session existe déjà ET que
-        UserPreferences.biometricLockEnabled est actif ET que la biométrie est disponible sur
-        l'appareil au moment du lancement. Même traitement que loginFragment/registerFragment ci-
-        dessus (Bottom Navigation masquée, voir MainActivity.AUTH_DESTINATION_IDS).
+        Verrou biométrique, DEUX points d'entrée distincts (voir BiometricLockFragment) :
+        - à l'ouverture (MainActivity.resolveStartDestination) : retourné comme startDestination À
+          LA PLACE de dashboardFragment quand une session existe déjà ET que
+          UserPreferences.biometricLockEnabled est actif ET que la biométrie est disponible sur
+          l'appareil au moment du lancement. Même traitement que loginFragment/registerFragment ci-
+          dessus (Bottom Navigation masquée, voir MainActivity.AUTH_DESTINATION_IDS).
+        - au retour au premier plan (MainActivity.checkBiometricReentryLock) : empilé PAR-DESSUS
+          l'écran courant (isResumeCheck=true), pour révéler exactement cet écran après succès
+          plutôt que de renvoyer systématiquement au Dashboard.
     -->
     <fragment
         android:id="@+id/biometricLockFragment"
         android:name="com.arzikina.ne.presentation.security.BiometricLockFragment"
         android:label="@string/biometric_lock_title"
-        tools:layout="@layout/fragment_biometric_lock" />
+        tools:layout="@layout/fragment_biometric_lock">
+
+        <argument
+            android:name="isResumeCheck"
+            android:defaultValue="false" />
+
+    </fragment>
 
     <fragment
         android:id="@+id/dashboardFragment"
