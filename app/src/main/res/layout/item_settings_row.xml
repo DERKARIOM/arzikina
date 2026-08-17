@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Ligne de réglage générique, réutilisée dans toutes les sections de fragment_settings.xml (voir
+    sa doc) — trois zones traînantes MUTUELLEMENT EXCLUSIVES, l'appelant choisit laquelle afficher
+    par code (les deux autres restent GONE) :
+    - rowChevron seul : ligne de NAVIGATION pure (ex. "Mes comptes").
+    - rowValue + rowChevron : ligne de navigation qui montre la valeur actuelle avant d'y accéder
+      (ex. "Devise" → "XOF").
+    - rowSwitch seul : réglage ON/OFF direct, sans écran/dialogue supplémentaire.
+
+    trailingBarrier calcule sa position à partir des SEULES vues effectivement visibles parmi ces
+    trois (`app:barrierAllowsGoneWidgets="false"`, indispensable : son défaut `true` ferait quand
+    même compter une vue GONE dans le calcul, décalant le titre/sous-titre — bug déjà rencontré et
+    corrigé sur fragment_account_detail.xml, voir sa doc pour le détail du mécanisme).
+-->
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="?attr/selectableItemBackground"
+    android:clickable="true"
+    android:focusable="true"
+    android:paddingHorizontal="@dimen/spacing_m"
+    android:paddingVertical="@dimen/spacing_m">
+
+    <ImageView
+        android:id="@+id/rowIcon"
+        android:layout_width="@dimen/icon_size_large"
+        android:layout_height="@dimen/icon_size_large"
+        android:background="@drawable/bg_icon_circle"
+        android:backgroundTint="?attr/colorPrimary"
+        android:contentDescription="@null"
+        android:padding="@dimen/spacing_s"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:tint="@android:color/white"
+        tools:src="@drawable/ic_payments_24" />
+
+    <TextView
+        android:id="@+id/rowTitle"
+        style="@style/TextAppearance.Material3.TitleSmall"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/spacing_m"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:textColor="?attr/colorOnSurface"
+        app:layout_constraintEnd_toStartOf="@id/trailingBarrier"
+        app:layout_constraintStart_toEndOf="@id/rowIcon"
+        app:layout_constraintTop_toTopOf="@id/rowIcon"
+        tools:text="Devise" />
+
+    <TextView
+        android:id="@+id/rowSubtitle"
+        style="@style/TextAppearance.Material3.BodySmall"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        app:layout_constraintEnd_toEndOf="@id/rowTitle"
+        app:layout_constraintStart_toStartOf="@id/rowTitle"
+        app:layout_constraintTop_toBottomOf="@id/rowTitle"
+        tools:text="Devise principale" />
+
+    <TextView
+        android:id="@+id/rowValue"
+        style="@style/TextAppearance.Material3.BodyMedium"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="@dimen/spacing_s"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:maxWidth="120dp"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/rowChevron"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:text="XOF"
+        tools:visibility="visible" />
+
+    <ImageView
+        android:id="@+id/rowChevron"
+        android:layout_width="@dimen/icon_size_default"
+        android:layout_height="@dimen/icon_size_default"
+        android:contentDescription="@null"
+        android:src="@drawable/ic_chevron_right_24"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:tint="?attr/colorOnSurfaceVariant" />
+
+    <com.google.android.material.materialswitch.MaterialSwitch
+        android:id="@+id/rowSwitch"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <androidx.constraintlayout.widget.Barrier
+        android:id="@+id/trailingBarrier"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:barrierAllowsGoneWidgets="false"
+        app:barrierDirection="start"
+        app:constraint_referenced_ids="rowValue,rowChevron,rowSwitch" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

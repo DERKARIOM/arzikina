@@ -1,20 +1,496 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+    Refonte complète de l'écran Paramètres (voir cahier des charges "Refonte de la page Paramètres" —
+    inspirée d'une maquette de référence, adaptée à l'identité visuelle d'Arzikina : postcards
+    @color/arzikina_postcart_background déjà utilisées partout ailleurs plutôt que les cartes
+    blanches/vert foncé de la maquette d'origine).
+
+    Toolbar avec flèche retour CONSERVÉE (contrairement au grand en-tête sans navigation de la
+    maquette) : cet écran est atteint par un push depuis l'onglet "Autre" (voir MoreFragment), pas
+    un onglet racine de la Bottom Navigation — toute la navigation de l'app utilise cette même
+    convention pour un écran poussé (voir fragment_account_detail.xml, fragment_profile.xml...).
+    Le sous-titre de la maquette est conservé sous forme de TextView sous la Toolbar plutôt que
+    fusionné dans son titre, pour ne pas casser ce pattern de navigation commun à tout le projet.
+
+    Construit SECTION PAR SECTION sur plusieurs étapes (voir le plan) : cette version ne contient
+    que l'en-tête profil et la section "Général" (devise, thème — les seuls réglages avec une
+    logique déjà fonctionnelle à ce stade). Chaque étape suivante ajoute sa propre section, jamais
+    en modifiant les précédentes.
+-->
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="?attr/colorSurface">
 
-    <TextView
-        android:id="@+id/placeholderText"
-        style="@style/TextAppearance.Material3.TitleMedium"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/nav_settings"
-        android:textColor="?attr/colorOnSurfaceVariant"
+    <com.google.android.material.appbar.MaterialToolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:background="?attr/colorSurface"
+        app:layout_constraintTop_toTopOf="parent"
+        app:navigationIcon="@drawable/ic_arrow_back_24"
+        app:title="@string/nav_settings"
+        app:titleTextColor="?attr/colorOnSurface" />
+
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:fillViewport="true"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toBottomOf="@id/toolbar">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="@dimen/spacing_m">
+
+            <TextView
+                android:id="@+id/subtitleText"
+                style="@style/TextAppearance.Material3.BodyMedium"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="@dimen/spacing_m"
+                android:textColor="?attr/colorOnSurfaceVariant"
+                tools:text="Personnalisez votre expérience Arzikina" />
+
+            <!--
+                En-tête profil : renvoie vers l'écran Profil déjà existant (voir
+                SettingsFragment.setUpProfileRow) — aucune donnée d'identité éditable ici, voir la
+                doc de SettingsUiState.
+            -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/profileCard"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:checkable="false"
+                android:clickable="true"
+                android:focusable="true"
+                android:theme="@style/ThemeOverlay.Arzikina.OnBalanceCard"
+                app:cardBackgroundColor="@color/arzikina_postcart_background"
+                app:cardCornerRadius="@dimen/corner_radius_medium"
+                app:cardElevation="@dimen/elevation_raised"
+                app:rippleColor="?attr/colorPrimary">
+
+                <androidx.constraintlayout.widget.ConstraintLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:padding="@dimen/spacing_m">
+
+                    <ImageView
+                        android:id="@+id/profileAvatar"
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
+                        android:background="@drawable/bg_avatar_circle"
+                        android:contentDescription="@null"
+                        android:padding="10dp"
+                        android:scaleType="centerCrop"
+                        android:src="@drawable/ic_person_24"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toTopOf="parent"
+                        app:tint="?attr/colorOnSurfaceVariant" />
+
+                    <TextView
+                        android:id="@+id/profileName"
+                        style="@style/TextAppearance.Material3.TitleSmall"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="@dimen/spacing_m"
+                        android:ellipsize="end"
+                        android:maxLines="1"
+                        android:textColor="?attr/colorOnSurface"
+                        app:layout_constraintEnd_toStartOf="@id/profileChevron"
+                        app:layout_constraintStart_toEndOf="@id/profileAvatar"
+                        app:layout_constraintTop_toTopOf="@id/profileAvatar"
+                        tools:text="Abdoul Kader" />
+
+                    <TextView
+                        style="@style/TextAppearance.Material3.BodySmall"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:ellipsize="end"
+                        android:maxLines="1"
+                        android:text="@string/settings_profile_subtitle"
+                        android:textColor="?attr/colorOnSurfaceVariant"
+                        app:layout_constraintEnd_toEndOf="@id/profileName"
+                        app:layout_constraintStart_toStartOf="@id/profileName"
+                        app:layout_constraintTop_toBottomOf="@id/profileName" />
+
+                    <ImageView
+                        android:id="@+id/profileChevron"
+                        android:layout_width="@dimen/icon_size_default"
+                        android:layout_height="@dimen/icon_size_default"
+                        android:contentDescription="@null"
+                        android:src="@drawable/ic_chevron_right_24"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintTop_toTopOf="parent"
+                        app:tint="?attr/colorOnSurfaceVariant" />
+
+                </androidx.constraintlayout.widget.ConstraintLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- En-tête de section : petites capitales, même principe que "Sécurité" sur
+                 fragment_profile.xml, avec android:textAllCaps pour le rendu "étiquette" de la
+                 maquette de référence. -->
+            <TextView
+                style="@style/TextAppearance.Material3.LabelMedium"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/spacing_xs"
+                android:layout_marginTop="@dimen/spacing_l"
+                android:layout_marginBottom="@dimen/spacing_s"
+                android:letterSpacing="0.05"
+                android:text="@string/settings_section_general"
+                android:textAllCaps="true"
+                android:textColor="?attr/colorOnSurfaceVariant" />
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/generalCard"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:theme="@style/ThemeOverlay.Arzikina.OnBalanceCard"
+                app:cardBackgroundColor="@color/arzikina_postcart_background"
+                app:cardCornerRadius="@dimen/corner_radius_medium"
+                app:cardElevation="@dimen/elevation_raised">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <include
+                        android:id="@+id/currencyRow"
+                        layout="@layout/item_settings_row" />
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:background="@drawable/divider_on_balance_card" />
+
+                    <include
+                        android:id="@+id/themeRow"
+                        layout="@layout/item_settings_row" />
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:background="@drawable/divider_on_balance_card" />
+
+                    <!-- Informatif UNIQUEMENT (voir SettingsFragment.setUpGeneralSection) : aucune
+                         langue alternative n'existe encore, cette ligne n'est ni cliquable ni
+                         dotée d'un chevron pour ne pas laisser croire à une action possible. -->
+                    <include
+                        android:id="@+id/languageRow"
+                        layout="@layout/item_settings_row" />
+
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Section Sécurité : voir SettingsFragment.setUpSecuritySection. Le switch biométrique
+                 lit/écrit EXACTEMENT la même préférence que fragment_profile.xml (biometricLockCard) —
+                 les deux réglages restent automatiquement synchronisés (même UserPreferencesRepository),
+                 voir la doc de SettingsViewModel. -->
+            <TextView
+                style="@style/TextAppearance.Material3.LabelMedium"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/spacing_xs"
+                android:layout_marginTop="@dimen/spacing_l"
+                android:layout_marginBottom="@dimen/spacing_s"
+                android:letterSpacing="0.05"
+                android:text="@string/settings_section_security"
+                android:textAllCaps="true"
+                android:textColor="?attr/colorOnSurfaceVariant" />
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/securityCard"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:theme="@style/ThemeOverlay.Arzikina.OnBalanceCard"
+                app:cardBackgroundColor="@color/arzikina_postcart_background"
+                app:cardCornerRadius="@dimen/corner_radius_medium"
+                app:cardElevation="@dimen/elevation_raised">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <include
+                        android:id="@+id/biometricLockRow"
+                        layout="@layout/item_settings_row" />
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:background="@drawable/divider_on_balance_card" />
+
+                    <include
+                        android:id="@+id/changePasswordRow"
+                        layout="@layout/item_settings_row" />
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:background="@drawable/divider_on_balance_card" />
+
+                    <include
+                        android:id="@+id/securityQuestionRow"
+                        layout="@layout/item_settings_row" />
+
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Sections Comptes / Transactions / Budget et finances : voir
+                 SettingsFragment.setUpNavigationSections. Simples raccourcis vers des écrans déjà
+                 existants (chevron seul, aucune valeur affichée), même pattern dividers/marges que
+                 les sections précédentes. -->
+            <TextView
+                style="@style/TextAppearance.Material3.LabelMedium"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/spacing_xs"
+                android:layout_marginTop="@dimen/spacing_l"
+                android:layout_marginBottom="@dimen/spacing_s"
+                android:letterSpacing="0.05"
+                android:text="@string/settings_section_accounts"
+                android:textAllCaps="true"
+                android:textColor="?attr/colorOnSurfaceVariant" />
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/accountsCard"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:theme="@style/ThemeOverlay.Arzikina.OnBalanceCard"
+                app:cardBackgroundColor="@color/arzikina_postcart_background"
+                app:cardCornerRadius="@dimen/corner_radius_medium"
+                app:cardElevation="@dimen/elevation_raised">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <include
+                        android:id="@+id/accountsRow"
+                        layout="@layout/item_settings_row" />
+
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <TextView
+                style="@style/TextAppearance.Material3.LabelMedium"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/spacing_xs"
+                android:layout_marginTop="@dimen/spacing_l"
+                android:layout_marginBottom="@dimen/spacing_s"
+                android:letterSpacing="0.05"
+                android:text="@string/settings_section_transactions"
+                android:textAllCaps="true"
+                android:textColor="?attr/colorOnSurfaceVariant" />
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/transactionsCard"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:theme="@style/ThemeOverlay.Arzikina.OnBalanceCard"
+                app:cardBackgroundColor="@color/arzikina_postcart_background"
+                app:cardCornerRadius="@dimen/corner_radius_medium"
+                app:cardElevation="@dimen/elevation_raised">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <include
+                        android:id="@+id/transactionsRow"
+                        layout="@layout/item_settings_row" />
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:background="@drawable/divider_on_balance_card" />
+
+                    <include
+                        android:id="@+id/categoriesRow"
+                        layout="@layout/item_settings_row" />
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:background="@drawable/divider_on_balance_card" />
+
+                    <include
+                        android:id="@+id/recurringRow"
+                        layout="@layout/item_settings_row" />
+
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <TextView
+                style="@style/TextAppearance.Material3.LabelMedium"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/spacing_xs"
+                android:layout_marginTop="@dimen/spacing_l"
+                android:layout_marginBottom="@dimen/spacing_s"
+                android:letterSpacing="0.05"
+                android:text="@string/settings_section_budget_finance"
+                android:textAllCaps="true"
+                android:textColor="?attr/colorOnSurfaceVariant" />
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/budgetFinanceCard"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:theme="@style/ThemeOverlay.Arzikina.OnBalanceCard"
+                app:cardBackgroundColor="@color/arzikina_postcart_background"
+                app:cardCornerRadius="@dimen/corner_radius_medium"
+                app:cardElevation="@dimen/elevation_raised">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <include
+                        android:id="@+id/budgetRow"
+                        layout="@layout/item_settings_row" />
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:background="@drawable/divider_on_balance_card" />
+
+                    <include
+                        android:id="@+id/loansRow"
+                        layout="@layout/item_settings_row" />
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:background="@drawable/divider_on_balance_card" />
+
+                    <include
+                        android:id="@+id/statisticsRow"
+                        layout="@layout/item_settings_row" />
+
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Section Sauvegarde & données : voir SettingsFragment.setUpBackupSection. Simple
+                 raccourci vers BackupFragment déjà existant (même écran que le bloc Utilitaires du
+                 Dashboard), aucune logique d'export/import dupliquée ici. -->
+            <TextView
+                style="@style/TextAppearance.Material3.LabelMedium"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/spacing_xs"
+                android:layout_marginTop="@dimen/spacing_l"
+                android:layout_marginBottom="@dimen/spacing_s"
+                android:letterSpacing="0.05"
+                android:text="@string/settings_section_backup"
+                android:textAllCaps="true"
+                android:textColor="?attr/colorOnSurfaceVariant" />
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/backupCard"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:theme="@style/ThemeOverlay.Arzikina.OnBalanceCard"
+                app:cardBackgroundColor="@color/arzikina_postcart_background"
+                app:cardCornerRadius="@dimen/corner_radius_medium"
+                app:cardElevation="@dimen/elevation_raised">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <include
+                        android:id="@+id/backupRow"
+                        layout="@layout/item_settings_row" />
+
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Section À propos : STATIQUE (voir SettingsFragment.setUpAboutSection), aucune
+                 action, aucune navigation. Badge générique (cercle @color/colorPrimary + icône
+                 portefeuille) plutôt que @mipmap/ic_launcher : ce dernier est encore le robot
+                 Android par défaut du template, pas un vrai logo Arzikina — décision validée avec
+                 l'utilisateur, à remplacer le jour où un logo définitif existera (voir aboutLogo
+                 ci-dessous, seul endroit à modifier à ce moment-là). -->
+            <TextView
+                style="@style/TextAppearance.Material3.LabelMedium"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/spacing_xs"
+                android:layout_marginTop="@dimen/spacing_l"
+                android:layout_marginBottom="@dimen/spacing_s"
+                android:letterSpacing="0.05"
+                android:text="@string/settings_section_about"
+                android:textAllCaps="true"
+                android:textColor="?attr/colorOnSurfaceVariant" />
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/aboutCard"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="@dimen/spacing_m"
+                android:theme="@style/ThemeOverlay.Arzikina.OnBalanceCard"
+                app:cardBackgroundColor="@color/arzikina_postcart_background"
+                app:cardCornerRadius="@dimen/corner_radius_medium"
+                app:cardElevation="@dimen/elevation_raised">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_horizontal"
+                    android:orientation="vertical"
+                    android:paddingVertical="@dimen/spacing_l">
+
+                    <ImageView
+                        android:id="@+id/aboutLogo"
+                        android:layout_width="64dp"
+                        android:layout_height="64dp"
+                        android:background="@drawable/bg_icon_circle"
+                        android:backgroundTint="?attr/colorPrimary"
+                        android:contentDescription="@null"
+                        android:padding="16dp"
+                        android:src="@drawable/ic_wallet_24"
+                        app:tint="@android:color/white" />
+
+                    <TextView
+                        style="@style/TextAppearance.Material3.TitleMedium"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/spacing_m"
+                        android:text="@string/app_name"
+                        android:textColor="?attr/colorOnSurface" />
+
+                    <TextView
+                        android:id="@+id/aboutVersion"
+                        style="@style/TextAppearance.Material3.BodySmall"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:textColor="?attr/colorOnSurfaceVariant"
+                        tools:text="Arzikina — version 1.0" />
+
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+        </LinearLayout>
+
+    </androidx.core.widget.NestedScrollView>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -15,16 +15,57 @@
     <string name="more_menu_categories">Catégories</string>
 
     <!-- Paramètres -->
+    <string name="settings_screen_subtitle">Personnalisez votre expérience %s</string>
+    <!-- Ligne d'en-tête (voir settingsProfileCard, fragment_settings.xml) : navigue vers l'écran
+         Profil déjà existant, ne duplique aucune donnée d'identité ici. -->
+    <string name="settings_profile_subtitle">Gérez votre compte</string>
+    <string name="settings_section_general">Général</string>
     <string name="settings_section_appearance">Apparence</string>
     <string name="settings_theme_system">Système</string>
     <string name="settings_theme_light">Clair</string>
     <string name="settings_theme_dark">Sombre</string>
+    <string name="settings_theme_label">Thème</string>
+    <string name="settings_theme_description">Choisissez votre thème préféré</string>
+    <string name="settings_dialog_theme_title">Choisir le thème</string>
     <string name="settings_section_currency">Devise principale</string>
     <string name="settings_currency_description">Utilisée pour les totaux qui regroupent plusieurs comptes (statistiques). Chaque compte garde sa propre devise.</string>
     <string name="settings_currency_label">Devise</string>
+    <string name="settings_dialog_currency_title">Choisir la devise</string>
     <string name="settings_section_language">Langue</string>
     <string name="settings_language_french_only">Français uniquement pour le moment. D\'autres langues seront proposées ici.</string>
+    <string name="settings_language_value">Français</string>
+
+    <!-- Section Sécurité (voir securityCard, fragment_settings.xml) : réutilise volontairement
+         EXACTEMENT les mêmes chaînes que fragment_profile.xml pour le verrouillage biométrique
+         (profile_biometric_lock_*) — même réglage, même bibliothèque de textes, pas de variante
+         parallèle à maintenir. -->
+    <string name="settings_section_security">Sécurité</string>
+    <string name="settings_security_change_password_subtitle">Modifier votre mot de passe</string>
+    <string name="settings_security_question_subtitle">Utilisée pour récupérer votre compte</string>
+
+    <!-- Sections Comptes / Transactions / Budget et finances (voir accountsCard/transactionsCard/
+         budgetCard, fragment_settings.xml) : simples raccourcis de NAVIGATION vers des écrans déjà
+         existants, aucune logique propre à ces lignes. Titres réutilisant volontairement les
+         chaînes déjà utilisées comme titre d'écran (accounts_title, categories_title, nav_budget,
+         utility_loans_title, utility_recurring_transactions_title, nav_statistics) pour rester
+         cohérent avec la barre d'outils affichée après navigation. -->
+    <string name="settings_section_accounts">Comptes</string>
+    <string name="settings_accounts_row_subtitle">Gérer vos comptes et leurs soldes</string>
+    <string name="settings_section_transactions">Transactions</string>
+    <string name="settings_transactions_all_label">Toutes les transactions</string>
+    <string name="settings_transactions_all_subtitle">Consulter l\'historique complet</string>
+    <string name="settings_categories_row_subtitle">Organiser vos catégories de dépenses et revenus</string>
+    <string name="settings_recurring_row_subtitle">Transactions récurrentes et planifiées</string>
+    <string name="settings_section_budget_finance">Budget et finances</string>
+    <string name="settings_budget_row_subtitle">Suivre vos budgets par catégorie</string>
+    <string name="settings_loans_row_subtitle">Suivre les prêts et emprunts en cours</string>
+    <string name="settings_statistics_row_subtitle">Analyser vos revenus et dépenses</string>
+
     <string name="settings_section_backup">Sauvegarde</string>
+    <!-- Sous-titre COURT de la ligne settings (voir backupRow, fragment_settings.xml), distinct de
+         settings_backup_description (trop long pour tenir sur une ligne, réservé à l'écran
+         BackupFragment lui-même). -->
+    <string name="settings_backup_row_subtitle">Exporter ou restaurer vos données</string>
     <!-- Titre de la page dédiée "Sauvegarde et restauration" (barre d'outils + nav_graph), DISTINCT
          de "utility_backup_title" — celui-ci reste court ("Sauvegarder") pour la tuile compacte du
          bloc Utilitaires du Dashboard, comme les autres tuiles ("Emprunts", "Planifications"). -->

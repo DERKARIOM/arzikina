@@ -14,6 +14,7 @@ import com.arzikina.ne.R
 import com.arzikina.ne.databinding.FragmentBiometricLockBinding
 import com.arzikina.ne.domain.repository.BiometricAuthenticator
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -97,9 +98,18 @@ class BiometricLockFragment : Fragment(R.layout.fragment_biometric_lock) {
      * détruite pendant la vérification (écran quitté autrement), la coroutine — et donc le prompt
      * système — s'annule proprement (voir `BiometricAuthenticatorImpl.authenticate`,
      * `invokeOnCancellation`).
+     *
+     * `Dispatchers.Main` explicite (PAS le `Main.immediate` hérité par défaut de
+     * `lifecycleScope`) : ce fragment peut être créé PENDANT que le `FragmentManager` exécute
+     * lui-même une transaction (ex. `MainActivity.onStart` qui rejoue une navigation en attente
+     * empilant cet écran) — appeler `BiometricPrompt.authenticate()` de façon synchrone dans ce
+     * cas précis fait planter l'app (`IllegalStateException: FragmentManager is already executing
+     * transactions`, `BiometricPrompt` appelant en interne `executePendingTransactions()`).
+     * `Dispatchers.Main` force un vrai passage par la file d'événements avant de continuer,
+     * garantissant que la transaction en cours est terminée quand le prompt s'affiche.
      */
     private fun requestAuthentication() {
-        viewLifecycleOwner.lifecycleScope.launch {
+        viewLifecycleOwner.lifecycleScope.launch(Dispatchers.Main) {
             val success = biometricAuthenticator.authenticate(requireActivity())
             if (success) {
                 viewModel.onUnlocked()
