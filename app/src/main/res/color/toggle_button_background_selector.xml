@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Fond du MaterialButtonToggleGroup Comptes/Cartes bancaires (voir fragment_accounts.xml) :
+    sélectionné = couleur principale pleine (#42B998, voir arzikina_primary), non sélectionné =
+    fond discret adapté au thème (colorSurfaceVariant, clair en thème clair / sombre en thème
+    sombre — Android resource qualifiers gèrent déjà cette bascule via themes.xml, aucune logique
+    supplémentaire nécessaire ici).
+-->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:color="?attr/colorPrimary" android:state_checked="true" />
+    <item android:color="?attr/colorSurfaceVariant" />
+</selector>

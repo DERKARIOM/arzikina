@@ -120,6 +120,14 @@ class AccountFormViewModel @Inject constructor(
     private val accountId: Long = savedStateHandle.get<Long>(ACCOUNT_ID_ARG) ?: 0L
     val isEditMode: Boolean = accountId != 0L
 
+    /** Voir `nav_graph.xml` (`initialType`) — présélection du type UNIQUEMENT à la création
+     * (voir [init]), passée par [AccountsFragment] selon l'onglet actif (Comptes/Cartes
+     * bancaires) au moment d'ouvrir ce formulaire. Lecture défensive : une valeur absente ou ne
+     * correspondant à aucun [AccountType] connu retombe silencieusement sur le comportement
+     * précédent (type par défaut de [AccountFormState]), plutôt que de planter. */
+    private val initialType: AccountType? = savedStateHandle.get<String>(INITIAL_TYPE_ARG)
+        ?.let { raw -> AccountType.entries.find { it.name == raw } }
+
     private val _formState = MutableStateFlow(AccountFormState())
     val formState: StateFlow<AccountFormState> = _formState.asStateFlow()
 
@@ -153,6 +161,16 @@ class AccountFormViewModel @Inject constructor(
                     }
                     account.mobileMoneyPackageName?.let { resolveMobileMoneyAppLabel(it) }
                 }
+            }
+        } else if (initialType != null) {
+            // Même synchronisation icône/type que [onTypeChange] (voir sa doc) : l'utilisateur
+            // reste libre de changer l'icône ensuite, cette présélection n'est qu'un point de
+            // départ pratique, jamais une contrainte.
+            _formState.update {
+                it.copy(
+                    type = initialType,
+                    icon = if (initialType == AccountType.CREDIT_CARD) AccountIcon.CREDIT_CARD else it.icon
+                )
             }
         }
     }
@@ -352,5 +370,6 @@ class AccountFormViewModel @Inject constructor(
 
     private companion object {
         const val ACCOUNT_ID_ARG = "accountId"
+        const val INITIAL_TYPE_ARG = "initialType"
     }
 }

@@ -205,6 +205,13 @@
     <string name="dashboard_accounts_action">Gérer mes comptes</string>
     <string name="accounts_title">Mes comptes</string>
     <string name="accounts_add">Ajouter</string>
+    <!-- ToggleGroup en haut de l'écran Comptes (voir accountsTabGroup, fragment_accounts.xml) :
+         filtre purement visuel de la même liste déjà chargée (AccountType.CREDIT_CARD vs le
+         reste), aucune nouvelle donnée. -->
+    <string name="accounts_tab_accounts">Comptes</string>
+    <string name="accounts_tab_bank_cards">Cartes bancaires</string>
+    <string name="accounts_empty_bank_cards_title">Aucune carte bancaire pour l\'instant</string>
+    <string name="accounts_empty_bank_cards_message">Ajoute ta première carte bancaire pour la retrouver ici.</string>
     <!-- Libellé "type" affiché sur la carte de compte (voir AccountIconDisplay). -->
     <string name="account_type_cash">Espèces</string>
     <string name="account_type_bank">Banque</string>

@@ -18,32 +18,89 @@
         app:title="@string/accounts_title"
         app:titleTextColor="?attr/colorOnSurface" />
 
-    <TextView
-        android:id="@+id/emptyState"
-        style="@style/TextAppearance.Material3.BodyMedium"
-        android:layout_width="0dp"
+    <!--
+        Bascule purement visuelle Comptes/Cartes bancaires (voir AccountsFragment.setUpTabGroup) :
+        filtre la même liste déjà chargée par AccountsViewModel selon AccountType.CREDIT_CARD,
+        aucune nouvelle donnée ni nouvel écran. Sélectionné = fond @color/arzikina_primary plein +
+        texte blanc, non sélectionné = fond discret ?attr/colorSurfaceVariant (voir
+        toggle_button_background_selector.xml/toggle_button_text_selector.xml) — même composant
+        MaterialButtonToggleGroup que fragment_categories.xml, mais avec un style de sélection
+        propre (fond plein, pas juste contour) conforme au cahier des charges.
+    -->
+    <com.google.android.material.button.MaterialButtonToggleGroup
+        android:id="@+id/accountsTabGroup"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:gravity="center"
-        android:paddingHorizontal="@dimen/spacing_l"
-        android:text="@string/accounts_empty_message"
-        android:textColor="?attr/colorOnSurfaceVariant"
-        android:visibility="gone"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/accountsList"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:clipToPadding="false"
-        android:paddingBottom="88dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginStart="@dimen/spacing_m"
+        android:layout_marginTop="@dimen/spacing_s"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/toolbar"
-        tools:listitem="@layout/item_account" />
+        app:selectionRequired="true"
+        app:singleSelection="true">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnAccounts"
+            style="?attr/materialButtonOutlinedStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:checkable="true"
+            android:checked="true"
+            android:text="@string/accounts_tab_accounts"
+            android:textColor="@color/toggle_button_text_selector"
+            app:backgroundTint="@color/toggle_button_background_selector"
+            app:cornerRadius="@dimen/corner_radius_small"
+            app:strokeColor="?attr/colorOutline" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnBankCards"
+            style="?attr/materialButtonOutlinedStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:checkable="true"
+            android:text="@string/accounts_tab_bank_cards"
+            android:textColor="@color/toggle_button_text_selector"
+            app:backgroundTint="@color/toggle_button_background_selector"
+            app:cornerRadius="@dimen/corner_radius_small"
+            app:strokeColor="?attr/colorOutline" />
+
+    </com.google.android.material.button.MaterialButtonToggleGroup>
+
+    <!--
+        Conteneur des deux vues normalement mutuellement exclusives (emptyState / accountsList) —
+        voir AccountsFragment.animateTabSwitch : un FrameLayout regroupant les deux permet
+        d'animer UN SEUL alpha/translationX lors du changement d'onglet, plutôt que de coordonner
+        deux animations séparées (source d'incohérence si l'une des deux vues est GONE).
+    -->
+    <FrameLayout
+        android:id="@+id/accountsContent"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/accountsTabGroup">
+
+        <TextView
+            android:id="@+id/emptyState"
+            style="@style/TextAppearance.Material3.BodyMedium"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:gravity="center"
+            android:paddingHorizontal="@dimen/spacing_l"
+            android:text="@string/accounts_empty_message"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            android:visibility="gone" />
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/accountsList"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:clipToPadding="false"
+            android:paddingBottom="88dp"
+            tools:listitem="@layout/item_account" />
+
+    </FrameLayout>
 
     <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
         android:id="@+id/addAccountButton"

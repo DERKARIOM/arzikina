@@ -179,6 +179,18 @@
             android:name="accountId"
             android:defaultValue="0L"
             app:argType="long" />
+        <!-- Voir AccountFormViewModel.initialType : nom de AccountType (ex. "CREDIT_CARD"),
+             utilisé UNIQUEMENT à la création (accountId == 0L) pour présélectionner le type
+             (voir AccountsFragment, bouton d'ajout adaptatif selon l'onglet Comptes/Cartes
+             bancaires). Chaîne plutôt qu'un argType enum dédié : aucun autre argument de ce
+             graphe n'utilise d'enum, une String nullable reste cohérente avec le reste et se
+             désérialise sans risque de crash de navigation si jamais invalide (voir sa lecture
+             défensive côté ViewModel). -->
+        <argument
+            android:name="initialType"
+            android:defaultValue="@null"
+            app:argType="string"
+            app:nullable="true" />
     </fragment>
 
     <!--
