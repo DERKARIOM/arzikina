@@ -141,6 +141,8 @@
                 android:id="@+id/saveButton"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:background="@drawable/forme_radius_10dp"
+                android:textColor="@color/white"
                 android:layout_marginTop="@dimen/spacing_l"
                 android:text="@string/action_save" />
 
