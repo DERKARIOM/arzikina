@@ -17,5 +17,10 @@ data class BackupResult(
      * voir [occurrencesCount] séparément), ajouté en même temps que leur prise en charge par la
      * sauvegarde. */
     val recurringTransactionsCount: Int = 0,
-    val occurrencesCount: Int = 0
+    val occurrencesCount: Int = 0,
+    /** Voir `FinancialPlanDto`/`FinancialPlanItemDto` — nombre de PLANIFICATIONS (pas leurs dépenses
+     * prévues, voir [planItemsCount] séparément), ajouté en même temps que leur prise en charge par
+     * la sauvegarde (Étape 10). */
+    val plansCount: Int = 0,
+    val planItemsCount: Int = 0
 )

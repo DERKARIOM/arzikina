@@ -39,7 +39,13 @@ data class BackupPayload(
      * existence — un ancien fichier restauré ne recrée simplement aucune règle récurrente, sans
      * erreur (comportement identique à celui déjà choisi pour `persons`/`loans` plus haut). */
     val recurringTransactions: List<RecurringTransactionDto> = emptyList(),
-    val recurringTransactionOccurrences: List<RecurringTransactionOccurrenceDto> = emptyList()
+    val recurringTransactionOccurrences: List<RecurringTransactionOccurrenceDto> = emptyList(),
+    /** Ajoutés après coup (voir `FinancialPlanEntity`/`FinancialPlanItemEntity`, Étape 10) : listes
+     * vides par défaut pour rester compatible avec les fichiers exportés avant leur existence — un
+     * ancien fichier restauré ne recrée simplement aucune planification, sans erreur (même
+     * comportement que `persons`/`loans`/`recurringTransactions` plus haut). */
+    val financialPlans: List<FinancialPlanDto> = emptyList(),
+    val financialPlanItems: List<FinancialPlanItemDto> = emptyList()
 )
 
 /**
@@ -271,4 +277,50 @@ data class RecurringTransactionOccurrenceDto(
     val transactionId: Long? = null,
     val processedAt: Long? = null,
     val createdAt: Long
+)
+
+/**
+ * Une planification financière par projet (voir `FinancialPlanEntity`) — pas ses dépenses prévues,
+ * voir [FinancialPlanItemDto] séparément (même séparation modèle/enfant que [RecurringTransactionDto]/
+ * [RecurringTransactionOccurrenceDto]). Aucune clé étrangère à remapper sur ce DTO lui-même (comme
+ * [SavingsGoalDto]) : seul son [id] change à la restauration, via la table de correspondance
+ * `financialPlanIdMap` construite par `BackupRepositoryImpl` pour réécrire [FinancialPlanItemDto.planId].
+ */
+@Serializable
+data class FinancialPlanDto(
+    val id: Long,
+    val name: String,
+    val description: String? = null,
+    val availableAmount: Long,
+    val targetAmount: Long? = null,
+    val periodType: String,
+    val startDate: Long? = null,
+    val endDate: Long? = null,
+    val icon: String,
+    val colorArgb: Long,
+    val status: String,
+    val createdAt: Long,
+    val updatedAt: Long
+)
+
+/**
+ * Une dépense prévue d'une [FinancialPlanDto] — voir `FinancialPlanItemEntity`. [transactionId]
+ * pointe vers la transaction réelle créée lors d'une conversion explicite (voir la doc de
+ * `FinancialPlanItem.transactionId`) ; `null` tant que la dépense reste purement prévisionnelle.
+ */
+@Serializable
+data class FinancialPlanItemDto(
+    val id: Long,
+    val planId: Long,
+    val name: String,
+    val amount: Long,
+    val actualAmount: Long? = null,
+    val categoryId: Long? = null,
+    val description: String? = null,
+    val plannedDate: Long? = null,
+    val priority: String,
+    val status: String,
+    val transactionId: Long? = null,
+    val createdAt: Long,
+    val updatedAt: Long
 )

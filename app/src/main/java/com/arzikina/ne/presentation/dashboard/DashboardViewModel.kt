@@ -6,6 +6,9 @@ import com.arzikina.ne.domain.model.Account
 import com.arzikina.ne.domain.model.Budget
 import com.arzikina.ne.domain.model.Category
 import com.arzikina.ne.domain.model.CurrencyAmount
+import com.arzikina.ne.domain.model.FinancialPlan
+import com.arzikina.ne.domain.model.FinancialPlanItem
+import com.arzikina.ne.domain.model.PlanStatus
 import com.arzikina.ne.domain.model.Transaction
 import com.arzikina.ne.domain.model.TransactionType
 import com.arzikina.ne.domain.model.User
@@ -13,6 +16,7 @@ import com.arzikina.ne.domain.repository.AccountRepository
 import com.arzikina.ne.domain.repository.AuthRepository
 import com.arzikina.ne.domain.repository.BudgetRepository
 import com.arzikina.ne.domain.repository.CategoryRepository
+import com.arzikina.ne.domain.repository.FinancialPlanRepository
 import com.arzikina.ne.domain.repository.RecurringTransactionRepository
 import com.arzikina.ne.domain.repository.SessionManager
 import com.arzikina.ne.domain.repository.TransactionRepository
@@ -20,8 +24,10 @@ import com.arzikina.ne.presentation.accounts.computeCurrentBalances
 import com.arzikina.ne.presentation.budget.BudgetUiItem
 import com.arzikina.ne.presentation.transactions.TransactionUiItem
 import com.arzikina.ne.presentation.transactions.feeTransactionIds
+import com.arzikina.ne.presentation.utilities.financialplan.FinancialPlanUiItem
 import com.arzikina.ne.util.AppResult
 import com.arzikina.ne.util.BudgetProgress
+import com.arzikina.ne.util.FinancialPlanProgress
 import com.arzikina.ne.util.PersonalStatistics
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
@@ -39,6 +45,11 @@ import javax.inject.Inject
 
 /** Nombre de transactions récentes affichées sur le tableau de bord. */
 private const val RECENT_TRANSACTIONS_LIMIT = 5
+
+/** Nombre de planifications affichées dans le bloc "Mes planifications" du tableau de bord (Étape
+ * 9) — voir [DashboardViewModel.featuredFinancialPlans]. La liste complète reste dans l'écran
+ * Planification, même principe que [RECENT_TRANSACTIONS_LIMIT] pour les transactions. */
+private const val DASHBOARD_FINANCIAL_PLANS_LIMIT = 3
 
 /**
  * État affiché par [DashboardScreen].
@@ -83,7 +94,15 @@ data class DashboardUiState(
      * `RecurringTransactionRepository.observePendingOccurrences`, qui anticipait déjà explicitement
      * cet usage) : jamais recalculé séparément, juste sa taille.
      */
-    val pendingRecurringCount: Int
+    val pendingRecurringCount: Int,
+    /**
+     * Jusqu'à [DASHBOARD_FINANCIAL_PLANS_LIMIT] planifications ACTIVES (voir [PlanStatus.ACTIVE]),
+     * triées par progression décroissante (les plus "urgentes" en premier, même règle que
+     * [featuredBudget]) — voir cahier des charges, section 18 : "résumé des planifications
+     * ACTIVES". Fonctionnalité INDÉPENDANTE d'"Automatisation" : aucune donnée partagée, voir la
+     * doc de [FinancialPlan].
+     */
+    val featuredFinancialPlans: List<FinancialPlanUiItem>
 )
 
 /** Regroupe les 5 flux "historiques" du Dashboard (avant l'ajout du compteur de transactions
@@ -97,6 +116,13 @@ private data class DashboardBaseData(
     val user: User?
 )
 
+/** Regroupe les 2 flux "Planification" du Dashboard (Étape 9) — voir [DashboardViewModel.uiState],
+ * même raisonnement que [DashboardBaseData]. */
+private data class DashboardFinancialPlanData(
+    val plans: List<FinancialPlan>,
+    val items: List<FinancialPlanItem>
+)
+
 @HiltViewModel
 class DashboardViewModel @Inject constructor(
     accountRepository: AccountRepository,
@@ -105,7 +131,8 @@ class DashboardViewModel @Inject constructor(
     budgetRepository: BudgetRepository,
     authRepository: AuthRepository,
     sessionManager: SessionManager,
-    recurringTransactionRepository: RecurringTransactionRepository
+    recurringTransactionRepository: RecurringTransactionRepository,
+    financialPlanRepository: FinancialPlanRepository
 ) : ViewModel() {
 
     val uiState: StateFlow<AppResult<DashboardUiState>> = combine(
@@ -120,8 +147,14 @@ class DashboardViewModel @Inject constructor(
         ) { accounts, transactions, categories, budgets, user ->
             DashboardBaseData(accounts, transactions, categories, budgets, user)
         },
-        recurringTransactionRepository.observePendingOccurrences()
-    ) { base, pendingOccurrences ->
+        recurringTransactionRepository.observePendingOccurrences(),
+        // Combiné séparément (voir DashboardFinancialPlanData) : même raisonnement que
+        // DashboardBaseData ci-dessus, pour ne pas dépasser la limite de 5 arguments de `combine`.
+        combine(
+            financialPlanRepository.observePlans(),
+            financialPlanRepository.observeAllItems()
+        ) { plans, items -> DashboardFinancialPlanData(plans, items) }
+    ) { base, pendingOccurrences, financialPlanData ->
         val (accounts, transactions, categories, budgets, user) = base
         val accountsById = accounts.associateBy { it.id }
         val categoriesById = categories.associateBy { it.id }
@@ -163,7 +196,8 @@ class DashboardViewModel @Inject constructor(
             userFullName = user?.fullName.orEmpty(),
             userProfilePhotoUri = user?.profilePhotoUri,
             cardNumberLastDigits = cardNumberLastDigits(user?.id),
-            pendingRecurringCount = pendingOccurrences.size
+            pendingRecurringCount = pendingOccurrences.size,
+            featuredFinancialPlans = featuredFinancialPlans(financialPlanData.plans, financialPlanData.items)
         )
     }
         .map<DashboardUiState, AppResult<DashboardUiState>> { AppResult.Success(it) }
@@ -233,6 +267,35 @@ class DashboardViewModel @Inject constructor(
             )
         }
         .maxByOrNull { it.progress }
+
+    /**
+     * Jusqu'à [DASHBOARD_FINANCIAL_PLANS_LIMIT] planifications ACTIVES, les plus "urgentes"
+     * (progression la plus élevée, dépassement inclus — même règle que [featuredBudget]) en
+     * premier. Même calcul que [com.arzikina.ne.presentation.utilities.financialplan.FinancialPlansViewModel.uiState]
+     * (groupement des dépenses prévues par planification via [FinancialPlanProgress]), avec en
+     * plus le filtre [PlanStatus.ACTIVE] et la limite d'affichage, propres au Dashboard.
+     */
+    private fun featuredFinancialPlans(
+        plans: List<FinancialPlan>,
+        allItems: List<FinancialPlanItem>
+    ): List<FinancialPlanUiItem> {
+        val itemsByPlanId = allItems.groupBy { it.planId }
+        return plans
+            .filter { it.status == PlanStatus.ACTIVE }
+            .map { plan ->
+                val items = itemsByPlanId[plan.id].orEmpty()
+                val totalPlanned = FinancialPlanProgress.calculateTotalPlanned(items)
+                FinancialPlanUiItem(
+                    plan = plan,
+                    totalPlanned = totalPlanned,
+                    remainingAmount = FinancialPlanProgress.calculateRemainingAmount(plan.availableAmount, totalPlanned),
+                    progressPercent = FinancialPlanProgress.calculateProgress(plan.availableAmount, totalPlanned),
+                    isOverBudget = FinancialPlanProgress.calculateOverBudget(plan.availableAmount, totalPlanned)
+                )
+            }
+            .sortedByDescending { it.progressPercent }
+            .take(DASHBOARD_FINANCIAL_PLANS_LIMIT)
+    }
 
     /**
      * 4 chiffres décoratifs (voir [DashboardUiState.cardNumberLastDigits]) —

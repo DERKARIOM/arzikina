@@ -57,8 +57,10 @@ interface FinancialPlanRepository {
      * [FinancialPlanItem.status] (toujours [com.arzikina.ne.domain.model.PlanItemStatus.DONE]
      * après conversion) EN UNE SEULE écriture atomique — même principe que
      * [LoanRepository.recordPayment] (voir sa doc). Échoue (exception) si [itemId] ne correspond à
-     * aucune dépense prévue, ou si elle a déjà été convertie ([FinancialPlanItem.transactionId]
-     * déjà renseigné) : on ne convertit jamais deux fois la même dépense prévue.
+     * aucune dépense prévue, si elle a déjà été convertie ([FinancialPlanItem.transactionId] déjà
+     * renseigné) : on ne convertit jamais deux fois la même dépense prévue, ou si elle est
+     * [com.arzikina.ne.domain.model.PlanItemStatus.CANCELLED] (Étape 11) : une dépense annulée n'a
+     * plus lieu d'être honorée.
      *
      * [accountId]/[categoryId] : choisis par l'utilisateur sur l'écran de conversion (pré-remplis
      * depuis la dépense prévue quand c'est possible, mais jamais imposés — voir

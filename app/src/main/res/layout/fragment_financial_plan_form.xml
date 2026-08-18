@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="?attr/colorSurface">
@@ -83,6 +84,111 @@
 
                 </com.google.android.material.textfield.TextInputLayout>
             </com.google.android.material.card.MaterialCardView>
+
+            <!-- Objectif financier OPTIONNEL (Étape 8) — voir la doc de
+                 FinancialPlanFormState.targetAmountInput. -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/targetAmountCard"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_m"
+                android:theme="@style/ThemeOverlay.Arzikina.OnBalanceCard"
+                app:cardBackgroundColor="@color/arzikina_postcart_background"
+                app:cardCornerRadius="@dimen/corner_radius_medium"
+                app:cardElevation="@dimen/elevation_raised">
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/targetAmountLayout"
+                    style="@style/Widget.Arzikina.TextInputLayout.OutlinedBox.PostCard"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="@dimen/spacing_xs"
+                    android:hint="@string/financial_plan_form_target_amount_label">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/targetAmountInput"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="numberDecimal"
+                        android:maxLines="1" />
+
+                </com.google.android.material.textfield.TextInputLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Période OPTIONNELLE (Étape 8) — voir la doc de FinancialPlan.periodType. Liste
+                 FERMÉE et fixe, même principe que setUpFrequencyDropdown de
+                 fragment_recurring_transaction_form.xml. -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/periodCard"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_m"
+                android:theme="@style/ThemeOverlay.Arzikina.OnBalanceCard"
+                app:cardBackgroundColor="@color/arzikina_postcart_background"
+                app:cardCornerRadius="@dimen/corner_radius_medium"
+                app:cardElevation="@dimen/elevation_raised">
+
+                <include
+                    android:id="@+id/periodField"
+                    layout="@layout/item_dropdown_field" />
+
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Dates de début/fin — visibles UNIQUEMENT si periodType != NONE (voir
+                 FinancialPlanFormFragment.render), pas de Switch dédié : le choix d'une période
+                 dans periodField ci-dessus fait déjà office de bascule. -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/startDateRow"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_m"
+                android:checkable="false"
+                android:clickable="true"
+                android:focusable="true"
+                android:theme="@style/ThemeOverlay.Arzikina.OnBalanceCard"
+                android:visibility="gone"
+                app:cardBackgroundColor="@color/arzikina_postcart_background"
+                app:cardCornerRadius="@dimen/corner_radius_medium"
+                app:cardElevation="@dimen/elevation_raised"
+                tools:visibility="visible">
+
+                <include
+                    android:id="@+id/startDateField"
+                    layout="@layout/item_date_field" />
+
+            </com.google.android.material.card.MaterialCardView>
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/endDateRow"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_m"
+                android:checkable="false"
+                android:clickable="true"
+                android:focusable="true"
+                android:theme="@style/ThemeOverlay.Arzikina.OnBalanceCard"
+                android:visibility="gone"
+                app:cardBackgroundColor="@color/arzikina_postcart_background"
+                app:cardCornerRadius="@dimen/corner_radius_medium"
+                app:cardElevation="@dimen/elevation_raised"
+                tools:visibility="visible">
+
+                <include
+                    android:id="@+id/endDateField"
+                    layout="@layout/item_date_field" />
+
+            </com.google.android.material.card.MaterialCardView>
+
+            <TextView
+                android:id="@+id/dateErrorText"
+                style="@style/TextAppearance.Material3.BodySmall"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:textColor="@color/expense_red"
+                android:visibility="gone"
+                tools:text="La date de fin doit être après la date de début"
+                tools:visibility="visible" />
 
             <!-- Sélecteurs icône/couleur — même composant que fragment_account_form.xml
                  (IconPickerAdapter<T>/ColorPickerAdapter, voir FinancialPlanFormFragment). -->

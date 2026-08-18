@@ -11,6 +11,8 @@ import com.arzikina.ne.data.backup.toEntity
 import com.arzikina.ne.data.local.dao.AccountDao
 import com.arzikina.ne.data.local.dao.BudgetDao
 import com.arzikina.ne.data.local.dao.CategoryDao
+import com.arzikina.ne.data.local.dao.FinancialPlanDao
+import com.arzikina.ne.data.local.dao.FinancialPlanItemDao
 import com.arzikina.ne.data.local.dao.LoanDao
 import com.arzikina.ne.data.local.dao.LoanPaymentDao
 import com.arzikina.ne.data.local.dao.PersonDao
@@ -59,6 +61,11 @@ import javax.inject.Inject
  * intégrante de la sauvegarde (voir `BackupPayload`) — les exclure aurait signifié
  * perdre tout l'historique Prêts/Emprunts à chaque restauration.
  *
+ * "Planification financière" (Étape 10) fait également partie intégrante de la sauvegarde
+ * (`financialPlans`/`financialPlanItems`) — fonctionnalité INDÉPENDANTE d'"Automatisation" (voir la
+ * doc de [com.arzikina.ne.domain.model.FinancialPlan]), traitée ici en parallèle, sans aucune
+ * donnée partagée entre les deux.
+ *
  * Réattribution des ids (voir la doc de tête de `data/backup/BackupMappers`) : l'import
  * n'insère JAMAIS les `id` du fichier tels quels — chaque table reçoit `id = 0L` (nouvel id
  * généré par SQLite), et les ids générés alimentent des tables de correspondance ancien → nouvel
@@ -79,6 +86,8 @@ class BackupRepositoryImpl @Inject constructor(
     private val loanPaymentDao: LoanPaymentDao,
     private val recurringTransactionDao: RecurringTransactionDao,
     private val recurringTransactionOccurrenceDao: RecurringTransactionOccurrenceDao,
+    private val financialPlanDao: FinancialPlanDao,
+    private val financialPlanItemDao: FinancialPlanItemDao,
     private val userDao: UserDao,
     private val userPreferencesRepository: UserPreferencesRepository,
     private val sessionManager: SessionManager,
@@ -116,6 +125,8 @@ class BackupRepositoryImpl @Inject constructor(
                 val loanPayments = loans.flatMap { loanPaymentDao.getAllForLoan(it.id, userId) }
                 val recurringTransactions = recurringTransactionDao.observeAllForUser(userId).first()
                 val recurringTransactionOccurrences = recurringTransactionOccurrenceDao.observeAllForUser(userId).first()
+                val financialPlans = financialPlanDao.observeAllForUser(userId).first()
+                val financialPlanItems = financialPlanItemDao.observeAllForUser(userId).first()
                 val preferences = userPreferencesRepository.observePreferences().first()
                 // `findById` : pas de flux dédié à un seul utilisateur ici, une lecture ponctuelle
                 // suffit pour un export (voir UserDao.findById). Ne devrait normalement jamais être
@@ -135,7 +146,9 @@ class BackupRepositoryImpl @Inject constructor(
                     loanPayments = loanPayments.map { it.toDto() },
                     user = user?.toDto(),
                     recurringTransactions = recurringTransactions.map { it.toDto() },
-                    recurringTransactionOccurrences = recurringTransactionOccurrences.map { it.toDto() }
+                    recurringTransactionOccurrences = recurringTransactionOccurrences.map { it.toDto() },
+                    financialPlans = financialPlans.map { it.toDto() },
+                    financialPlanItems = financialPlanItems.map { it.toDto() }
                 )
 
                 stream.write(json.encodeToString(payload).encodeToByteArray())
@@ -148,7 +161,9 @@ class BackupRepositoryImpl @Inject constructor(
                     savingsGoalsCount = savingsGoals.size,
                     loansCount = loans.size,
                     recurringTransactionsCount = recurringTransactions.size,
-                    occurrencesCount = recurringTransactionOccurrences.size
+                    occurrencesCount = recurringTransactionOccurrences.size,
+                    plansCount = financialPlans.size,
+                    planItemsCount = financialPlanItems.size
                 )
             }
         }
@@ -197,14 +212,18 @@ class BackupRepositoryImpl @Inject constructor(
                 // Ordre de suppression : les tables dépendantes d'abord (contraintes de clé
                 // étrangère) — loan_payments/loans avant persons/accounts dont ils dépendent ;
                 // recurring_transaction_occurrences avant recurring_transactions, qui dépend lui-
-                // même de accounts/categories. Scopé à l'utilisateur courant : ne touche jamais
-                // aux données d'un autre compte.
+                // même de accounts/categories ; financial_plan_items (FK NO_ACTION vers categories,
+                // voir FinancialPlanItemEntity) avant categoryDao ci-dessous, et avant
+                // financial_plans dont il dépend en CASCADE. Scopé à l'utilisateur courant : ne
+                // touche jamais aux données d'un autre compte.
                 loanPaymentDao.deleteAllForUser(userId)
                 loanDao.deleteAllForUser(userId)
                 recurringTransactionOccurrenceDao.deleteAllForUser(userId)
                 recurringTransactionDao.deleteAllForUser(userId)
                 transactionDao.deleteAllForUser(userId)
                 budgetDao.deleteAllForUser(userId)
+                financialPlanItemDao.deleteAllForUser(userId)
+                financialPlanDao.deleteAllForUser(userId)
                 personDao.deleteAllForUser(userId)
                 categoryDao.deleteAllForUser(userId)
                 accountDao.deleteAllForUser(userId)
@@ -277,6 +296,20 @@ class BackupRepositoryImpl @Inject constructor(
                     }
                 )
 
+                // Planification financière (Étape 10) : financial_plans n'a aucune clé étrangère
+                // (voir FinancialPlanEntity), insérable dès que possible — placé ici pour rester
+                // groupé avec financial_plan_items juste en dessous, qui a lui besoin de
+                // categoryIdMap ET transactionIdMap, déjà connus à ce stade.
+                val financialPlanIdMap = payload.financialPlans
+                    .zip(financialPlanDao.insertAll(payload.financialPlans.map { it.toEntity(userId).copy(id = 0L) }))
+                    .associate { (dto, newId) -> dto.id to newId }
+
+                financialPlanItemDao.insertAll(
+                    payload.financialPlanItems.map {
+                        it.remapIds(0L, financialPlanIdMap, categoryIdMap, transactionIdMap).toEntity(userId)
+                    }
+                )
+
                 budgetDao.insertAll(payload.budgets.map { it.remapIds(0L, categoryIdMap).toEntity(userId) })
 
                 val loanIdMap = payload.loans
@@ -304,7 +337,9 @@ class BackupRepositoryImpl @Inject constructor(
                 savingsGoalsCount = payload.savingsGoals.size,
                 loansCount = payload.loans.size,
                 recurringTransactionsCount = payload.recurringTransactions.size,
-                occurrencesCount = payload.recurringTransactionOccurrences.size
+                occurrencesCount = payload.recurringTransactionOccurrences.size,
+                plansCount = payload.financialPlans.size,
+                planItemsCount = payload.financialPlanItems.size
             )
         }
 

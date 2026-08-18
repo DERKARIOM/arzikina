@@ -2,6 +2,7 @@ package com.arzikina.ne.presentation.utilities.financialplan
 
 import android.content.res.ColorStateList
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.DiffUtil
@@ -20,10 +21,18 @@ import com.arzikina.ne.util.Money
  * Aucune notion de devise par planification pour cette première version (voir [FinancialPlan] —
  * pas de champ `currencyCode`) : affichage dans la devise par défaut de l'application, comme les
  * autres montants sans compte associé.
+ *
+ * [showDeleteButton] (Étape 9) : `false` réutilisé par le bloc "Mes planifications" du Dashboard
+ * (voir `DashboardFragment`), pour lequel aucune suppression rapide n'a de sens sur un simple
+ * aperçu — même raisonnement que `budgetPreview.deleteButton.visibility = View.GONE` sur le bloc
+ * Budget du Dashboard, mais ici via un paramètre plutôt qu'un accès direct puisque cet adapter,
+ * contrairement à `BudgetAdapter.ViewHolder`, est réutilisé pour une VRAIE liste (plusieurs
+ * planifications), pas un seul élément posé à la main.
  */
 class FinancialPlansAdapter(
     private val onClick: (FinancialPlanUiItem) -> Unit,
-    private val onDeleteClick: (FinancialPlanUiItem) -> Unit
+    private val onDeleteClick: (FinancialPlanUiItem) -> Unit,
+    private val showDeleteButton: Boolean = true
 ) : ListAdapter<FinancialPlanUiItem, FinancialPlansAdapter.ViewHolder>(DIFF_CALLBACK) {
 
     override fun onCreateViewHolder(parent: ViewGroup, position: Int): ViewHolder {
@@ -32,14 +41,15 @@ class FinancialPlansAdapter(
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        holder.bind(getItem(position), onClick, onDeleteClick)
+        holder.bind(getItem(position), onClick, onDeleteClick, showDeleteButton)
     }
 
     class ViewHolder(private val binding: ItemFinancialPlanBinding) : RecyclerView.ViewHolder(binding.root) {
         fun bind(
             item: FinancialPlanUiItem,
             onClick: (FinancialPlanUiItem) -> Unit,
-            onDeleteClick: (FinancialPlanUiItem) -> Unit
+            onDeleteClick: (FinancialPlanUiItem) -> Unit,
+            showDeleteButton: Boolean = true
         ) {
             val context = binding.root.context
             val plan = item.plan
@@ -72,6 +82,7 @@ class FinancialPlansAdapter(
 
             binding.root.setOnClickListener { onClick(item) }
             binding.deleteButton.setOnClickListener { onDeleteClick(item) }
+            binding.deleteButton.visibility = if (showDeleteButton) View.VISIBLE else View.GONE
         }
     }
 

@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.arzikina.ne.domain.model.Account
 import com.arzikina.ne.domain.model.Category
+import com.arzikina.ne.domain.model.PlanItemStatus
 import com.arzikina.ne.domain.model.TransactionType
 import com.arzikina.ne.domain.repository.AccountRepository
 import com.arzikina.ne.domain.repository.CategoryRepository
@@ -44,9 +45,10 @@ import javax.inject.Inject
  */
 data class FinancialPlanItemConvertState(
     val isLoaded: Boolean = false,
-    /** `true` si `itemId` ne correspond à aucune dépense prévue existante, ou si elle a déjà été
-     * convertie (voir [com.arzikina.ne.domain.model.FinancialPlanItem.transactionId]) — même
-     * raisonnement que `LoanPaymentFormState.notFound`. */
+    /** `true` si `itemId` ne correspond à aucune dépense prévue existante, si elle a déjà été
+     * convertie (voir [com.arzikina.ne.domain.model.FinancialPlanItem.transactionId]), ou si elle
+     * est [com.arzikina.ne.domain.model.PlanItemStatus.CANCELLED] (Étape 11 : une dépense annulée
+     * n'a plus lieu d'être honorée) — même raisonnement que `LoanPaymentFormState.notFound`. */
     val notFound: Boolean = false,
     val itemName: String = "",
     val plannedAmount: Long = 0L,
@@ -102,7 +104,10 @@ class FinancialPlanItemConvertViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             val item = financialPlanRepository.getItem(itemId)
-            if (item == null || item.transactionId != null) {
+            // Étape 11 : une dépense CANCELLED ne peut plus être convertie (voir la doc de
+            // FinancialPlanRepository.convertItemToTransaction) — même traitement que "déjà
+            // convertie" ou "introuvable", cet écran ne doit simplement jamais s'ouvrir dans ce cas.
+            if (item == null || item.transactionId != null || item.status == PlanItemStatus.CANCELLED) {
                 _formState.update { it.copy(notFound = true) }
                 return@launch
             }

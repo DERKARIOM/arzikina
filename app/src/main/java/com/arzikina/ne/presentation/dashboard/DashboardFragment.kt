@@ -3,6 +3,7 @@ package com.arzikina.ne.presentation.dashboard
 import android.os.Bundle
 import android.view.View
 import androidx.core.content.ContextCompat
+import androidx.core.os.bundleOf
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updatePadding
@@ -22,6 +23,8 @@ import com.arzikina.ne.presentation.budget.BudgetUiItem
 import com.arzikina.ne.presentation.components.NavAnimations
 import com.arzikina.ne.presentation.utilities.UtilityCatalog
 import com.arzikina.ne.presentation.utilities.UtilityTileAdapter
+import com.arzikina.ne.presentation.utilities.financialplan.FinancialPlanUiItem
+import com.arzikina.ne.presentation.utilities.financialplan.FinancialPlansAdapter
 import com.arzikina.ne.util.AppResult
 import com.arzikina.ne.util.Constants
 import com.arzikina.ne.util.Money
@@ -61,6 +64,21 @@ class DashboardFragment : Fragment(R.layout.fragment_dashboard) {
         findNavController().navigate(item.destinationId, null, NavAnimations.push)
     }
 
+    /** Bloc "Mes planifications" (Étape 9) — mêmes callbacks de clic que [FinancialPlansFragment]
+     * (voir sa doc), mais `showDeleteButton = false` : pas de suppression rapide depuis cet aperçu
+     * (même raisonnement que [budgetPreview] ci-dessous). */
+    private val financialPlansAdapter = FinancialPlansAdapter(
+        onClick = { item ->
+            findNavController().navigate(
+                R.id.financialPlanDetailFragment,
+                bundleOf("planId" to item.plan.id),
+                NavAnimations.push
+            )
+        },
+        onDeleteClick = {},
+        showDeleteButton = false
+    )
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         val viewBinding = FragmentDashboardBinding.bind(view)
@@ -74,6 +92,10 @@ class DashboardFragment : Fragment(R.layout.fragment_dashboard) {
         viewBinding.recentTransactionsList.apply {
             layoutManager = LinearLayoutManager(requireContext())
             adapter = recentTransactionsAdapter
+        }
+        viewBinding.financialPlansList.apply {
+            layoutManager = LinearLayoutManager(requireContext())
+            adapter = financialPlansAdapter
         }
         // Le fond dégradé de l'en-tête (dashboardHeaderBackground) s'étend
         // volontairement sous la barre de statut, désormais transparente
@@ -147,6 +169,13 @@ class DashboardFragment : Fragment(R.layout.fragment_dashboard) {
         // tel quel avec BudgetAdapter.ViewHolder pour ne pas dupliquer son rendu).
         viewBinding.budgetPreview.deleteButton.visibility = View.GONE
 
+        viewBinding.financialPlansSeeAll.setOnClickListener {
+            findNavController().navigate(R.id.financialPlansFragment, null, NavAnimations.push)
+        }
+        viewBinding.financialPlansEmptyAction.setOnClickListener {
+            findNavController().navigate(R.id.financialPlanFormFragment, null, NavAnimations.push)
+        }
+
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.uiState.collect { state -> render(state) }
@@ -178,6 +207,21 @@ class DashboardFragment : Fragment(R.layout.fragment_dashboard) {
         recentTransactionsAdapter.submitList(uiState.recentTransactions)
 
         renderUtilities(uiState.pendingRecurringCount)
+        renderFinancialPlans(uiState.featuredFinancialPlans)
+    }
+
+    /**
+     * [items] est vide soit parce qu'aucune planification n'existe encore, soit parce qu'aucune
+     * n'est ACTIVE (voir [DashboardViewModel.featuredFinancialPlans]) : dans les deux cas, on
+     * affiche la même invite de création plutôt que de distinguer les deux cas, même principe que
+     * [renderFeaturedBudget].
+     */
+    private fun renderFinancialPlans(items: List<FinancialPlanUiItem>) {
+        val binding = binding ?: return
+        val hasPlans = items.isNotEmpty()
+        binding.financialPlansList.setVisible(hasPlans)
+        binding.financialPlansEmpty.setVisible(!hasPlans)
+        financialPlansAdapter.submitList(items)
     }
 
     /** Reconstruit [UtilityCatalog.all] avec la pastille de comptage à jour sur l'entrée

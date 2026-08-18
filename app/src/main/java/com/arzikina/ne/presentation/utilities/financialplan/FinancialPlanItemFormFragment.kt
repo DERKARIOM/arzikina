@@ -165,12 +165,41 @@ class FinancialPlanItemFormFragment : Fragment(R.layout.fragment_financial_plan_
 
         binding.saveButton.isEnabled = state.isLoaded && !state.isSaving
         // "Enregistrer comme transaction" (Étape 6) : uniquement en édition, pour une dépense pas
-        // encore convertie — voir la doc de FinancialPlanItemFormState.isAlreadyConverted.
+        // encore convertie (voir la doc de FinancialPlanItemFormState.isAlreadyConverted) ET pas
+        // annulée (Étape 11 — une dépense CANCELLED n'a plus lieu d'être honorée, voir la doc de
+        // FinancialPlanRepository.convertItemToTransaction).
         binding.convertButton.visibility =
-            if (viewModel.isEditMode && state.isLoaded && !state.isAlreadyConverted) View.VISIBLE else View.GONE
+            if (viewModel.isEditMode && state.isLoaded && !state.isAlreadyConverted && state.status != PlanItemStatus.CANCELLED) {
+                View.VISIBLE
+            } else {
+                View.GONE
+            }
         if (state.isLoaded) {
-            val remainingLabel = Money.format(CurrencyAmount(Constants.DEFAULT_CURRENCY_CODE, state.planRemainingAmount))
-            binding.planContextLabel.text = getString(R.string.financial_plan_item_form_context, state.planName, remainingLabel)
+            // Étape 7 — alerte sobre de dépassement, même logique visuelle que
+            // FinancialPlansAdapter/FinancialPlanDetailAdapter (voir leur doc) : rouge dès que le
+            // reste (hors dépense en cours d'édition, voir FinancialPlanItemFormViewModel.init) est
+            // déjà négatif, texte neutre sinon.
+            if (state.planRemainingAmount < 0L) {
+                val overspentLabel = Money.format(CurrencyAmount(Constants.DEFAULT_CURRENCY_CODE, -state.planRemainingAmount))
+                binding.planContextLabel.text =
+                    getString(R.string.financial_plan_item_form_context_overbudget, state.planName, overspentLabel)
+                binding.planContextLabel.setTextColor(ContextCompat.getColor(requireContext(), R.color.expense_red))
+            } else {
+                val remainingLabel = Money.format(CurrencyAmount(Constants.DEFAULT_CURRENCY_CODE, state.planRemainingAmount))
+                binding.planContextLabel.text = getString(R.string.financial_plan_item_form_context, state.planName, remainingLabel)
+                binding.planContextLabel.setTextColor(ContextCompat.getColor(requireContext(), R.color.arzikina_on_surface_variant))
+            }
+
+            // Avertissement non bloquant : CE montant, à lui seul, dépasserait le reste disponible
+            // ci-dessus (indépendant du cas déjà-en-dépassement traité juste au-dessus).
+            val amountMinor = Money.parseToMinorUnits(state.amountInput)
+            val exceedsRemaining = amountMinor != null && amountMinor > state.planRemainingAmount
+            binding.amountExceedsWarningText.visibility = if (exceedsRemaining) View.VISIBLE else View.GONE
+            if (exceedsRemaining) {
+                val remainingLabel = Money.format(CurrencyAmount(Constants.DEFAULT_CURRENCY_CODE, state.planRemainingAmount))
+                binding.amountExceedsWarningText.text =
+                    getString(R.string.financial_plan_item_form_amount_exceeds_warning, remainingLabel)
+            }
         }
 
         if (binding.nameInput.text?.toString() != state.nameInput) {

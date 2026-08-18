@@ -3,6 +3,8 @@ package com.arzikina.ne.data.backup
 import com.arzikina.ne.data.local.entity.AccountEntity
 import com.arzikina.ne.data.local.entity.BudgetEntity
 import com.arzikina.ne.data.local.entity.CategoryEntity
+import com.arzikina.ne.data.local.entity.FinancialPlanEntity
+import com.arzikina.ne.data.local.entity.FinancialPlanItemEntity
 import com.arzikina.ne.data.local.entity.LoanEntity
 import com.arzikina.ne.data.local.entity.LoanPaymentEntity
 import com.arzikina.ne.data.local.entity.PersonEntity
@@ -16,11 +18,16 @@ import com.arzikina.ne.domain.model.AccountType
 import com.arzikina.ne.domain.model.BudgetPeriod
 import com.arzikina.ne.domain.model.CategoryIcon
 import com.arzikina.ne.domain.model.FeeType
+import com.arzikina.ne.domain.model.FinancialPlanIcon
 import com.arzikina.ne.domain.model.LoanReason
 import com.arzikina.ne.domain.model.LoanStatus
 import com.arzikina.ne.domain.model.LoanType
 import com.arzikina.ne.domain.model.OccurrenceStatus
 import com.arzikina.ne.domain.model.PaymentMethod
+import com.arzikina.ne.domain.model.PlanItemPriority
+import com.arzikina.ne.domain.model.PlanItemStatus
+import com.arzikina.ne.domain.model.PlanPeriodType
+import com.arzikina.ne.domain.model.PlanStatus
 import com.arzikina.ne.domain.model.RecurringFrequency
 import com.arzikina.ne.domain.model.RepaymentMode
 import com.arzikina.ne.domain.model.SecurityQuestion
@@ -451,5 +458,87 @@ fun RecurringTransactionOccurrenceDto.remapIds(
 ): RecurringTransactionOccurrenceDto = copy(
     id = newId,
     recurringTransactionId = recurringTransactionIdMap.getValue(recurringTransactionId),
+    transactionId = transactionId?.let { transactionIdMap[it] }
+)
+
+fun FinancialPlanEntity.toDto() = FinancialPlanDto(
+    id = id,
+    name = name,
+    description = description,
+    availableAmount = availableAmount,
+    targetAmount = targetAmount,
+    periodType = periodType.name,
+    startDate = startDate,
+    endDate = endDate,
+    icon = icon.name,
+    colorArgb = colorArgb,
+    status = status.name,
+    createdAt = createdAt,
+    updatedAt = updatedAt
+)
+
+fun FinancialPlanDto.toEntity(userId: Long) = FinancialPlanEntity(
+    id = id,
+    userId = userId,
+    name = name,
+    description = description,
+    availableAmount = availableAmount,
+    targetAmount = targetAmount,
+    periodType = runCatching { PlanPeriodType.valueOf(periodType) }.getOrDefault(PlanPeriodType.NONE),
+    startDate = startDate,
+    endDate = endDate,
+    icon = runCatching { FinancialPlanIcon.valueOf(icon) }.getOrDefault(FinancialPlanIcon.WALLET),
+    colorArgb = colorArgb,
+    status = runCatching { PlanStatus.valueOf(status) }.getOrDefault(PlanStatus.ACTIVE),
+    createdAt = createdAt,
+    updatedAt = updatedAt
+)
+
+fun FinancialPlanItemEntity.toDto() = FinancialPlanItemDto(
+    id = id,
+    planId = planId,
+    name = name,
+    amount = amount,
+    actualAmount = actualAmount,
+    categoryId = categoryId,
+    description = description,
+    plannedDate = plannedDate,
+    priority = priority.name,
+    status = status.name,
+    transactionId = transactionId,
+    createdAt = createdAt,
+    updatedAt = updatedAt
+)
+
+fun FinancialPlanItemDto.toEntity(userId: Long) = FinancialPlanItemEntity(
+    id = id,
+    userId = userId,
+    planId = planId,
+    name = name,
+    amount = amount,
+    actualAmount = actualAmount,
+    categoryId = categoryId,
+    description = description,
+    plannedDate = plannedDate,
+    priority = runCatching { PlanItemPriority.valueOf(priority) }.getOrDefault(PlanItemPriority.IMPORTANT),
+    status = runCatching { PlanItemStatus.valueOf(status) }.getOrDefault(PlanItemStatus.TO_PLAN),
+    transactionId = transactionId,
+    createdAt = createdAt,
+    updatedAt = updatedAt
+)
+
+/** Voir la doc de tête de ce fichier. `planId` obligatoire (voir `FinancialPlanItemEntity`) :
+ * `getValue` échoue bruyamment si absent de [planIdMap] (fichier corrompu). `categoryId`/
+ * `transactionId` nullables — retombent simplement sur `null` si absents de leur table de
+ * correspondance, même raisonnement que [TransactionDto.remapIds]/[RecurringTransactionOccurrenceDto.remapIds]. */
+fun FinancialPlanItemDto.remapIds(
+    newId: Long,
+    planIdMap: Map<Long, Long>,
+    categoryIdMap: Map<Long, Long>,
+    transactionIdMap: Map<Long, Long>
+): FinancialPlanItemDto = copy(
+    id = newId,
+    planId = planIdMap.getValue(planId),
+    categoryId = categoryId?.let { categoryIdMap[it] },
     transactionId = transactionId?.let { transactionIdMap[it] }
 )

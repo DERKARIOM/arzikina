@@ -578,6 +578,104 @@
         </LinearLayout>
 
         <!--
+            Mes planifications (Étape 9) — résumé des planifications ACTIVES (voir cahier des
+            charges, section 18), même traitement "titre hors carte, contenu dans une carte" que
+            la section Budget ci-dessus. "Voir tout" mène à financialPlansFragment (écran complet).
+            Réutilise item_financial_plan.xml/FinancialPlansAdapter tels quels (voir
+            DashboardFragment.kt), bouton supprimer masqué sur cet aperçu (showDeleteButton=false,
+            même principe que budgetPreview.deleteButton ci-dessus). Fond "postcard" sombre fixe,
+            comme les cartes Solde/Revenus-Dépenses/Dernières transactions.
+        -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/spacing_l"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <TextView
+                style="@style/TextAppearance.Material3.TitleMedium"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/dashboard_financial_plans_title"
+                android:textColor="?attr/colorOnSurface" />
+
+            <TextView
+                android:id="@+id/financialPlansSeeAll"
+                style="@style/TextAppearance.Material3.LabelLarge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:clickable="true"
+                android:focusable="true"
+                android:padding="@dimen/spacing_xs"
+                android:text="@string/dashboard_financial_plans_see_all"
+                android:textColor="?attr/colorPrimary" />
+
+        </LinearLayout>
+
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/spacing_s"
+            app:cardBackgroundColor="@color/arzikina_postcart_background"
+            app:cardCornerRadius="@dimen/corner_radius_medium"
+            app:cardElevation="0dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:theme="@style/ThemeOverlay.Arzikina.OnBalanceCard">
+
+                <!-- État vide : message + invitation à créer une première planification (même
+                     pattern que budgetEmptyState/createBudgetAction ci-dessus). -->
+                <LinearLayout
+                    android:id="@+id/financialPlansEmpty"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:orientation="vertical"
+                    android:padding="@dimen/spacing_m"
+                    android:visibility="gone"
+                    tools:visibility="visible">
+
+                    <TextView
+                        style="@style/TextAppearance.Material3.BodyMedium"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:text="@string/dashboard_financial_plans_empty_title"
+                        android:textColor="?attr/colorOnSurfaceVariant" />
+
+                    <TextView
+                        android:id="@+id/financialPlansEmptyAction"
+                        style="@style/TextAppearance.Material3.LabelLarge"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/spacing_xs"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:padding="@dimen/spacing_xs"
+                        android:text="@string/dashboard_financial_plans_empty_action"
+                        android:textColor="?attr/colorPrimary" />
+
+                </LinearLayout>
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/financialPlansList"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:nestedScrollingEnabled="false"
+                    android:overScrollMode="never"
+                    tools:listitem="@layout/item_financial_plan" />
+
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!--
             Dernières transactions : même traitement "titre hors carte, contenu
             dans une carte" que la section Budget ci-dessus, mais fond sombre
             fixe comme les cartes Solde / Revenus-Dépenses (demande explicite

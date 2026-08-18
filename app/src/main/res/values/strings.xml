@@ -73,8 +73,8 @@
     <string name="settings_backup_description">Exporte toutes tes données (comptes, catégories, transactions, frais, budgets, objectifs d\'épargne, prêts/emprunts, transactions automatiques, profil) dans un fichier, ou restaure une sauvegarde précédente.</string>
     <string name="settings_backup_export_action">Sauvegarder mes données</string>
     <string name="settings_backup_import_action">Restaurer mes données</string>
-    <string name="settings_backup_export_success">Export réussi : %1$d comptes, %2$d catégories, %3$d transactions, %4$d budgets, %5$d objectifs, %6$d prêts/emprunts, %7$d transactions automatiques, %8$d occurrences.</string>
-    <string name="settings_backup_import_success">Importation réussie : %1$d comptes, %2$d catégories, %3$d transactions, %4$d budgets, %5$d objectifs, %6$d prêts/emprunts, %7$d transactions automatiques, %8$d occurrences.</string>
+    <string name="settings_backup_export_success">Export réussi : %1$d comptes, %2$d catégories, %3$d transactions, %4$d budgets, %5$d objectifs, %6$d prêts/emprunts, %7$d transactions automatiques, %8$d occurrences, %9$d planifications, %10$d dépenses prévues.</string>
+    <string name="settings_backup_import_success">Importation réussie : %1$d comptes, %2$d catégories, %3$d transactions, %4$d budgets, %5$d objectifs, %6$d prêts/emprunts, %7$d transactions automatiques, %8$d occurrences, %9$d planifications, %10$d dépenses prévues.</string>
     <string name="settings_backup_error_prefix">Échec :</string>
     <string name="settings_backup_import_confirm_title">Remplacer toutes les données ?</string>
     <string name="settings_backup_import_confirm_message">L\'importation remplace définitivement toutes les données actuelles (comptes, catégories, transactions, frais, budgets, objectifs d\'épargne, prêts/emprunts, transactions automatiques, profil) par celles du fichier choisi. Cette action est irréversible.</string>
@@ -424,6 +424,14 @@
     <string name="dashboard_budget_see_all">Voir tout</string>
     <string name="dashboard_budget_empty_title">Aucun budget pour l\'instant</string>
     <string name="dashboard_budget_empty_action">Créer un budget</string>
+
+    <!-- Dashboard — Étape 9 (Planification), bloc "Mes planifications" (résumé des planifications
+         ACTIVES, voir cahier des charges section 18). Même convention de nommage que
+         dashboard_budget_*/dashboard_recent_transactions_* ci-dessus. -->
+    <string name="dashboard_financial_plans_title">Mes planifications</string>
+    <string name="dashboard_financial_plans_see_all">Voir tout</string>
+    <string name="dashboard_financial_plans_empty_title">Aucune planification pour l\'instant</string>
+    <string name="dashboard_financial_plans_empty_action">Créer une planification</string>
     <!--
         Bloc "Utilitaires" (voir presentation/utilities) : raccourcis vers des fonctionnalités
         annexes (Catégories, Prêts/Emprunts, Sauvegarde...), placé juste avant le bloc Budget.
@@ -488,6 +496,18 @@
     <string name="financial_plan_form_icon_label">Icône</string>
     <string name="financial_plan_form_color_label">Couleur</string>
 
+    <!-- Planification financière — Étape 8, période + objectif financier -->
+    <string name="financial_plan_form_target_amount_label">Objectif financier (facultatif)</string>
+    <string name="financial_plan_form_target_amount_error">Montant invalide</string>
+    <string name="financial_plan_form_period_label">Période</string>
+    <string name="financial_plan_form_start_date_label">Date de début</string>
+    <string name="financial_plan_form_end_date_label">Date de fin</string>
+    <string name="financial_plan_form_date_error">La date de fin doit être après la date de début</string>
+    <string name="plan_period_none">Aucune</string>
+    <string name="plan_period_monthly">Mensuelle</string>
+    <string name="plan_period_yearly">Annuelle</string>
+    <string name="plan_period_custom">Personnalisée</string>
+
     <!-- Planification financière — Étape 4, écran de détail -->
     <string name="financial_plan_detail_title">Détail de la planification</string>
     <string name="financial_plan_detail_menu_edit">Modifier</string>
@@ -534,8 +554,14 @@
     <string name="financial_plan_item_convert_amount_label">Montant réel</string>
     <string name="financial_plan_item_convert_description_label">Description</string>
     <string name="financial_plan_item_convert_date_label">Date</string>
-    <string name="financial_plan_item_convert_not_found_message">Cette dépense prévue n\'existe plus ou a déjà été convertie.</string>
+    <string name="financial_plan_item_convert_not_found_message">Cette dépense prévue n\'existe plus, a déjà été convertie, ou a été annulée.</string>
     <string name="financial_plan_item_convert_action">Enregistrer comme transaction</string>
+
+    <!-- Planification financière — Étape 7, alerte de dépassement dans le formulaire de dépense -->
+    <!-- %1$s = nom de la planification, %2$s = montant du dépassement déjà formaté (positif). -->
+    <string name="financial_plan_item_form_context_overbudget">Planification : %1$s · Dépassement : %2$s</string>
+    <!-- %1$s = reste disponible déjà formaté (avant cette dépense). -->
+    <string name="financial_plan_item_form_amount_exceeds_warning">Ce montant dépasse le reste disponible (%1$s).</string>
 
     <!-- Statistiques -->
     <string name="statistics_evolution_title">Évolution (6 derniers mois)</string>

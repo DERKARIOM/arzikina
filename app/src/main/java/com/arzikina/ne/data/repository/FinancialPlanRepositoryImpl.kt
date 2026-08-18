@@ -128,6 +128,10 @@ class FinancialPlanRepositoryImpl @Inject constructor(
         database.withTransaction {
             val item = financialPlanItemDao.getById(itemId, userId) ?: error("Dépense prévue introuvable.")
             check(item.transactionId == null) { "Cette dépense prévue a déjà été convertie en transaction." }
+            // Étape 11 : une dépense annulée n'a plus lieu d'être honorée — garde de dernier
+            // recours en plus de celle déjà posée côté UI (voir
+            // `FinancialPlanItemConvertViewModel.init`/`FinancialPlanItemFormFragment.render`).
+            check(item.status != PlanItemStatus.CANCELLED) { "Cette dépense prévue a été annulée." }
 
             val now = System.currentTimeMillis()
             val transactionId = transactionDao.upsert(
