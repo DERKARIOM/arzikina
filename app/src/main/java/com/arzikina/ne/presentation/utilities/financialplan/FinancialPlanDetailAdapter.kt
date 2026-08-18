@@ -60,7 +60,7 @@ class FinancialPlanDetailAdapter(
                 // résumé nécessaires aux lignes suivantes.
                 val categoriesById = (getItem(0) as? FinancialPlanDetailListRow.Header)?.uiState?.categoriesById.orEmpty()
                 val category = row.item.categoryId?.let { categoriesById[it] }
-                (holder as ItemViewHolder).bind(row.item, category, onClickItem, onDeleteItem)
+                (holder as ItemViewHolder).bind(row.item, category, row.isFirst, row.isLast, onClickItem, onDeleteItem)
             }
         }
     }
@@ -105,10 +105,26 @@ class FinancialPlanDetailAdapter(
         fun bind(
             item: FinancialPlanItem,
             category: Category?,
+            isFirst: Boolean,
+            isLast: Boolean,
             onClickItem: (FinancialPlanItem) -> Unit,
             onDeleteItem: (FinancialPlanItem) -> Unit
         ) {
             val context = binding.root.context
+
+            // Fond "postcard" : toutes les dépenses forment un seul bloc à couleur uniforme, comme
+            // les groupes de transactions par jour (voir GroupedTransactionsAdapter). Le séparateur
+            // fin en haut de la ligne est masqué sur la première dépense pour ne pas dupliquer
+            // l'arrondi du haut du bloc.
+            binding.root.setBackgroundResource(
+                when {
+                    isFirst && isLast -> R.drawable.bg_postcard_single
+                    isFirst -> R.drawable.bg_postcard_top
+                    isLast -> R.drawable.bg_postcard_bottom
+                    else -> R.color.arzikina_postcart_background
+                }
+            )
+            binding.itemDivider.visibility = if (isFirst) View.INVISIBLE else View.VISIBLE
 
             if (category != null) {
                 binding.itemCategoryIcon.setImageResource(CategoryIconMapper.iconFor(category.icon))

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Fond "postcard" pour un bloc qui n'a qu'un seul élément (les 4 coins sont arrondis) — cas de la
+    section "Dépenses prévues" de l'écran "Détail de la planification" quand une planification n'a
+    qu'une seule dépense prévue : contrairement aux groupes de transactions par jour (toujours
+    précédés d'un en-tête sombre qui porte lui-même l'arrondi du haut, voir bg_postcard_top), cette
+    liste n'a pas d'en-tête "postcard" au-dessus des lignes — la toute première ligne doit donc
+    porter l'arrondi du haut ET, si elle est aussi la dernière, celui du bas.
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="@color/arzikina_postcart_background" />
+    <corners android:radius="@dimen/corner_radius_medium" />
+</shape>

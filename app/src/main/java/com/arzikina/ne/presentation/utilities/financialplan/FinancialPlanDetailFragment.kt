@@ -104,7 +104,15 @@ class FinancialPlanDetailFragment : Fragment(R.layout.fragment_financial_plan_de
 
         val rows = buildList {
             add(FinancialPlanDetailListRow.Header(uiState))
-            addAll(uiState.items.map { item -> FinancialPlanDetailListRow.ItemRow(item) })
+            addAll(
+                uiState.items.mapIndexed { index, item ->
+                    FinancialPlanDetailListRow.ItemRow(
+                        item = item,
+                        isFirst = index == 0,
+                        isLast = index == uiState.items.lastIndex
+                    )
+                }
+            )
         }
         adapter.submitList(rows)
     }
