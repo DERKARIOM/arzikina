@@ -181,7 +181,7 @@
 
     <!-- Écran de verrouillage à l'ouverture (voir presentation/security/BiometricLockFragment.kt). -->
     <string name="biometric_lock_title">Verrouillage biométrique</string>
-    <string name="biometric_lock_subtitle">Utilise ton empreinte digitale pour accéder à Arzikina</string>
+    <string name="biometric_lock_subtitle">Utilise ton empreinte digitale pour accéder</string>
     <string name="biometric_lock_retry_action">Réessayer</string>
     <!-- Échappatoire volontaire si l'empreinte échoue de façon répétée ou irrécupérable (capteur
          désactivé entre-temps, verrouillage biométrique système après trop d'essais...) : ramène

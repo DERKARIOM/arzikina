@@ -170,6 +170,8 @@
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/saveButton"
+                    android:background="@drawable/forme_radius_10dp"
+                    android:textColor="@color/white"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="@string/profile_save_action" />
@@ -253,7 +255,9 @@
                         <com.google.android.material.materialswitch.MaterialSwitch
                             android:id="@+id/biometricLockSwitch"
                             android:layout_width="wrap_content"
-                            android:layout_height="wrap_content" />
+                            android:layout_height="wrap_content"
+                            app:thumbTint="@color/switch_thumb_tint"
+                            app:trackTint="@color/switch_track_tint"/>
 
                     </LinearLayout>
 
@@ -275,6 +279,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/spacing_xl"
+                app:cornerRadius="10dp"
                 android:text="@string/profile_logout_action"
                 android:textColor="?attr/colorError"
                 app:strokeColor="?attr/colorError" />

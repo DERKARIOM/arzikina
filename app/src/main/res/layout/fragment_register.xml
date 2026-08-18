@@ -318,6 +318,8 @@
                     android:id="@+id/registerButton"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:background="@drawable/forme_radius_10dp"
+                    android:textColor="@color/white"
                     android:text="@string/register_submit_action" />
 
                 <com.google.android.material.progressindicator.CircularProgressIndicator
