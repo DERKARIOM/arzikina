@@ -351,6 +351,93 @@
     </fragment>
 
     <!--
+        Écran liste "Planification" (voir presentation/utilities/financialplan/
+        FinancialPlansViewModel) : une carte par planification (disponible/prévu/reste +
+        progression). Atteint depuis le bloc Utilitaires du Dashboard/"Tous les utilitaires" (voir
+        UtilityCatalog), même principe que loansFragment/recurringTransactionsFragment ci-dessus.
+        INDÉPENDANTE de recurringTransactionsFragment ("Automatisation") : aucune donnée ni
+        logique partagée (voir Étape 1/2 du plan "Planification financière").
+    -->
+    <fragment
+        android:id="@+id/financialPlansFragment"
+        android:name="com.arzikina.ne.presentation.utilities.financialplan.FinancialPlansFragment"
+        android:label="@string/utility_financial_plans_title"
+        tools:layout="@layout/fragment_financial_plans" />
+
+    <!--
+        Création/édition d'une planification (voir presentation/utilities/financialplan/
+        FinancialPlanFormFragment). planId = 0L (défaut) pour une nouvelle planification, même
+        convention que budgetFormFragment/budgetId ci-dessus.
+    -->
+    <fragment
+        android:id="@+id/financialPlanFormFragment"
+        android:name="com.arzikina.ne.presentation.utilities.financialplan.FinancialPlanFormFragment"
+        android:label="@string/financial_plan_form_title_add"
+        tools:layout="@layout/fragment_financial_plan_form">
+        <argument
+            android:name="planId"
+            android:defaultValue="0L"
+            app:argType="long" />
+    </fragment>
+
+    <!--
+        Détail d'une planification (voir presentation/utilities/financialplan/
+        FinancialPlanDetailFragment), atteint en cliquant sur une carte de financialPlansFragment.
+        planId n'a volontairement PAS de valeur par défaut, même raisonnement que
+        accountDetailFragment/loanDetailFragment ci-dessus.
+    -->
+    <fragment
+        android:id="@+id/financialPlanDetailFragment"
+        android:name="com.arzikina.ne.presentation.utilities.financialplan.FinancialPlanDetailFragment"
+        android:label="@string/financial_plan_detail_title"
+        tools:layout="@layout/fragment_financial_plan_detail">
+        <argument
+            android:name="planId"
+            app:argType="long" />
+    </fragment>
+
+    <!--
+        Ajout/édition d'une dépense prévue (voir presentation/utilities/financialplan/
+        FinancialPlanItemFormFragment), atteint depuis le bouton "+ Ajouter une dépense" (création,
+        itemId = 0L) ou une ligne de la liste (édition) de financialPlanDetailFragment. planId
+        obligatoire (même raisonnement que loanPaymentFormFragment/loanId ci-dessus) : ce
+        formulaire n'a de sens que rattaché à une planification précise, y compris en édition.
+        itemId = 0L (défaut) pour une nouvelle dépense, même convention que
+        financialPlanFormFragment/planId ci-dessus (Étape 5 : édition ajoutée, voir la doc de
+        FinancialPlanItemFormViewModel).
+    -->
+    <fragment
+        android:id="@+id/financialPlanItemFormFragment"
+        android:name="com.arzikina.ne.presentation.utilities.financialplan.FinancialPlanItemFormFragment"
+        android:label="@string/financial_plan_item_form_title_add"
+        tools:layout="@layout/fragment_financial_plan_item_form">
+        <argument
+            android:name="planId"
+            app:argType="long" />
+        <argument
+            android:name="itemId"
+            android:defaultValue="0L"
+            app:argType="long" />
+    </fragment>
+
+    <!--
+        "Enregistrer comme transaction" (voir presentation/utilities/financialplan/
+        FinancialPlanItemConvertFragment, Étape 6) — atteint depuis le bouton dédié de
+        financialPlanItemFormFragment. itemId obligatoire (PAS de valeur par défaut, même
+        raisonnement que loanPaymentFormFragment/loanId) : cet écran n'agit que sur une dépense
+        prévue existante et déjà identifiée, jamais en création.
+    -->
+    <fragment
+        android:id="@+id/financialPlanItemConvertFragment"
+        android:name="com.arzikina.ne.presentation.utilities.financialplan.FinancialPlanItemConvertFragment"
+        android:label="@string/financial_plan_item_convert_title"
+        tools:layout="@layout/fragment_financial_plan_item_convert">
+        <argument
+            android:name="itemId"
+            app:argType="long" />
+    </fragment>
+
+    <!--
         Première UI réelle pour BackupViewModel (voir presentation/settings/BackupFragment,
         présent depuis l'étape Sauvegarde en version Compose mais resté sans écran depuis la
         reconstruction XML/Views — voir settingsFragment ci-dessus, resté un simple placeholder).

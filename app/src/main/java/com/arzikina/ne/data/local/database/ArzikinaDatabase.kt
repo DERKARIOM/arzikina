@@ -7,6 +7,8 @@ import com.arzikina.ne.data.local.dao.AccountDao
 import com.arzikina.ne.data.local.dao.BudgetDao
 import com.arzikina.ne.data.local.dao.CardSecretDao
 import com.arzikina.ne.data.local.dao.CategoryDao
+import com.arzikina.ne.data.local.dao.FinancialPlanDao
+import com.arzikina.ne.data.local.dao.FinancialPlanItemDao
 import com.arzikina.ne.data.local.dao.LoanDao
 import com.arzikina.ne.data.local.dao.LoanPaymentDao
 import com.arzikina.ne.data.local.dao.PersonDao
@@ -19,6 +21,8 @@ import com.arzikina.ne.data.local.entity.AccountEntity
 import com.arzikina.ne.data.local.entity.BudgetEntity
 import com.arzikina.ne.data.local.entity.CardSecretEntity
 import com.arzikina.ne.data.local.entity.CategoryEntity
+import com.arzikina.ne.data.local.entity.FinancialPlanEntity
+import com.arzikina.ne.data.local.entity.FinancialPlanItemEntity
 import com.arzikina.ne.data.local.entity.LoanEntity
 import com.arzikina.ne.data.local.entity.LoanPaymentEntity
 import com.arzikina.ne.data.local.entity.PersonEntity
@@ -75,6 +79,10 @@ import com.arzikina.ne.data.local.entity.UserEntity
  *   `transactions` — voir [MIGRATION_15_16]).
  * - 17 : Lancer l'application Mobile Money associée à un compte (`mobileMoneyPackageName` sur
  *   `accounts` — voir [MIGRATION_16_17]).
+ * - 18 : Planification financière par projet, tables `financial_plans`, `financial_plan_items`
+ *   (voir [MIGRATION_17_18]/[FinancialPlanEntity]/[FinancialPlanItemEntity]) — fonctionnalité
+ *   INDÉPENDANTE de "Automatisation" (ex-"Planification", transactions récurrentes, tables
+ *   `recurring_transactions`/`recurring_transaction_occurrences` de la version 14).
  */
 @Database(
     entities = [
@@ -89,9 +97,11 @@ import com.arzikina.ne.data.local.entity.UserEntity
         LoanEntity::class,
         LoanPaymentEntity::class,
         RecurringTransactionEntity::class,
-        RecurringTransactionOccurrenceEntity::class
+        RecurringTransactionOccurrenceEntity::class,
+        FinancialPlanEntity::class,
+        FinancialPlanItemEntity::class
     ],
-    version = 17,
+    version = 18,
     exportSchema = true
 )
 @TypeConverters(Converters::class)
@@ -108,4 +118,6 @@ abstract class ArzikinaDatabase : RoomDatabase() {
     abstract fun loanPaymentDao(): LoanPaymentDao
     abstract fun recurringTransactionDao(): RecurringTransactionDao
     abstract fun recurringTransactionOccurrenceDao(): RecurringTransactionOccurrenceDao
+    abstract fun financialPlanDao(): FinancialPlanDao
+    abstract fun financialPlanItemDao(): FinancialPlanItemDao
 }

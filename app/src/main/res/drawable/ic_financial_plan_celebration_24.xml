@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Fête / célébration (cadeau) : construit géométriquement (boîte + ruban + noeud), pas un
+     glyphe Material mémorisé — voir la note de vérification de l'Étape 3 sur les icônes
+     personnalisées de FinancialPlanIcon. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:fillColor="#FF000000"
+        android:pathData="M4,10 L20,10 L20,21 L4,21 Z" />
+    <path
+        android:fillColor="#FF000000"
+        android:pathData="M3,7 L21,7 L21,10 L3,10 Z" />
+    <path
+        android:fillColor="#FF000000"
+        android:pathData="M11,7 L13,7 L13,21 L11,21 Z" />
+    <path
+        android:fillColor="#FF000000"
+        android:pathData="M9,2.7 A1.8,1.8 0 1,0 9,6.3 A1.8,1.8 0 1,0 9,2.7 Z" />
+    <path
+        android:fillColor="#FF000000"
+        android:pathData="M15,2.7 A1.8,1.8 0 1,0 15,6.3 A1.8,1.8 0 1,0 15,2.7 Z" />
+</vector>

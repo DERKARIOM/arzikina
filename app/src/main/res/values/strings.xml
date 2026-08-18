@@ -55,7 +55,7 @@
     <string name="settings_transactions_all_label">Toutes les transactions</string>
     <string name="settings_transactions_all_subtitle">Consulter l\'historique complet</string>
     <string name="settings_categories_row_subtitle">Organiser vos catégories de dépenses et revenus</string>
-    <string name="settings_recurring_row_subtitle">Transactions récurrentes et planifiées</string>
+    <string name="settings_recurring_row_subtitle">Transactions récurrentes et automatiques</string>
     <string name="settings_section_budget_finance">Budget et finances</string>
     <string name="settings_budget_row_subtitle">Suivre vos budgets par catégorie</string>
     <string name="settings_loans_row_subtitle">Suivre les prêts et emprunts en cours</string>
@@ -68,16 +68,16 @@
     <string name="settings_backup_row_subtitle">Exporter ou restaurer vos données</string>
     <!-- Titre de la page dédiée "Sauvegarde et restauration" (barre d'outils + nav_graph), DISTINCT
          de "utility_backup_title" — celui-ci reste court ("Sauvegarder") pour la tuile compacte du
-         bloc Utilitaires du Dashboard, comme les autres tuiles ("Emprunts", "Planifications"). -->
+         bloc Utilitaires du Dashboard, comme les autres tuiles ("Emprunts", "Automatisation"). -->
     <string name="backup_screen_title">Sauvegarde et restauration</string>
-    <string name="settings_backup_description">Exporte toutes tes données (comptes, catégories, transactions, frais, budgets, objectifs d\'épargne, prêts/emprunts, transactions planifiées, profil) dans un fichier, ou restaure une sauvegarde précédente.</string>
+    <string name="settings_backup_description">Exporte toutes tes données (comptes, catégories, transactions, frais, budgets, objectifs d\'épargne, prêts/emprunts, transactions automatiques, profil) dans un fichier, ou restaure une sauvegarde précédente.</string>
     <string name="settings_backup_export_action">Sauvegarder mes données</string>
     <string name="settings_backup_import_action">Restaurer mes données</string>
-    <string name="settings_backup_export_success">Export réussi : %1$d comptes, %2$d catégories, %3$d transactions, %4$d budgets, %5$d objectifs, %6$d prêts/emprunts, %7$d transactions planifiées, %8$d occurrences.</string>
-    <string name="settings_backup_import_success">Importation réussie : %1$d comptes, %2$d catégories, %3$d transactions, %4$d budgets, %5$d objectifs, %6$d prêts/emprunts, %7$d transactions planifiées, %8$d occurrences.</string>
+    <string name="settings_backup_export_success">Export réussi : %1$d comptes, %2$d catégories, %3$d transactions, %4$d budgets, %5$d objectifs, %6$d prêts/emprunts, %7$d transactions automatiques, %8$d occurrences.</string>
+    <string name="settings_backup_import_success">Importation réussie : %1$d comptes, %2$d catégories, %3$d transactions, %4$d budgets, %5$d objectifs, %6$d prêts/emprunts, %7$d transactions automatiques, %8$d occurrences.</string>
     <string name="settings_backup_error_prefix">Échec :</string>
     <string name="settings_backup_import_confirm_title">Remplacer toutes les données ?</string>
-    <string name="settings_backup_import_confirm_message">L\'importation remplace définitivement toutes les données actuelles (comptes, catégories, transactions, frais, budgets, objectifs d\'épargne, prêts/emprunts, transactions planifiées, profil) par celles du fichier choisi. Cette action est irréversible.</string>
+    <string name="settings_backup_import_confirm_message">L\'importation remplace définitivement toutes les données actuelles (comptes, catégories, transactions, frais, budgets, objectifs d\'épargne, prêts/emprunts, transactions automatiques, profil) par celles du fichier choisi. Cette action est irréversible.</string>
     <string name="settings_backup_import_confirm_action">Remplacer</string>
     <string name="settings_section_about">À propos</string>
     <string name="settings_about_version">Arzikina — version %1$s</string>
@@ -464,6 +464,79 @@
     <string name="budget_item_subtitle">%1$s · %2$s</string>
     <string name="budget_form_no_categories">Toutes les catégories de dépense ont déjà un budget.</string>
 
+    <!--
+        Planification financière par projet (voir cahier des charges "Nouvelle fonctionnalité :
+        Planification financière") — INDÉPENDANTE de "Automatisation" (ex-"Planification",
+        transactions récurrentes, voir la section "Utilitaires" plus haut dans ce fichier pour son
+        renommage). utility_financial_plans_title est réutilisée comme titre d'écran (voir
+        fragment_financial_plans.xml) ET comme libellé de destination (nav_graph.xml), même
+        principe que utility_loans_title/utility_recurring_transactions_title.
+    -->
+    <string name="utility_financial_plans_title">Planification</string>
+    <string name="financial_plans_add">Ajouter</string>
+    <string name="financial_plans_empty_message">Crée une planification pour prévoir tes dépenses d\'un projet (mariage, voyage, achat...).</string>
+    <string name="financial_plans_delete_title">Supprimer cette planification ?</string>
+    <string name="financial_plans_delete_message">Cette action supprime aussi toutes ses dépenses prévues. Les transactions déjà converties restent dans ton historique.</string>
+    <string name="financial_plan_available_label">Disponible</string>
+    <string name="financial_plan_planned_label">Prévu</string>
+    <string name="financial_plan_remaining_prefix">Reste : %1$s</string>
+    <string name="financial_plan_overbudget_prefix">Dépassement : %1$s</string>
+    <string name="financial_plan_form_title_add">Nouvelle planification</string>
+    <string name="financial_plan_form_title_edit">Modifier la planification</string>
+    <string name="financial_plan_form_name_label">Nom du projet</string>
+    <string name="financial_plan_form_available_amount_label">Montant disponible</string>
+    <string name="financial_plan_form_icon_label">Icône</string>
+    <string name="financial_plan_form_color_label">Couleur</string>
+
+    <!-- Planification financière — Étape 4, écran de détail -->
+    <string name="financial_plan_detail_title">Détail de la planification</string>
+    <string name="financial_plan_detail_menu_edit">Modifier</string>
+    <string name="financial_plan_detail_menu_delete">Supprimer</string>
+    <string name="financial_plan_detail_items_title">Dépenses prévues (%d)</string>
+    <string name="financial_plan_detail_items_empty">Aucune dépense prévue pour l\'instant.</string>
+    <string name="financial_plan_detail_add_item_action">Ajouter une dépense</string>
+    <string name="financial_plan_detail_not_found_message">Cette planification n\'existe plus.</string>
+    <string name="financial_plan_item_delete_title">Supprimer cette dépense prévue ?</string>
+    <string name="financial_plan_item_delete_message">Supprimer « %1$s » (%2$s) ? Cette action est irréversible.</string>
+    <string name="financial_plan_item_form_title_add">Ajouter une dépense</string>
+    <string name="financial_plan_item_form_title_edit">Modifier la dépense</string>
+    <string name="financial_plan_item_form_name_label">Nom de la dépense</string>
+    <string name="financial_plan_item_form_amount_label">Montant prévu</string>
+    <!-- %1$s = nom de la planification, %2$s = montant restant disponible déjà formaté. -->
+    <string name="financial_plan_item_form_context">Planification : %1$s · Reste disponible : %2$s</string>
+
+    <!-- Planification financière — Étape 5, formulaire complet de dépense -->
+    <string name="financial_plan_item_form_category_label">Catégorie</string>
+    <string name="financial_plan_item_form_category_none">Aucune catégorie</string>
+    <string name="financial_plan_item_form_category_picker_title">Choisir une catégorie</string>
+    <string name="financial_plan_item_form_description_label">Description (facultatif)</string>
+    <string name="financial_plan_item_form_date_toggle">Ajouter une date prévue</string>
+    <string name="financial_plan_item_form_date_label">Date prévue</string>
+    <string name="financial_plan_item_form_priority_label">Priorité</string>
+    <string name="financial_plan_item_form_status_label">État</string>
+    <string name="plan_item_priority_essential">Essentielle</string>
+    <string name="plan_item_priority_important">Importante</string>
+    <string name="plan_item_priority_optional">Optionnelle</string>
+    <string name="plan_item_status_to_plan">À prévoir</string>
+    <string name="plan_item_status_done">Réalisée</string>
+    <string name="plan_item_status_cancelled">Annulée</string>
+    <!-- Distinct de financial_plan_detail_not_found_message : ce formulaire peut échouer soit parce
+         que la planification elle-même a été supprimée, soit (en édition) parce que la dépense
+         prévue l'a été — message volontairement générique pour couvrir les deux cas. -->
+    <string name="financial_plan_item_form_not_found_message">Cette planification ou cette dépense prévue n\'existe plus.</string>
+
+    <!-- Planification financière — Étape 6, convertir une dépense prévue en transaction réelle -->
+    <string name="financial_plan_item_form_convert_action">Enregistrer comme transaction</string>
+    <string name="financial_plan_item_converted_indicator">Dépense déjà convertie en transaction</string>
+    <string name="financial_plan_item_convert_title">Enregistrer comme transaction</string>
+    <!-- %1$s = nom de la dépense prévue, %2$s = montant prévu déjà formaté. -->
+    <string name="financial_plan_item_convert_context">Dépense prévue : %1$s · Prévu : %2$s</string>
+    <string name="financial_plan_item_convert_amount_label">Montant réel</string>
+    <string name="financial_plan_item_convert_description_label">Description</string>
+    <string name="financial_plan_item_convert_date_label">Date</string>
+    <string name="financial_plan_item_convert_not_found_message">Cette dépense prévue n\'existe plus ou a déjà été convertie.</string>
+    <string name="financial_plan_item_convert_action">Enregistrer comme transaction</string>
+
     <!-- Statistiques -->
     <string name="statistics_evolution_title">Évolution (6 derniers mois)</string>
     <string name="statistics_breakdown_title">Répartition des dépenses (ce mois)</string>
@@ -602,27 +675,36 @@
     <string name="loan_form_saved_message">Prêt/emprunt enregistré.</string>
 
     <!--
-        Transactions récurrentes / planifiées (voir presentation/utilities/recurring). Écran
-        principal : trois sections défilant dans une seule RecyclerView ("À traiter", "À venir",
+        Transactions récurrentes / automatiques — fonctionnalité "Automatisation" (voir
+        presentation/utilities/recurring, renommée depuis "Planification", voir le commentaire de
+        utility_recurring_transactions_title ci-dessous). Écran principal : trois sections
+        défilant dans une seule RecyclerView ("À traiter", "À venir",
         "Historique"), même principe qu'une seule liste pour cartes de résumé + contenu que
         LoansFragment (voir sa doc) — pas de recherche/filtres pour cette première version.
         "dashboard_transaction_subtitle" (existante, "%1$s • %2$s") est réutilisée telle quelle pour
         le sous-titre de chaque ligne, plutôt que de dupliquer un gabarit identique ici.
     -->
-    <string name="utility_recurring_transactions_title">Planifications</string>
+    <!-- Renommage "Planifications" → "Automatisation" (voir cahier des charges "Nouvelle
+         fonctionnalité : Planification financière", section 1) : cette fonctionnalité de
+         transactions récurrentes/automatiques reste FONCTIONNELLEMENT identique, seul son nom
+         visible change — le nom "Planification" est désormais réservé à une fonctionnalité
+         entièrement différente (planification financière par projet). Vocabulaire générique
+         "transaction planifiée" renommé en "transaction automatique" dans toutes les chaînes
+         ci-dessous pour éviter toute confusion entre les deux fonctionnalités. -->
+    <string name="utility_recurring_transactions_title">Automatisation</string>
     <string name="recurring_transactions_summary_pending">À traiter</string>
     <string name="recurring_transactions_summary_upcoming">À venir</string>
     <string name="recurring_transactions_summary_total">Total</string>
     <string name="recurring_transactions_summary_pending_label">À enregistrer</string>
-    <string name="recurring_transactions_summary_upcoming_label">Planifiées</string>
+    <string name="recurring_transactions_summary_upcoming_label">Automatiques</string>
     <string name="recurring_transactions_summary_total_label">Récurrentes</string>
     <string name="recurring_transactions_pending_title">À traiter</string>
     <string name="recurring_transactions_upcoming_title">À venir</string>
     <string name="recurring_transactions_history_title">Historique</string>
     <string name="recurring_transactions_scheduled_date">Prévue le %s</string>
-    <string name="recurring_transactions_empty_title">Aucune transaction planifiée</string>
+    <string name="recurring_transactions_empty_title">Aucune transaction automatique</string>
     <string name="recurring_transactions_empty_message">Ajoute une transaction récurrente pour ne plus jamais oublier un revenu ou une dépense régulière.</string>
-    <string name="recurring_transactions_add_action">Ajouter une transaction planifiée</string>
+    <string name="recurring_transactions_add_action">Ajouter une transaction automatique</string>
 
     <!-- Fréquences (voir domain/model/RecurringFrequency). -->
     <string name="recurring_frequency_once">Une seule fois</string>
@@ -646,8 +728,8 @@
         "transaction_form_payment_method_none"/"action_save" (existantes) sont réutilisées telles
         quelles, pas dupliquées ici.
     -->
-    <string name="recurring_transaction_form_title_add">Nouvelle transaction planifiée</string>
-    <string name="recurring_transaction_form_title_edit">Modifier la transaction planifiée</string>
+    <string name="recurring_transaction_form_title_add">Nouvelle transaction automatique</string>
+    <string name="recurring_transaction_form_title_edit">Modifier la transaction automatique</string>
     <string name="recurring_transaction_form_type_label">Type</string>
     <string name="recurring_transaction_form_category_label">Catégorie</string>
     <string name="recurring_transaction_form_amount_label">Montant</string>
@@ -657,7 +739,7 @@
     <string name="recurring_transaction_form_end_date_toggle">Définir une date de fin</string>
     <string name="recurring_transaction_form_end_date_label">Date de fin</string>
     <string name="recurring_transaction_form_frequency_label">Fréquence</string>
-    <string name="recurring_transaction_form_delete_title">Supprimer cette transaction planifiée ?</string>
+    <string name="recurring_transaction_form_delete_title">Supprimer cette transaction automatique ?</string>
     <string name="recurring_transaction_form_delete_message">Cette action est irréversible et supprimera aussi les transactions déjà enregistrées à partir de cette règle.</string>
 
     <!--
@@ -665,12 +747,12 @@
         "action_save"/"action_cancel" (existantes) sont réutilisées telles quelles pour "Enregistrer"/
         "Annuler", pas dupliquées ici.
     -->
-    <string name="recurring_queue_title">Transaction planifiée à valider</string>
+    <string name="recurring_queue_title">Transaction automatique à valider</string>
     <string name="recurring_queue_progress">%1$d sur %2$d</string>
     <string name="recurring_queue_account_line">Compte : %1$s</string>
     <string name="recurring_queue_edit_action">Modifier</string>
     <string name="recurring_queue_reject_action">Rejeter</string>
-    <string name="recurring_queue_reject_confirm_title">Rejeter cette transaction planifiée ?</string>
+    <string name="recurring_queue_reject_confirm_title">Rejeter cette transaction automatique ?</string>
     <string name="recurring_queue_reject_confirm_message">Elle ne sera plus jamais proposée et aucune transaction ne sera créée pour cette échéance.</string>
     <!--
         Formulaire d'édition ponctuelle ("Modifier", voir RecurringOccurrenceQueueViewModel) —

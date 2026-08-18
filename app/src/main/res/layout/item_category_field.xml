@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Ligne "catégorie" cliquable réutilisable (icône, libellé, nom, chevron) — même principe que
+    item_account_field.xml, sans ligne "solde" (une catégorie n'en a pas). Ouvre CategoryPickerDialog
+    (voir FinancialPlanItemFormFragment.setUpPickers).
+-->
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:padding="@dimen/spacing_m">
+
+    <ImageView
+        android:id="@+id/categoryFieldIcon"
+        android:layout_width="@dimen/icon_size_large"
+        android:layout_height="@dimen/icon_size_large"
+        android:background="@drawable/bg_icon_circle"
+        android:contentDescription="@null"
+        android:padding="@dimen/spacing_s"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:tint="@android:color/white" />
+
+    <TextView
+        android:id="@+id/categoryFieldLabel"
+        style="@style/TextAppearance.Material3.BodySmall"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/spacing_m"
+        android:text="@string/financial_plan_item_form_category_label"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        app:layout_constraintEnd_toStartOf="@id/categoryFieldChevron"
+        app:layout_constraintStart_toEndOf="@id/categoryFieldIcon"
+        app:layout_constraintTop_toTopOf="@id/categoryFieldIcon" />
+
+    <TextView
+        android:id="@+id/categoryFieldName"
+        style="@style/TextAppearance.Material3.TitleSmall"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/spacing_m"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:textColor="?attr/colorOnSurface"
+        app:layout_constraintEnd_toStartOf="@id/categoryFieldChevron"
+        app:layout_constraintStart_toEndOf="@id/categoryFieldIcon"
+        app:layout_constraintTop_toBottomOf="@id/categoryFieldLabel"
+        tools:text="Aucune catégorie" />
+
+    <ImageView
+        android:id="@+id/categoryFieldChevron"
+        android:layout_width="@dimen/icon_size_default"
+        android:layout_height="@dimen/icon_size_default"
+        android:contentDescription="@null"
+        android:src="@drawable/ic_chevron_right_24"
+        app:layout_constraintBottom_toBottomOf="@id/categoryFieldIcon"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="@id/categoryFieldIcon"
+        app:tint="?attr/colorOnSurfaceVariant" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

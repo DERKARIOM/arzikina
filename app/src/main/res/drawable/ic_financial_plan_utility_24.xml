@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Icône du bloc Utilitaires pour "Planification" (drapeau = objectif financier, voir cahier des
+     charges section 17 "objectif financier optionnel") — DISTINCTE de ic_planifications.xml
+     (utilisée par "Automatisation", ex-Planification, voir Étape 1 du renommage). Même style que
+     investissement_24.xml/ic_planifications.xml (fillColor blanc + teinte posée sur le vector). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="24dp" android:height="24dp" android:viewportWidth="24" android:viewportHeight="24" android:tint="?attr/colorControlNormal">
+    <path
+        android:fillColor="@android:color/white"
+        android:pathData="M14,6l-1,-2L5,4v17h2v-7h5l1,2h7V6z" />
+</vector>

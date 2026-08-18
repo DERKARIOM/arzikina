@@ -6,11 +6,16 @@ import com.arzikina.ne.domain.model.AccountType
 import com.arzikina.ne.domain.model.BudgetPeriod
 import com.arzikina.ne.domain.model.CategoryIcon
 import com.arzikina.ne.domain.model.FeeType
+import com.arzikina.ne.domain.model.FinancialPlanIcon
 import com.arzikina.ne.domain.model.LoanReason
 import com.arzikina.ne.domain.model.LoanStatus
 import com.arzikina.ne.domain.model.LoanType
 import com.arzikina.ne.domain.model.OccurrenceStatus
 import com.arzikina.ne.domain.model.PaymentMethod
+import com.arzikina.ne.domain.model.PlanItemPriority
+import com.arzikina.ne.domain.model.PlanItemStatus
+import com.arzikina.ne.domain.model.PlanPeriodType
+import com.arzikina.ne.domain.model.PlanStatus
 import com.arzikina.ne.domain.model.RecurringFrequency
 import com.arzikina.ne.domain.model.RepaymentMode
 import com.arzikina.ne.domain.model.SecurityQuestion
@@ -108,4 +113,34 @@ class Converters {
 
     @TypeConverter
     fun toFeeType(value: String?): FeeType? = value?.let { FeeType.valueOf(it) }
+
+    @TypeConverter
+    fun fromPlanPeriodType(type: PlanPeriodType): String = type.name
+
+    @TypeConverter
+    fun toPlanPeriodType(value: String): PlanPeriodType = PlanPeriodType.valueOf(value)
+
+    @TypeConverter
+    fun fromPlanStatus(status: PlanStatus): String = status.name
+
+    @TypeConverter
+    fun toPlanStatus(value: String): PlanStatus = PlanStatus.valueOf(value)
+
+    @TypeConverter
+    fun fromFinancialPlanIcon(icon: FinancialPlanIcon): String = icon.name
+
+    @TypeConverter
+    fun toFinancialPlanIcon(value: String): FinancialPlanIcon = FinancialPlanIcon.valueOf(value)
+
+    @TypeConverter
+    fun fromPlanItemPriority(priority: PlanItemPriority): String = priority.name
+
+    @TypeConverter
+    fun toPlanItemPriority(value: String): PlanItemPriority = PlanItemPriority.valueOf(value)
+
+    @TypeConverter
+    fun fromPlanItemStatus(status: PlanItemStatus): String = status.name
+
+    @TypeConverter
+    fun toPlanItemStatus(value: String): PlanItemStatus = PlanItemStatus.valueOf(value)
 }

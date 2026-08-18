@@ -32,6 +32,11 @@ object UtilityCatalog {
             destinationId = R.id.recurringTransactionsFragment
         ),
         UtilityItem(
+            iconRes = R.drawable.ic_financial_plan_utility_24,
+            titleRes = R.string.utility_financial_plans_title,
+            destinationId = R.id.financialPlansFragment
+        ),
+        UtilityItem(
             iconRes = R.drawable.sauvegarde,
             titleRes = R.string.utility_backup_title,
             destinationId = R.id.backupFragment

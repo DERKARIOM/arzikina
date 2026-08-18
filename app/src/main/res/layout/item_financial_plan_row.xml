@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Une ligne de la section "Dépenses prévues" de l'écran "Détail de la planification" — une
+    FinancialPlanItem. Carte claire simple (pas "postcard" sombre), même raisonnement que
+    item_loan_payment.xml.
+
+    Étape 5 : icône de catégorie (ou générique si aucune), pastille d'état colorée (voir
+    planItemStatusDisplay), libellé de priorité coloré (voir planItemPriorityDisplay), date prévue
+    et description optionnelles — un clic sur la ligne ouvre l'édition (voir
+    FinancialPlanDetailFragment/FinancialPlanDetailAdapter).
+-->
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginHorizontal="@dimen/spacing_m"
+    android:layout_marginTop="@dimen/spacing_s"
+    android:checkable="false"
+    android:clickable="true"
+    android:focusable="true"
+    app:cardCornerRadius="@dimen/corner_radius_medium"
+    app:cardElevation="0dp"
+    app:strokeColor="?attr/colorOutline"
+    app:strokeWidth="1dp">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="@dimen/spacing_m">
+
+        <ImageView
+            android:id="@+id/itemCategoryIcon"
+            android:layout_width="@dimen/icon_size_default"
+            android:layout_height="@dimen/icon_size_default"
+            android:background="@drawable/bg_icon_circle"
+            android:contentDescription="@null"
+            android:padding="3dp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:tint="@android:color/white"
+            tools:tint="@android:color/white" />
+
+        <TextView
+            android:id="@+id/itemName"
+            style="@style/TextAppearance.Material3.TitleSmall"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/spacing_s"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textColor="?attr/colorOnSurface"
+            app:layout_constraintEnd_toStartOf="@id/itemAmount"
+            app:layout_constraintStart_toEndOf="@id/itemCategoryIcon"
+            app:layout_constraintTop_toTopOf="@id/itemCategoryIcon"
+            tools:text="Alliance" />
+
+        <TextView
+            android:id="@+id/itemAmount"
+            style="@style/TextAppearance.Material3.TitleSmall"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="?attr/colorOnSurface"
+            android:textStyle="bold"
+            app:layout_constraintEnd_toStartOf="@id/itemConvertedIcon"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:text="35 000 F CFA" />
+
+        <!-- Visible uniquement si FinancialPlanItem.transactionId n'est pas nul (voir
+             FinancialPlanDetailAdapter.ItemViewHolder.bind, Étape 6) : indique que cette dépense
+             prévue a déjà été convertie en transaction réelle. -->
+        <ImageView
+            android:id="@+id/itemConvertedIcon"
+            android:layout_width="@dimen/icon_size_default"
+            android:layout_height="@dimen/icon_size_default"
+            android:layout_marginStart="@dimen/spacing_xs"
+            android:contentDescription="@string/financial_plan_item_converted_indicator"
+            android:padding="2dp"
+            android:src="@drawable/ic_receipt_long_24"
+            android:visibility="gone"
+            app:layout_constraintEnd_toStartOf="@id/itemDeleteButton"
+            app:layout_constraintTop_toTopOf="parent"
+            app:tint="?attr/colorOnSurfaceVariant"
+            tools:visibility="visible" />
+
+        <ImageView
+            android:id="@+id/itemDeleteButton"
+            android:layout_width="@dimen/icon_size_default"
+            android:layout_height="@dimen/icon_size_default"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/action_delete"
+            android:padding="2dp"
+            android:src="@drawable/ic_delete_24"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:tint="?attr/colorOnSurfaceVariant" />
+
+        <TextView
+            android:id="@+id/itemStatusPill"
+            style="@style/TextAppearance.Material3.LabelSmall"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/spacing_s"
+            android:layout_marginTop="@dimen/spacing_xs"
+            android:background="@drawable/bg_pill"
+            android:paddingHorizontal="@dimen/spacing_s"
+            android:paddingVertical="2dp"
+            android:textColor="@android:color/white"
+            app:layout_constraintStart_toEndOf="@id/itemCategoryIcon"
+            app:layout_constraintTop_toBottomOf="@id/itemCategoryIcon"
+            tools:backgroundTint="#8E938F"
+            tools:text="À prévoir" />
+
+        <TextView
+            android:id="@+id/itemPriorityLabel"
+            style="@style/TextAppearance.Material3.LabelSmall"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/spacing_s"
+            android:textStyle="bold"
+            app:layout_constraintBottom_toBottomOf="@id/itemStatusPill"
+            app:layout_constraintStart_toEndOf="@id/itemStatusPill"
+            app:layout_constraintTop_toTopOf="@id/itemStatusPill"
+            tools:text="Essentielle"
+            tools:textColor="#DC2626" />
+
+        <TextView
+            android:id="@+id/itemDateLabel"
+            style="@style/TextAppearance.Material3.LabelSmall"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/spacing_s"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            app:layout_constraintBottom_toBottomOf="@id/itemStatusPill"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@id/itemPriorityLabel"
+            app:layout_constraintTop_toTopOf="@id/itemStatusPill"
+            tools:text="12 mai 2025"
+            tools:visibility="visible" />
+
+        <TextView
+            android:id="@+id/itemDescription"
+            style="@style/TextAppearance.Material3.BodySmall"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/spacing_s"
+            android:layout_marginTop="@dimen/spacing_xs"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            android:textStyle="italic"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@id/itemCategoryIcon"
+            app:layout_constraintTop_toBottomOf="@id/itemStatusPill"
+            tools:text="Prévoir la gravure des initiales."
+            tools:visibility="visible" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</com.google.android.material.card.MaterialCardView>
