@@ -38,7 +38,6 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_margin="@dimen/spacing_m"
-        android:text="@string/financial_plan_detail_add_item_action"
         android:textColor="@color/white"
         app:icon="@drawable/ic_add_24"
         app:iconTint="@color/white"
