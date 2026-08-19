@@ -9,7 +9,9 @@ fun BudgetEntity.toDomain(): Budget = Budget(
     period = period,
     limitAmount = limitAmount,
     currencyCode = currencyCode,
-    createdAt = createdAt
+    createdAt = createdAt,
+    startDate = startDate,
+    endDate = endDate
 )
 
 /** [userId] : fourni par le repository, jamais par l'appelant. */
@@ -20,5 +22,7 @@ fun Budget.toEntity(userId: Long): BudgetEntity = BudgetEntity(
     period = period,
     limitAmount = limitAmount,
     currencyCode = currencyCode,
-    createdAt = createdAt
+    createdAt = createdAt,
+    startDate = startDate,
+    endDate = endDate
 )

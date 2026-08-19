@@ -2,6 +2,7 @@ package com.arzikina.ne.presentation.budget
 
 import android.os.Bundle
 import android.view.View
+import androidx.annotation.StringRes
 import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
@@ -15,9 +16,15 @@ import com.arzikina.ne.domain.model.BudgetPeriod
 import com.arzikina.ne.domain.model.Category
 import com.arzikina.ne.domain.model.SupportedCurrency
 import com.arzikina.ne.presentation.components.ConfirmDialogs
+import com.arzikina.ne.util.QuickDateRange
+import com.google.android.material.datepicker.MaterialDatePicker
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
+import java.time.Instant
+import java.time.ZoneId
+import java.time.ZoneOffset
+import java.time.format.DateTimeFormatter
 
 /**
  * Formulaire d'ajout/édition d'un budget. Reconstruit en XML/Views (voir
@@ -46,6 +53,8 @@ class BudgetFormFragment : Fragment(R.layout.fragment_budget_form) {
         setUpCategoryDropdown(viewBinding)
         setUpCurrencyDropdown(viewBinding)
         setUpPeriodToggle(viewBinding)
+        setUpQuickRangeGroup(viewBinding)
+        setUpDatePickers(viewBinding)
         setUpInputs(viewBinding)
 
         viewBinding.saveButton.setOnClickListener { viewModel.save() }
@@ -116,6 +125,59 @@ class BudgetFormFragment : Fragment(R.layout.fragment_budget_form) {
         }
     }
 
+    private fun setUpQuickRangeGroup(binding: FragmentBudgetFormBinding) {
+        binding.quickRangeGroup.addOnButtonCheckedListener { _, checkedId, isChecked ->
+            if (!isChecked) return@addOnButtonCheckedListener
+            val range = quickRangeForButtonId(checkedId)
+            if (range != null) viewModel.onQuickRangeSelected(range) else viewModel.onCustomRangeSelected()
+        }
+    }
+
+    private fun quickRangeForButtonId(buttonId: Int): QuickDateRange? = when (buttonId) {
+        R.id.quickRangeThisWeek -> QuickDateRange.THIS_WEEK
+        R.id.quickRangeThisMonth -> QuickDateRange.THIS_MONTH
+        R.id.quickRangeNextMonth -> QuickDateRange.NEXT_MONTH
+        R.id.quickRangeThisYear -> QuickDateRange.THIS_YEAR
+        else -> null // quickRangeCustom : voir onCustomRangeSelected.
+    }
+
+    private fun buttonIdForQuickRange(range: QuickDateRange?): Int = when (range) {
+        QuickDateRange.THIS_WEEK -> R.id.quickRangeThisWeek
+        QuickDateRange.THIS_MONTH -> R.id.quickRangeThisMonth
+        QuickDateRange.NEXT_MONTH -> R.id.quickRangeNextMonth
+        QuickDateRange.THIS_YEAR -> R.id.quickRangeThisYear
+        null -> View.NO_ID
+    }
+
+    private fun setUpDatePickers(binding: FragmentBudgetFormBinding) {
+        binding.startDateField.dateFieldLabel.text = getString(R.string.budget_form_start_date_label)
+        binding.startDateRow.setOnClickListener {
+            showDatePicker(R.string.budget_form_start_date_label) { viewModel.onStartDateChange(it) }
+        }
+
+        binding.endDateField.dateFieldLabel.text = getString(R.string.budget_form_end_date_label)
+        binding.endDateRow.setOnClickListener {
+            showDatePicker(R.string.budget_form_end_date_label) { viewModel.onEndDateChange(it) }
+        }
+    }
+
+    /** Voir `FinancialPlanFormFragment.showDatePicker` pour le même raisonnement (reconversion
+     * UTC → heure locale) : même convention de stockage réutilisée telle quelle ici. */
+    private fun showDatePicker(@StringRes titleRes: Int, onSelected: (Long) -> Unit) {
+        val picker = MaterialDatePicker.Builder.datePicker()
+            .setTitleText(titleRes)
+            .build()
+        picker.addOnPositiveButtonClickListener { selectionUtcMillis ->
+            val localDate = Instant.ofEpochMilli(selectionUtcMillis).atZone(ZoneOffset.UTC).toLocalDate()
+            onSelected(localDate.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli())
+        }
+        picker.show(parentFragmentManager, "budget_form_date_picker")
+    }
+
+    private fun formatDate(millis: Long?): String =
+        millis?.let { Instant.ofEpochMilli(it).atZone(ZoneId.systemDefault()).toLocalDate().format(DATE_FORMATTER) }
+            ?: getString(R.string.budget_form_date_placeholder)
+
     private fun render(state: BudgetFormState, categories: List<Category>) {
         val binding = binding ?: return
         latestCategories = categories
@@ -131,10 +193,34 @@ class BudgetFormFragment : Fragment(R.layout.fragment_budget_form) {
         }
         binding.categoryField.dropdownLayout.error = state.categoryError
 
+        // Les deux blocs sont mutuellement exclusifs (voir BudgetFormState.isLegacyRecurring et
+        // fragment_budget_form.xml) : jamais affichés en même temps.
+        val legacyVisibility = if (state.isLegacyRecurring) View.VISIBLE else View.GONE
+        val fixedPeriodVisibility = if (state.isLegacyRecurring) View.GONE else View.VISIBLE
+        binding.periodLabel.visibility = legacyVisibility
+        binding.periodGroup.visibility = legacyVisibility
+        binding.quickRangeLabel.visibility = fixedPeriodVisibility
+        binding.quickRangeGroup.visibility = fixedPeriodVisibility
+        binding.startDateRow.visibility = fixedPeriodVisibility
+        binding.endDateRow.visibility = fixedPeriodVisibility
+
         val expectedPeriodButtonId = if (state.period == BudgetPeriod.WEEKLY) R.id.periodWeekly else R.id.periodMonthly
         if (binding.periodGroup.checkedButtonId != expectedPeriodButtonId) {
             binding.periodGroup.check(expectedPeriodButtonId)
         }
+
+        val expectedQuickRangeButtonId = buttonIdForQuickRange(state.quickRange)
+        if (binding.quickRangeGroup.checkedButtonId != expectedQuickRangeButtonId) {
+            if (expectedQuickRangeButtonId == View.NO_ID) {
+                binding.quickRangeGroup.clearChecked()
+            } else {
+                binding.quickRangeGroup.check(expectedQuickRangeButtonId)
+            }
+        }
+        binding.startDateField.dateFieldValue.text = formatDate(state.startDate)
+        binding.endDateField.dateFieldValue.text = formatDate(state.endDate)
+        binding.dateErrorText.text = state.dateError
+        binding.dateErrorText.visibility = if (state.dateError != null) View.VISIBLE else View.GONE
 
         if (binding.limitInput.text?.toString() != state.limitInput) {
             binding.limitInput.setText(state.limitInput)
@@ -162,5 +248,9 @@ class BudgetFormFragment : Fragment(R.layout.fragment_budget_form) {
             message = getString(R.string.budgets_delete_message),
             onConfirm = { viewModel.delete() }
         )
+    }
+
+    private companion object {
+        val DATE_FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
     }
 }

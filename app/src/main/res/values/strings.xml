@@ -479,6 +479,32 @@
     <string name="budget_form_limit_label">Plafond</string>
     <string name="budget_item_subtitle">%1$s · %2$s</string>
     <string name="budget_form_no_categories">Toutes les catégories de dépense ont déjà un budget.</string>
+    <!-- Période fixe (voir cahier des charges "Amélioration de la fonctionnalité Budget — Gestion
+         d'une période") : réservée aux nouveaux budgets (voir BudgetFormState.isLegacyRecurring) ;
+         budget_form_period_label/periodGroup ci-dessus restent affichés tels quels pour l'édition
+         d'un budget récurrent existant, jamais modifiés. -->
+    <string name="budget_form_quick_select_label">Sélection rapide</string>
+    <string name="budget_quick_range_this_week">Cette semaine</string>
+    <string name="budget_quick_range_this_month">Ce mois</string>
+    <string name="budget_quick_range_next_month">Mois prochain</string>
+    <string name="budget_quick_range_this_year">Cette année</string>
+    <string name="budget_quick_range_custom">Personnalisée</string>
+    <string name="budget_form_start_date_label">Date de début</string>
+    <string name="budget_form_end_date_label">Date de fin</string>
+    <string name="budget_form_date_placeholder">Sélectionner</string>
+    <!-- Statut automatique d'un budget à période fixe (voir BudgetPeriodStatus/BudgetAdapter) —
+         remplace budget_expires_prefix UNIQUEMENT pour ce mode, jamais pour un budget récurrent
+         legacy (qui garde budget_expires_prefix tel quel). -->
+    <string name="budget_status_completed">Terminé</string>
+    <string name="budget_status_upcoming_days">À venir · dans %1$d j</string>
+    <string name="budget_status_ongoing_days">En cours · %1$d j restants</string>
+
+    <!-- Filtre optionnel par statut sur l'écran Budget (voir BudgetStatusFilterOption/BudgetFragment) -->
+    <string name="budget_filter_all">Tous</string>
+    <string name="budget_filter_upcoming">À venir</string>
+    <string name="budget_filter_ongoing">En cours</string>
+    <string name="budget_filter_completed">Terminés</string>
+    <string name="budgets_empty_message_filtered">Aucun budget ne correspond à ce filtre.</string>
 
     <!--
         Planification financière par projet (voir cahier des charges "Nouvelle fonctionnalité :

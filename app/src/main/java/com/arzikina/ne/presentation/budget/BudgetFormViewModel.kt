@@ -9,8 +9,11 @@ import com.arzikina.ne.domain.model.Category
 import com.arzikina.ne.domain.model.TransactionType
 import com.arzikina.ne.domain.repository.BudgetRepository
 import com.arzikina.ne.domain.repository.CategoryRepository
+import com.arzikina.ne.util.BudgetPeriodStatus
 import com.arzikina.ne.util.Constants
+import com.arzikina.ne.util.DatePeriods
 import com.arzikina.ne.util.Money
+import com.arzikina.ne.util.QuickDateRange
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -23,6 +26,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.time.LocalDate
 import javax.inject.Inject
 
 /**
@@ -30,10 +34,21 @@ import javax.inject.Inject
  *
  * `Budget.id == 0L` fait office de sentinelle "nouveau budget" (même
  * convention que [Budget.id]).
+ *
+ * [isLegacyRecurring] distingue les deux modes mutuellement exclusifs de la doc de [Budget] :
+ * `true` uniquement en édition d'un budget créé avant la fonctionnalité "période fixe" (`false` par
+ * défaut, donc pour tout nouveau budget — voir cahier des charges "Amélioration de la
+ * fonctionnalité Budget — Gestion d'une période", remplacement recommandé). [period] reste utilisé
+ * tel quel quand [isLegacyRecurring] vaut `true` ; ignoré sinon (voir [startDate]/[endDate]).
  */
 data class BudgetFormState(
     val categoryId: Long = 0L,
     val period: BudgetPeriod = BudgetPeriod.MONTHLY,
+    val isLegacyRecurring: Boolean = false,
+    val startDate: Long? = null,
+    val endDate: Long? = null,
+    val quickRange: QuickDateRange? = null,
+    val dateError: String? = null,
     val limitInput: String = "",
     val currencyCode: String = Constants.DEFAULT_CURRENCY_CODE,
     val createdAt: Long? = null,
@@ -63,16 +78,23 @@ class BudgetFormViewModel @Inject constructor(
     val events: SharedFlow<BudgetFormEvent> = _events.asSharedFlow()
 
     /**
-     * Catégories de dépense sans budget actif, plus celle déjà assignée à ce
-     * budget en mode édition (contrainte d'unicité posée par l'index
-     * `categoryId` de `BudgetEntity`).
+     * Catégories de dépense sans budget ACTIF, plus celle déjà assignée à ce
+     * budget en mode édition. Depuis la version 19 (période fixe, voir
+     * [Budget]), l'index `categoryId` de `BudgetEntity` n'est plus unique : une
+     * catégorie peut avoir plusieurs budgets successifs (un par période), donc
+     * ce n'est plus "toute catégorie déjà utilisée" qui est exclue, mais
+     * seulement celle dont un budget est encore actif (voir [isActive]) — un
+     * budget Terminé libère sa catégorie pour un nouveau budget.
      */
     val availableCategories: StateFlow<List<Category>> = combine(
         categoryRepository.observeCategoriesByType(TransactionType.EXPENSE),
         budgetRepository.observeBudgets()
     ) { categories, budgets ->
-        val usedCategoryIds = budgets.filter { it.id != budgetId }.map { it.categoryId }.toSet()
-        categories.filter { it.id !in usedCategoryIds }
+        val blockedCategoryIds = budgets
+            .filter { it.id != budgetId && isActive(it) }
+            .map { it.categoryId }
+            .toSet()
+        categories.filter { it.id !in blockedCategoryIds }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     init {
@@ -83,6 +105,11 @@ class BudgetFormViewModel @Inject constructor(
                         it.copy(
                             categoryId = budget.categoryId,
                             period = budget.period,
+                            // Jamais un seul des deux nul (voir Budget) : startDate suffit à
+                            // distinguer les deux modes.
+                            isLegacyRecurring = budget.startDate == null,
+                            startDate = budget.startDate,
+                            endDate = budget.endDate,
                             limitInput = Money.formatMajorUnits(budget.limitAmount),
                             currencyCode = budget.currencyCode,
                             createdAt = budget.createdAt
@@ -99,6 +126,36 @@ class BudgetFormViewModel @Inject constructor(
 
     fun onPeriodChange(period: BudgetPeriod) {
         _formState.update { it.copy(period = period) }
+    }
+
+    /** Calcule et applique les dates littérales du raccourci (voir [QuickDateRange], doc de tête :
+     * figées à l'appel, ne "glissent" plus ensuite). */
+    fun onQuickRangeSelected(range: QuickDateRange) {
+        val (start, end) = range.toDateRange()
+        _formState.update {
+            it.copy(
+                quickRange = range,
+                startDate = DatePeriods.toEpochMillis(start),
+                endDate = DatePeriods.toEpochMillis(end),
+                dateError = null
+            )
+        }
+    }
+
+    /** "Personnalisée" : ne touche pas aux dates déjà choisies, seulement à l'état visuel du
+     * ToggleGroup (voir `BudgetFormFragment.render`) — l'utilisateur les affine ensuite via
+     * [onStartDateChange]/[onEndDateChange]. */
+    fun onCustomRangeSelected() {
+        _formState.update { it.copy(quickRange = null) }
+    }
+
+    /** Une modification manuelle d'une date invalide tout raccourci actif : voir [onQuickRangeSelected]. */
+    fun onStartDateChange(millis: Long) {
+        _formState.update { it.copy(startDate = millis, quickRange = null, dateError = null) }
+    }
+
+    fun onEndDateChange(millis: Long) {
+        _formState.update { it.copy(endDate = millis, quickRange = null, dateError = null) }
     }
 
     fun onLimitChange(value: String) {
@@ -121,6 +178,20 @@ class BudgetFormViewModel @Inject constructor(
             _formState.update { it.copy(limitError = "Plafond invalide") }
             return
         }
+        // Récurrent (legacy) : aucune date à valider, period fait foi (voir isLegacyRecurring).
+        val dateError = if (!state.isLegacyRecurring) {
+            when {
+                state.startDate == null || state.endDate == null -> "Choisis une période"
+                state.endDate < state.startDate -> "La date de fin doit être après ou égale à la date de début"
+                else -> null
+            }
+        } else {
+            null
+        }
+        if (dateError != null) {
+            _formState.update { it.copy(dateError = dateError) }
+            return
+        }
 
         viewModelScope.launch {
             budgetRepository.saveBudget(
@@ -130,7 +201,9 @@ class BudgetFormViewModel @Inject constructor(
                     period = state.period,
                     limitAmount = limitMinor,
                     currencyCode = state.currencyCode,
-                    createdAt = state.createdAt ?: System.currentTimeMillis()
+                    createdAt = state.createdAt ?: System.currentTimeMillis(),
+                    startDate = if (state.isLegacyRecurring) null else state.startDate,
+                    endDate = if (state.isLegacyRecurring) null else state.endDate
                 )
             )
             _events.emit(BudgetFormEvent.Saved)
@@ -144,6 +217,15 @@ class BudgetFormViewModel @Inject constructor(
             _events.emit(BudgetFormEvent.Deleted)
         }
     }
+
+    /**
+     * Un budget "occupe" sa catégorie tant qu'il n'est pas Terminé : toujours vrai pour un budget
+     * récurrent legacy ([BudgetPeriodStatus.of] retourne `null`, voir sa doc), vrai pour À venir et
+     * En cours sinon — seul [BudgetPeriodStatus.COMPLETED] libère la catégorie. Même statut que
+     * celui affiché sur la carte de la liste (voir `BudgetAdapter`) : pas de règle dupliquée.
+     */
+    private fun isActive(budget: Budget, today: LocalDate = LocalDate.now()): Boolean =
+        BudgetPeriodStatus.of(budget.startDate, budget.endDate, today) != BudgetPeriodStatus.COMPLETED
 
     private companion object {
         const val BUDGET_ID_ARG = "budgetId"

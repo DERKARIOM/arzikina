@@ -21,6 +21,13 @@ object DatePeriods {
     fun toLocalDate(epochMillis: Long): LocalDate =
         Instant.ofEpochMilli(epochMillis).atZone(ZoneId.systemDefault()).toLocalDate()
 
+    /** Réciproque de [toLocalDate] : début de journée, fuseau local — même convention que
+     * `FinancialPlanFormFragment.showDatePicker`/`RecurringTransactionFormFragment.showDatePicker`,
+     * réutilisée telle quelle pour les dates de période fixe d'un budget (voir
+     * [com.arzikina.ne.util.QuickDateRange]). */
+    fun toEpochMillis(date: LocalDate): Long =
+        date.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+
     /** Voir [toLocalDate] : même conversion, pour l'heure (ex. "12:30" sur une ligne de transaction). */
     fun toLocalTime(epochMillis: Long): LocalTime =
         Instant.ofEpochMilli(epochMillis).atZone(ZoneId.systemDefault()).toLocalTime()

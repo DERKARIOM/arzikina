@@ -143,6 +143,10 @@ data class TransactionDto(
     val feeType: String? = null
 )
 
+/** [startDate]/[endDate] : période fixe, absents (`null` par défaut) dans toute sauvegarde créée
+ * avant la fonctionnalité "période fixe" — voir [BudgetEntity][com.arzikina.ne.data.local.entity.BudgetEntity]/
+ * [Budget][com.arzikina.ne.domain.model.Budget]. Valeurs par défaut indispensables ici : sans elles,
+ * la désérialisation d'une ancienne sauvegarde (JSON sans ces deux clés) échouerait. */
 @Serializable
 data class BudgetDto(
     val id: Long,
@@ -150,7 +154,9 @@ data class BudgetDto(
     val period: String,
     val limitAmount: Long,
     val currencyCode: String,
-    val createdAt: Long
+    val createdAt: Long,
+    val startDate: Long? = null,
+    val endDate: Long? = null
 )
 
 @Serializable

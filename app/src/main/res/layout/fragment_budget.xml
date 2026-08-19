@@ -15,6 +15,70 @@
         app:title="@string/nav_budget"
         app:titleTextColor="?attr/colorOnSurface" />
 
+    <!-- Filtre optionnel par statut (voir cahier des charges, section filtres) : même principe que
+         quickRangeGroup de fragment_budget_form.xml (HorizontalScrollView pour éviter le
+         débordement sur petit écran, 4 libellés). Toujours affiché, y compris quand la liste ne
+         contient que des budgets récurrents legacy (voir BudgetStatusFilterOption, doc de tête) —
+         seul "Tous" aurait alors un effet visible, ce qui reste cohérent sans logique
+         supplémentaire pour le masquer. -->
+    <HorizontalScrollView
+        android:id="@+id/statusFilterScroll"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/spacing_s"
+        android:clipToPadding="false"
+        android:paddingHorizontal="@dimen/spacing_m"
+        android:scrollbars="none"
+        app:layout_constraintTop_toBottomOf="@id/toolbar">
+
+        <com.google.android.material.button.MaterialButtonToggleGroup
+            android:id="@+id/statusFilterGroup"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:selectionRequired="true"
+            app:singleSelection="true">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/statusFilterAll"
+                style="?attr/materialButtonOutlinedStyle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:checkable="true"
+                android:checked="true"
+                android:text="@string/budget_filter_all"
+                android:textSize="12sp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/statusFilterUpcoming"
+                style="?attr/materialButtonOutlinedStyle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:checkable="true"
+                android:text="@string/budget_filter_upcoming"
+                android:textSize="12sp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/statusFilterOngoing"
+                style="?attr/materialButtonOutlinedStyle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:checkable="true"
+                android:text="@string/budget_filter_ongoing"
+                android:textSize="12sp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/statusFilterCompleted"
+                style="?attr/materialButtonOutlinedStyle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:checkable="true"
+                android:text="@string/budget_filter_completed"
+                android:textSize="12sp" />
+
+        </com.google.android.material.button.MaterialButtonToggleGroup>
+
+    </HorizontalScrollView>
+
     <TextView
         android:id="@+id/emptyState"
         style="@style/TextAppearance.Material3.BodyMedium"
@@ -28,7 +92,7 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toBottomOf="@id/statusFilterScroll" />
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/budgetsList"
@@ -39,7 +103,7 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/toolbar"
+        app:layout_constraintTop_toBottomOf="@id/statusFilterScroll"
         tools:listitem="@layout/item_budget" />
 
     <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton

@@ -34,9 +34,6 @@ class BudgetRepositoryImpl @Inject constructor(
     override suspend fun getBudget(id: Long): Budget? =
         withContext(ioDispatcher) { budgetDao.getById(id, requireCurrentUserId())?.toDomain() }
 
-    override suspend fun getBudgetForCategory(categoryId: Long): Budget? =
-        withContext(ioDispatcher) { budgetDao.getByCategoryId(categoryId, requireCurrentUserId())?.toDomain() }
-
     override suspend fun saveBudget(budget: Budget) =
         withContext(ioDispatcher) { budgetDao.upsert(budget.toEntity(requireCurrentUserId())) }
 

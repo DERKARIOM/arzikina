@@ -83,6 +83,9 @@ import com.arzikina.ne.data.local.entity.UserEntity
  *   (voir [MIGRATION_17_18]/[FinancialPlanEntity]/[FinancialPlanItemEntity]) — fonctionnalité
  *   INDÉPENDANTE de "Automatisation" (ex-"Planification", transactions récurrentes, tables
  *   `recurring_transactions`/`recurring_transaction_occurrences` de la version 14).
+ * - 19 : Période fixe (`startDate`/`endDate`) pour un budget, en plus du mode récurrent existant
+ *   (voir [MIGRATION_18_19]/[BudgetEntity]/[com.arzikina.ne.domain.model.Budget]) ; index
+ *   `categoryId` de `budgets` devenu non unique (plusieurs budgets successifs par catégorie).
  */
 @Database(
     entities = [
@@ -101,7 +104,7 @@ import com.arzikina.ne.data.local.entity.UserEntity
         FinancialPlanEntity::class,
         FinancialPlanItemEntity::class
     ],
-    version = 18,
+    version = 19,
     exportSchema = true
 )
 @TypeConverters(Converters::class)

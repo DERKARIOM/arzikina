@@ -17,16 +17,6 @@ interface BudgetDao {
     @Query("SELECT * FROM budgets WHERE id = :id AND userId = :userId")
     suspend fun getById(id: Long, userId: Long): BudgetEntity?
 
-    /**
-     * Filtre `userId` ajouté par cohérence avec le reste de ce DAO (défense en
-     * profondeur), même si `categoryId` référence déjà une catégorie
-     * appartenant à un seul utilisateur (voir `BudgetEntity`) : aucune requête
-     * de ce DAO ne doit dépendre implicitement de l'unicité d'un id étranger
-     * pour rester isolée par utilisateur.
-     */
-    @Query("SELECT * FROM budgets WHERE categoryId = :categoryId AND userId = :userId")
-    suspend fun getByCategoryId(categoryId: Long, userId: Long): BudgetEntity?
-
     @Upsert
     suspend fun upsert(budget: BudgetEntity)
 

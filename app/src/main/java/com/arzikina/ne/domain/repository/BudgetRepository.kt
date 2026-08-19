@@ -13,9 +13,6 @@ interface BudgetRepository {
 
     suspend fun getBudget(id: Long): Budget?
 
-    /** Utilisé par le formulaire pour n'autoriser qu'un budget actif par catégorie. */
-    suspend fun getBudgetForCategory(categoryId: Long): Budget?
-
     /** Crée le budget si [Budget.id] vaut 0, le met à jour sinon. */
     suspend fun saveBudget(budget: Budget)
 

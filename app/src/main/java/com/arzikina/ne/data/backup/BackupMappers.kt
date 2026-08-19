@@ -190,7 +190,9 @@ fun BudgetEntity.toDto() = BudgetDto(
     period = period.name,
     limitAmount = limitAmount,
     currencyCode = currencyCode,
-    createdAt = createdAt
+    createdAt = createdAt,
+    startDate = startDate,
+    endDate = endDate
 )
 
 fun BudgetDto.toEntity(userId: Long) = BudgetEntity(
@@ -200,11 +202,15 @@ fun BudgetDto.toEntity(userId: Long) = BudgetEntity(
     period = runCatching { BudgetPeriod.valueOf(period) }.getOrDefault(BudgetPeriod.MONTHLY),
     limitAmount = limitAmount,
     currencyCode = currencyCode,
-    createdAt = createdAt
+    createdAt = createdAt,
+    startDate = startDate,
+    endDate = endDate
 )
 
-/** Voir la doc de tête de ce fichier. `categoryId` obligatoire (voir `BudgetEntity`, index unique) :
- * `getValue` échoue bruyamment si absent de [categoryIdMap] (fichier corrompu). */
+/** Voir la doc de tête de ce fichier. `categoryId` obligatoire : `getValue` échoue bruyamment si
+ * absent de [categoryIdMap] (fichier corrompu) — reste vrai même si l'index `categoryId` de
+ * `BudgetEntity` n'est plus unique depuis la version 19 (période fixe), une catégorie appartient
+ * toujours à un seul utilisateur (voir `BudgetEntity`). */
 fun BudgetDto.remapIds(newId: Long, categoryIdMap: Map<Long, Long>): BudgetDto = copy(
     id = newId,
     categoryId = categoryIdMap.getValue(categoryId)

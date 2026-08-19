@@ -16,6 +16,7 @@ import com.arzikina.ne.presentation.components.ConfirmDialogs
 import com.arzikina.ne.presentation.components.NavAnimations
 import com.arzikina.ne.util.AppResult
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 
 /**
@@ -41,10 +42,15 @@ class BudgetFragment : Fragment(R.layout.fragment_budget) {
         viewBinding.budgetsList.layoutManager = LinearLayoutManager(requireContext())
         viewBinding.budgetsList.adapter = adapter
         viewBinding.addBudgetButton.setOnClickListener { navigateToForm(budgetId = 0L) }
+        setUpStatusFilter(viewBinding)
 
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.uiState.collect { state -> render(state) }
+                combine(
+                    viewModel.uiState,
+                    viewModel.statusFilter
+                ) { state, filter -> state to filter }
+                    .collect { (state, filter) -> render(state, filter) }
             }
         }
     }
@@ -54,13 +60,35 @@ class BudgetFragment : Fragment(R.layout.fragment_budget) {
         binding = null
     }
 
-    private fun render(state: AppResult<List<BudgetUiItem>>) {
+    private fun setUpStatusFilter(binding: FragmentBudgetBinding) {
+        binding.statusFilterGroup.addOnButtonCheckedListener { _, checkedId, isChecked ->
+            if (!isChecked) return@addOnButtonCheckedListener
+            val filter = when (checkedId) {
+                R.id.statusFilterUpcoming -> BudgetStatusFilterOption.UPCOMING
+                R.id.statusFilterOngoing -> BudgetStatusFilterOption.ONGOING
+                R.id.statusFilterCompleted -> BudgetStatusFilterOption.COMPLETED
+                else -> BudgetStatusFilterOption.ALL
+            }
+            viewModel.onStatusFilterChange(filter)
+        }
+    }
+
+    private fun render(state: AppResult<List<BudgetUiItem>>, filter: BudgetStatusFilterOption) {
         val binding = binding ?: return
         if (state !is AppResult.Success) return
 
         val hasBudgets = state.data.isNotEmpty()
         binding.budgetsList.visibility = if (hasBudgets) View.VISIBLE else View.GONE
         binding.emptyState.visibility = if (hasBudgets) View.GONE else View.VISIBLE
+        // Filtre actif et liste vide : message distinct de l'état vide "aucun budget du tout",
+        // pour ne pas laisser penser à l'utilisateur qu'il n'a jamais créé de budget.
+        binding.emptyState.text = getString(
+            if (!hasBudgets && filter != BudgetStatusFilterOption.ALL) {
+                R.string.budgets_empty_message_filtered
+            } else {
+                R.string.budgets_empty_message
+            }
+        )
         adapter.submitList(state.data)
     }
 

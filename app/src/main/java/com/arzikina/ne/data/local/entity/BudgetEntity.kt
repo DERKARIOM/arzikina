@@ -14,13 +14,18 @@ import com.arzikina.ne.domain.model.BudgetPeriod
  *   (`NO_ACTION`, une transaction a une valeur historique à préserver), un
  *   budget n'est qu'une règle de plafond sans valeur propre une fois sa
  *   catégorie supprimée.
- * - Index `unique` sur `categoryId` : un seul budget actif par catégorie
- *   (voir [Budget]). La couche presentation doit vérifier
- *   [BudgetDao.getByCategoryId] avant de proposer la création d'un budget.
- *   Reste valable telle quelle en multi-utilisateurs : une catégorie
- *   (identifiant auto-généré) appartient déjà à un seul utilisateur, deux
- *   personnes ne peuvent donc jamais partager le même `categoryId`.
+ * - Index sur `categoryId` : **non unique depuis la version 19** (voir
+ *   [com.arzikina.ne.data.local.database.MIGRATION_18_19]). Avant cette
+ *   version, un seul budget existait jamais par catégorie ; la fonctionnalité
+ *   "période fixe" autorise désormais plusieurs budgets successifs sur la
+ *   même catégorie (ex. "Alimentation" d'août, puis "Alimentation" de
+ *   septembre). La règle "un seul budget **actif** par catégorie" (À venir ou
+ *   En cours) reste appliquée, mais uniquement côté présentation (voir
+ *   `BudgetFormViewModel.availableCategories`), plus en base.
  * - [userId] : voir [AccountEntity] (pas de contrainte SQL vers `users`).
+ * - [startDate]/[endDate] : `null` pour un budget récurrent (legacy, voir
+ *   [Budget]), tous deux non nuls pour un budget à période fixe. Jamais un
+ *   seul des deux renseigné.
  */
 @Entity(
     tableName = "budgets",
@@ -32,7 +37,7 @@ import com.arzikina.ne.domain.model.BudgetPeriod
             onDelete = ForeignKey.CASCADE
         )
     ],
-    indices = [Index("categoryId", unique = true), Index("userId")]
+    indices = [Index("categoryId"), Index("userId")]
 )
 data class BudgetEntity(
     @PrimaryKey(autoGenerate = true)
@@ -42,5 +47,7 @@ data class BudgetEntity(
     val period: BudgetPeriod,
     val limitAmount: Long,
     val currencyCode: String,
-    val createdAt: Long
+    val createdAt: Long,
+    val startDate: Long? = null,
+    val endDate: Long? = null
 )

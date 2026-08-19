@@ -8,8 +8,12 @@ import com.arzikina.ne.domain.model.TransactionType
 import java.time.LocalDate
 
 /**
- * Calcul du montant dépensé et de la progression d'un [Budget] sur sa période
- * en cours (semaine ou mois civil, voir [Budget.period]).
+ * Calcul du montant dépensé et de la progression d'un [Budget] sur sa période.
+ *
+ * Deux modes (voir [Budget], doc de tête) : si [Budget.startDate]/[Budget.endDate] sont renseignés
+ * (période fixe), les dépenses comptées sont bornées par ces dates exactes, [Budget.period] est
+ * alors ignoré ; sinon (budget récurrent legacy), comportement inchangé — semaine/mois civil EN
+ * COURS, recalculé à chaque affichage.
  *
  * Centralisé ici plutôt que dupliqué : cette même règle est utilisée par
  * [com.arzikina.ne.presentation.budget.BudgetViewModel] (écran Budget) et par
@@ -36,10 +40,21 @@ object BudgetProgress {
             .asSequence()
             .filter { it.categoryId == budget.categoryId && it.type == TransactionType.EXPENSE }
             .filter { accountsById[it.accountId]?.currencyCode == budget.currencyCode }
-            .filter { isInCurrentPeriod(it.date, budget.period, today) }
+            .filter { isInBudgetPeriod(it.date, budget, today) }
             .sumOf { it.amount }
         val progress = if (budget.limitAmount > 0L) spent.toFloat() / budget.limitAmount.toFloat() else 0f
         return Result(spent, progress)
+    }
+
+    private fun isInBudgetPeriod(dateMillis: Long, budget: Budget, today: LocalDate): Boolean {
+        val startDate = budget.startDate
+        val endDate = budget.endDate
+        return if (startDate != null && endDate != null) {
+            val date = DatePeriods.toLocalDate(dateMillis)
+            !date.isBefore(DatePeriods.toLocalDate(startDate)) && !date.isAfter(DatePeriods.toLocalDate(endDate))
+        } else {
+            isInCurrentPeriod(dateMillis, budget.period, today)
+        }
     }
 
     private fun isInCurrentPeriod(dateMillis: Long, period: BudgetPeriod, today: LocalDate): Boolean =

@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="?attr/colorSurface">
@@ -56,21 +57,30 @@
                 android:textColor="?attr/colorOnSurfaceVariant"
                 android:visibility="gone" />
 
+            <!-- Récurrent (legacy) — visible UNIQUEMENT en édition d'un budget créé avant la
+                 fonctionnalité "période fixe" (voir BudgetFormState.isLegacyRecurring/
+                 BudgetFormFragment.render) : un budget récurrent existant garde ce même contrôle,
+                 jamais converti automatiquement en période fixe. Absent pour tout nouveau budget. -->
             <TextView
+                android:id="@+id/periodLabel"
                 style="@style/TextAppearance.Material3.LabelLarge"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/spacing_l"
                 android:text="@string/budget_form_period_label"
-                android:textColor="?attr/colorOnSurfaceVariant" />
+                android:textColor="?attr/colorOnSurfaceVariant"
+                android:visibility="gone"
+                tools:visibility="visible" />
 
             <com.google.android.material.button.MaterialButtonToggleGroup
                 android:id="@+id/periodGroup"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/spacing_s"
+                android:visibility="gone"
                 app:selectionRequired="true"
-                app:singleSelection="true">
+                app:singleSelection="true"
+                tools:visibility="visible">
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/periodWeekly"
@@ -92,6 +102,136 @@
                     android:text="@string/budget_period_monthly" />
 
             </com.google.android.material.button.MaterialButtonToggleGroup>
+
+            <!-- Période fixe — visible pour tout nouveau budget, et en édition d'un budget déjà à
+                 période fixe (mutuellement exclusif avec le bloc récurrent ci-dessus, voir
+                 BudgetFormFragment.render). app:selectionRequired="false" : aucun bouton coché tant
+                 que l'utilisateur n'a rien choisi (nouveau budget), contrairement à periodGroup qui a
+                 toujours une valeur par défaut (MONTHLY). -->
+            <TextView
+                android:id="@+id/quickRangeLabel"
+                style="@style/TextAppearance.Material3.LabelLarge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_l"
+                android:text="@string/budget_form_quick_select_label"
+                android:textColor="?attr/colorOnSurfaceVariant" />
+
+            <!-- HorizontalScrollView : 5 boutons en wrap_content débordent sur petit écran
+                 (MaterialButtonToggleGroup ne passe pas à la ligne automatiquement, contrairement à
+                 accountsTabGroup de fragment_accounts.xml qui n'en a que 3 en layout_weight="1") —
+                 défilement plutôt que texte tronqué ou boutons écrasés. -->
+            <HorizontalScrollView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_s"
+                android:clipToPadding="false"
+                android:scrollbars="none">
+
+                <com.google.android.material.button.MaterialButtonToggleGroup
+                    android:id="@+id/quickRangeGroup"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    app:selectionRequired="false"
+                    app:singleSelection="true">
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/quickRangeThisWeek"
+                        style="?attr/materialButtonOutlinedStyle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:checkable="true"
+                        android:text="@string/budget_quick_range_this_week"
+                        android:textSize="12sp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/quickRangeThisMonth"
+                        style="?attr/materialButtonOutlinedStyle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:checkable="true"
+                        android:text="@string/budget_quick_range_this_month"
+                        android:textSize="12sp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/quickRangeNextMonth"
+                        style="?attr/materialButtonOutlinedStyle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:checkable="true"
+                        android:text="@string/budget_quick_range_next_month"
+                        android:textSize="12sp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/quickRangeThisYear"
+                        style="?attr/materialButtonOutlinedStyle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:checkable="true"
+                        android:text="@string/budget_quick_range_this_year"
+                        android:textSize="12sp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/quickRangeCustom"
+                        style="?attr/materialButtonOutlinedStyle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:checkable="true"
+                        android:text="@string/budget_quick_range_custom"
+                        android:textSize="12sp" />
+
+                </com.google.android.material.button.MaterialButtonToggleGroup>
+
+            </HorizontalScrollView>
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/startDateRow"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_m"
+                android:checkable="false"
+                android:clickable="true"
+                android:focusable="true"
+                android:theme="@style/ThemeOverlay.Arzikina.OnBalanceCard"
+                app:cardBackgroundColor="@color/arzikina_postcart_background"
+                app:cardCornerRadius="@dimen/corner_radius_medium"
+                app:cardElevation="@dimen/elevation_raised">
+
+                <include
+                    android:id="@+id/startDateField"
+                    layout="@layout/item_date_field" />
+
+            </com.google.android.material.card.MaterialCardView>
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/endDateRow"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_m"
+                android:checkable="false"
+                android:clickable="true"
+                android:focusable="true"
+                android:theme="@style/ThemeOverlay.Arzikina.OnBalanceCard"
+                app:cardBackgroundColor="@color/arzikina_postcart_background"
+                app:cardCornerRadius="@dimen/corner_radius_medium"
+                app:cardElevation="@dimen/elevation_raised">
+
+                <include
+                    android:id="@+id/endDateField"
+                    layout="@layout/item_date_field" />
+
+            </com.google.android.material.card.MaterialCardView>
+
+            <TextView
+                android:id="@+id/dateErrorText"
+                style="@style/TextAppearance.Material3.BodySmall"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:textColor="@color/expense_red"
+                android:visibility="gone"
+                tools:text="La date de fin doit être après ou égale à la date de début"
+                tools:visibility="visible" />
 
             <!-- Postcard — voir descriptionLayout de fragment_transaction_form.xml
                  ("harmonisation des champs de saisie"). -->

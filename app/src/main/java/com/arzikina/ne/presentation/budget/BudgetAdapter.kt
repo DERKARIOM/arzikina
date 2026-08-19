@@ -12,8 +12,10 @@ import com.arzikina.ne.databinding.ItemBudgetBinding
 import com.arzikina.ne.domain.model.BudgetPeriod
 import com.arzikina.ne.domain.model.CurrencyAmount
 import com.arzikina.ne.presentation.categories.CategoryIconMapper
+import com.arzikina.ne.util.BudgetPeriodStatus
 import com.arzikina.ne.util.DatePeriods
 import com.arzikina.ne.util.Money
+import com.arzikina.ne.util.daysRemaining
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
@@ -53,9 +55,21 @@ class BudgetAdapter(
             binding.categoryName.text = category?.name
                 ?: context.getString(R.string.transaction_uncategorized)
 
-            val periodText = context.getString(
-                if (item.budget.period == BudgetPeriod.WEEKLY) R.string.budget_period_weekly else R.string.budget_period_monthly
-            )
+            val today = LocalDate.now()
+            val status = BudgetPeriodStatus.of(item.budget.startDate, item.budget.endDate, today)
+
+            // Plage de dates courte (même format "d MMM" que l'ancienne ligne "Expire le ...", voir
+            // EXPIRATION_DATE_FORMATTER) si période fixe, sinon comportement inchangé (Hebdomadaire/
+            // Mensuel) pour un budget récurrent legacy — voir Budget, doc de tête.
+            val periodText = if (status != null) {
+                val start = DatePeriods.toLocalDate(item.budget.startDate!!)
+                val end = DatePeriods.toLocalDate(item.budget.endDate!!)
+                "${start.format(EXPIRATION_DATE_FORMATTER)} - ${end.format(EXPIRATION_DATE_FORMATTER)}"
+            } else {
+                context.getString(
+                    if (item.budget.period == BudgetPeriod.WEEKLY) R.string.budget_period_weekly else R.string.budget_period_monthly
+                )
+            }
             val limitText = Money.format(CurrencyAmount(item.budget.currencyCode, item.budget.limitAmount))
             binding.periodLabel.text = context.getString(R.string.budget_item_subtitle, periodText, limitText)
 
@@ -76,20 +90,35 @@ class BudgetAdapter(
                 ContextCompat.getColor(context, if (isOverspent) R.color.expense_red else R.color.arzikina_on_surface_variant)
             )
 
-            val today = LocalDate.now()
-            val periodEnd = DatePeriods.currentPeriodEnd(item.budget.period, today)
-            val daysUntilExpiration = ChronoUnit.DAYS.between(today, periodEnd)
-            val isExpiringSoon = daysUntilExpiration <= EXPIRATION_WARNING_THRESHOLD_DAYS
-            binding.expirationLabel.text = context.getString(
-                R.string.budget_expires_prefix,
-                periodEnd.format(EXPIRATION_DATE_FORMATTER)
-            )
-            val expirationColor = ContextCompat.getColor(
-                context,
-                if (isExpiringSoon) R.color.expense_red else R.color.arzikina_on_surface_variant
-            )
-            binding.expirationLabel.setTextColor(expirationColor)
-            binding.expirationIcon.setColorFilter(expirationColor)
+            // Ligne "statut" : "Jours restants" automatique (voir BudgetPeriodStatus) pour un budget
+            // à période fixe, comportement "Expire le ..." INCHANGÉ pour un budget récurrent legacy
+            // (status == null, voir la doc de tête du bloc periodText ci-dessus).
+            val (expirationText, expirationColor) = if (status != null) {
+                when (status) {
+                    BudgetPeriodStatus.COMPLETED ->
+                        context.getString(R.string.budget_status_completed) to R.color.arzikina_on_surface_variant
+                    BudgetPeriodStatus.UPCOMING -> {
+                        val daysUntilStart = ChronoUnit.DAYS.between(today, DatePeriods.toLocalDate(item.budget.startDate!!))
+                        context.getString(R.string.budget_status_upcoming_days, daysUntilStart) to R.color.arzikina_on_surface_variant
+                    }
+                    BudgetPeriodStatus.ONGOING -> {
+                        val remaining = daysRemaining(item.budget.endDate!!, today)
+                        val isExpiringSoon = remaining <= EXPIRATION_WARNING_THRESHOLD_DAYS
+                        val color = if (isExpiringSoon) R.color.expense_red else R.color.arzikina_on_surface_variant
+                        context.getString(R.string.budget_status_ongoing_days, remaining) to color
+                    }
+                }
+            } else {
+                val periodEnd = DatePeriods.currentPeriodEnd(item.budget.period, today)
+                val daysUntilExpiration = ChronoUnit.DAYS.between(today, periodEnd)
+                val isExpiringSoon = daysUntilExpiration <= EXPIRATION_WARNING_THRESHOLD_DAYS
+                val color = if (isExpiringSoon) R.color.expense_red else R.color.arzikina_on_surface_variant
+                context.getString(R.string.budget_expires_prefix, periodEnd.format(EXPIRATION_DATE_FORMATTER)) to color
+            }
+            binding.expirationLabel.text = expirationText
+            val expirationTextColor = ContextCompat.getColor(context, expirationColor)
+            binding.expirationLabel.setTextColor(expirationTextColor)
+            binding.expirationIcon.setColorFilter(expirationTextColor)
 
             binding.root.setOnClickListener { onClick(item) }
             binding.deleteButton.setOnClickListener { onDeleteClick(item) }
