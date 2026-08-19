@@ -68,6 +68,15 @@ class AccountsFragment : Fragment(R.layout.fragment_accounts) {
         viewBinding.accountsList.adapter = adapter
         viewBinding.planningList.layoutManager = LinearLayoutManager(requireContext())
         viewBinding.planningList.adapter = financialPlansAdapter
+        // Changer d'onglet remplace la liste par un jeu d'ids ENTIÈREMENT différent (comptes vs
+        // cartes bancaires, voir AccountUiItem.matchesTab) : DiffUtil traite donc ça comme "tout
+        // supprimer, tout ajouter", ce qui déclenche les animations d'ajout/suppression par défaut
+        // de RecyclerView (DefaultItemAnimator) EN PLUS de notre propre fondu sur `accountsContent`
+        // (voir animateTabSwitch) — les deux animations se superposent avec des durées/courbes
+        // différentes, d'où le clignotement observé. On désactive l'animateur d'item ici : le
+        // fondu du conteneur suffit déjà à habiller le changement de contenu.
+        viewBinding.accountsList.itemAnimator = null
+        viewBinding.planningList.itemAnimator = null
         viewBinding.addAccountButton.setOnClickListener { navigateToForm() }
         viewBinding.planningEmptyAction.setOnClickListener { navigateToFinancialPlanForm() }
 
@@ -123,9 +132,14 @@ class AccountsFragment : Fragment(R.layout.fragment_accounts) {
     }
 
     /** Synchronise le bouton coché (utile si l'onglet a été mémorisé par le ViewModel avant que
-     * la vue ne soit recréée, ex. retour depuis "Détail du compte") et le message d'écran vide,
-     * puis refiltre la liste déjà en mémoire — aucun rechargement de données. N'anime QUE lors
-     * d'un changement d'onglet réel (voir [lastRenderedTab]), jamais au tout premier affichage. */
+     * la vue ne soit recréée, ex. retour depuis "Détail du compte") — TOUJOURS immédiat, c'est le
+     * retour visuel standard d'un ToggleGroup au moment même du tap. Le reste (libellé du bouton
+     * d'ajout, texte de l'état vide, contenu de la liste, voir [applyTabContent]) est en revanche
+     * différé au creux du fondu lors d'un changement d'onglet réel (voir [lastRenderedTab]),
+     * jamais au tout premier affichage — sans ce report, ces éléments changeaient jusqu'ici
+     * instantanément, AVANT même que l'ancien contenu ait commencé à disparaître, provoquant un
+     * flash visible (bug signalé : "erreur d'animation" sur Comptes/Cartes bancaires, les deux
+     * onglets qui partagent `emptyState`). */
     private fun renderTab(binding: FragmentAccountsBinding, tab: AccountsDisplayTab) {
         val checkedId = when (tab) {
             AccountsDisplayTab.BANK_CARDS -> R.id.btnBankCards
@@ -135,11 +149,30 @@ class AccountsFragment : Fragment(R.layout.fragment_accounts) {
         if (binding.accountsTabGroup.checkedButtonId != checkedId) {
             binding.accountsTabGroup.check(checkedId)
         }
+
+        val previousTab = lastRenderedTab
+        lastRenderedTab = tab
+        if (previousTab == null || previousTab == tab) {
+            applyTabContent(binding, tab)
+        } else {
+            // Sens de l'animation = sens de lecture des onglets (voir la doc de
+            // AccountsDisplayTab/animateTabSwitch) : Comptes(0) → Cartes bancaires(1) →
+            // Planification(2), dans l'ordre de déclaration de l'enum, réutilisé tel quel comme
+            // position plutôt qu'une table de positions séparée à maintenir en double.
+            animateTabSwitch(binding, tab, forward = tab.ordinal > previousTab.ordinal)
+        }
+    }
+
+    /**
+     * Tout ce qui doit changer "en même temps" pour un onglet donné : libellé du bouton d'ajout,
+     * texte de l'état vide (Comptes/Cartes bancaires uniquement — l'état vide de Planification a
+     * son propre texte fixe, voir `fragment_accounts.xml`), puis le contenu de la liste elle-même
+     * (voir [renderList]). Appelé soit immédiatement (premier affichage, voir [renderTab]), soit
+     * au creux du fondu (voir [animateTabSwitch]) — jamais entre les deux, pour qu'aucun de ces
+     * changements ne soit visible avant que l'ancien contenu ait fini de disparaître.
+     */
+    private fun applyTabContent(binding: FragmentAccountsBinding, tab: AccountsDisplayTab) {
         updateAddButtonLabel(binding, tab)
-        // L'écran vide de l'onglet Planification (planningEmptyState) est un layout dédié avec
-        // son propre texte fixe (voir fragment_accounts.xml) : rien à synchroniser ici pour ce
-        // troisième onglet, contrairement à emptyState (Comptes/Cartes bancaires) dont le texte
-        // dépend de l'onglet.
         if (tab != AccountsDisplayTab.PLANNING) {
             binding.emptyState.text = getString(
                 if (tab == AccountsDisplayTab.BANK_CARDS) {
@@ -149,18 +182,7 @@ class AccountsFragment : Fragment(R.layout.fragment_accounts) {
                 }
             )
         }
-
-        val previousTab = lastRenderedTab
-        lastRenderedTab = tab
-        if (previousTab == null || previousTab == tab) {
-            renderList(binding)
-        } else {
-            // Sens de l'animation = sens de lecture des onglets (voir la doc de
-            // AccountsDisplayTab/animateTabSwitch) : Comptes(0) → Cartes bancaires(1) →
-            // Planification(2), dans l'ordre de déclaration de l'enum, réutilisé tel quel comme
-            // position plutôt qu'une table de positions séparée à maintenir en double.
-            animateTabSwitch(binding, forward = tab.ordinal > previousTab.ordinal)
-        }
+        renderList(binding)
     }
 
     /**
@@ -187,15 +209,17 @@ class AccountsFragment : Fragment(R.layout.fragment_accounts) {
      * TOUTES les vues des 3 onglets (`accountsList`/`emptyState` pour Comptes/Cartes bancaires,
      * `planningList`/`planningEmptyState` pour Planification) : un seul alpha/translationX à
      * animer, pas plusieurs animations à coordonner sur des vues normalement mutuellement
-     * exclusives. `renderList` (qui recalcule juste un filtre/état en mémoire, aucun accès
-     * disque/réseau) s'exécute pendant le creux du fondu, jamais visible pour l'utilisateur.
+     * exclusives. [applyTabContent] (qui recalcule juste un filtre/état en mémoire, aucun accès
+     * disque/réseau — voir aussi le libellé du bouton d'ajout, hors de `accountsContent` mais
+     * changé au même instant pour rester synchronisé) s'exécute pendant le creux du fondu, jamais
+     * visible pour l'utilisateur tant que l'ancien contenu n'a pas fini de disparaître.
      *
      * [forward] : `true` quand on avance dans l'ordre des onglets (Comptes → Cartes bancaires →
      * Planification, voir [renderTab]) — l'ancien contenu sort vers la GAUCHE et le nouveau entre
      * depuis la DROITE ; `false` (on revient en arrière) inverse les deux sens. Même durée dans les
      * deux cas (les deux moitiés cumulées, 220ms, restent dans la fourchette 200-300ms demandée).
      */
-    private fun animateTabSwitch(binding: FragmentAccountsBinding, forward: Boolean) {
+    private fun animateTabSwitch(binding: FragmentAccountsBinding, tab: AccountsDisplayTab, forward: Boolean) {
         val content = binding.accountsContent
         content.animate().cancel()
         val slideDistance = resources.getDimension(R.dimen.spacing_m)
@@ -206,7 +230,7 @@ class AccountsFragment : Fragment(R.layout.fragment_accounts) {
             .translationX(exitTranslation)
             .setDuration(TAB_SWITCH_FADE_OUT_MS)
             .withEndAction {
-                renderList(binding)
+                applyTabContent(binding, tab)
                 content.translationX = enterFromTranslation
                 content.animate()
                     .alpha(1f)
