@@ -5,8 +5,11 @@ import androidx.lifecycle.viewModelScope
 import com.arzikina.ne.domain.model.AccountType
 import com.arzikina.ne.domain.repository.AccountRepository
 import com.arzikina.ne.domain.repository.AuthRepository
+import com.arzikina.ne.domain.repository.FinancialPlanRepository
 import com.arzikina.ne.domain.repository.SessionManager
 import com.arzikina.ne.domain.repository.TransactionRepository
+import com.arzikina.ne.presentation.utilities.financialplan.FinancialPlanUiItem
+import com.arzikina.ne.presentation.utilities.financialplan.buildFinancialPlanUiItems
 import com.arzikina.ne.util.AppResult
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -36,13 +39,25 @@ data class AccountsUiState(
  * filtre d'affichage sur [AccountType.CREDIT_CARD], le seul type déjà rendu comme une carte
  * bancaire visuelle (voir `AccountsAdapter`/`item_account_credit_card.xml`). Tous les autres
  * types (`CASH`, `BANK`, `MOBILE_MONEY`, `SAVINGS`) restent sous [ACCOUNTS].
+ *
+ * [PLANNING] : troisième onglet, données ENTIÈREMENT différentes (planifications financières, voir
+ * [financialPlans] ci-dessous) — ne filtre PAS la liste de comptes, voir [matchesTab] qui exclut
+ * volontairement tout compte de cet onglet.
+ *
+ * ORDRE DE DÉCLARATION SIGNIFICATIF : `AccountsFragment.animateTabSwitch` utilise directement
+ * `.ordinal` (0/1/2, dans cet ordre) comme position pour choisir le sens de l'animation de
+ * transition — ne pas réordonner ces 3 valeurs sans mettre à jour cette logique en conséquence.
  */
-enum class AccountsDisplayTab { ACCOUNTS, BANK_CARDS }
+enum class AccountsDisplayTab { ACCOUNTS, BANK_CARDS, PLANNING }
 
 /** Voir [AccountsDisplayTab] : un compte "correspond" à l'onglet Cartes bancaires si et
- * seulement s'il est de type [AccountType.CREDIT_CARD]. */
-fun AccountUiItem.matchesTab(tab: AccountsDisplayTab): Boolean =
-    (account.type == AccountType.CREDIT_CARD) == (tab == AccountsDisplayTab.BANK_CARDS)
+ * seulement s'il est de type [AccountType.CREDIT_CARD], à l'onglet Comptes sinon — jamais à
+ * l'onglet Planification (aucun compte ne s'y affiche, voir sa doc). */
+fun AccountUiItem.matchesTab(tab: AccountsDisplayTab): Boolean = when (tab) {
+    AccountsDisplayTab.BANK_CARDS -> account.type == AccountType.CREDIT_CARD
+    AccountsDisplayTab.ACCOUNTS -> account.type != AccountType.CREDIT_CARD
+    AccountsDisplayTab.PLANNING -> false
+}
 
 /**
  * État et actions de l'écran "Liste des comptes".
@@ -52,7 +67,8 @@ class AccountsViewModel @Inject constructor(
     accountRepository: AccountRepository,
     transactionRepository: TransactionRepository,
     authRepository: AuthRepository,
-    sessionManager: SessionManager
+    sessionManager: SessionManager,
+    financialPlanRepository: FinancialPlanRepository
 ) : ViewModel() {
 
     /**
@@ -93,8 +109,31 @@ class AccountsViewModel @Inject constructor(
             initialValue = AppResult.Loading
         )
 
+    /**
+     * Onglet "Planification" (voir [AccountsDisplayTab.PLANNING]) : flux INDÉPENDANT de [uiState]
+     * ci-dessus, sans aucun lien avec [AccountRepository]/[TransactionRepository] — mêmes
+     * planifications, même calcul que [com.arzikina.ne.presentation.utilities.financialplan.FinancialPlansViewModel.uiState]
+     * (voir [buildFinancialPlanUiItems], partagé pour ne pas dupliquer ce calcul une troisième
+     * fois). [FinancialPlanRepository] filtre déjà par utilisateur connecté (voir sa doc) : aucune
+     * planification d'un autre utilisateur ne peut apparaître ici, même garantie que partout
+     * ailleurs dans l'app.
+     */
+    val financialPlans: StateFlow<AppResult<List<FinancialPlanUiItem>>> = combine(
+        financialPlanRepository.observePlans(),
+        financialPlanRepository.observeAllItems()
+    ) { plans, allItems ->
+        buildFinancialPlanUiItems(plans, allItems)
+    }
+        .map<List<FinancialPlanUiItem>, AppResult<List<FinancialPlanUiItem>>> { AppResult.Success(it) }
+        .catch { throwable -> emit(AppResult.Error(throwable.message ?: "Erreur inconnue", throwable)) }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(stopTimeoutMillis = 5_000),
+            initialValue = AppResult.Loading
+        )
+
     /** Voir [AccountsDisplayTab] : appelé par `AccountsFragment` au clic sur `btnAccounts`/
-     * `btnBankCards`. */
+     * `btnBankCards`/`btnPlanning`. */
     fun onTabSelected(tab: AccountsDisplayTab) {
         _selectedTab.value = tab
     }

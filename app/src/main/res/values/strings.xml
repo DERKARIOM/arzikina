@@ -206,12 +206,27 @@
     <string name="accounts_title">Mes comptes</string>
     <string name="accounts_add">Ajouter</string>
     <!-- ToggleGroup en haut de l'écran Comptes (voir accountsTabGroup, fragment_accounts.xml) :
-         filtre purement visuel de la même liste déjà chargée (AccountType.CREDIT_CARD vs le
-         reste), aucune nouvelle donnée. -->
+         les 2 premiers onglets filtrent purement visuellement la même liste déjà chargée
+         (AccountType.CREDIT_CARD vs le reste), aucune nouvelle donnée. Le 3e onglet
+         (accounts_tab_planning) affiche un contenu entièrement différent (AccountsViewModel.
+         financialPlans) — voir accounts_tab_planning_empty_*/planningEmptyState ci-dessous. -->
     <string name="accounts_tab_accounts">Comptes</string>
     <string name="accounts_tab_bank_cards">Cartes bancaires</string>
+    <string name="accounts_tab_planning">Planification</string>
     <string name="accounts_empty_bank_cards_title">Aucune carte bancaire pour l\'instant</string>
     <string name="accounts_empty_bank_cards_message">Ajoute ta première carte bancaire pour la retrouver ici.</string>
+    <!-- État vide du 3e onglet "Planification" (voir planningEmptyState, fragment_accounts.xml) :
+         titre + sous-titre + action, plus riche que accounts_empty_message/_bank_cards_message
+         ci-dessus (demande explicite du cahier des charges pour cet onglet précis). -->
+    <string name="accounts_tab_planning_empty_title">Aucune planification</string>
+    <string name="accounts_tab_planning_empty_subtitle">Créez votre première planification pour organiser vos dépenses et vos projets.</string>
+    <string name="accounts_tab_planning_empty_action">Créer une planification</string>
+    <!-- Bouton d'ajout adaptatif (addAccountButton, voir AccountsFragment.updateAddButtonLabel) :
+         un texte par onglet ("financial_plan_form_title_add" — "Nouvelle planification" — est
+         réutilisé tel quel pour l'onglet Planification, même chaîne que le titre du formulaire de
+         création, pas de doublon). -->
+    <string name="accounts_add_action_accounts">Ajouter un compte</string>
+    <string name="accounts_add_action_bank_cards">Ajouter une carte bancaire</string>
     <!-- Libellé "type" affiché sur la carte de compte (voir AccountIconDisplay). -->
     <string name="account_type_cash">Espèces</string>
     <string name="account_type_bank">Banque</string>

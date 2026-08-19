@@ -19,20 +19,29 @@
         app:titleTextColor="?attr/colorOnSurface" />
 
     <!--
-        Bascule purement visuelle Comptes/Cartes bancaires (voir AccountsFragment.setUpTabGroup) :
-        filtre la même liste déjà chargée par AccountsViewModel selon AccountType.CREDIT_CARD,
-        aucune nouvelle donnée ni nouvel écran. Sélectionné = fond @color/arzikina_primary plein +
+        Bascule purement visuelle Comptes/Cartes bancaires/Planification (voir
+        AccountsFragment.setUpTabGroup) : les deux premiers boutons filtrent la même liste déjà
+        chargée par AccountsViewModel.uiState selon AccountType.CREDIT_CARD (aucune nouvelle
+        donnée) ; le troisième affiche AccountsViewModel.financialPlans, un flux entièrement
+        séparé (voir sa doc) — toujours aucun nouvel écran, juste un contenu différent dans le même
+        conteneur accountsContent ci-dessous. Sélectionné = fond @color/arzikina_primary plein +
         texte blanc, non sélectionné = fond discret ?attr/colorSurfaceVariant (voir
         toggle_button_background_selector.xml/toggle_button_text_selector.xml) — même composant
         MaterialButtonToggleGroup que fragment_categories.xml, mais avec un style de sélection
         propre (fond plein, pas juste contour) conforme au cahier des charges.
+
+        android:layout_width="wrap_content" sur le groupe + poids égal sur les 3 boutons
+        (layout_width="0dp"/layout_weight="1") : sur petit écran, les 3 libellés se partagent la
+        largeur disponible plutôt que de déborder (voir aussi autoSizeTextType sur chaque bouton,
+        qui réduit le texte avant de tronquer si "Cartes bancaires" reste trop long).
     -->
     <com.google.android.material.button.MaterialButtonToggleGroup
         android:id="@+id/accountsTabGroup"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginStart="@dimen/spacing_m"
+        android:layout_marginHorizontal="@dimen/spacing_m"
         android:layout_marginTop="@dimen/spacing_s"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/toolbar"
         app:selectionRequired="true"
@@ -41,10 +50,17 @@
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnAccounts"
             style="?attr/materialButtonOutlinedStyle"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:autoSizeMaxTextSize="14sp"
+            android:autoSizeMinTextSize="10sp"
+            android:autoSizeTextType="uniform"
             android:checkable="true"
             android:checked="true"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:paddingHorizontal="@dimen/spacing_xs"
             android:text="@string/accounts_tab_accounts"
             android:textColor="@color/toggle_button_text_selector"
             app:backgroundTint="@color/toggle_button_background_selector"
@@ -54,10 +70,36 @@
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnBankCards"
             style="?attr/materialButtonOutlinedStyle"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:autoSizeMaxTextSize="14sp"
+            android:autoSizeMinTextSize="10sp"
+            android:autoSizeTextType="uniform"
             android:checkable="true"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:paddingHorizontal="@dimen/spacing_xs"
             android:text="@string/accounts_tab_bank_cards"
+            android:textColor="@color/toggle_button_text_selector"
+            app:backgroundTint="@color/toggle_button_background_selector"
+            app:cornerRadius="@dimen/corner_radius_small"
+            app:strokeColor="?attr/colorOutline" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnPlanning"
+            style="?attr/materialButtonOutlinedStyle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:autoSizeMaxTextSize="14sp"
+            android:autoSizeMinTextSize="10sp"
+            android:autoSizeTextType="uniform"
+            android:checkable="true"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:paddingHorizontal="@dimen/spacing_xs"
+            android:text="@string/accounts_tab_planning"
             android:textColor="@color/toggle_button_text_selector"
             app:backgroundTint="@color/toggle_button_background_selector"
             app:cornerRadius="@dimen/corner_radius_small"
@@ -66,10 +108,11 @@
     </com.google.android.material.button.MaterialButtonToggleGroup>
 
     <!--
-        Conteneur des deux vues normalement mutuellement exclusives (emptyState / accountsList) —
-        voir AccountsFragment.animateTabSwitch : un FrameLayout regroupant les deux permet
-        d'animer UN SEUL alpha/translationX lors du changement d'onglet, plutôt que de coordonner
-        deux animations séparées (source d'incohérence si l'une des deux vues est GONE).
+        Conteneur des vues normalement mutuellement exclusives (emptyState/accountsList pour les
+        onglets Comptes/Cartes bancaires, planningEmptyState/planningList pour Planification) —
+        voir AccountsFragment.animateTabSwitch : un FrameLayout regroupant tout permet d'animer UN
+        SEUL alpha/translationX lors du changement d'onglet, plutôt que de coordonner plusieurs
+        animations séparées (source d'incohérence si l'une des vues est GONE).
     -->
     <FrameLayout
         android:id="@+id/accountsContent"
@@ -99,6 +142,71 @@
             android:clipToPadding="false"
             android:paddingBottom="88dp"
             tools:listitem="@layout/item_account" />
+
+        <!--
+            Onglet "Planification" : état vide dédié (voir cahier des charges — titre + sous-titre
+            + action, plus riche que le simple `emptyState` texte des deux autres onglets) sur le
+            même modèle que budgetEmptyState/createBudgetAction de fragment_dashboard.xml (avant sa
+            simplification). planningEmptyAction ouvre financialPlanFormFragment (voir
+            AccountsFragment) — même destination que le FAB adaptatif de cet onglet.
+        -->
+        <LinearLayout
+            android:id="@+id/planningEmptyState"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:paddingHorizontal="@dimen/spacing_l"
+            android:visibility="gone"
+            tools:visibility="visible">
+
+            <TextView
+                style="@style/TextAppearance.Material3.TitleMedium"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:text="@string/accounts_tab_planning_empty_title"
+                android:textColor="?attr/colorOnSurface" />
+
+            <TextView
+                style="@style/TextAppearance.Material3.BodySmall"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_xs"
+                android:gravity="center"
+                android:text="@string/accounts_tab_planning_empty_subtitle"
+                android:textColor="?attr/colorOnSurfaceVariant" />
+
+            <TextView
+                android:id="@+id/planningEmptyAction"
+                style="@style/TextAppearance.Material3.LabelLarge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_s"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:clickable="true"
+                android:focusable="true"
+                android:padding="@dimen/spacing_xs"
+                android:text="@string/accounts_tab_planning_empty_action"
+                android:textColor="?attr/colorPrimary" />
+
+        </LinearLayout>
+
+        <!--
+            Onglet "Planification" : même carte/adapter que l'écran "Mes planifications" dédié
+            (item_financial_plan.xml/FinancialPlansAdapter, voir AccountsFragment) — aucun nouveau
+            design, PostCard dégradé identique.
+        -->
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/planningList"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:clipToPadding="false"
+            android:paddingBottom="88dp"
+            android:visibility="gone"
+            tools:listitem="@layout/item_financial_plan"
+            tools:visibility="visible" />
 
     </FrameLayout>
 

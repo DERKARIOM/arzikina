@@ -14,16 +14,22 @@ import com.arzikina.ne.R
 import com.arzikina.ne.databinding.FragmentAccountsBinding
 import com.arzikina.ne.domain.model.AccountType
 import com.arzikina.ne.presentation.components.NavAnimations
+import com.arzikina.ne.presentation.utilities.financialplan.FinancialPlanUiItem
+import com.arzikina.ne.presentation.utilities.financialplan.FinancialPlansAdapter
 import com.arzikina.ne.util.AppResult
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 
 /**
  * Liste des comptes, sous forme de cartes façon carte bancaire (voir
- * `item_account.xml`). Reconstruit en XML/Views (voir instructions projet) ;
- * [AccountsViewModel] est inchangé. Ajout via [addAccountButton] ; modifier/
- * supprimer se fait depuis "Détail du compte" (menu "⋮"), plus depuis cette
- * liste (voir [AccountsAdapter]).
+ * `item_account.xml`), avec un 3e onglet "Planification" (voir [AccountsDisplayTab.PLANNING])
+ * réutilisant tel quel [FinancialPlansAdapter]/`item_financial_plan.xml` de l'écran "Mes
+ * planifications" dédié — même carte, même navigation, aucune logique dupliquée. Reconstruit en
+ * XML/Views (voir instructions projet) ; [AccountsViewModel] est inchangé pour les onglets
+ * Comptes/Cartes bancaires. Ajout via [addAccountButton] (adapté par onglet) ; modifier/supprimer
+ * un compte se fait depuis "Détail du compte" (menu "⋮"), plus depuis cette liste (voir
+ * [AccountsAdapter]) — une planification se modifie/supprime de même depuis son propre écran de
+ * détail (voir [FinancialPlansAdapter]).
  */
 @AndroidEntryPoint
 class AccountsFragment : Fragment(R.layout.fragment_accounts) {
@@ -33,11 +39,19 @@ class AccountsFragment : Fragment(R.layout.fragment_accounts) {
     private val adapter = AccountsAdapter(
         onClick = { account -> navigateToDetail(account.id) }
     )
+    private val financialPlansAdapter = FinancialPlansAdapter(
+        onClick = { item -> navigateToFinancialPlanDetail(item.plan.id) }
+    )
 
     /** Dernière liste COMPLÈTE reçue de [AccountsViewModel.uiState] (tous types confondus) —
      * conservée pour pouvoir refiltrer immédiatement quand seul l'onglet change (voir
      * [renderTab]), sans attendre une nouvelle émission de `uiState`. */
     private var latestAccounts: List<AccountUiItem> = emptyList()
+
+    /** Même raisonnement que [latestAccounts] mais pour l'onglet Planification (voir
+     * [AccountsViewModel.financialPlans]) — flux entièrement séparé, propre écran vide (voir
+     * [renderList]). */
+    private var latestFinancialPlans: List<FinancialPlanUiItem> = emptyList()
 
     /** `null` tant qu'aucun onglet n'a encore été rendu (premier affichage, voir [renderTab]) —
      * distingue "changement d'onglet réel" (à animer) de la toute première émission de
@@ -52,13 +66,17 @@ class AccountsFragment : Fragment(R.layout.fragment_accounts) {
 
         viewBinding.accountsList.layoutManager = LinearLayoutManager(requireContext())
         viewBinding.accountsList.adapter = adapter
+        viewBinding.planningList.layoutManager = LinearLayoutManager(requireContext())
+        viewBinding.planningList.adapter = financialPlansAdapter
         viewBinding.addAccountButton.setOnClickListener { navigateToForm() }
+        viewBinding.planningEmptyAction.setOnClickListener { navigateToFinancialPlanForm() }
 
         setUpTabGroup(viewBinding)
 
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch { viewModel.uiState.collect { state -> render(state) } }
+                launch { viewModel.financialPlans.collect { state -> renderFinancialPlans(state) } }
                 launch { viewModel.selectedTab.collect { tab -> renderTab(viewBinding, tab) } }
             }
         }
@@ -73,16 +91,16 @@ class AccountsFragment : Fragment(R.layout.fragment_accounts) {
         lastRenderedTab = null
     }
 
-    /** `isChecked` est rappelé pour LES DEUX boutons à chaque bascule (celui qui se coche ET
-     * celui qui se décoche, voir la doc de `MaterialButtonToggleGroup`) — filtrer sur
+    /** `isChecked` est rappelé pour TOUS les boutons à chaque bascule (celui qui se coche ET
+     * ceux qui se décochent, voir la doc de `MaterialButtonToggleGroup`) — filtrer sur
      * `isChecked == true` évite de traiter l'événement en double. */
     private fun setUpTabGroup(binding: FragmentAccountsBinding) {
         binding.accountsTabGroup.addOnButtonCheckedListener { _, checkedId, isChecked ->
             if (!isChecked) return@addOnButtonCheckedListener
-            val tab = if (checkedId == R.id.btnBankCards) {
-                AccountsDisplayTab.BANK_CARDS
-            } else {
-                AccountsDisplayTab.ACCOUNTS
+            val tab = when (checkedId) {
+                R.id.btnBankCards -> AccountsDisplayTab.BANK_CARDS
+                R.id.btnPlanning -> AccountsDisplayTab.PLANNING
+                else -> AccountsDisplayTab.ACCOUNTS
             }
             viewModel.onTabSelected(tab)
         }
@@ -95,51 +113,101 @@ class AccountsFragment : Fragment(R.layout.fragment_accounts) {
         renderList(binding)
     }
 
+    /** Voir [AccountsViewModel.financialPlans] — même principe que [render] ci-dessus, pour
+     * l'onglet Planification. */
+    private fun renderFinancialPlans(state: AppResult<List<FinancialPlanUiItem>>) {
+        val binding = binding ?: return
+        if (state !is AppResult.Success) return
+        latestFinancialPlans = state.data
+        renderList(binding)
+    }
+
     /** Synchronise le bouton coché (utile si l'onglet a été mémorisé par le ViewModel avant que
      * la vue ne soit recréée, ex. retour depuis "Détail du compte") et le message d'écran vide,
      * puis refiltre la liste déjà en mémoire — aucun rechargement de données. N'anime QUE lors
      * d'un changement d'onglet réel (voir [lastRenderedTab]), jamais au tout premier affichage. */
     private fun renderTab(binding: FragmentAccountsBinding, tab: AccountsDisplayTab) {
-        val checkedId = if (tab == AccountsDisplayTab.BANK_CARDS) R.id.btnBankCards else R.id.btnAccounts
+        val checkedId = when (tab) {
+            AccountsDisplayTab.BANK_CARDS -> R.id.btnBankCards
+            AccountsDisplayTab.PLANNING -> R.id.btnPlanning
+            AccountsDisplayTab.ACCOUNTS -> R.id.btnAccounts
+        }
         if (binding.accountsTabGroup.checkedButtonId != checkedId) {
             binding.accountsTabGroup.check(checkedId)
         }
-        binding.emptyState.text = getString(
-            if (tab == AccountsDisplayTab.BANK_CARDS) {
-                R.string.accounts_empty_bank_cards_message
-            } else {
-                R.string.accounts_empty_message
-            }
-        )
+        updateAddButtonLabel(binding, tab)
+        // L'écran vide de l'onglet Planification (planningEmptyState) est un layout dédié avec
+        // son propre texte fixe (voir fragment_accounts.xml) : rien à synchroniser ici pour ce
+        // troisième onglet, contrairement à emptyState (Comptes/Cartes bancaires) dont le texte
+        // dépend de l'onglet.
+        if (tab != AccountsDisplayTab.PLANNING) {
+            binding.emptyState.text = getString(
+                if (tab == AccountsDisplayTab.BANK_CARDS) {
+                    R.string.accounts_empty_bank_cards_message
+                } else {
+                    R.string.accounts_empty_message
+                }
+            )
+        }
 
         val previousTab = lastRenderedTab
         lastRenderedTab = tab
         if (previousTab == null || previousTab == tab) {
             renderList(binding)
         } else {
-            animateTabSwitch(binding)
+            // Sens de l'animation = sens de lecture des onglets (voir la doc de
+            // AccountsDisplayTab/animateTabSwitch) : Comptes(0) → Cartes bancaires(1) →
+            // Planification(2), dans l'ordre de déclaration de l'enum, réutilisé tel quel comme
+            // position plutôt qu'une table de positions séparée à maintenir en double.
+            animateTabSwitch(binding, forward = tab.ordinal > previousTab.ordinal)
         }
     }
 
     /**
-     * Fondu enchaîné + léger glissement horizontal (voir cahier des charges : "fade, éventuellement
-     * léger slide horizontal, 200-250ms") lors d'un changement d'onglet réel. `accountsContent`
-     * (voir `fragment_accounts.xml`) regroupe `accountsList`/`emptyState` : un seul alpha à animer,
-     * pas deux animations à coordonner sur des vues normalement mutuellement exclusives.
-     * `renderList` (qui recalcule juste un filtre en mémoire, aucun accès disque/réseau) s'exécute
-     * pendant le creux du fondu, jamais visible pour l'utilisateur.
+     * Libellé visible de [addAccountButton] selon l'onglet (voir cahier des charges) — le bouton
+     * lui-même reste unique pour les 3 onglets (voir [navigateToForm]), seul son texte change.
+     * `ExtendedFloatingActionButton` n'a jamais été rétréci en icône seule ici (pas de
+     * `.shrink()`/comportement de défilement, ce FAB vit dans un `ConstraintLayout`, pas un
+     * `CoordinatorLayout`) : une simple affectation de `text` suffit, sans `.extend()`.
      */
-    private fun animateTabSwitch(binding: FragmentAccountsBinding) {
+    private fun updateAddButtonLabel(binding: FragmentAccountsBinding, tab: AccountsDisplayTab) {
+        binding.addAccountButton.text = getString(
+            when (tab) {
+                AccountsDisplayTab.BANK_CARDS -> R.string.accounts_add_action_bank_cards
+                AccountsDisplayTab.PLANNING -> R.string.financial_plan_form_title_add
+                AccountsDisplayTab.ACCOUNTS -> R.string.accounts_add_action_accounts
+            }
+        )
+    }
+
+    /**
+     * Fondu enchaîné + léger glissement horizontal DIRECTIONNEL (voir cahier des charges : "fade +
+     * léger slide horizontal, 200-300ms, sens intelligent selon la position de l'onglet") lors
+     * d'un changement d'onglet réel. `accountsContent` (voir `fragment_accounts.xml`) regroupe
+     * TOUTES les vues des 3 onglets (`accountsList`/`emptyState` pour Comptes/Cartes bancaires,
+     * `planningList`/`planningEmptyState` pour Planification) : un seul alpha/translationX à
+     * animer, pas plusieurs animations à coordonner sur des vues normalement mutuellement
+     * exclusives. `renderList` (qui recalcule juste un filtre/état en mémoire, aucun accès
+     * disque/réseau) s'exécute pendant le creux du fondu, jamais visible pour l'utilisateur.
+     *
+     * [forward] : `true` quand on avance dans l'ordre des onglets (Comptes → Cartes bancaires →
+     * Planification, voir [renderTab]) — l'ancien contenu sort vers la GAUCHE et le nouveau entre
+     * depuis la DROITE ; `false` (on revient en arrière) inverse les deux sens. Même durée dans les
+     * deux cas (les deux moitiés cumulées, 220ms, restent dans la fourchette 200-300ms demandée).
+     */
+    private fun animateTabSwitch(binding: FragmentAccountsBinding, forward: Boolean) {
         val content = binding.accountsContent
         content.animate().cancel()
         val slideDistance = resources.getDimension(R.dimen.spacing_m)
+        val exitTranslation = if (forward) -slideDistance else slideDistance
+        val enterFromTranslation = if (forward) slideDistance else -slideDistance
         content.animate()
             .alpha(0f)
-            .translationX(-slideDistance)
+            .translationX(exitTranslation)
             .setDuration(TAB_SWITCH_FADE_OUT_MS)
             .withEndAction {
                 renderList(binding)
-                content.translationX = slideDistance
+                content.translationX = enterFromTranslation
                 content.animate()
                     .alpha(1f)
                     .translationX(0f)
@@ -149,12 +217,31 @@ class AccountsFragment : Fragment(R.layout.fragment_accounts) {
             .start()
     }
 
+    /**
+     * Filtre/affiche le contenu de l'onglet actuellement sélectionné à partir des données déjà en
+     * mémoire ([latestAccounts]/[latestFinancialPlans]) — aucun rechargement. L'onglet
+     * Planification masque ENTIÈREMENT `accountsList`/`emptyState` (et inversement) : ce ne sont
+     * pas des vues qu'on refiltre en commun, contrairement à Comptes/Cartes bancaires qui
+     * partagent la même liste de comptes (voir [AccountUiItem.matchesTab]).
+     */
     private fun renderList(binding: FragmentAccountsBinding) {
-        val filtered = latestAccounts.filter { it.matchesTab(viewModel.selectedTab.value) }
-        val hasAccounts = filtered.isNotEmpty()
-        binding.accountsList.visibility = if (hasAccounts) View.VISIBLE else View.GONE
-        binding.emptyState.visibility = if (hasAccounts) View.GONE else View.VISIBLE
-        adapter.submitList(filtered)
+        val tab = viewModel.selectedTab.value
+        if (tab == AccountsDisplayTab.PLANNING) {
+            binding.accountsList.visibility = View.GONE
+            binding.emptyState.visibility = View.GONE
+            val hasPlans = latestFinancialPlans.isNotEmpty()
+            binding.planningList.visibility = if (hasPlans) View.VISIBLE else View.GONE
+            binding.planningEmptyState.visibility = if (hasPlans) View.GONE else View.VISIBLE
+            financialPlansAdapter.submitList(latestFinancialPlans)
+        } else {
+            binding.planningList.visibility = View.GONE
+            binding.planningEmptyState.visibility = View.GONE
+            val filtered = latestAccounts.filter { it.matchesTab(tab) }
+            val hasAccounts = filtered.isNotEmpty()
+            binding.accountsList.visibility = if (hasAccounts) View.VISIBLE else View.GONE
+            binding.emptyState.visibility = if (hasAccounts) View.GONE else View.VISIBLE
+            adapter.submitList(filtered)
+        }
     }
 
     /**
@@ -162,8 +249,17 @@ class AccountsFragment : Fragment(R.layout.fragment_accounts) {
      * depuis l'onglet "Cartes bancaires", sinon `null` (comportement inchangé — l'utilisateur
      * choisit lui-même le type, comme avant l'ajout du ToggleGroup). Toujours `accountId = 0L`
      * (nouveau compte) : ce bouton ne sert qu'à l'ajout, jamais à l'édition.
+     *
+     * Depuis l'onglet Planification, ce même bouton ouvre [R.id.financialPlanFormFragment] à la
+     * place (voir aussi [navigateToFinancialPlanForm], appelée à l'identique par
+     * `planningEmptyAction`) : un seul bouton d'ajout pour les 3 onglets, sa destination s'adapte
+     * plutôt que d'en dupliquer un par onglet.
      */
     private fun navigateToForm() {
+        if (viewModel.selectedTab.value == AccountsDisplayTab.PLANNING) {
+            navigateToFinancialPlanForm()
+            return
+        }
         val initialType = if (viewModel.selectedTab.value == AccountsDisplayTab.BANK_CARDS) {
             AccountType.CREDIT_CARD.name
         } else {
@@ -183,6 +279,19 @@ class AccountsFragment : Fragment(R.layout.fragment_accounts) {
      */
     private fun navigateToDetail(accountId: Long) {
         findNavController().navigate(R.id.accountDetailFragment, bundleOf("accountId" to accountId), NavAnimations.push)
+    }
+
+    /** Clic sur une carte de planification : ouvre son détail — même destination/navigation que
+     * [com.arzikina.ne.presentation.utilities.financialplan.FinancialPlansFragment.navigateToDetail]
+     * (écran dédié), aucune logique de navigation propre à cet onglet. */
+    private fun navigateToFinancialPlanDetail(planId: Long) {
+        findNavController().navigate(R.id.financialPlanDetailFragment, bundleOf("planId" to planId), NavAnimations.push)
+    }
+
+    /** `planId` par défaut (0L, voir `nav_graph.xml`) : toujours une création depuis cet onglet,
+     * jamais une édition — même appel que l'ancien bloc "Mes planifications" du Dashboard. */
+    private fun navigateToFinancialPlanForm() {
+        findNavController().navigate(R.id.financialPlanFormFragment, null, NavAnimations.push)
     }
 
     private companion object {
