@@ -1,14 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
     Premier élément de la liste de l'écran "Détail de la planification" (voir
-    FinancialPlanDetailAdapter, même principe Header+Rows que item_loan_detail_header.xml) : carte
-    "postcard" de résumé (icône/nom/disponible/prévu/reste/progression, même structure visuelle que
-    item_financial_plan.xml de l'écran liste) puis le titre de la section "Dépenses prévues" — les
-    dépenses elles-mêmes sont des items séparés (item_financial_plan_row.xml) suivant celui-ci.
-
-    Couleurs de texte (?attr/colorOnSurface/colorOnSurfaceVariant, pas de blanc figé) : même
-    convention que item_financial_plan.xml/item_budget.xml, pas item_loan_detail_header.xml (texte
-    blanc figé, écran plus ancien) — cohérence à l'intérieur de la fonctionnalité Planification.
+    FinancialPlanDetailAdapter, même principe Header+Rows que item_loan_detail_header.xml) : même
+    PostCard dégradé (fond vert, coins très arrondis, texte blanc) que item_financial_plan.xml de
+    l'écran liste — "même style" explicitement demandé, voir sa doc pour le détail de chaque zone
+    (A. Montant disponible, B. séparateur, C. Total prévu/Reste, D. progression, E. nom + %
+    utilisé) — puis le titre de la section "Dépenses prévues". Les dépenses elles-mêmes sont des
+    items séparés (item_financial_plan_row.xml) suivant celui-ci.
 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -20,121 +18,167 @@
     android:paddingTop="@dimen/spacing_m">
 
     <com.google.android.material.card.MaterialCardView
+        android:id="@+id/planCard"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:checkable="false"
-        app:cardBackgroundColor="@color/arzikina_postcart_background"
-        app:cardCornerRadius="@dimen/corner_radius_medium"
+        app:cardCornerRadius="15dp"
         app:cardElevation="@dimen/elevation_raised">
 
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:padding="@dimen/spacing_m">
+            android:background="@drawable/bg_financial_plan_card_gradient"
+            android:padding="@dimen/spacing_l">
 
-            <ImageView
-                android:id="@+id/planIcon"
-                android:layout_width="@dimen/icon_size_large"
-                android:layout_height="@dimen/icon_size_large"
-                android:background="@drawable/bg_icon_circle"
-                android:contentDescription="@null"
-                android:padding="@dimen/spacing_s"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent"
-                app:tint="@android:color/white" />
-
+            <!-- A. Haut du card : libellé discret + grand montant, centrés. -->
             <TextView
-                android:id="@+id/planName"
-                style="@style/TextAppearance.Material3.TitleMedium"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="@dimen/spacing_m"
-                android:ellipsize="end"
-                android:maxLines="2"
-                android:textColor="?attr/colorOnSurface"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toEndOf="@id/planIcon"
-                app:layout_constraintTop_toTopOf="@id/planIcon"
-                tools:text="Mariage" />
-
-            <androidx.constraintlayout.widget.Barrier
-                android:id="@+id/amountsBarrier"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                app:barrierDirection="bottom"
-                app:constraint_referenced_ids="availableValue,plannedValue" />
-
-            <TextView
-                android:id="@+id/availableLabel"
+                android:id="@+id/availableAmountLabel"
                 style="@style/TextAppearance.Material3.BodySmall"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/spacing_l"
-                android:text="@string/financial_plan_available_label"
-                android:textColor="?attr/colorOnSurfaceVariant"
-                app:layout_constraintEnd_toStartOf="@id/plannedLabel"
-                app:layout_constraintHorizontal_chainStyle="spread_inside"
+                android:alpha="0.85"
+                android:gravity="center"
+                android:text="@string/financial_plan_form_available_amount_label"
+                android:textColor="@color/white"
+                app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/planIcon" />
+                app:layout_constraintTop_toTopOf="parent" />
 
             <TextView
                 android:id="@+id/availableValue"
-                style="@style/TextAppearance.Material3.TitleMedium"
+                style="@style/TextAppearance.Material3.HeadlineMedium"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
+                android:textSize="25dp"
                 android:layout_marginTop="2dp"
-                android:textColor="?attr/colorOnSurface"
-                app:layout_constraintEnd_toEndOf="@id/availableLabel"
-                app:layout_constraintStart_toStartOf="@id/availableLabel"
-                app:layout_constraintTop_toBottomOf="@id/availableLabel"
+                android:gravity="center"
+                android:textColor="@color/white"
+                android:textStyle="bold"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/availableAmountLabel"
                 tools:text="150 000 F CFA" />
 
+            <!-- B. Séparateur horizontal fin (~18% blanc, voir colors.xml). -->
+            <View
+                android:id="@+id/cardDivider"
+                android:layout_width="0dp"
+                android:layout_height="1dp"
+                android:layout_marginTop="@dimen/spacing_l"
+                android:background="@color/arzikina_divider_on_financial_plan_card"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/availableValue" />
+
+            <!-- C. Milieu du card, deux colonnes : Total prévu (gauche) / Reste (droite). -->
             <TextView
                 android:id="@+id/plannedLabel"
                 style="@style/TextAppearance.Material3.BodySmall"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/spacing_l"
-                android:text="@string/financial_plan_planned_label"
-                android:textColor="?attr/colorOnSurfaceVariant"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toEndOf="@id/availableLabel"
-                app:layout_constraintTop_toBottomOf="@id/planIcon" />
+                android:layout_marginTop="@dimen/spacing_m"
+                android:alpha="0.85"
+                android:text="@string/financial_plan_card_total_label"
+                android:textColor="@color/white"
+                app:layout_constraintEnd_toStartOf="@id/remainingLabel"
+                app:layout_constraintHorizontal_chainStyle="spread_inside"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/cardDivider" />
 
             <TextView
                 android:id="@+id/plannedValue"
-                style="@style/TextAppearance.Material3.TitleMedium"
+                style="@style/TextAppearance.Material3.TitleLarge"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
+                android:textSize="15dp"
                 android:layout_marginTop="2dp"
-                android:textColor="?attr/colorOnSurface"
+                android:textColor="@color/white"
+                android:textStyle="bold"
                 app:layout_constraintEnd_toEndOf="@id/plannedLabel"
                 app:layout_constraintStart_toStartOf="@id/plannedLabel"
                 app:layout_constraintTop_toBottomOf="@id/plannedLabel"
-                tools:text="92 500 F CFA" />
-
-            <com.google.android.material.progressindicator.LinearProgressIndicator
-                android:id="@+id/progressBar"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/spacing_s"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/amountsBarrier"
-                app:trackCornerRadius="4dp"
-                app:trackThickness="8dp"
-                app:trackColor="?attr/colorSurfaceVariant"
-                tools:progress="62" />
+                tools:text="79 000 F CFA" />
 
             <TextView
                 android:id="@+id/remainingLabel"
                 style="@style/TextAppearance.Material3.BodySmall"
+                android:layout_width="0dp"
+                android:gravity="end"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_m"
+                android:alpha="0.85"
+                android:text="@string/financial_plan_card_remaining_label"
+                android:textColor="@color/white"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toEndOf="@id/plannedLabel"
+                app:layout_constraintTop_toBottomOf="@id/cardDivider"
+                tools:text="Reste" />
+
+            <TextView
+                android:id="@+id/remainingValue"
+                style="@style/TextAppearance.Material3.TitleLarge"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:textSize="15dp"
+                android:layout_marginTop="2dp"
+                android:gravity="end"
+                android:textColor="@color/white"
+                android:textStyle="bold"
+                app:layout_constraintEnd_toEndOf="@id/remainingLabel"
+                app:layout_constraintStart_toStartOf="@id/remainingLabel"
+                app:layout_constraintTop_toBottomOf="@id/remainingLabel"
+                tools:text="71 000 F CFA" />
+
+            <androidx.constraintlayout.widget.Barrier
+                android:id="@+id/columnsBarrier"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/spacing_xs"
+                app:barrierDirection="bottom"
+                app:constraint_referenced_ids="plannedValue,remainingValue" />
+
+            <!-- D. Barre de progression : remplissage blanc plein, piste blanche ~28% (voir
+                 colors.xml), coins arrondis. -->
+            <com.google.android.material.progressindicator.LinearProgressIndicator
+                android:id="@+id/progressBar"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_m"
+                app:indicatorColor="@color/white"
                 app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/columnsBarrier"
+                app:trackColor="@color/arzikina_track_on_financial_plan_card"
+                app:trackCornerRadius="5dp"
+                app:trackThickness="10dp"
+                tools:progress="62" />
+
+            <!-- E. Bas du card : nom de la planification (gauche) et "% utilisé" (droite), même
+                 alignement. -->
+            <TextView
+                android:id="@+id/planName"
+                style="@style/TextAppearance.Material3.LabelLarge"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_s"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:textColor="@color/white"
+                app:layout_constraintEnd_toStartOf="@id/percentUsedLabel"
+                app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/progressBar"
-                tools:text="Reste : 57 500 F CFA" />
+                tools:text="Mariage" />
+
+            <TextView
+                android:id="@+id/percentUsedLabel"
+                style="@style/TextAppearance.Material3.LabelLarge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/spacing_s"
+                android:textColor="@color/white"
+                app:layout_constraintBaseline_toBaselineOf="@id/planName"
+                app:layout_constraintEnd_toEndOf="parent"
+                tools:text="52 % utilisé" />
 
         </androidx.constraintlayout.widget.ConstraintLayout>
 

@@ -71,28 +71,23 @@ class FinancialPlanDetailAdapter(
             val context = binding.root.context
             val plan = uiState.plan
 
-            binding.planIcon.setImageResource(FinancialPlanIconMapper.iconFor(plan.icon))
-            binding.planIcon.backgroundTintList = ColorStateList.valueOf(plan.colorArgb.toInt())
+            // PostCard dégradé, même style que item_financial_plan.xml/FinancialPlansAdapter (voir
+            // sa doc) : ni icône, ni couleur de progression par plan — tous les textes restent
+            // blancs, le libellé "Reste"/"Dépassement" suffit à signaler un dépassement.
             binding.planName.text = plan.name
-
             binding.availableValue.text = Money.format(CurrencyAmount(Constants.DEFAULT_CURRENCY_CODE, plan.availableAmount))
             binding.plannedValue.text = Money.format(CurrencyAmount(Constants.DEFAULT_CURRENCY_CODE, uiState.totalPlanned))
-
             binding.progressBar.progress = uiState.progressPercent
-            binding.progressBar.setIndicatorColor(plan.colorArgb.toInt())
-
-            val overBudgetColor = ContextCompat.getColor(context, R.color.expense_red)
-            val normalColor = ContextCompat.getColor(context, R.color.arzikina_on_surface_variant)
+            binding.percentUsedLabel.text = context.getString(R.string.financial_plan_card_percent_used, uiState.progressPercent)
 
             if (uiState.isOverBudget) {
-                val overspentAmount = Money.format(CurrencyAmount(Constants.DEFAULT_CURRENCY_CODE, -uiState.remainingAmount))
-                binding.remainingLabel.text = context.getString(R.string.financial_plan_overbudget_prefix, overspentAmount)
-                binding.remainingLabel.setTextColor(overBudgetColor)
-                binding.progressBar.setIndicatorColor(overBudgetColor)
+                binding.remainingLabel.text = context.getString(R.string.financial_plan_card_overbudget_label)
+                binding.remainingValue.text =
+                    Money.format(CurrencyAmount(Constants.DEFAULT_CURRENCY_CODE, -uiState.remainingAmount))
             } else {
-                val remainingAmount = Money.format(CurrencyAmount(Constants.DEFAULT_CURRENCY_CODE, uiState.remainingAmount))
-                binding.remainingLabel.text = context.getString(R.string.financial_plan_remaining_prefix, remainingAmount)
-                binding.remainingLabel.setTextColor(normalColor)
+                binding.remainingLabel.text = context.getString(R.string.financial_plan_card_remaining_label)
+                binding.remainingValue.text =
+                    Money.format(CurrencyAmount(Constants.DEFAULT_CURRENCY_CODE, uiState.remainingAmount))
             }
 
             binding.itemsSectionTitle.text =
