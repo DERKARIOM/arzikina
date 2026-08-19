@@ -425,13 +425,6 @@
     <string name="dashboard_budget_empty_title">Aucun budget pour l\'instant</string>
     <string name="dashboard_budget_empty_action">Créer un budget</string>
 
-    <!-- Dashboard — Étape 9 (Planification), bloc "Mes planifications" (résumé des planifications
-         ACTIVES, voir cahier des charges section 18). Même convention de nommage que
-         dashboard_budget_*/dashboard_recent_transactions_* ci-dessus. -->
-    <string name="dashboard_financial_plans_title">Mes planifications</string>
-    <string name="dashboard_financial_plans_see_all">Voir tout</string>
-    <string name="dashboard_financial_plans_empty_title">Aucune planification pour l\'instant</string>
-    <string name="dashboard_financial_plans_empty_action">Créer une planification</string>
     <!--
         Bloc "Utilitaires" (voir presentation/utilities) : raccourcis vers des fonctionnalités
         annexes (Catégories, Prêts/Emprunts, Sauvegarde...), placé juste avant le bloc Budget.
