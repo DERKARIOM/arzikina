@@ -13,7 +13,6 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 /**
@@ -66,10 +65,4 @@ class FinancialPlansViewModel @Inject constructor(
             started = SharingStarted.WhileSubscribed(stopTimeoutMillis = 5_000),
             initialValue = AppResult.Loading
         )
-
-    fun deletePlan(id: Long) {
-        viewModelScope.launch {
-            financialPlanRepository.deletePlan(id)
-        }
-    }
 }

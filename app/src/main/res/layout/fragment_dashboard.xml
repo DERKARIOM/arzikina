@@ -582,9 +582,10 @@
             charges, section 18), même traitement "titre hors carte, contenu dans une carte" que
             la section Budget ci-dessus. "Voir tout" mène à financialPlansFragment (écran complet).
             Réutilise item_financial_plan.xml/FinancialPlansAdapter tels quels (voir
-            DashboardFragment.kt), bouton supprimer masqué sur cet aperçu (showDeleteButton=false,
-            même principe que budgetPreview.deleteButton ci-dessus). Fond "postcard" sombre fixe,
-            comme les cartes Solde/Revenus-Dépenses/Dernières transactions.
+            DashboardFragment.kt) : PostCard dégradé, sans bouton supprimer (retiré de la carte
+            elle-même lors du redesign — suppression toujours possible depuis "Détail de la
+            planification"). Fond "postcard" sombre fixe pour le bloc lui-même, comme les cartes
+            Solde/Revenus-Dépenses/Dernières transactions.
         -->
         <LinearLayout
             android:layout_width="match_parent"

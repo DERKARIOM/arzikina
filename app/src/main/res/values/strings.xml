@@ -489,6 +489,13 @@
     <string name="financial_plan_planned_label">Prévu</string>
     <string name="financial_plan_remaining_prefix">Reste : %1$s</string>
     <string name="financial_plan_overbudget_prefix">Dépassement : %1$s</string>
+    <!-- PostCard dégradé de item_financial_plan.xml (voir sa doc) : libellés séparés
+         label/valeur, distincts des chaînes "prefix" ci-dessus déjà utilisées par
+         item_financial_plan_detail_header.xml. -->
+    <string name="financial_plan_card_total_label">Total prévu</string>
+    <string name="financial_plan_card_remaining_label">Reste</string>
+    <string name="financial_plan_card_overbudget_label">Dépassement</string>
+    <string name="financial_plan_card_percent_used">%d %% utilisé</string>
     <string name="financial_plan_form_title_add">Nouvelle planification</string>
     <string name="financial_plan_form_title_edit">Modifier la planification</string>
     <string name="financial_plan_form_name_label">Nom du projet</string>

@@ -15,6 +15,10 @@
     <dimen name="corner_radius_medium">16dp</dimen>
     <dimen name="corner_radius_large">10dp</dimen>
     <dimen name="corner_radius_extra_large">10dp</dimen>
+    <!-- Coins très arrondis réservés aux grandes cartes "hero" décoratives (ex. le PostCard
+         dégradé de item_financial_plan.xml) — hors de l'échelle standard ci-dessus, qui reste
+         pensée pour des composants ordinaires (champs, boutons, petites cartes). -->
+    <dimen name="corner_radius_xxl">28dp</dimen>
 
     <!-- Icônes -->
     <dimen name="icon_size_bottom_nav">26dp</dimen>

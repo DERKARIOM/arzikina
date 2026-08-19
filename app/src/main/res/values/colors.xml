@@ -96,4 +96,19 @@
          ci-dessus mais très assombries, pour rester lisibles en carte "postcard" sombre. -->
     <color name="loan_summary_lent_bg">#1B3226</color>
     <color name="loan_summary_borrowed_bg">#3A1E1E</color>
+
+    <!--
+        PostCard "Montant disponible" de la liste des planifications (voir item_financial_plan.xml/
+        bg_financial_plan_card_gradient.xml) : dégradé vert fixe, volontairement identique en clair
+        et en sombre (même raisonnement que arzikina_balance_card ci-dessus) — carte "à part", pas
+        une déclinaison du thème, sur demande explicite pour correspondre à une capture de
+        référence.
+    -->
+    <color name="arzikina_financial_plan_card_start">#FF3CC28F</color>
+    <color name="arzikina_financial_plan_card_end">#FF1AA978</color>
+    <!-- Séparateur horizontal fin sur ce dégradé (~18% blanc). -->
+    <color name="arzikina_divider_on_financial_plan_card">#2EFFFFFF</color>
+    <!-- Piste (partie non remplie) de la barre de progression sur ce dégradé (~28% blanc) — la
+         partie remplie reste @color/white plein. -->
+    <color name="arzikina_track_on_financial_plan_card">#47FFFFFF</color>
 </resources>

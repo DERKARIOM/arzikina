@@ -12,7 +12,6 @@ import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.arzikina.ne.R
 import com.arzikina.ne.databinding.FragmentFinancialPlansBinding
-import com.arzikina.ne.presentation.components.ConfirmDialogs
 import com.arzikina.ne.presentation.components.NavAnimations
 import com.arzikina.ne.util.AppResult
 import dagger.hilt.android.AndroidEntryPoint
@@ -20,16 +19,16 @@ import kotlinx.coroutines.launch
 
 /**
  * Liste des planifications financières (voir cahier des charges "Planification financière",
- * sections 3/4) — une carte par planification (disponible/prévu/reste + progression). Même
- * squelette que [com.arzikina.ne.presentation.budget.BudgetFragment] (Toolbar + RecyclerView +
- * FAB + état vide).
+ * sections 3/4) — une carte par planification (disponible/prévu/reste + progression, voir
+ * PostCard dégradé de item_financial_plan.xml). Même squelette que
+ * [com.arzikina.ne.presentation.budget.BudgetFragment] (Toolbar + RecyclerView + FAB + état vide).
  *
  * Clic sur une carte ouvre [FinancialPlanDetailFragment] (Étape 4) — l'édition (nom/montant/icône/
- * couleur, voir [FinancialPlanFormFragment]) reste accessible depuis le menu "Modifier" de cet
- * écran de détail, même principe que [com.arzikina.ne.presentation.accounts.AccountsFragment] →
- * `AccountDetailFragment`. Le bouton de suppression rapide de chaque carte (voir [confirmDelete])
- * reste néanmoins conservé ICI en plus du détail (contrairement à Prêts/Emprunts, qui ne l'a que
- * sur l'écran de détail) : fonctionnalité déjà validée à l'Étape 3, non retirée sans nécessité.
+ * couleur, voir [FinancialPlanFormFragment]) ET la suppression restent accessibles depuis le menu
+ * "Modifier"/"Supprimer" de cet écran de détail, même principe que
+ * [com.arzikina.ne.presentation.accounts.AccountsFragment] → `AccountDetailFragment`. PLUS de
+ * bouton de suppression rapide sur chaque carte (redesign PostCard sur capture de référence,
+ * retiré de item_financial_plan.xml — absent de la capture).
  *
  * INDÉPENDANTE de "Automatisation" (ex-"Planification", transactions récurrentes) : aucune donnée
  * ni logique partagée, voir [FinancialPlansViewModel].
@@ -40,8 +39,7 @@ class FinancialPlansFragment : Fragment(R.layout.fragment_financial_plans) {
     private val viewModel: FinancialPlansViewModel by viewModels()
     private var binding: FragmentFinancialPlansBinding? = null
     private val adapter = FinancialPlansAdapter(
-        onClick = { item -> navigateToDetail(item.plan.id) },
-        onDeleteClick = { item -> confirmDelete(item) }
+        onClick = { item -> navigateToDetail(item.plan.id) }
     )
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -73,15 +71,6 @@ class FinancialPlansFragment : Fragment(R.layout.fragment_financial_plans) {
         binding.plansList.visibility = if (hasPlans) View.VISIBLE else View.GONE
         binding.emptyState.visibility = if (hasPlans) View.GONE else View.VISIBLE
         adapter.submitList(state.data)
-    }
-
-    private fun confirmDelete(item: FinancialPlanUiItem) {
-        ConfirmDialogs.confirm(
-            context = requireContext(),
-            title = getString(R.string.financial_plans_delete_title),
-            message = getString(R.string.financial_plans_delete_message),
-            onConfirm = { viewModel.deletePlan(item.plan.id) }
-        )
     }
 
     private fun navigateToForm(planId: Long) {

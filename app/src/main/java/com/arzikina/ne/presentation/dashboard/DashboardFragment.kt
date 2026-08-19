@@ -64,9 +64,9 @@ class DashboardFragment : Fragment(R.layout.fragment_dashboard) {
         findNavController().navigate(item.destinationId, null, NavAnimations.push)
     }
 
-    /** Bloc "Mes planifications" (Étape 9) — mêmes callbacks de clic que [FinancialPlansFragment]
-     * (voir sa doc), mais `showDeleteButton = false` : pas de suppression rapide depuis cet aperçu
-     * (même raisonnement que [budgetPreview] ci-dessous). */
+    /** Bloc "Mes planifications" (Étape 9) — même adapter/PostCard que [FinancialPlansFragment]
+     * (voir sa doc) : plus de bouton de suppression rapide sur la carte elle-même depuis le
+     * redesign PostCard, donc plus besoin d'un paramètre dédié pour le masquer sur cet aperçu. */
     private val financialPlansAdapter = FinancialPlansAdapter(
         onClick = { item ->
             findNavController().navigate(
@@ -74,9 +74,7 @@ class DashboardFragment : Fragment(R.layout.fragment_dashboard) {
                 bundleOf("planId" to item.plan.id),
                 NavAnimations.push
             )
-        },
-        onDeleteClick = {},
-        showDeleteButton = false
+        }
     )
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {

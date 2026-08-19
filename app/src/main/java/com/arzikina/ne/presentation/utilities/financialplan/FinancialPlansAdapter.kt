@@ -1,10 +1,7 @@
 package com.arzikina.ne.presentation.utilities.financialplan
 
-import android.content.res.ColorStateList
 import android.view.LayoutInflater
-import android.view.View
 import android.view.ViewGroup
-import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
@@ -22,17 +19,13 @@ import com.arzikina.ne.util.Money
  * pas de champ `currencyCode`) : affichage dans la devise par défaut de l'application, comme les
  * autres montants sans compte associé.
  *
- * [showDeleteButton] (Étape 9) : `false` réutilisé par le bloc "Mes planifications" du Dashboard
- * (voir `DashboardFragment`), pour lequel aucune suppression rapide n'a de sens sur un simple
- * aperçu — même raisonnement que `budgetPreview.deleteButton.visibility = View.GONE` sur le bloc
- * Budget du Dashboard, mais ici via un paramètre plutôt qu'un accès direct puisque cet adapter,
- * contrairement à `BudgetAdapter.ViewHolder`, est réutilisé pour une VRAIE liste (plusieurs
- * planifications), pas un seul élément posé à la main.
+ * PostCard dégradé (voir item_financial_plan.xml) : ni icône, ni bouton de suppression rapide sur
+ * cette carte (redesign sur capture de référence) — la suppression reste accessible depuis
+ * "Détail de la planification" (menu ⋮ > Supprimer). Réutilisé tel quel par le bloc "Mes
+ * planifications" du Dashboard (voir `DashboardFragment`).
  */
 class FinancialPlansAdapter(
-    private val onClick: (FinancialPlanUiItem) -> Unit,
-    private val onDeleteClick: (FinancialPlanUiItem) -> Unit,
-    private val showDeleteButton: Boolean = true
+    private val onClick: (FinancialPlanUiItem) -> Unit
 ) : ListAdapter<FinancialPlanUiItem, FinancialPlansAdapter.ViewHolder>(DIFF_CALLBACK) {
 
     override fun onCreateViewHolder(parent: ViewGroup, position: Int): ViewHolder {
@@ -41,48 +34,36 @@ class FinancialPlansAdapter(
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        holder.bind(getItem(position), onClick, onDeleteClick, showDeleteButton)
+        holder.bind(getItem(position), onClick)
     }
 
     class ViewHolder(private val binding: ItemFinancialPlanBinding) : RecyclerView.ViewHolder(binding.root) {
-        fun bind(
-            item: FinancialPlanUiItem,
-            onClick: (FinancialPlanUiItem) -> Unit,
-            onDeleteClick: (FinancialPlanUiItem) -> Unit,
-            showDeleteButton: Boolean = true
-        ) {
+        fun bind(item: FinancialPlanUiItem, onClick: (FinancialPlanUiItem) -> Unit) {
             val context = binding.root.context
             val plan = item.plan
 
-            binding.planIcon.setImageResource(FinancialPlanIconMapper.iconFor(plan.icon))
-            binding.planIcon.backgroundTintList = ColorStateList.valueOf(plan.colorArgb.toInt())
             binding.planName.text = plan.name
-
             binding.availableValue.text = Money.format(CurrencyAmount(Constants.DEFAULT_CURRENCY_CODE, plan.availableAmount))
             binding.plannedValue.text = Money.format(CurrencyAmount(Constants.DEFAULT_CURRENCY_CODE, item.totalPlanned))
-
             binding.progressBar.progress = item.progressPercent
-            binding.progressBar.setIndicatorColor(plan.colorArgb.toInt())
+            binding.percentUsedLabel.text = context.getString(R.string.financial_plan_card_percent_used, item.progressPercent)
 
-            val overBudgetColor = ContextCompat.getColor(context, R.color.expense_red)
-            val normalColor = ContextCompat.getColor(context, R.color.arzikina_on_surface_variant)
-
+            // Dépassement : le libellé passe de "Reste" à "Dépassement" et le montant devient
+            // l'excédent (voir FinancialPlanProgress.calculateRemainingAmount, peut être négatif) —
+            // volontairement PAS de couleur rouge ici (fond dégradé, tous les textes restent blancs
+            // pour rester lisibles, voir la doc de item_financial_plan.xml) : le libellé + le
+            // montant affiché suffisent à signaler l'état.
             if (item.isOverBudget) {
-                val overspentAmount = Money.format(
-                    CurrencyAmount(Constants.DEFAULT_CURRENCY_CODE, -item.remainingAmount)
-                )
-                binding.remainingLabel.text = context.getString(R.string.financial_plan_overbudget_prefix, overspentAmount)
-                binding.remainingLabel.setTextColor(overBudgetColor)
-                binding.progressBar.setIndicatorColor(overBudgetColor)
+                binding.remainingLabel.text = context.getString(R.string.financial_plan_card_overbudget_label)
+                binding.remainingValue.text =
+                    Money.format(CurrencyAmount(Constants.DEFAULT_CURRENCY_CODE, -item.remainingAmount))
             } else {
-                val remainingAmount = Money.format(CurrencyAmount(Constants.DEFAULT_CURRENCY_CODE, item.remainingAmount))
-                binding.remainingLabel.text = context.getString(R.string.financial_plan_remaining_prefix, remainingAmount)
-                binding.remainingLabel.setTextColor(normalColor)
+                binding.remainingLabel.text = context.getString(R.string.financial_plan_card_remaining_label)
+                binding.remainingValue.text =
+                    Money.format(CurrencyAmount(Constants.DEFAULT_CURRENCY_CODE, item.remainingAmount))
             }
 
             binding.root.setOnClickListener { onClick(item) }
-            binding.deleteButton.setOnClickListener { onDeleteClick(item) }
-            binding.deleteButton.visibility = if (showDeleteButton) View.VISIBLE else View.GONE
         }
     }
 
