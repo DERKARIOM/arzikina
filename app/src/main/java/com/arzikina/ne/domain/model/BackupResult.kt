@@ -22,5 +22,9 @@ data class BackupResult(
      * prévues, voir [planItemsCount] séparément), ajouté en même temps que leur prise en charge par
      * la sauvegarde (Étape 10). */
     val plansCount: Int = 0,
-    val planItemsCount: Int = 0
+    val planItemsCount: Int = 0,
+    /** Voir `ReceiptDto` — nombre de reçus PDF (métadonnées ET fichier physique, voir
+     * `BackupRepositoryImpl`), ajouté en même temps que leur prise en charge par la sauvegarde
+     * (Étape 9). */
+    val receiptsCount: Int = 0
 )

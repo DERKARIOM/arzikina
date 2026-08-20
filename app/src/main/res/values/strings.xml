@@ -73,8 +73,8 @@
     <string name="settings_backup_description">Exporte toutes tes données (comptes, catégories, transactions, frais, budgets, objectifs d\'épargne, prêts/emprunts, transactions automatiques, profil) dans un fichier, ou restaure une sauvegarde précédente.</string>
     <string name="settings_backup_export_action">Sauvegarder mes données</string>
     <string name="settings_backup_import_action">Restaurer mes données</string>
-    <string name="settings_backup_export_success">Export réussi : %1$d comptes, %2$d catégories, %3$d transactions, %4$d budgets, %5$d objectifs, %6$d prêts/emprunts, %7$d transactions automatiques, %8$d occurrences, %9$d planifications, %10$d dépenses prévues.</string>
-    <string name="settings_backup_import_success">Importation réussie : %1$d comptes, %2$d catégories, %3$d transactions, %4$d budgets, %5$d objectifs, %6$d prêts/emprunts, %7$d transactions automatiques, %8$d occurrences, %9$d planifications, %10$d dépenses prévues.</string>
+    <string name="settings_backup_export_success">Export réussi : %1$d comptes, %2$d catégories, %3$d transactions, %4$d budgets, %5$d objectifs, %6$d prêts/emprunts, %7$d transactions automatiques, %8$d occurrences, %9$d planifications, %10$d dépenses prévues, %11$d reçus.</string>
+    <string name="settings_backup_import_success">Importation réussie : %1$d comptes, %2$d catégories, %3$d transactions, %4$d budgets, %5$d objectifs, %6$d prêts/emprunts, %7$d transactions automatiques, %8$d occurrences, %9$d planifications, %10$d dépenses prévues, %11$d reçus.</string>
     <string name="settings_backup_error_prefix">Échec :</string>
     <string name="settings_backup_import_confirm_title">Remplacer toutes les données ?</string>
     <string name="settings_backup_import_confirm_message">L\'importation remplace définitivement toutes les données actuelles (comptes, catégories, transactions, frais, budgets, objectifs d\'épargne, prêts/emprunts, transactions automatiques, profil) par celles du fichier choisi. Cette action est irréversible.</string>
@@ -450,6 +450,10 @@
     <string name="dashboard_utilities_see_all">Voir tout</string>
     <string name="utility_loans_title">Emprunts</string>
     <string name="utility_backup_title">Sauvegarder</string>
+    <!-- Réutilisée comme titre d'écran par ReceiptsFragment (voir plus bas, section "Gestion des
+         reçus") — même principe que utility_loans_title/utility_financial_plans_title. La tuile
+         Utilitaires elle-même n'est ajoutée qu'à l'Étape 8 (voir UtilityCatalog). -->
+    <string name="utility_receipts_title">Gestion des reçus</string>
     <string name="all_utilities_title">Tous les utilitaires</string>
     <!-- Écran "en cours de développement" (voir LoansFragment) : générique, réutilisable pour
          tout futur utilitaire pas encore implémenté. -->
@@ -876,4 +880,74 @@
     <string name="recurring_queue_edit_date_label">Date</string>
     <string name="recurring_queue_confirm_edit_action">Confirmer</string>
     <string name="recurring_queue_cancel_edit_action">Annuler</string>
+
+    <!--
+        Gestion des reçus — réception du partage (voir MainActivity.handleIncomingReceiptShare,
+        data/receipts/ReceiptFileStorage) : uniquement les messages de confirmation affichés à la
+        réception d'un PDF partagé depuis une autre application (ex. Mobile Money) — les chaînes de
+        l'écran liste/détail (à venir) seront ajoutées aux étapes suivantes.
+    -->
+    <!-- Nom affiché si le fichier partagé n'a aucun nom exploitable (ContentResolver n'a pas pu le fournir). -->
+    <string name="receipt_share_default_file_name">Reçu partagé</string>
+    <string name="receipt_share_imported_message">Reçu importé dans Arzikina.</string>
+    <string name="receipt_share_import_failed_message">Impossible d\'importer ce reçu.</string>
+
+    <!--
+        Gestion des reçus — écran liste (voir presentation/utilities/receipts/ReceiptsFragment,
+        fragment_receipts.xml). "utility_receipts_title" (existante, voir plus haut) reste le titre
+        de la barre d'outils — même principe que "utility_loans_title" pour LoansFragment.
+    -->
+    <string name="receipts_search_placeholder">Rechercher un reçu…</string>
+    <string name="receipts_filter_all">Tous</string>
+    <string name="receipts_filter_today">Aujourd\'hui</string>
+    <string name="receipts_filter_this_week">Cette semaine</string>
+    <string name="receipts_filter_this_month">Ce mois</string>
+    <string name="receipts_empty_title">Aucun reçu pour l\'instant</string>
+    <string name="receipts_empty_message">Partagez un PDF depuis une autre application (ex. Mobile Money) ou importez-en un manuellement.</string>
+    <string name="receipts_import_action">Importer un PDF</string>
+    <!-- Cahier des charges "Gestion des reçus", section 3 : jamais une provenance inventée — affiché
+         uniquement quand Receipt.sourceName est null (voir ReceiptsAdapter). -->
+    <string name="receipt_source_unknown">Provenance inconnue</string>
+    <!-- "15:41 · 2,3 Mo" (voir ReceiptsAdapter.ReceiptViewHolder) — la date n'est pas répétée ici,
+         déjà portée par l'en-tête de section du jour (item_receipt_day_header.xml). -->
+    <string name="receipt_meta_line_format">%1$s · %2$s</string>
+
+    <!--
+        Gestion des reçus — "Détail du reçu" (voir presentation/utilities/receipts/ReceiptDetailFragment,
+        fragment_receipt_detail.xml) : cahier des charges section 6/8/9/10.
+    -->
+    <string name="receipt_detail_rename_action">Renommer</string>
+    <string name="receipt_detail_rename_hint">Nom du reçu</string>
+    <string name="receipt_detail_rename_empty_error">Le nom ne peut pas être vide.</string>
+    <string name="receipt_detail_delete_title">Supprimer ce reçu ?</string>
+    <string name="receipt_detail_delete_message">Le fichier sera définitivement supprimé d\'Arzikina.</string>
+    <string name="receipt_detail_share_action">Partager</string>
+    <string name="receipt_detail_share_chooser_title">Partager le reçu</string>
+    <string name="receipt_detail_share_failed_message">Impossible de partager ce reçu.</string>
+    <string name="receipt_detail_open_action">Ouvrir</string>
+    <string name="receipt_detail_open_with_chooser_title">Ouvrir avec</string>
+    <string name="receipt_detail_open_with_failed_message">Aucune application ne peut ouvrir ce fichier.</string>
+    <string name="receipt_detail_preview_unavailable">Aperçu indisponible</string>
+    <string name="receipt_detail_info_title">Informations</string>
+    <string name="receipt_detail_size_label">Taille</string>
+    <string name="receipt_detail_source_label">Provenance</string>
+    <string name="receipt_detail_received_label">Reçu le</string>
+    <string name="receipt_detail_amount_label">Montant</string>
+
+    <!--
+        Gestion des reçus — visualiseur PDF plein écran (voir
+        presentation/utilities/receipts/ReceiptPdfViewerFragment, cahier des charges section 7).
+        "receipt_detail_preview_unavailable" (existante) est réutilisée pour le même message quand
+        une page ne peut pas être rendue.
+    -->
+    <string name="receipt_viewer_previous_action">Page précédente</string>
+    <string name="receipt_viewer_next_action">Page suivante</string>
+    <!-- "2 / 5" -->
+    <string name="receipt_viewer_page_indicator_format">%1$d / %2$d</string>
+
+    <!-- Labels `nav_graph.xml` génériques (repris par `ReceiptDetailFragment.render`/
+         `ReceiptPdfViewerFragment.render` dès que le reçu est chargé, voir
+         `binding.toolbar.title = ...`) — même principe que "loan_detail_title". -->
+    <string name="receipt_detail_title">Détail du reçu</string>
+    <string name="receipt_viewer_title">Aperçu du reçu</string>
 </resources>

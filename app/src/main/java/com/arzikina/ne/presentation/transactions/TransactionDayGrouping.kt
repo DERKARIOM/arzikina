@@ -1,26 +1,17 @@
 package com.arzikina.ne.presentation.transactions
 
 import com.arzikina.ne.util.DatePeriods
+import com.arzikina.ne.util.DayLabel
 import java.time.LocalDate
 
 /**
- * Regroupement d'une transaction sous un jour donné. Volontairement sans
- * texte affichable : la couche presentation (qui a accès aux ressources, voir
- * [GroupedTransactionsAdapter]) est seule responsable de traduire
- * [Today]/[Yesterday] en libellé localisé — un ViewModel ne doit pas dépendre
- * d'un `Context` Android.
- *
- * Partagé entre l'écran Transactions ([TransactionsViewModel]) et "Détail du
- * compte" ([com.arzikina.ne.presentation.accounts.AccountDetailViewModel]) :
- * un seul endroit pour cette logique, plutôt que de la dupliquer entre les
- * deux (elle vivait initialement uniquement dans AccountDetailViewModel).
+ * Regroupement des transactions par jour — voir [DayLabel] (déplacé dans `util/`, partagé avec
+ * "Gestion des reçus") pour le type de libellé lui-même. Partagé entre l'écran Transactions
+ * ([TransactionsViewModel]) et "Détail du compte"
+ * ([com.arzikina.ne.presentation.accounts.AccountDetailViewModel]) : un seul endroit pour cette
+ * logique, plutôt que de la dupliquer entre les deux (elle vivait initialement uniquement dans
+ * AccountDetailViewModel).
  */
-sealed interface DayLabel {
-    data object Today : DayLabel
-    data object Yesterday : DayLabel
-    data class Other(val date: LocalDate) : DayLabel
-}
-
 data class TransactionDaySection(
     val label: DayLabel,
     val items: List<TransactionUiItem>

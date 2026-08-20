@@ -77,6 +77,24 @@
               envoyer, voir sa documentation officielle) — exported="true" ne les rend donc pas
               usurpables par une app tierce, contrairement à une diffusion non protégée.
         -->
+        <!--
+            Gestion des reçus (voir data/receipts/ReceiptFileStorage.kt, res/xml/file_paths.xml) :
+            expose UNIQUEMENT files/receipts/ (voir ce fichier XML) via une URI content:// sécurisée
+            — jamais un chemin de fichier privé exposé directement (cahier des charges section 9).
+            exported="false"/grantUriPermissions="true" : combinaison standard et obligatoire pour
+            un FileProvider (seules les URI explicitement accordées via un Intent sont lisibles par
+            l'app destinataire, jamais tout le provider).
+        -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+
         <receiver
             android:name=".work.AutomationAlarmReceiver"
             android:exported="false" />
@@ -100,16 +118,41 @@
             SystemBars.applyImeAwarePadding(), appliqué automatiquement à chaque écran par
             MainActivity (registerFragmentLifecycleCallbacks), aucune configuration par Fragment.
         -->
+        <!--
+            android:launchMode="singleTask" (voir MainActivity.onNewIntent, data/receipts/) : une
+            seule Activity dans toute l'app (voir sa doc de classe) — indispensable pour la réception
+            du partage (cahier des charges "Gestion des reçus", section 1). Sans lui, partager un PDF
+            alors qu'Arzikina est déjà ouverte créerait une DEUXIÈME instance de MainActivity
+            empilée par-dessus la première (comportement standard "standard" d'Android pour une
+            Activity ciblée par un nouvel Intent), dupliquant toute la navigation/le verrou
+            biométrique. "singleTask" garantit qu'un Intent entrant est TOUJOURS livré à l'instance
+            unique existante via onNewIntent, jamais une nouvelle instance.
+        -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
             android:label="@string/app_name"
+            android:launchMode="singleTask"
             android:theme="@style/Theme.Arzikina"
             android:windowSoftInputMode="adjustResize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+
+            <!--
+                Gestion des reçus, section 1 : Arzikina doit apparaître dans le sélecteur de partage
+                Android ("Share Sheet") pour tout fichier PDF (ex. reçu Mobile Money). Volontairement
+                SEUL "application/pdf" (jamais "*/*" ni "application/*") : n'apparaître QUE pour le
+                type de fichier réellement géré, jamais comme cible générique de tout partage.
+            -->
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+
+                <data android:mimeType="application/pdf" />
             </intent-filter>
         </activity>
     </application>

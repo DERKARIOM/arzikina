@@ -12,6 +12,7 @@ import com.arzikina.ne.domain.model.TransactionType
 import com.arzikina.ne.presentation.categories.CategoryIconMapper
 import com.arzikina.ne.util.DatePeriods
 import com.arzikina.ne.util.Money
+import com.arzikina.ne.util.TriggerTimeFormatter
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 

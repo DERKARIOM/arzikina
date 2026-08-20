@@ -448,6 +448,48 @@
         android:label="@string/backup_screen_title"
         tools:layout="@layout/fragment_backup" />
 
+    <!--
+        "Gestion des reçus" (voir presentation/utilities/receipts/ReceiptsFragment), atteint depuis
+        le bloc Utilitaires du Dashboard/"Tous les utilitaires" (voir UtilityCatalog), même principe
+        que loansFragment/financialPlansFragment ci-dessus.
+    -->
+    <fragment
+        android:id="@+id/receiptsFragment"
+        android:name="com.arzikina.ne.presentation.utilities.receipts.ReceiptsFragment"
+        android:label="@string/utility_receipts_title"
+        tools:layout="@layout/fragment_receipts" />
+
+    <!--
+        Détail d'un reçu (voir presentation/utilities/receipts/ReceiptDetailFragment), atteint en
+        cliquant sur une carte de receiptsFragment. receiptId n'a volontairement PAS de valeur par
+        défaut, même raisonnement que loanDetailFragment/financialPlanDetailFragment ci-dessus.
+    -->
+    <fragment
+        android:id="@+id/receiptDetailFragment"
+        android:name="com.arzikina.ne.presentation.utilities.receipts.ReceiptDetailFragment"
+        android:label="@string/receipt_detail_title"
+        tools:layout="@layout/fragment_receipt_detail">
+        <argument
+            android:name="receiptId"
+            app:argType="long" />
+    </fragment>
+
+    <!--
+        Visualiseur PDF plein écran (voir presentation/utilities/receipts/ReceiptPdfViewerFragment,
+        cahier des charges "Gestion des reçus" section 7), atteint depuis l'aperçu de
+        receiptDetailFragment. receiptId obligatoire, même raisonnement que receiptDetailFragment
+        ci-dessus.
+    -->
+    <fragment
+        android:id="@+id/receiptPdfViewerFragment"
+        android:name="com.arzikina.ne.presentation.utilities.receipts.ReceiptPdfViewerFragment"
+        android:label="@string/receipt_viewer_title"
+        tools:layout="@layout/fragment_receipt_pdf_viewer">
+        <argument
+            android:name="receiptId"
+            app:argType="long" />
+    </fragment>
+
     <fragment
         android:id="@+id/securityQuestionFragment"
         android:name="com.arzikina.ne.presentation.profile.SecurityQuestionUpdateFragment"

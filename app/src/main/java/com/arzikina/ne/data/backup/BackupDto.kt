@@ -45,7 +45,15 @@ data class BackupPayload(
      * ancien fichier restauré ne recrée simplement aucune planification, sans erreur (même
      * comportement que `persons`/`loans`/`recurringTransactions` plus haut). */
     val financialPlans: List<FinancialPlanDto> = emptyList(),
-    val financialPlanItems: List<FinancialPlanItemDto> = emptyList()
+    val financialPlanItems: List<FinancialPlanItemDto> = emptyList(),
+    /** Ajouté après coup (voir `ReceiptEntity`, cahier des charges "Gestion des reçus" Étape 9) :
+     * liste vide par défaut pour rester compatible avec les fichiers exportés avant son existence —
+     * un ancien fichier restauré ne recrée simplement aucun reçu, sans erreur (même comportement que
+     * les autres listes ajoutées après coup ci-dessus). Contrairement à toutes les autres listes de
+     * ce fichier, chaque [ReceiptDto] embarque le contenu BINAIRE complet d'un PDF (voir sa doc) —
+     * accepté explicitement : un fichier de sauvegarde qui contient beaucoup de reçus, ou des PDF
+     * volumineux, peut donc devenir nettement plus lourd qu'avant cette fonctionnalité. */
+    val receipts: List<ReceiptDto> = emptyList()
 )
 
 /**
@@ -334,4 +342,36 @@ data class FinancialPlanItemDto(
     val transactionId: Long? = null,
     val createdAt: Long,
     val updatedAt: Long
+)
+
+/**
+ * Un reçu PDF (voir `ReceiptEntity`/`domain/model/Receipt`) — le SEUL DTO de ce fichier à embarquer
+ * du contenu binaire ([pdfBase64]) plutôt que de simples métadonnées : voir la doc de tête de
+ * `BackupPayload.receipts` pour le compromis assumé (taille de fichier), et la doc de tête de
+ * `BackupMappers` pour le raisonnement complet sur la lecture/écriture du fichier physique, qui
+ * reste hors de ce DTO et de ses fonctions de correspondance (fonctions PURES, voir la convention
+ * de ce fichier).
+ *
+ * PAS de champ `localPath` : le chemin physique est un détail d'implémentation propre à un appareil
+ * donné (voir `Receipt.localPath`) — la restauration écrit toujours [pdfBase64] vers un tout NOUVEAU
+ * fichier (nom UUID neuf, voir `ReceiptFileStorage.writeBytes`), jamais vers l'ancien chemin, qui
+ * n'existe de toute façon pas sur l'appareil de destination.
+ */
+@Serializable
+data class ReceiptDto(
+    val id: Long,
+    val fileName: String,
+    val receivedAt: Long,
+    val fileSize: Long,
+    val mimeType: String,
+    val sourceApp: String? = null,
+    val sourceName: String? = null,
+    val amountMinor: Long? = null,
+    val createdAt: Long,
+    val updatedAt: Long,
+    /** Contenu binaire complet du fichier PDF, encodé en Base64 (voir `java.util.Base64`, même
+     * choix que `util/PasswordHasher`). Lu depuis/écrit vers le disque uniquement par
+     * `BackupRepositoryImpl` (via `ReceiptFileStorage`), jamais par ce DTO ni par les fonctions de
+     * `BackupMappers` qui le manipulent. */
+    val pdfBase64: String
 )

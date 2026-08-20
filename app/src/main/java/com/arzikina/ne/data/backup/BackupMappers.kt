@@ -8,6 +8,7 @@ import com.arzikina.ne.data.local.entity.FinancialPlanItemEntity
 import com.arzikina.ne.data.local.entity.LoanEntity
 import com.arzikina.ne.data.local.entity.LoanPaymentEntity
 import com.arzikina.ne.data.local.entity.PersonEntity
+import com.arzikina.ne.data.local.entity.ReceiptEntity
 import com.arzikina.ne.data.local.entity.RecurringTransactionEntity
 import com.arzikina.ne.data.local.entity.RecurringTransactionOccurrenceEntity
 import com.arzikina.ne.data.local.entity.SavingsGoalEntity
@@ -34,6 +35,7 @@ import com.arzikina.ne.domain.model.SecurityQuestion
 import com.arzikina.ne.domain.model.ThemeMode
 import com.arzikina.ne.domain.model.TransactionType
 import com.arzikina.ne.domain.model.UserPreferences
+import java.util.Base64
 
 /**
  * Conversions Entity Room <-> DTO de sauvegarde. Volontairement séparées des
@@ -551,4 +553,49 @@ fun FinancialPlanItemDto.remapIds(
     planId = planIdMap.getValue(planId),
     categoryId = categoryId?.let { categoryIdMap[it] },
     transactionId = transactionId?.let { transactionIdMap[it] }
+)
+
+/**
+ * Voir la doc de tête de [ReceiptDto]. Contrairement à toutes les autres fonctions `toDto()` de ce
+ * fichier, celle-ci prend un paramètre supplémentaire ([pdfBytes]) : elle reste néanmoins une
+ * fonction PURE (aucun accès disque ici) — c'est à l'appelant ([com.arzikina.ne.data.repository.BackupRepositoryImpl.exportBackup],
+ * seul à connaître [com.arzikina.ne.data.receipts.ReceiptFileStorage]) de lire le fichier physique
+ * désigné par [ReceiptEntity.localPath] et de fournir ses octets ici.
+ */
+fun ReceiptEntity.toDto(pdfBytes: ByteArray) = ReceiptDto(
+    id = id,
+    fileName = fileName,
+    receivedAt = receivedAt,
+    fileSize = fileSize,
+    mimeType = mimeType,
+    sourceApp = sourceApp,
+    sourceName = sourceName,
+    amountMinor = amountMinor,
+    createdAt = createdAt,
+    updatedAt = updatedAt,
+    pdfBase64 = Base64.getEncoder().encodeToString(pdfBytes)
+)
+
+/**
+ * Voir la doc de tête de [ReceiptDto] et de [ReceiptEntity.toDto] ci-dessus : [localPath] et
+ * [fileSize] proviennent tous les deux du fichier RÉELLEMENT écrit sur le disque de destination
+ * (voir `ReceiptFileStorage.writeBytes`, appelé par `BackupRepositoryImpl.importBackup` AVANT
+ * cette fonction) — jamais reconstruits ni recopiés depuis [ReceiptDto.fileSize] ici (fonction pure,
+ * aucun accès disque). `id = 0L` : comme toutes les autres tables de ce fichier, un reçu restauré
+ * reçoit toujours un nouvel id généré par SQLite (voir la doc de tête de ce fichier) — aucune autre
+ * table ne référence l'id d'un reçu, pas de table de correspondance à construire.
+ */
+fun ReceiptDto.toEntity(userId: Long, localPath: String, fileSize: Long) = ReceiptEntity(
+    id = 0L,
+    userId = userId,
+    fileName = fileName,
+    localPath = localPath,
+    receivedAt = receivedAt,
+    fileSize = fileSize,
+    mimeType = mimeType,
+    sourceApp = sourceApp,
+    sourceName = sourceName,
+    amountMinor = amountMinor,
+    createdAt = createdAt,
+    updatedAt = updatedAt
 )

@@ -25,6 +25,7 @@ import com.arzikina.ne.presentation.components.AccountPickerDialog
 import com.arzikina.ne.presentation.components.ConfirmDialogs
 import com.arzikina.ne.presentation.transactions.displayTextRes
 import com.arzikina.ne.util.Money
+import com.arzikina.ne.util.TriggerTimeFormatter
 import com.google.android.material.datepicker.MaterialDatePicker
 import com.google.android.material.timepicker.MaterialTimePicker
 import com.google.android.material.timepicker.TimeFormat

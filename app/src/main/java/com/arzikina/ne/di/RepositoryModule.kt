@@ -9,6 +9,7 @@ import com.arzikina.ne.data.repository.CategoryRepositoryImpl
 import com.arzikina.ne.data.repository.FinancialPlanRepositoryImpl
 import com.arzikina.ne.data.repository.LoanRepositoryImpl
 import com.arzikina.ne.data.repository.PersonRepositoryImpl
+import com.arzikina.ne.data.repository.ReceiptRepositoryImpl
 import com.arzikina.ne.data.repository.RecurringTransactionRepositoryImpl
 import com.arzikina.ne.data.repository.SavingsGoalRepositoryImpl
 import com.arzikina.ne.data.repository.SessionManagerImpl
@@ -25,6 +26,7 @@ import com.arzikina.ne.domain.repository.CategoryRepository
 import com.arzikina.ne.domain.repository.FinancialPlanRepository
 import com.arzikina.ne.domain.repository.LoanRepository
 import com.arzikina.ne.domain.repository.PersonRepository
+import com.arzikina.ne.domain.repository.ReceiptRepository
 import com.arzikina.ne.domain.repository.RecurringTransactionRepository
 import com.arzikina.ne.domain.repository.SavingsGoalRepository
 import com.arzikina.ne.domain.repository.SessionManager
@@ -104,4 +106,8 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindAutomationScheduler(impl: AutomationSchedulerImpl): AutomationScheduler
+
+    @Binds
+    @Singleton
+    abstract fun bindReceiptRepository(impl: ReceiptRepositoryImpl): ReceiptRepository
 }

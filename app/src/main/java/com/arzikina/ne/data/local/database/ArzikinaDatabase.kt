@@ -12,6 +12,7 @@ import com.arzikina.ne.data.local.dao.FinancialPlanItemDao
 import com.arzikina.ne.data.local.dao.LoanDao
 import com.arzikina.ne.data.local.dao.LoanPaymentDao
 import com.arzikina.ne.data.local.dao.PersonDao
+import com.arzikina.ne.data.local.dao.ReceiptDao
 import com.arzikina.ne.data.local.dao.RecurringTransactionDao
 import com.arzikina.ne.data.local.dao.RecurringTransactionOccurrenceDao
 import com.arzikina.ne.data.local.dao.SavingsGoalDao
@@ -26,6 +27,7 @@ import com.arzikina.ne.data.local.entity.FinancialPlanItemEntity
 import com.arzikina.ne.data.local.entity.LoanEntity
 import com.arzikina.ne.data.local.entity.LoanPaymentEntity
 import com.arzikina.ne.data.local.entity.PersonEntity
+import com.arzikina.ne.data.local.entity.ReceiptEntity
 import com.arzikina.ne.data.local.entity.RecurringTransactionEntity
 import com.arzikina.ne.data.local.entity.RecurringTransactionOccurrenceEntity
 import com.arzikina.ne.data.local.entity.SavingsGoalEntity
@@ -90,6 +92,9 @@ import com.arzikina.ne.data.local.entity.UserEntity
  *   fréquence existante (voir [MIGRATION_19_20]/[RecurringTransactionEntity]/
  *   [com.arzikina.ne.domain.model.RecurringTransaction]) — réellement utilisée pour programmer son
  *   déclenchement (voir `com.arzikina.ne.work.AutomationScheduler`), pas seulement affichée.
+ * - 21 : Gestion des reçus PDF, table `receipts` (voir [MIGRATION_20_21]/[ReceiptEntity]/
+ *   [com.arzikina.ne.domain.model.Receipt]) — indépendante du reste du modèle financier, aucune
+ *   clé étrangère.
  */
 @Database(
     entities = [
@@ -106,9 +111,10 @@ import com.arzikina.ne.data.local.entity.UserEntity
         RecurringTransactionEntity::class,
         RecurringTransactionOccurrenceEntity::class,
         FinancialPlanEntity::class,
-        FinancialPlanItemEntity::class
+        FinancialPlanItemEntity::class,
+        ReceiptEntity::class
     ],
-    version = 20,
+    version = 21,
     exportSchema = true
 )
 @TypeConverters(Converters::class)
@@ -127,4 +133,5 @@ abstract class ArzikinaDatabase : RoomDatabase() {
     abstract fun recurringTransactionOccurrenceDao(): RecurringTransactionOccurrenceDao
     abstract fun financialPlanDao(): FinancialPlanDao
     abstract fun financialPlanItemDao(): FinancialPlanItemDao
+    abstract fun receiptDao(): ReceiptDao
 }

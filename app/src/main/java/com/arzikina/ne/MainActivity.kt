@@ -1,11 +1,14 @@
 package com.arzikina.ne
 
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.os.SystemClock
 import android.view.View
 import android.view.ViewGroup
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
+import androidx.core.content.IntentCompat
 import androidx.core.os.bundleOf
 import androidx.core.view.ViewCompat
 import androidx.core.widget.NestedScrollView
@@ -14,16 +17,21 @@ import androidx.fragment.app.FragmentManager
 import androidx.navigation.NavController
 import androidx.navigation.fragment.NavHostFragment
 import androidx.lifecycle.lifecycleScope
+import com.arzikina.ne.data.receipts.ReceiptFileStorage
 import com.arzikina.ne.databinding.ActivityMainBinding
 import com.arzikina.ne.domain.model.ThemeMode
 import com.arzikina.ne.domain.repository.BiometricAuthenticator
+import com.arzikina.ne.domain.repository.ReceiptRepository
 import com.arzikina.ne.domain.repository.RecurringTransactionRepository
 import com.arzikina.ne.domain.repository.SessionManager
 import com.arzikina.ne.domain.repository.UserPreferencesRepository
 import com.arzikina.ne.presentation.components.NavAnimations
 import com.arzikina.ne.presentation.security.BiometricLockFragment
 import com.arzikina.ne.presentation.utilities.recurring.RecurringOccurrenceQueueDialogFragment
+import com.arzikina.ne.util.Constants
 import com.arzikina.ne.util.SystemBars
+import com.arzikina.ne.util.external.ExternalAppLauncher
+import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -54,12 +62,29 @@ class MainActivity : AppCompatActivity() {
     @Inject
     lateinit var biometricAuthenticator: BiometricAuthenticator
 
+    @Inject
+    lateinit var receiptRepository: ReceiptRepository
+
+    @Inject
+    lateinit var receiptFileStorage: ReceiptFileStorage
+
+    @Inject
+    lateinit var externalAppLauncher: ExternalAppLauncher
+
     private lateinit var binding: ActivityMainBinding
     private lateinit var navController: NavController
 
     /** Voir le listener posé dans [onCreate] : garantit une génération unique par processus,
      * jamais par-dessus [R.id.biometricLockFragment] (voir sa doc pour le risque évité). */
     private var hasGeneratedMissingRecurringOccurrences = false
+
+    /** Voir [handleIncomingReceiptShare]/[tryProcessPendingReceiptShare] : un PDF partagé en
+     * attente d'import (URI encore lisible, métadonnées déjà résolues) — `null` tant qu'aucun
+     * partage n'est en attente. Volontairement un simple champ en mémoire, PAS persisté : si le
+     * processus est tué pendant l'attente (verrou biométrique non franchi, app en arrière-plan
+     * longtemps...), ce partage est perdu — limitation acceptée, voir la doc de
+     * [handleIncomingReceiptShare] pour le raisonnement complet. */
+    private var pendingReceiptShare: PendingReceiptShare? = null
 
     /** Voir [onStop]/[checkBiometricReentryLock] : horodatage du dernier passage en arrière-plan
      * RÉEL (pas une simple rotation d'écran), `null` tant qu'aucun ne s'est encore produit — ce qui
@@ -159,7 +184,36 @@ class MainActivity : AppCompatActivity() {
                 hasGeneratedMissingRecurringOccurrences = true
                 generateMissingRecurringOccurrences()
             }
+            // Gestion des reçus (voir [tryProcessPendingReceiptShare]) : retente un import en
+            // attente à CHAQUE destination atteinte hors écran d'authentification/verrouillage —
+            // pas seulement le Dashboard (contrairement au bloc ci-dessus), car un déverrouillage
+            // "resume check" (voir BiometricLockFragment.isResumeCheck) révèle l'écran quitté par
+            // l'utilisateur, pas forcément le Dashboard. No-op immédiat si aucun partage en attente.
+            if (destination.id !in AUTH_DESTINATION_IDS) {
+                tryProcessPendingReceiptShare()
+            }
         }
+
+        // Partage entrant à froid (app pas encore lancée, voir cahier des charges "Gestion des
+        // reçus" section 1) : l'Intent de lancement est déjà celui du partage dans ce cas (PAS
+        // besoin d'attendre onNewIntent, réservé aux partages reçus APP DÉJÀ EN COURS D'EXÉCUTION,
+        // voir sa doc). Placé APRÈS l'inflation du graphe (juste au-dessus) : [tryProcessPendingReceiptShare]
+        // a besoin de `navController.currentDestination`, déjà valide à ce stade.
+        handleIncomingReceiptShare(intent)
+    }
+
+    /**
+     * Reçoit un partage ACTION_SEND alors qu'Arzikina est déjà lancée (voir `AndroidManifest.xml`,
+     * `android:launchMode="singleTask"` sur cette Activity — indispensable pour que ce callback soit
+     * appelé plutôt qu'une seconde instance créée). `setIntent(intent)` AVANT tout traitement :
+     * même règle documentée officiellement pour `onNewIntent` (`getIntent()` doit refléter le
+     * dernier Intent reçu, notamment pour un éventuel redémarrage de l'Activity par le système par
+     * la suite).
+     */
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        handleIncomingReceiptShare(intent)
     }
 
     /**
@@ -269,6 +323,115 @@ class MainActivity : AppCompatActivity() {
             RecurringOccurrenceQueueDialogFragment().show(supportFragmentManager, RECURRING_QUEUE_DIALOG_TAG)
         }
     }
+
+    /**
+     * Point d'entrée UNIQUE pour un [Intent] potentiellement porteur d'un partage PDF (cahier des
+     * charges "Gestion des reçus", section 1) — appelé aussi bien pour l'Intent de lancement à froid
+     * ([onCreate]) que pour un partage reçu app déjà ouverte ([onNewIntent]). Ignore silencieusement
+     * tout Intent qui n'est pas EXACTEMENT `ACTION_SEND`/`application/pdf` avec un flux exploitable
+     * (ex. l'Intent `MAIN`/`LAUNCHER` habituel) : ce n'est jamais une erreur, seulement "rien à
+     * importer cette fois".
+     *
+     * Ne copie/n'enregistre RIEN elle-même : résout uniquement les métadonnées immédiatement
+     * disponibles (nom d'origine, application source si déterminable) et délègue tout le reste à
+     * [tryProcessPendingReceiptShare], qui applique la garde biométrique (voir sa doc) avant
+     * d'effectuer la copie réelle — potentiellement bien après cet appel si l'app est verrouillée.
+     *
+     * Résolution de l'application source via [Activity.getReferrer] (voir sa documentation
+     * officielle) : reflète soit `Intent.EXTRA_REFERRER`/`EXTRA_REFERRER_NAME` posé explicitement
+     * par l'application source, soit — à défaut — l'information de provenance suivie par le système
+     * pour cet Intent. Non garanti par TOUTES les applications/lanceurs (cahier des charges section
+     * 3) : `null` dans ce cas, jamais une provenance devinée autrement (ex. jamais une simple
+     * supposition basée sur le nom du fichier).
+     */
+    private fun handleIncomingReceiptShare(intent: Intent?) {
+        if (intent == null || intent.action != Intent.ACTION_SEND || intent.type != Constants.RECEIPT_MIME_TYPE) return
+        val sourceUri = IntentCompat.getParcelableExtra(intent, Intent.EXTRA_STREAM, Uri::class.java) ?: return
+
+        // Aucun ajout au bloc <queries> du manifeste nécessaire ici (contrairement à
+        // ExternalAppLauncher.listLaunchableApps) : une application qui vient de nous envoyer un
+        // Intent (ce partage lui-même) devient automatiquement visible à notre PackageManager —
+        // "visibilité implicite" documentée officiellement (Android 11+, filtrage de visibilité des
+        // packages) — getApplicationInfo(sourcePackageName, ...) fonctionne donc sans déclaration
+        // supplémentaire, quelle que soit l'application source.
+        val sourcePackageName = referrer?.takeIf { it.scheme == REFERRER_APP_SCHEME }?.host
+        val sourceAppInfo = sourcePackageName?.let { externalAppLauncher.getAppInfo(it) }
+        val displayName = receiptFileStorage.queryDisplayName(sourceUri)
+            ?: getString(R.string.receipt_share_default_file_name)
+
+        pendingReceiptShare = PendingReceiptShare(
+            uriString = sourceUri.toString(),
+            displayName = displayName,
+            // sourceAppInfo peut résoudre un libellé même si l'app source n'a pas correctement
+            // valorisé le referrer côté package (repli sur le nom de package lui-même, voir
+            // ExternalAppLauncher.getAppInfo) : jamais utilisé si sourcePackageName est déjà null.
+            sourcePackage = sourcePackageName,
+            sourceLabel = sourceAppInfo?.label
+        )
+        tryProcessPendingReceiptShare()
+    }
+
+    /**
+     * Effectue l'import RÉEL de [pendingReceiptShare] si — et seulement si — l'application n'est
+     * PAS actuellement sur un écran d'authentification/verrouillage (voir [AUTH_DESTINATION_IDS]) ET
+     * qu'une session existe. `no-op` silencieux si [pendingReceiptShare] est déjà `null` (rien en
+     * attente) : sûr à appeler depuis n'importe quel point de l'Activity sans condition préalable.
+     *
+     * Revérifié APRÈS les `suspend fun` (session) — même raisonnement que
+     * [checkBiometricReentryLock] ("Revérifié : la coroutine ci-dessus a pu laisser le temps...") :
+     * un verrou de retour au premier plan peut apparaître PENDANT cette coroutine (ex. un partage
+     * reçu au tout premier instant où l'app repasse au premier plan, avant même que
+     * [checkBiometricReentryLock] n'ait fini de décider s'il faut verrouiller). ⚠️ Fenêtre résiduelle
+     * documentée : ce deuxième contrôle réduit ce risque sans l'éliminer totalement dans ce cas
+     * précis (deux coroutines indépendantes sur `Dispatchers.Main`, sans verrou explicite entre
+     * elles) — accepté car la seule conséquence visible serait, au pire, la confirmation Snackbar
+     * d'un import déjà réussi affichée un bref instant AVANT que l'écran de verrouillage ne
+     * s'affiche par-dessus : aucune donnée financière, aucune action possible depuis ce Snackbar,
+     * contrairement au risque déjà corrigé pour le dialogue des transactions automatiques (montants/
+     * catégories visibles ET validables). Signalé ici plutôt que silencieusement accepté.
+     */
+    private fun tryProcessPendingReceiptShare() {
+        val pending = pendingReceiptShare ?: return
+        if (navController.currentDestination?.id in AUTH_DESTINATION_IDS) return
+
+        lifecycleScope.launch {
+            val hasSession = sessionManager.getCurrentUserIdOnce() != null
+            if (!hasSession) return@launch
+            if (navController.currentDestination?.id in AUTH_DESTINATION_IDS) return@launch
+
+            // Consommé AVANT l'écriture elle-même : un second appel concurrent (ex. l'immédiat de
+            // handleIncomingReceiptShare ET le listener de destinationChanged déclenchés très près
+            // l'un de l'autre) ne doit jamais importer deux fois le même partage.
+            pendingReceiptShare = null
+
+            val result = runCatching {
+                receiptRepository.importReceipt(
+                    sourceUri = pending.uriString,
+                    displayName = pending.displayName,
+                    mimeType = Constants.RECEIPT_MIME_TYPE,
+                    sourceApp = pending.sourcePackage,
+                    sourceName = pending.sourceLabel
+                )
+            }
+            val messageRes = if (result.isSuccess) {
+                R.string.receipt_share_imported_message
+            } else {
+                R.string.receipt_share_import_failed_message
+            }
+            Snackbar.make(binding.root, messageRes, Snackbar.LENGTH_LONG).show()
+        }
+    }
+
+    /** Voir [handleIncomingReceiptShare] : métadonnées d'un partage PDF déjà résolues, en attente de
+     * la garde biométrique de [tryProcessPendingReceiptShare]. [uriString] plutôt qu'un [Uri] direct
+     * — cohérent avec `ReceiptRepository.importReceipt`, voir sa doc (aucun type Android dans le
+     * domaine). */
+    private data class PendingReceiptShare(
+        val uriString: String,
+        val displayName: String,
+        val sourcePackage: String?,
+        val sourceLabel: String?
+    )
 
     /**
      * Câblage MANUEL de la Bottom Navigation (plutôt que
@@ -420,6 +583,10 @@ class MainActivity : AppCompatActivity() {
         /** Voir [checkBiometricReentryLock] : délai de grâce sous lequel un aller-retour hors de
          * l'app (sélecteur de photo/fichier système, etc.) ne redemande PAS d'empreinte. */
         const val BIOMETRIC_REENTRY_GRACE_PERIOD_MILLIS = 30_000L
+
+        /** Schéma utilisé par [Activity.getReferrer] pour désigner une application Android (voir sa
+         * documentation officielle) — `android-app://<packageName>`. */
+        const val REFERRER_APP_SCHEME = "android-app"
 
         /** Destinations sans Bottom Navigation ni onglet correspondant (voir plus haut).
          * `biometricLockFragment` y figure pour la même raison que les 3 écrans d'authentification :

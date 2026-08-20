@@ -12,6 +12,7 @@ import com.arzikina.ne.databinding.ItemTransactionCompactBinding
 import com.arzikina.ne.databinding.ItemTransactionDayHeaderBinding
 import com.arzikina.ne.domain.model.CurrencyAmount
 import com.arzikina.ne.domain.model.TransactionType
+import com.arzikina.ne.util.DayLabel
 import com.arzikina.ne.util.Money
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
