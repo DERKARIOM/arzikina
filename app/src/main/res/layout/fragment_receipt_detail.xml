@@ -121,6 +121,90 @@
 
             </LinearLayout>
 
+            <!-- ==================== Montant détecté (suggestion) ====================
+                 Voir ReceiptDetailViewModel.suggestedAmountMinor : UNIQUEMENT une suggestion, jamais
+                 un montant déjà enregistré (voir ReceiptAmountParser, "ne jamais inventer une
+                 donnée") — visible seulement le temps que l'utilisateur confirme, modifie ou
+                 ignore explicitement (voir ReceiptDetailFragment). -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/suggestedAmountCard"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_m"
+                android:checkable="false"
+                android:visibility="gone"
+                app:cardBackgroundColor="?attr/colorSurfaceVariant"
+                app:cardCornerRadius="@dimen/corner_radius_medium"
+                app:cardElevation="0dp"
+                tools:visibility="visible">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="@dimen/spacing_m">
+
+                    <TextView
+                        style="@style/TextAppearance.Material3.TitleSmall"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/receipt_detail_suggested_amount_title"
+                        android:textColor="?attr/colorOnSurface" />
+
+                    <TextView
+                        android:id="@+id/suggestedAmountValue"
+                        style="@style/TextAppearance.Material3.HeadlineSmall"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/spacing_xs"
+                        android:textColor="?attr/colorPrimary"
+                        tools:text="5 000 F CFA" />
+
+                    <TextView
+                        style="@style/TextAppearance.Material3.BodySmall"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/spacing_xs"
+                        android:text="@string/receipt_detail_suggested_amount_disclaimer"
+                        android:textColor="?attr/colorOnSurfaceVariant" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/confirmSuggestedAmountButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/spacing_m"
+                        android:background="@drawable/forme_radius_10dp"
+                        android:text="@string/receipt_detail_suggested_amount_confirm"
+                        android:textColor="@color/white" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/spacing_xs"
+                        android:orientation="horizontal">
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/editSuggestedAmountButton"
+                            style="@style/Widget.Material3.Button.TextButton"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="@string/receipt_detail_suggested_amount_edit" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/dismissSuggestedAmountButton"
+                            style="@style/Widget.Material3.Button.TextButton"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="@string/receipt_detail_suggested_amount_dismiss" />
+
+                    </LinearLayout>
+
+                </LinearLayout>
+
+            </com.google.android.material.card.MaterialCardView>
+
             <!-- ==================== Informations ==================== -->
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
@@ -245,6 +329,23 @@
                             tools:text="5 000 F CFA" />
 
                     </LinearLayout>
+
+                    <!-- Voir ReceiptDetailViewModel.detectAmountButtonState (Hidden/Idle/Loading) :
+                         visible SEULEMENT tant qu'aucun montant n'est enregistré (amountRow ci-dessus
+                         masqué) et qu'aucune suggestion n'est déjà affichée par suggestedAmountCard —
+                         jamais les deux en même temps. Déclenchement à la demande uniquement, jamais
+                         automatique (voir cahier des charges, "extraction du montant"). -->
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/detectAmountButton"
+                        style="@style/Widget.Material3.Button.TextButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/spacing_s"
+                        android:paddingHorizontal="0dp"
+                        android:text="@string/receipt_detail_detect_amount_action"
+                        android:visibility="gone"
+                        app:icon="@drawable/ic_search_24"
+                        tools:visibility="visible" />
 
                 </LinearLayout>
 

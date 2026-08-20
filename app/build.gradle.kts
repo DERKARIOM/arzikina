@@ -98,6 +98,11 @@ dependencies {
     // Graphiques (statistiques : camembert, barres, évolution)
     implementation(libs.vico.views)
 
+    // Extraction de texte des reçus PDF (voir data/receipts/ReceiptTextExtractor.kt) — utilisée
+    // pour SUGGÉRER un montant à l'utilisateur, jamais pour le renseigner automatiquement (voir
+    // cahier des charges "Gestion des reçus" et la doc de ReceiptDetailViewModel).
+    implementation(libs.pdfbox.android)
+
     // Tests unitaires JVM (src/test) : ViewModels des prêts/emprunts — voir le détail de chaque
     // dépendance dans gradle/libs.versions.toml.
     testImplementation(libs.junit)

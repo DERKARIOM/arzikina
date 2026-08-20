@@ -58,6 +58,12 @@ vico = "3.2.2"
 # Listes (RecyclerView)
 recyclerview = "1.4.0"
 
+# Extraction de texte des reçus PDF (suggestion de montant, jamais persistée automatiquement — voir
+# data/receipts/ReceiptTextExtractor.kt). Portage Android d'Apache PdfBox, licence Apache 2.0.
+# 2.0.27.0 est la dernière version publiée sur Maven Central (projet peu actif depuis, mais stable
+# et largement utilisé en production).
+pdfboxAndroid = "2.0.27.0"
+
 # Tests (voir la section [libraries] plus bas pour le détail de chaque usage :
 # JVM pur pour les ViewModels, instrumentés pour Room)
 mockk = "1.14.11"
@@ -114,6 +120,9 @@ coil = { group = "io.coil-kt.coil3", name = "coil", version.ref = "coil" }
 
 # Vico (graphiques statistiques), variante Views (pas de Compose)
 vico-views = { group = "com.patrykandpatrick.vico", name = "views", version.ref = "vico" }
+
+# Extraction de texte des reçus PDF (voir data/receipts/ReceiptTextExtractor.kt)
+pdfbox-android = { group = "com.tom-roush", name = "pdfbox-android", version.ref = "pdfboxAndroid" }
 
 # Tests unitaires JVM (src/test) : ViewModels des prêts/emprunts (voir Étape "Tests et correction
 # des bugs" du plan de développement). kotlinx-coroutines-test pour piloter les coroutines/StateFlow

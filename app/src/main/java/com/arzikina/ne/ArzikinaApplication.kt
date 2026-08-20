@@ -6,6 +6,7 @@ import androidx.work.Configuration
 import com.arzikina.ne.domain.repository.AutomationScheduler
 import com.arzikina.ne.domain.repository.RecurringTransactionRepository
 import com.arzikina.ne.work.RecurringOccurrencesScheduler
+import com.tom_roush.pdfbox.android.PDFBoxResourceLoader
 import dagger.hilt.android.HiltAndroidApp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -39,6 +40,13 @@ import javax.inject.Inject
  * de test explicite "automatisation historique"). `AutomationScheduler.schedule` étant idempotent
  * (annule puis reprogramme), répéter cet appel à chaque lancement du processus est sans risque de
  * doublon.
+ *
+ * [PDFBoxResourceLoader.init] : requis par PdfBox-Android AVANT tout usage de la bibliothèque (voir
+ * `data/receipts/ReceiptTextExtractor`, "Extraction du montant d'un reçu") — charge ses ressources
+ * de polices une seule fois pour tout le processus. Idempotent et peu coûteux (pas de lecture de
+ * fichier utilisateur), placé ici par cohérence avec les autres initialisations globales de cette
+ * classe plutôt que dans `ReceiptTextExtractor` lui-même (qui resterait sinon appelé plusieurs fois
+ * sans bénéfice, une fois par instance créée par Hilt).
  */
 @HiltAndroidApp
 class ArzikinaApplication : Application(), Configuration.Provider {
@@ -59,6 +67,7 @@ class ArzikinaApplication : Application(), Configuration.Provider {
 
     override fun onCreate() {
         super.onCreate()
+        PDFBoxResourceLoader.init(applicationContext)
         RecurringOccurrencesScheduler.schedule(this)
         rescheduleActiveAutomations()
     }

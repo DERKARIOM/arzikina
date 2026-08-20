@@ -935,6 +935,25 @@
     <string name="receipt_detail_amount_label">Montant</string>
 
     <!--
+        Gestion des reçus — extraction/suggestion de montant (voir ReceiptDetailViewModel,
+        ReceiptAmountParser) : SUGGESTION uniquement, jamais enregistrée sans confirmation explicite
+        (voir la doc de ReceiptAmountParser, "ne jamais inventer une donnée").
+    -->
+    <string name="receipt_detail_suggested_amount_title">Montant détecté</string>
+    <string name="receipt_detail_suggested_amount_disclaimer">Détection automatique, à vérifier avant de confirmer.</string>
+    <string name="receipt_detail_suggested_amount_confirm">Confirmer ce montant</string>
+    <string name="receipt_detail_suggested_amount_edit">Modifier</string>
+    <string name="receipt_detail_suggested_amount_dismiss">Ignorer</string>
+    <string name="receipt_detail_edit_amount_title">Modifier le montant</string>
+    <string name="receipt_detail_edit_amount_hint">Montant</string>
+    <string name="receipt_detail_edit_amount_empty_error">Indiquez un montant valide.</string>
+    <!-- Voir fragment_receipt_detail.xml (detectAmountButton) : déclenchement à la demande UNIQUEMENT
+         (jamais automatique, voir ReceiptDetailViewModel.detectAmount) — visible seulement tant
+         qu'aucun montant n'est enregistré et qu'aucune suggestion n'est déjà affichée. -->
+    <string name="receipt_detail_detect_amount_action">Détecter le montant</string>
+    <string name="receipt_detail_detect_amount_loading">Détection en cours…</string>
+
+    <!--
         Gestion des reçus — visualiseur PDF plein écran (voir
         presentation/utilities/receipts/ReceiptPdfViewerFragment, cahier des charges section 7).
         "receipt_detail_preview_unavailable" (existante) est réutilisée pour le même message quand

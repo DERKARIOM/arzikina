@@ -12,6 +12,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import com.arzikina.ne.R
+import com.arzikina.ne.databinding.DialogEditReceiptAmountBinding
 import com.arzikina.ne.databinding.DialogRenameReceiptBinding
 import com.arzikina.ne.databinding.FragmentReceiptDetailBinding
 import com.arzikina.ne.domain.model.Receipt
@@ -57,11 +58,17 @@ class ReceiptDetailFragment : Fragment(R.layout.fragment_receipt_detail) {
         viewBinding.openButton.setOnClickListener { viewModel.openWithAnotherApp() }
         viewBinding.shareButton.setOnClickListener { viewModel.shareReceipt() }
         viewBinding.previewContainer.setOnClickListener { openPdfViewer() }
+        viewBinding.confirmSuggestedAmountButton.setOnClickListener { viewModel.confirmSuggestedAmount() }
+        viewBinding.dismissSuggestedAmountButton.setOnClickListener { viewModel.dismissSuggestedAmount() }
+        viewBinding.editSuggestedAmountButton.setOnClickListener { showEditAmountDialog() }
+        viewBinding.detectAmountButton.setOnClickListener { viewModel.detectAmount() }
 
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch { viewModel.uiState.collect { state -> render(state) } }
                 launch { viewModel.previewBitmap.collect { bitmap -> renderPreview(bitmap) } }
+                launch { viewModel.suggestedAmountMinor.collect { amount -> renderSuggestedAmount(amount) } }
+                launch { viewModel.detectAmountButtonState.collect { state -> renderDetectAmountButton(state) } }
                 launch { viewModel.events.collect { event -> handleEvent(event) } }
             }
         }
@@ -135,6 +142,38 @@ class ReceiptDetailFragment : Fragment(R.layout.fragment_receipt_detail) {
         }
     }
 
+    /** Voir `ReceiptDetailViewModel.suggestedAmountMinor` : `null` masque le bandeau (aucune
+     * suggestion en attente — cas normal la plupart du temps, voir Étape 5, "déclenchement à la
+     * demande"), une valeur non nulle l'affiche avec le montant formaté (voir [Money.formatAmount]). */
+    private fun renderSuggestedAmount(amountMinor: Long?) {
+        val binding = binding ?: return
+        if (amountMinor != null) {
+            binding.suggestedAmountValue.text = Money.formatAmount(amountMinor)
+            binding.suggestedAmountCard.visibility = View.VISIBLE
+        } else {
+            binding.suggestedAmountCard.visibility = View.GONE
+        }
+    }
+
+    /** Voir la doc de [DetectAmountButtonState] — même fichier que [ReceiptDetailViewModel], aucun
+     * import supplémentaire nécessaire. */
+    private fun renderDetectAmountButton(state: DetectAmountButtonState) {
+        val binding = binding ?: return
+        when (state) {
+            DetectAmountButtonState.Hidden -> binding.detectAmountButton.visibility = View.GONE
+            DetectAmountButtonState.Idle -> {
+                binding.detectAmountButton.visibility = View.VISIBLE
+                binding.detectAmountButton.isEnabled = true
+                binding.detectAmountButton.text = getString(R.string.receipt_detail_detect_amount_action)
+            }
+            DetectAmountButtonState.Loading -> {
+                binding.detectAmountButton.visibility = View.VISIBLE
+                binding.detectAmountButton.isEnabled = false
+                binding.detectAmountButton.text = getString(R.string.receipt_detail_detect_amount_loading)
+            }
+        }
+    }
+
     private fun handleEvent(event: ReceiptDetailEvent) {
         val binding = binding ?: return
         val message = when (event) {
@@ -169,6 +208,41 @@ class ReceiptDetailFragment : Fragment(R.layout.fragment_receipt_detail) {
                 } else {
                     dialogBinding.renameLayout.error = null
                     viewModel.renameReceipt(newName)
+                    dialog.dismiss()
+                }
+            }
+        }
+        dialog.show()
+    }
+
+    /**
+     * Voir la doc de [showRenameDialog] : même principe de validation manuelle du bouton positif
+     * (erreur affichée SUR LE CHAMP, dialogue jamais fermé puis rouvert plutôt qu'une fermeture
+     * immédiate sur une saisie invalide). Pré-rempli avec la valeur actuellement suggérée (voir
+     * `ReceiptDetailViewModel.suggestedAmountMinor`) — permet de la CORRIGER plutôt que de la
+     * ressaisir entièrement depuis zéro. `return` silencieux si aucune suggestion n'est affichée :
+     * ce bouton n'est de toute façon visible que dans ce cas (voir `suggestedAmountCard`).
+     */
+    private fun showEditAmountDialog() {
+        val suggested = viewModel.suggestedAmountMinor.value ?: return
+        val dialogBinding = DialogEditReceiptAmountBinding.inflate(layoutInflater)
+        dialogBinding.editAmountInput.setText(Money.formatMajorUnits(suggested))
+
+        val dialog = MaterialAlertDialogBuilder(requireContext())
+            .setTitle(R.string.receipt_detail_edit_amount_title)
+            .setView(dialogBinding.root)
+            .setPositiveButton(R.string.receipt_detail_edit_amount_title, null)
+            .setNegativeButton(R.string.action_cancel, null)
+            .create()
+
+        dialog.setOnShowListener {
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
+                val amountMinor = Money.parseToMinorUnits(dialogBinding.editAmountInput.text?.toString().orEmpty())
+                if (amountMinor == null) {
+                    dialogBinding.editAmountLayout.error = getString(R.string.receipt_detail_edit_amount_empty_error)
+                } else {
+                    dialogBinding.editAmountLayout.error = null
+                    viewModel.saveAmount(amountMinor)
                     dialog.dismiss()
                 }
             }
