@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Puce translucide "pilule" posée sur le dégradé du PostCard budget moderne (voir
+    item_budget_modern.xml) : badge de statut ("● En cours") et puce "jours restants"
+    ("🕐 12 jours restants") partagent ce même fond, seul le petit point coloré du badge de statut
+    varie selon l'état (voir BudgetModernItemBinder) — cahier des charges section 4 : "Adapter
+    légèrement la couleur du badge selon l'état, tout en conservant le style général du PostCard".
+
+    android:radius="100dp" : plus grand que la hauteur réelle de la puce (toujours wrap_content, une
+    ligne de texte) — force un arrondi COMPLET (pilule) quelle que soit la hauteur exacte au moment
+    du rendu, sans avoir à la calculer, idiome standard pour ce genre de forme.
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="@color/arzikina_chip_on_budget_card" />
+    <corners android:radius="100dp" />
+</shape>

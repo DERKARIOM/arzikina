@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Fond dégradé du PostCard "moderne" d'un budget — Fragment Budget UNIQUEMENT (voir
+    item_budget_modern.xml, cahier des charges "Personnalisation des PostCards — Fragment Budget
+    uniquement"). Même technique que bg_financial_plan_card_gradient.xml (dégradé fixe du haut vers
+    le bas, posé comme fond du contenu à l'intérieur d'une MaterialCardView qui découpe déjà la
+    forme) — voir sa doc pour le raisonnement complet.
+
+    NE PAS réutiliser pour le PostCard budget du Dashboard (item_budget.xml, inchangé) : ce dernier
+    garde son fond uni @color/arzikina_postcart_background, aucune régression visuelle voulue.
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <gradient
+        android:angle="270"
+        android:startColor="@color/arzikina_budget_card_start"
+        android:endColor="@color/arzikina_budget_card_end" />
+</shape>

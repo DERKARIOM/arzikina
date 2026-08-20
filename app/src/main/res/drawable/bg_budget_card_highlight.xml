@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Fond du bloc "Reste" mis en évidence dans le PostCard budget moderne (voir
+    item_budget_modern.xml) : superposition sombre discrète sur le dégradé environnant, pour
+    distinguer visuellement Reste de Budget total/Dépensé (simples TextView sans fond) — cahier des
+    charges section 5 : "Le montant restant doit être visuellement mis en valeur".
+
+    Rayon plus petit que celui de la carte (voir item_budget_modern.xml, 15dp) : arrondi imbriqué
+    standard, un élément interne reste toujours moins arrondi que son conteneur.
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="@color/arzikina_highlight_on_budget_card" />
+    <corners android:radius="@dimen/corner_radius_small" />
+</shape>

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Menu contextuel (PopupMenu) du bouton "⋮" du PostCard budget moderne — Fragment Budget
+    UNIQUEMENT (voir item_budget_modern.xml/BudgetModernAdapter, cahier des charges "Personnalisation
+    des PostCards — Fragment Budget uniquement"). Même paire Modifier/Supprimer que
+    financial_plan_detail_menu.xml, mais affichée en PopupMenu sur la carte elle-même plutôt que dans
+    la barre d'outils d'un écran de détail séparé (ce budget n'en a pas) : les deux actions
+    déclenchent exactement les callbacks déjà existants de BudgetFragment (navigateToForm/
+    confirmDelete, inchangés).
+-->
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/action_edit_budget"
+        android:icon="@drawable/ic_edit_24"
+        android:title="@string/budget_item_menu_edit" />
+    <item
+        android:id="@+id/action_delete_budget"
+        android:icon="@drawable/ic_delete_24"
+        android:title="@string/action_delete" />
+</menu>

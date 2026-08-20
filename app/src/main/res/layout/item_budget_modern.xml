@@ -1,0 +1,355 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    PostCard "moderne" d'UN budget — Fragment Budget UNIQUEMENT (voir BudgetFragment/
+    BudgetModernAdapter). Redesign sur maquette de référence fournie par l'utilisateur : grande
+    carte à coins très arrondis, fond en dégradé vert/turquoise (voir bg_budget_card_gradient.xml),
+    tous les textes en blanc — même technique "dégradé posé dans une MaterialCardView qui découpe
+    déjà son contenu" que item_financial_plan.xml (voir sa doc pour le raisonnement complet).
+
+    ⚠️ Composant INDÉPENDANT de item_budget.xml (toujours utilisé tel quel par BudgetAdapter/
+    DashboardFragment, jamais modifié) — voir cahier des charges "Personnalisation des PostCards —
+    Fragment Budget uniquement", section 12 : ne jamais faire dépendre l'un de l'autre.
+
+    Toutes les valeurs visibles ici sont des placeholders `tools:` : le remplissage réel est fait
+    par BudgetModernAdapter.ViewHolder.bind (aucune donnée statique dans ce fichier).
+-->
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/budgetModernCard"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginHorizontal="@dimen/spacing_m"
+    android:layout_marginTop="@dimen/spacing_m"
+    android:checkable="false"
+    android:clickable="true"
+    android:focusable="true"
+    app:cardCornerRadius="15dp"
+    app:cardElevation="@dimen/elevation_raised"
+    app:rippleColor="@android:color/white">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@drawable/bg_budget_card_gradient"
+        android:padding="@dimen/spacing_l">
+
+        <!-- A. En-tête : icône catégorie, nom + badge de statut, menu ⋮ (Modifier/Supprimer). -->
+        <ImageView
+            android:id="@+id/categoryIcon"
+            android:layout_width="@dimen/icon_size_large"
+            android:layout_height="@dimen/icon_size_large"
+            android:background="@drawable/bg_icon_circle"
+            android:contentDescription="@null"
+            android:padding="@dimen/spacing_s"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:tint="@color/white"
+            tools:ignore="ImageContrastCheck" />
+
+        <ImageButton
+            android:id="@+id/menuButton"
+            android:layout_width="@dimen/icon_size_default"
+            android:layout_height="@dimen/icon_size_default"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/budget_item_menu_content_description"
+            android:src="@drawable/ic_more_horiz_24"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="@id/categoryIcon"
+            app:tint="@color/white" />
+
+        <TextView
+            android:id="@+id/categoryName"
+            style="@style/TextAppearance.Material3.TitleLarge"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/spacing_m"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textColor="@color/white"
+            android:textStyle="bold"
+            app:layout_constraintEnd_toStartOf="@id/menuButton"
+            app:layout_constraintStart_toEndOf="@id/categoryIcon"
+            app:layout_constraintTop_toTopOf="@id/categoryIcon"
+            tools:text="Alimentation" />
+
+        <!-- Badge de statut : point coloré (teinte selon l'état, voir BudgetModernAdapter) + libellé,
+             posés sur une puce translucide (voir bg_budget_card_chip.xml). -->
+        <LinearLayout
+            android:id="@+id/statusBadge"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/spacing_m"
+            android:layout_marginTop="@dimen/spacing_xs"
+            android:background="@drawable/bg_budget_card_chip"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingHorizontal="@dimen/spacing_s"
+            android:paddingVertical="4dp"
+            app:layout_constraintStart_toStartOf="@id/categoryName"
+            app:layout_constraintTop_toBottomOf="@id/categoryName">
+
+            <View
+                android:id="@+id/statusDot"
+                android:layout_width="8dp"
+                android:layout_height="8dp"
+                android:background="@drawable/bg_icon_circle" />
+
+            <TextView
+                android:id="@+id/statusText"
+                style="@style/TextAppearance.Material3.LabelMedium"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/spacing_xs"
+                android:textColor="@color/white"
+                android:textStyle="bold"
+                tools:text="En cours" />
+
+        </LinearLayout>
+
+        <!-- B. Informations financières : 3 colonnes (poids égaux pour les deux premières, "Reste"
+             mis en évidence dans un bloc à part) — voir cahier des charges section 13 : largeurs
+             réparties par poids pour rester lisibles sur petit écran, jamais de chevauchement. -->
+        <LinearLayout
+            android:id="@+id/financialRow"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/spacing_l"
+            android:baselineAligned="false"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/statusBadge">
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/totalLabel"
+                    style="@style/TextAppearance.Material3.BodySmall"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:alpha="0.85"
+                    android:text="@string/budget_modern_total_label"
+                    android:textColor="@color/white" />
+
+                <TextView
+                    android:id="@+id/totalValue"
+                    style="@style/TextAppearance.Material3.TitleMedium"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:ellipsize="end"
+                    android:maxLines="1"
+                    android:textColor="@color/white"
+                    android:textStyle="bold"
+                    tools:text="50 000 CFA" />
+
+            </LinearLayout>
+
+            <View
+                android:layout_width="1dp"
+                android:layout_height="28dp"
+                android:layout_marginHorizontal="@dimen/spacing_s"
+                android:background="@color/arzikina_divider_on_budget_card" />
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/spentLabel"
+                    style="@style/TextAppearance.Material3.BodySmall"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:alpha="0.85"
+                    android:text="@string/budget_modern_spent_label"
+                    android:textColor="@color/white" />
+
+                <TextView
+                    android:id="@+id/spentValue"
+                    style="@style/TextAppearance.Material3.TitleMedium"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:ellipsize="end"
+                    android:maxLines="1"
+                    android:textColor="@color/white"
+                    android:textStyle="bold"
+                    tools:text="32 500 CFA" />
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/spacing_s"
+                android:background="@drawable/bg_budget_card_highlight"
+                android:orientation="vertical"
+                android:paddingHorizontal="@dimen/spacing_s"
+                android:paddingVertical="@dimen/spacing_xs">
+
+                <TextView
+                    android:id="@+id/remainingLabel"
+                    style="@style/TextAppearance.Material3.BodySmall"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:alpha="0.85"
+                    android:text="@string/budget_modern_remaining_label"
+                    android:textColor="@color/white" />
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <ImageView
+                        android:id="@+id/remainingIcon"
+                        android:layout_width="16dp"
+                        android:layout_height="16dp"
+                        android:contentDescription="@null"
+                        android:src="@drawable/ic_wallet_24"
+                        app:tint="@color/white" />
+
+                    <TextView
+                        android:id="@+id/remainingValue"
+                        style="@style/TextAppearance.Material3.TitleMedium"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="@dimen/spacing_xs"
+                        android:ellipsize="end"
+                        android:maxLines="1"
+                        android:textColor="@color/white"
+                        android:textStyle="bold"
+                        tools:text="17 500 CFA" />
+
+                </LinearLayout>
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+        <!-- C. Barre de progression + pourcentages (gauche/droite, voir cahier des charges section 6). -->
+        <com.google.android.material.progressindicator.LinearProgressIndicator
+            android:id="@+id/progressBar"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/spacing_l"
+            app:indicatorColor="@color/white"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/financialRow"
+            app:trackColor="@color/arzikina_track_on_budget_card"
+            app:trackCornerRadius="5dp"
+            app:trackThickness="10dp"
+            tools:progress="65" />
+
+        <TextView
+            android:id="@+id/percentUsedLabel"
+            style="@style/TextAppearance.Material3.LabelMedium"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/spacing_xs"
+            android:textColor="@color/white"
+            android:textStyle="bold"
+            app:layout_constraintEnd_toStartOf="@id/percentOfBudgetLabel"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/progressBar"
+            tools:text="65 % utilisé" />
+
+        <TextView
+            android:id="@+id/percentOfBudgetLabel"
+            style="@style/TextAppearance.Material3.LabelMedium"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="@color/white"
+            android:textStyle="bold"
+            app:layout_constraintBaseline_toBaselineOf="@id/percentUsedLabel"
+            app:layout_constraintEnd_toEndOf="parent"
+            tools:text="65 % du budget" />
+
+        <!-- D. Séparateur + période/jours restants (voir cahier des charges sections 7/8). -->
+        <View
+            android:id="@+id/bottomDivider"
+            android:layout_width="0dp"
+            android:layout_height="1dp"
+            android:layout_marginTop="@dimen/spacing_m"
+            android:background="@color/arzikina_divider_on_budget_card"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/percentUsedLabel" />
+
+        <ImageView
+            android:id="@+id/periodIcon"
+            android:layout_width="16dp"
+            android:layout_height="16dp"
+            android:layout_marginTop="@dimen/spacing_m"
+            android:contentDescription="@null"
+            android:src="@drawable/ic_calendar_24"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/bottomDivider"
+            app:tint="@color/white" />
+
+        <TextView
+            android:id="@+id/periodValue"
+            style="@style/TextAppearance.Material3.BodySmall"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/spacing_xs"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textColor="@color/white"
+            android:textStyle="bold"
+            app:layout_constraintBottom_toBottomOf="@id/periodIcon"
+            app:layout_constraintEnd_toStartOf="@id/daysChip"
+            app:layout_constraintStart_toEndOf="@id/periodIcon"
+            app:layout_constraintTop_toTopOf="@id/periodIcon"
+            tools:text="01/08/2026 → 31/08/2026" />
+
+        <LinearLayout
+            android:id="@+id/daysChip"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/spacing_s"
+            android:background="@drawable/bg_budget_card_chip"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingHorizontal="@dimen/spacing_s"
+            android:paddingVertical="4dp"
+            app:layout_constraintBottom_toBottomOf="@id/periodIcon"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="@id/periodIcon">
+
+            <ImageView
+                android:id="@+id/daysIcon"
+                android:layout_width="14dp"
+                android:layout_height="14dp"
+                android:contentDescription="@null"
+                android:src="@drawable/ic_time_24"
+                app:tint="@color/white" />
+
+            <TextView
+                android:id="@+id/daysValue"
+                style="@style/TextAppearance.Material3.LabelMedium"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="4dp"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:textColor="@color/white"
+                android:textStyle="bold"
+                tools:text="12 jours restants" />
+
+        </LinearLayout>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</com.google.android.material.card.MaterialCardView>

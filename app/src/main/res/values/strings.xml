@@ -507,6 +507,34 @@
     <string name="budgets_empty_message_filtered">Aucun budget ne correspond à ce filtre.</string>
 
     <!--
+        PostCard budget "moderne" — Fragment Budget UNIQUEMENT (voir item_budget_modern.xml/
+        BudgetModernItemBinder, cahier des charges "Personnalisation des PostCards — Fragment Budget
+        uniquement"). Badge de statut : réutilise budget_filter_upcoming ("À venir"),
+        budget_filter_ongoing ("En cours") et budget_status_completed ("Terminé") ci-dessus, déjà des
+        libellés nus adaptés à un badge — seul budget_modern_status_overspent est nouveau (aucun
+        équivalent nu existant, budget_overspent_prefix ci-dessus étant un préfixe pour un MONTANT,
+        pas un libellé de badge).
+    -->
+    <string name="budget_modern_status_overspent">Dépassé</string>
+    <string name="budget_modern_total_label">Budget total</string>
+    <string name="budget_modern_spent_label">Dépensé</string>
+    <string name="budget_modern_remaining_label">Reste</string>
+    <!-- Puce "jours restants" en bas de carte (distincte du badge de statut) — %1$d = nombre de
+         jours, pas de gestion plurielle dédiée (même convention que budget_status_ongoing_days). -->
+    <string name="budget_modern_days_remaining">%1$d jours restants</string>
+    <string name="budget_modern_starts_in_days">Commence dans %1$d jours</string>
+    <string name="budget_modern_completed_chip">Budget terminé</string>
+    <!-- %1$s/%2$s = pourcentage déjà formaté (ex. "65"), séparé de l'unité "%%" pour rester lisible
+         des deux côtés de la barre de progression (voir maquette). -->
+    <string name="budget_modern_percent_used">%1$d %% utilisé</string>
+    <string name="budget_modern_percent_of_budget">%1$d %% du budget</string>
+    <string name="budget_modern_period_range">%1$s → %2$s</string>
+    <!-- Menu ⋮ (voir menu/budget_item_actions_menu.xml) : action_delete (déjà existante) réutilisée
+         pour "Supprimer", seul "Modifier" est nouveau ici. -->
+    <string name="budget_item_menu_edit">Modifier</string>
+    <string name="budget_item_menu_content_description">Actions du budget</string>
+
+    <!--
         Planification financière par projet (voir cahier des charges "Nouvelle fonctionnalité :
         Planification financière") — INDÉPENDANTE de "Automatisation" (ex-"Planification",
         transactions récurrentes, voir la section "Utilitaires" plus haut dans ce fichier pour son

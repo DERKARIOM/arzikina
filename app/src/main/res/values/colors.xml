@@ -111,4 +111,30 @@
     <!-- Piste (partie non remplie) de la barre de progression sur ce dégradé (~28% blanc) — la
          partie remplie reste @color/white plein. -->
     <color name="arzikina_track_on_financial_plan_card">#47FFFFFF</color>
+
+    <!--
+        PostCard "moderne" d'un budget (Fragment Budget UNIQUEMENT, voir item_budget_modern.xml) —
+        cahier des charges "Personnalisation des PostCards — Fragment Budget uniquement". Couleurs
+        NOMMÉES séparément de arzikina_financial_plan_card_start/end ci-dessus bien que très proches
+        (même famille turquoise/vert, cohérente avec arzikina_primary #42B998, référence explicite du
+        cahier des charges) : garde deux composants indépendants sémantiquement, même si leur rendu
+        visuel se ressemble — un futur changement de l'un n'affecte jamais l'autre par erreur.
+        Volontairement identiques en clair et en sombre (même raisonnement que
+        arzikina_financial_plan_card_start/end) : carte "à part", pas une déclinaison du thème.
+    -->
+    <color name="arzikina_budget_card_start">#FF4CCBA3</color>
+    <color name="arzikina_budget_card_end">#FF1F9A78</color>
+    <!-- Piste (partie non remplie) de la barre de progression sur ce dégradé (~28% blanc) — la
+         partie remplie reste @color/white plein, même principe que arzikina_track_on_financial_plan_card. -->
+    <color name="arzikina_track_on_budget_card">#47FFFFFF</color>
+    <!-- Séparateur fin sur ce dégradé (~15% blanc), légèrement plus discret que
+         arzikina_divider_on_financial_plan_card : sépare ici trois colonnes rapprochées, pas une
+         seule ligne pleine largeur. -->
+    <color name="arzikina_divider_on_budget_card">#26FFFFFF</color>
+    <!-- Fond des puces translucides (badge de statut, puce "jours restants") posées sur le dégradé. -->
+    <color name="arzikina_chip_on_budget_card">#33FFFFFF</color>
+    <!-- Fond du bloc "Reste" mis en évidence : plus sombre que le dégradé environnant (superposition
+         noire discrète), pour le distinguer visuellement de Budget total/Dépensé sans introduire une
+         nouvelle teinte hors de l'identité Arsikina. -->
+    <color name="arzikina_highlight_on_budget_card">#26000000</color>
 </resources>

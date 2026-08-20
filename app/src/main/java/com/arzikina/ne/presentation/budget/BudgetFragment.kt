@@ -23,13 +23,19 @@ import kotlinx.coroutines.launch
  * Liste des budgets avec leur progression sur la période en cours.
  * Reconstruite en XML/Views (voir instructions projet) ; [BudgetViewModel]
  * est inchangé.
+ *
+ * [BudgetModernAdapter] (PostCard "moderne", voir sa doc) — cahier des charges "Personnalisation
+ * des PostCards — Fragment Budget uniquement" : UNIQUEMENT cet écran. Le Dashboard continue de
+ * réutiliser [BudgetAdapter]/`item_budget.xml` tels quels (voir
+ * [com.arzikina.ne.presentation.dashboard.DashboardFragment.renderFeaturedBudget]), aucun changement
+ * là-bas. Mêmes callbacks `onClick`/`onDeleteClick` qu'avant : seule la classe d'adapter change.
  */
 @AndroidEntryPoint
 class BudgetFragment : Fragment(R.layout.fragment_budget) {
 
     private val viewModel: BudgetViewModel by viewModels()
     private var binding: FragmentBudgetBinding? = null
-    private val adapter = BudgetAdapter(
+    private val adapter = BudgetModernAdapter(
         onClick = { item -> navigateToForm(item.budget.id) },
         onDeleteClick = { item -> confirmDelete(item) }
     )
@@ -41,6 +47,11 @@ class BudgetFragment : Fragment(R.layout.fragment_budget) {
 
         viewBinding.budgetsList.layoutManager = LinearLayoutManager(requireContext())
         viewBinding.budgetsList.adapter = adapter
+        // Désactive l'animateur d'item par défaut (DefaultItemAnimator) : sans ça, ses propres
+        // animations d'ajout/changement se superposeraient au fondu+glissement déjà géré par
+        // BudgetModernAdapter.animateAppearance, avec le même clignotement déjà corrigé côté
+        // AccountsFragment (voir son historique) — le fondu du ViewHolder suffit à lui seul.
+        viewBinding.budgetsList.itemAnimator = null
         viewBinding.addBudgetButton.setOnClickListener { navigateToForm(budgetId = 0L) }
         setUpStatusFilter(viewBinding)
 
