@@ -19,6 +19,11 @@ import com.arzikina.ne.domain.model.TransactionType
  * pour le raisonnement complet, volontairement identique ici).
  *
  * [userId] : voir [AccountEntity] pour le raisonnement (filtrage direct sans jointure).
+ *
+ * [triggerHour]/[triggerMinute] : voir [com.arzikina.ne.domain.model.RecurringTransaction] pour le
+ * raisonnement (deux `INTEGER NOT NULL` plutôt qu'une chaîne "HH:mm" ou une paire nullable — voir
+ * cahier des charges, section base de données : "préférer une représentation permettant facilement
+ * de comparer et programmer l'heure").
  */
 @Entity(
     tableName = "recurring_transactions",
@@ -64,5 +69,7 @@ data class RecurringTransactionEntity(
      * son historique reste consultable — jamais supprimée pour autant. */
     val isActive: Boolean,
     val createdAt: Long,
-    val updatedAt: Long
+    val updatedAt: Long,
+    val triggerHour: Int,
+    val triggerMinute: Int
 )

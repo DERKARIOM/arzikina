@@ -225,6 +225,37 @@
 
             </com.google.android.material.card.MaterialCardView>
 
+            <!-- Postcard — réutilise item_date_field.xml (icône/libellé/valeur/chevron) pour l'heure
+                 de déclenchement : même rôle (ouvrir un sélecteur, afficher un résumé en lecture
+                 seule) que pour une date, seule l'icône diffère (ic_time_24, voir
+                 RecurringTransactionFormFragment.setUpPickers) — voir cahier des charges "Ajouter
+                 l'heure de déclenchement à Automatisation". -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/triggerTimeCard"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_m"
+                android:theme="@style/ThemeOverlay.Arzikina.OnBalanceCard"
+                app:cardBackgroundColor="@color/arzikina_postcart_background"
+                app:cardCornerRadius="@dimen/corner_radius_medium"
+                app:cardElevation="@dimen/elevation_raised">
+
+                <FrameLayout
+                    android:id="@+id/triggerTimeRow"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="?attr/selectableItemBackground"
+                    android:clickable="true"
+                    android:focusable="true">
+
+                    <include
+                        android:id="@+id/triggerTimeField"
+                        layout="@layout/item_date_field" />
+
+                </FrameLayout>
+
+            </com.google.android.material.card.MaterialCardView>
+
             <!-- Postcard — voir item_date_field.xml ("harmonisation des champs de date"). -->
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/startDateCard"

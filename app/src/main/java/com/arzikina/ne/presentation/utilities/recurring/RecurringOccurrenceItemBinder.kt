@@ -68,8 +68,15 @@ object RecurringOccurrenceItemBinder {
     private fun subtitleFor(context: Context, item: RecurringOccurrenceUiItem, section: RecurringSection): String {
         val date = DatePeriods.toLocalDate(item.scheduledDate).format(dateFormatter)
         return when (section) {
-            RecurringSection.PENDING, RecurringSection.UPCOMING ->
-                context.getString(R.string.recurring_transactions_scheduled_date, date)
+            // Heure de déclenchement ajoutée ici (voir TriggerTimeFormatter) : c'est précisément
+            // dans ces deux sections qu'elle a du sens ("à quelle heure ceci va-t-il se déclencher
+            // ?", cahier des charges section 2) — HISTORY, ci-dessous, décrit un événement déjà
+            // traité, l'heure de déclenchement de la règle n'y apporterait rien d'utile.
+            RecurringSection.PENDING, RecurringSection.UPCOMING -> {
+                val rule = item.recurringTransaction
+                val time = TriggerTimeFormatter.format(context, rule.triggerHour, rule.triggerMinute)
+                context.getString(R.string.recurring_transactions_scheduled_date, date, time)
+            }
             RecurringSection.HISTORY -> {
                 val statusLabel = context.getString(statusLabelRes(item.status))
                 // Réutilise le gabarit générique "%1$s • %2$s" (voir dashboard_transaction_subtitle),

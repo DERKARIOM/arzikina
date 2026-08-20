@@ -768,7 +768,11 @@
     <string name="recurring_transactions_pending_title">À traiter</string>
     <string name="recurring_transactions_upcoming_title">À venir</string>
     <string name="recurring_transactions_history_title">Historique</string>
-    <string name="recurring_transactions_scheduled_date">Prévue le %s</string>
+    <!-- %1$s = date (ex. "12/05/2025"), %2$s = heure de déclenchement formatée selon le réglage
+         12h/24h de l'appareil (ex. "12:30", voir TriggerTimeFormatter) — cahier des charges
+         "Ajouter l'heure de déclenchement à Automatisation", section 2 : afficher l'heure sans
+         surcharger l'écran, une seule ligne de sous-titre suffit ici comme avant. -->
+    <string name="recurring_transactions_scheduled_date">Prévue le %1$s à %2$s</string>
     <string name="recurring_transactions_empty_title">Aucune transaction automatique</string>
     <string name="recurring_transactions_empty_message">Ajoute une transaction récurrente pour ne plus jamais oublier un revenu ou une dépense régulière.</string>
     <string name="recurring_transactions_add_action">Ajouter une transaction automatique</string>
@@ -806,8 +810,21 @@
     <string name="recurring_transaction_form_end_date_toggle">Définir une date de fin</string>
     <string name="recurring_transaction_form_end_date_label">Date de fin</string>
     <string name="recurring_transaction_form_frequency_label">Fréquence</string>
+    <string name="recurring_transaction_form_trigger_time_label">Heure de déclenchement</string>
+    <!-- %1$s = libellé de fréquence (ex. "Tous les jours"), %2$s = heure formatée selon le réglage
+         12h/24h de l'appareil (ex. "12:30") — voir cahier des charges "Ajouter l'heure de
+         déclenchement à Automatisation", section 13 : afficher un résumé, pas seulement l'heure. -->
+    <string name="recurring_transaction_form_trigger_time_summary">%1$s à %2$s</string>
     <string name="recurring_transaction_form_delete_title">Supprimer cette transaction automatique ?</string>
     <string name="recurring_transaction_form_delete_message">Cette action est irréversible et supprimera aussi les transactions déjà enregistrées à partir de cette règle.</string>
+
+    <!-- Notification de rappel à l'heure de déclenchement d'une automatisation (voir
+         work/AutomationNotifier.kt, cahier des charges "Ajouter l'heure de déclenchement à
+         Automatisation", section 5). -->
+    <string name="automation_notification_fallback_name">Transaction automatique</string>
+    <string name="automation_notification_text">Il est temps d\'enregistrer cette transaction récurrente.</string>
+    <string name="automation_notification_channel_name">Automatisations</string>
+    <string name="automation_notification_channel_description">Rappels à l\'heure de déclenchement d\'une transaction automatique.</string>
 
     <!--
         Dialogue de validation en file d'attente (voir RecurringOccurrenceQueueDialogFragment) —

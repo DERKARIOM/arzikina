@@ -3,8 +3,15 @@ package com.arzikina.ne
 import android.app.Application
 import androidx.hilt.work.HiltWorkerFactory
 import androidx.work.Configuration
+import com.arzikina.ne.domain.repository.AutomationScheduler
+import com.arzikina.ne.domain.repository.RecurringTransactionRepository
 import com.arzikina.ne.work.RecurringOccurrencesScheduler
 import dagger.hilt.android.HiltAndroidApp
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 /**
@@ -22,12 +29,28 @@ import javax.inject.Inject
  * [RecurringOccurrencesScheduler.schedule] appelé une seule fois ici (pas dans `MainActivity`) :
  * la planification en arrière-plan doit exister dès le démarrage du PROCESSUS, indépendamment de
  * l'ouverture ou non d'un écran — voir la doc de [RecurringOccurrencesScheduler].
+ *
+ * [rescheduleActiveAutomations] : même raisonnement, ajouté lors de la vérification finale du
+ * cahier des charges "Ajouter l'heure de déclenchement à Automatisation" — sans cet appel, une
+ * règle créée AVANT cette fonctionnalité (migration 19→20, heure de repli 08:00) ne serait jamais
+ * réellement programmée via `AlarmManager` tant que l'utilisateur ne la modifie pas explicitement
+ * OU ne redémarre pas son téléphone ([com.arzikina.ne.work.BootCompletedReceiver]), ce qui ne
+ * couvre pas le cas courant "mise à jour de l'app puis simple réouverture" (section 17, scénario
+ * de test explicite "automatisation historique"). `AutomationScheduler.schedule` étant idempotent
+ * (annule puis reprogramme), répéter cet appel à chaque lancement du processus est sans risque de
+ * doublon.
  */
 @HiltAndroidApp
 class ArzikinaApplication : Application(), Configuration.Provider {
 
     @Inject
     lateinit var workerFactory: HiltWorkerFactory
+
+    @Inject
+    lateinit var recurringTransactionRepository: RecurringTransactionRepository
+
+    @Inject
+    lateinit var automationScheduler: AutomationScheduler
 
     override val workManagerConfiguration: Configuration
         get() = Configuration.Builder()
@@ -37,5 +60,16 @@ class ArzikinaApplication : Application(), Configuration.Provider {
     override fun onCreate() {
         super.onCreate()
         RecurringOccurrencesScheduler.schedule(this)
+        rescheduleActiveAutomations()
+    }
+
+    private fun rescheduleActiveAutomations() {
+        CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
+            // `observeRecurringTransactions()` renvoie une liste vide sans session active (voir son
+            // implémentation) : ne fait donc rien tant que personne n'est connecté, aucune vérification
+            // supplémentaire nécessaire ici — même principe que BootCompletedReceiver.
+            val activeRules = recurringTransactionRepository.observeRecurringTransactions().first().filter { it.isActive }
+            automationScheduler.rescheduleAll(activeRules)
+        }
     }
 }

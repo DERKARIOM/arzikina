@@ -59,6 +59,11 @@ data class RecurringTransactionFormState(
     val frequency: RecurringFrequency = RecurringFrequency.MONTHLY,
     val isActive: Boolean = true,
     val createdAt: Long? = null,
+    // Défauts alignés sur RecurringTransaction.DEFAULT_TRIGGER_HOUR/MINUTE (08:00) : une nouvelle
+    // règle propose donc directement la même valeur de repli qu'une règle héritée non configurée
+    // (voir cahier des charges "Ajouter l'heure de déclenchement à Automatisation", section 11).
+    val triggerHour: Int = RecurringTransaction.DEFAULT_TRIGGER_HOUR,
+    val triggerMinute: Int = RecurringTransaction.DEFAULT_TRIGGER_MINUTE,
     val amountError: String? = null,
     val accountError: String? = null,
     val categoryError: String? = null,
@@ -126,7 +131,9 @@ class RecurringTransactionFormViewModel @Inject constructor(
                             endDate = rule.endDate ?: rule.startDate,
                             frequency = rule.frequency,
                             isActive = rule.isActive,
-                            createdAt = rule.createdAt
+                            createdAt = rule.createdAt,
+                            triggerHour = rule.triggerHour,
+                            triggerMinute = rule.triggerMinute
                         )
                     }
                 }
@@ -177,6 +184,10 @@ class RecurringTransactionFormViewModel @Inject constructor(
         _formState.update { it.copy(frequency = frequency) }
     }
 
+    fun onTriggerTimeChange(hour: Int, minute: Int) {
+        _formState.update { it.copy(triggerHour = hour, triggerMinute = minute) }
+    }
+
     fun save() {
         val state = _formState.value
 
@@ -219,7 +230,9 @@ class RecurringTransactionFormViewModel @Inject constructor(
                     nextExecutionDate = state.startDate,
                     isActive = state.isActive,
                     createdAt = state.createdAt ?: System.currentTimeMillis(),
-                    updatedAt = System.currentTimeMillis()
+                    updatedAt = System.currentTimeMillis(),
+                    triggerHour = state.triggerHour,
+                    triggerMinute = state.triggerMinute
                 )
             )
             _events.emit(RecurringTransactionFormEvent.Saved)

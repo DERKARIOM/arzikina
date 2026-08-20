@@ -265,7 +265,12 @@ data class RecurringTransactionDto(
     val nextExecutionDate: Long,
     val isActive: Boolean,
     val createdAt: Long,
-    val updatedAt: Long
+    val updatedAt: Long,
+    /** Défaut 08:00 (voir `RecurringTransactionEntity`/[com.arzikina.ne.domain.model.RecurringTransaction])
+     * : absent de toute sauvegarde créée avant la fonctionnalité "heure de déclenchement", donc
+     * indispensable pour que la désérialisation d'une ancienne sauvegarde continue de fonctionner. */
+    val triggerHour: Int = 8,
+    val triggerMinute: Int = 0
 )
 
 /**

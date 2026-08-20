@@ -17,7 +17,9 @@ fun RecurringTransactionEntity.toDomain(): RecurringTransaction = RecurringTrans
     nextExecutionDate = nextExecutionDate,
     isActive = isActive,
     createdAt = createdAt,
-    updatedAt = updatedAt
+    updatedAt = updatedAt,
+    triggerHour = triggerHour,
+    triggerMinute = triggerMinute
 )
 
 /** [userId] : fourni par le repository, jamais par l'appelant. */
@@ -36,5 +38,7 @@ fun RecurringTransaction.toEntity(userId: Long): RecurringTransactionEntity = Re
     nextExecutionDate = nextExecutionDate,
     isActive = isActive,
     createdAt = createdAt,
-    updatedAt = updatedAt
+    updatedAt = updatedAt,
+    triggerHour = triggerHour,
+    triggerMinute = triggerMinute
 )

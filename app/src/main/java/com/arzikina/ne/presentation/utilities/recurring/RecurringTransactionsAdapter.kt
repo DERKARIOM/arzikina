@@ -17,7 +17,10 @@ import com.arzikina.ne.databinding.ItemTransactionCompactBinding
  * `com.arzikina.ne.presentation.utilities.loans.LoansAdapter`.
  */
 class RecurringTransactionsAdapter(
-    private val onOccurrenceClick: (RecurringOccurrenceUiItem) -> Unit
+    // La section est transmise en plus de l'item : seule "À venir" doit réagir au tap pour l'instant
+    // (voir RecurringTransactionsFragment.onOccurrenceRowClick), "À traiter" restant réservée à un
+    // futur dialogue de validation distinct de l'édition de la règle.
+    private val onOccurrenceClick: (RecurringOccurrenceUiItem, RecurringSection) -> Unit
 ) : ListAdapter<RecurringTransactionsListRow, RecyclerView.ViewHolder>(DIFF_CALLBACK) {
 
     override fun getItemViewType(position: Int): Int = when (getItem(position)) {
@@ -60,9 +63,9 @@ class RecurringTransactionsAdapter(
     }
 
     class OccurrenceViewHolder(private val binding: ItemTransactionCompactBinding) : RecyclerView.ViewHolder(binding.root) {
-        fun bind(row: RecurringTransactionsListRow.OccurrenceRow, onClick: (RecurringOccurrenceUiItem) -> Unit) {
+        fun bind(row: RecurringTransactionsListRow.OccurrenceRow, onClick: (RecurringOccurrenceUiItem, RecurringSection) -> Unit) {
             RecurringOccurrenceItemBinder.bind(binding, row.item, row.section)
-            binding.root.setOnClickListener { onClick(row.item) }
+            binding.root.setOnClickListener { onClick(row.item, row.section) }
         }
     }
 

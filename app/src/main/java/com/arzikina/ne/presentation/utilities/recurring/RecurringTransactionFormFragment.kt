@@ -26,6 +26,8 @@ import com.arzikina.ne.presentation.components.ConfirmDialogs
 import com.arzikina.ne.presentation.transactions.displayTextRes
 import com.arzikina.ne.util.Money
 import com.google.android.material.datepicker.MaterialDatePicker
+import com.google.android.material.timepicker.MaterialTimePicker
+import com.google.android.material.timepicker.TimeFormat
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
@@ -165,6 +167,13 @@ class RecurringTransactionFormFragment : Fragment(R.layout.fragment_recurring_tr
         binding.endDateRow.setOnClickListener {
             showDatePicker(R.string.recurring_transaction_form_end_date_label) { viewModel.onEndDateChange(it) }
         }
+
+        // item_date_field.xml est générique (voir sa doc) : icône ré-affectée ici à ic_time_24 pour
+        // ce seul champ, sur le modèle des autres lignes de cet écran (label écrasé une fois après
+        // inflate, jamais dans render() — voir la doc de item_date_field.xml).
+        binding.triggerTimeField.dateFieldIcon.setImageResource(R.drawable.ic_time_24)
+        binding.triggerTimeField.dateFieldLabel.text = getString(R.string.recurring_transaction_form_trigger_time_label)
+        binding.triggerTimeRow.setOnClickListener { showTimePicker() }
     }
 
     private fun setUpEndDateSwitch(binding: FragmentRecurringTransactionFormBinding) {
@@ -210,6 +219,34 @@ class RecurringTransactionFormFragment : Fragment(R.layout.fragment_recurring_tr
         picker.show(parentFragmentManager, "recurring_transaction_form_date_picker")
     }
 
+    /**
+     * `TimeFormat.CLOCK_24H`/`CLOCK_12H` choisi selon le réglage système (voir
+     * [android.text.format.DateFormat.is24HourFormat]) — cahier des charges "Ajouter l'heure de
+     * déclenchement à Automatisation", section 1 : le sélecteur doit respecter le format horaire
+     * configuré sur l'appareil, contrairement à `TransactionFormFragment.showTimePicker` qui force
+     * `CLOCK_24H` (précédent existant, volontairement non repris ici : la spécification de cette
+     * fonctionnalité demande explicitement ce respect, et le corriger ailleurs sortirait du
+     * périmètre de cette étape).
+     */
+    private fun showTimePicker() {
+        val state = viewModel.formState.value
+        val clockFormat = if (android.text.format.DateFormat.is24HourFormat(requireContext())) {
+            TimeFormat.CLOCK_24H
+        } else {
+            TimeFormat.CLOCK_12H
+        }
+        val picker = MaterialTimePicker.Builder()
+            .setTimeFormat(clockFormat)
+            .setHour(state.triggerHour)
+            .setMinute(state.triggerMinute)
+            .setTitleText(getString(R.string.recurring_transaction_form_trigger_time_label))
+            .build()
+        picker.addOnPositiveButtonClickListener {
+            viewModel.onTriggerTimeChange(picker.hour, picker.minute)
+        }
+        picker.show(parentFragmentManager, "recurring_transaction_form_time_picker")
+    }
+
     private fun render(data: FormRenderState) {
         val binding = binding ?: return
         val state = data.formState
@@ -253,6 +290,14 @@ class RecurringTransactionFormFragment : Fragment(R.layout.fragment_recurring_tr
         if (binding.frequencyField.dropdownInput.text?.toString() != frequencyLabel) {
             binding.frequencyField.dropdownInput.setText(frequencyLabel, false)
         }
+
+        // Résumé combiné (ex. "Tous les jours à 12:30"), pas seulement l'heure seule — voir cahier
+        // des charges "Ajouter l'heure de déclenchement à Automatisation", section 13.
+        binding.triggerTimeField.dateFieldValue.text = getString(
+            R.string.recurring_transaction_form_trigger_time_summary,
+            frequencyLabel,
+            TriggerTimeFormatter.format(requireContext(), state.triggerHour, state.triggerMinute)
+        )
 
         binding.startDateField.dateFieldValue.text = formatDate(state.startDate)
 

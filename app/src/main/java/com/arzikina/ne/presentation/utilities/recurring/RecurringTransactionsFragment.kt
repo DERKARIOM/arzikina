@@ -1,7 +1,13 @@
 package com.arzikina.ne.presentation.utilities.recurring
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import android.view.View
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
+import androidx.core.os.bundleOf
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
@@ -27,17 +33,33 @@ import kotlinx.coroutines.launch
  * [com.arzikina.ne.presentation.utilities.loans.LoansFragment] pour ce que ça impliquerait
  * d'ajouter plus tard, sur le même modèle).
  *
- * Lecture seule pour l'instant : un tap sur une ligne "À traiter" n'ouvre PAS encore le dialogue de
- * validation Enregistrer/Modifier/Rejeter (voir cahier des charges, section "Dialog") — cette
- * interaction arrive à une étape suivante du plan de développement, distincte de cet écran de
- * consultation.
+ * Un tap sur une ligne "À venir" ouvre le formulaire en mode édition pour la règle correspondante
+ * (voir [onOccurrenceRowClick]) — modifier ou supprimer (bouton dédié du formulaire, déjà géré par
+ * [RecurringTransactionFormFragment]) passent tous les deux par cet unique écran, même principe que
+ * [com.arzikina.ne.presentation.budget.BudgetFragment]. "À traiter" reste volontairement inerte au
+ * tap : réservée à un futur dialogue de validation Enregistrer/Modifier/Rejeter (voir cahier des
+ * charges, section "Dialog"), une interaction distincte de l'édition de la règle elle-même, pas
+ * encore construite. "Historique" reste inerte aussi pour cette version.
  */
 @AndroidEntryPoint
 class RecurringTransactionsFragment : Fragment(R.layout.fragment_recurring_transactions) {
 
     private val viewModel: RecurringTransactionsViewModel by viewModels()
     private var binding: FragmentRecurringTransactionsBinding? = null
-    private val adapter = RecurringTransactionsAdapter(onOccurrenceClick = {})
+    private val adapter = RecurringTransactionsAdapter(onOccurrenceClick = ::onOccurrenceRowClick)
+
+    /**
+     * Demande la permission `POST_NOTIFICATIONS` (Android 13+) au premier passage sur CET écran
+     * plutôt qu'au démarrage de l'app : Automatisation est la seule fonctionnalité qui en a besoin
+     * (voir `com.arzikina.ne.work.AutomationNotifier`), demander au moment où elle devient
+     * pertinente pour l'utilisateur plutôt qu'à froid, sans contexte, est la pratique recommandée
+     * par Android. Résultat volontairement ignoré : un refus ne bloque jamais la création/
+     * modification d'une automatisation (voir `RecurringTransactionFormFragment`, inchangé) — seule
+     * la notification de rappel ne s'affichera pas (voir `AutomationNotifier.notifyTrigger`, qui gère
+     * déjà silencieusement ce cas sans vérification supplémentaire de son côté).
+     */
+    private val notificationPermissionLauncher =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { /* résultat ignoré, voir doc ci-dessus */ }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -49,6 +71,7 @@ class RecurringTransactionsFragment : Fragment(R.layout.fragment_recurring_trans
         viewBinding.recurringTransactionsList.adapter = adapter
         viewBinding.addRecurringTransactionButton.setOnClickListener { navigateToForm() }
         viewBinding.emptyAddRecurringTransactionButton.setOnClickListener { navigateToForm() }
+        requestNotificationPermissionIfNeeded()
 
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -98,10 +121,37 @@ class RecurringTransactionsFragment : Fragment(R.layout.fragment_recurring_trans
         items.forEach { add(RecurringTransactionsListRow.OccurrenceRow(it, section)) }
     }
 
+    /** Ne fait rien avant Android 13 (`POST_NOTIFICATIONS` n'existe pas, les notifications sont
+     * autorisées par défaut) ni si déjà accordée — évite de rouvrir inutilement la boîte de dialogue
+     * système à chaque passage sur cet écran une fois la permission déjà en main. */
+    private fun requestNotificationPermissionIfNeeded() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return
+        val granted = ContextCompat.checkSelfPermission(
+            requireContext(),
+            Manifest.permission.POST_NOTIFICATIONS
+        ) == PackageManager.PERMISSION_GRANTED
+        if (!granted) notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+    }
+
     private fun navigateToForm() {
-        // Toujours en création (recurringTransactionId par défaut = 0L, voir nav_graph.xml) : le tap
-        // sur une ligne existante pour l'éditer arrive à une étape suivante du plan de développement
-        // (voir cahier des charges), distincte de ce bouton d'ajout.
+        // Toujours en création (recurringTransactionId par défaut = 0L, voir nav_graph.xml) — l'édition
+        // d'une règle existante passe par onOccurrenceRowClick, pas par ce bouton d'ajout.
         findNavController().navigate(R.id.recurringTransactionFormFragment, null, NavAnimations.push)
+    }
+
+    /**
+     * Seule la section "À venir" ouvre le formulaire en mode édition (voir la doc de classe) : la
+     * règle y est TOUJOURS représentée par exactement une ligne tant qu'elle reste active (voir
+     * `RecurringTransactionsViewModel.upcomingItems`, basé sur `nextExecutionDate`), donc toute
+     * automatisation active reste modifiable/supprimable par ce biais, sans exception. "À traiter"
+     * et "Historique" ne font rien au tap pour l'instant.
+     */
+    private fun onOccurrenceRowClick(item: RecurringOccurrenceUiItem, section: RecurringSection) {
+        if (section != RecurringSection.UPCOMING) return
+        findNavController().navigate(
+            R.id.recurringTransactionFormFragment,
+            bundleOf("recurringTransactionId" to item.recurringTransaction.id),
+            NavAnimations.push
+        )
     }
 }

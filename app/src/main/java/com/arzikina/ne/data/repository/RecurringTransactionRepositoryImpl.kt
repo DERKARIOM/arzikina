@@ -18,6 +18,7 @@ import com.arzikina.ne.domain.model.Transaction
 import com.arzikina.ne.domain.model.TransactionType
 import com.arzikina.ne.domain.model.computeNextExecutionDate
 import com.arzikina.ne.domain.model.generateMissingScheduledDates
+import com.arzikina.ne.domain.repository.AutomationScheduler
 import com.arzikina.ne.domain.repository.RecurringTransactionRepository
 import com.arzikina.ne.domain.repository.SessionManager
 import kotlinx.coroutines.CoroutineDispatcher
@@ -44,6 +45,15 @@ import javax.inject.Inject
  * `toDomain()`/`toEntity()` intermédiaire inutile) : seules les méthodes de LECTURE PUBLIQUE
  * ([observeRecurringTransactions], [getRecurringTransaction], [observePendingOccurrences],
  * [observeProcessedOccurrences]) exposent des modèles domaine.
+ *
+ * [AutomationScheduler] tenu à jour depuis [saveRecurringTransaction]/[deleteRecurringTransaction]
+ * (voir leur doc) — jamais depuis un Fragment/ViewModel (cahier des charges "Ajouter l'heure de
+ * déclenchement à Automatisation", section 15) : ce repository reste le SEUL point d'entrée qui
+ * modifie une règle, c'est donc aussi le seul endroit correct pour répercuter ce changement sur sa
+ * programmation système. [generateMissingOccurrences] n'a pas besoin d'un appel équivalent : c'est
+ * `AutomationAlarmReceiver` qui reprogramme après l'avoir appelée (voir sa doc), le Worker périodique
+ * `RecurringOccurrencesWorker` restant volontairement silencieux de son côté (sert uniquement de
+ * filet de sécurité, voir sa doc).
  */
 class RecurringTransactionRepositoryImpl @Inject constructor(
     private val database: ArzikinaDatabase,
@@ -51,6 +61,7 @@ class RecurringTransactionRepositoryImpl @Inject constructor(
     private val occurrenceDao: RecurringTransactionOccurrenceDao,
     private val transactionDao: TransactionDao,
     private val sessionManager: SessionManager,
+    private val automationScheduler: AutomationScheduler,
     @IoDispatcher private val ioDispatcher: CoroutineDispatcher
 ) : RecurringTransactionRepository {
 
@@ -86,7 +97,7 @@ class RecurringTransactionRepositoryImpl @Inject constructor(
 
     override suspend fun saveRecurringTransaction(recurringTransaction: RecurringTransaction): Long = withContext(ioDispatcher) {
         val userId = requireCurrentUserId()
-        database.withTransaction {
+        val id = database.withTransaction {
             val now = System.currentTimeMillis()
             if (recurringTransaction.id == 0L) {
                 recurringTransactionDao.upsert(
@@ -124,6 +135,14 @@ class RecurringTransactionRepositoryImpl @Inject constructor(
                 recurringTransaction.id
             }
         }
+        // Reprogramme l'alarme avec l'état DÉFINITIF après écriture (id généré pour une création,
+        // nextExecutionDate/triggerHour/triggerMinute à jour pour une modification — voir cahier des
+        // charges "Ajouter l'heure de déclenchement à Automatisation", section 6 : modifier l'heure
+        // doit annuler proprement l'ancien déclenchement et programmer le nouveau, jamais de doublon).
+        // Volontairement HORS de la transaction Room ci-dessus : un échec de programmation d'alarme
+        // ne doit jamais faire annuler une écriture déjà validée en base.
+        recurringTransactionDao.getById(id, userId)?.let { automationScheduler.schedule(it.toDomain()) }
+        id
     }
 
     override suspend fun deleteRecurringTransaction(id: Long) = withContext(ioDispatcher) {
@@ -136,6 +155,11 @@ class RecurringTransactionRepositoryImpl @Inject constructor(
             // Supprime aussi, en cascade SQLite, tout l'historique d'occurrences de cette règle.
             recurringTransactionDao.deleteById(id, userId)
         }
+        // Toujours appelé, même si la règle n'existait déjà plus ci-dessus (voir la doc de
+        // `AutomationScheduler.cancel` : ne lève jamais d'exception si aucune alarme n'était
+        // programmée) — voir cahier des charges section 7 : une suppression doit annuler le
+        // déclenchement programmé.
+        automationScheduler.cancel(id)
     }
 
     override suspend fun acceptOccurrence(occurrenceId: Long): Long = withContext(ioDispatcher) {

@@ -394,7 +394,9 @@ fun RecurringTransactionEntity.toDto() = RecurringTransactionDto(
     nextExecutionDate = nextExecutionDate,
     isActive = isActive,
     createdAt = createdAt,
-    updatedAt = updatedAt
+    updatedAt = updatedAt,
+    triggerHour = triggerHour,
+    triggerMinute = triggerMinute
 )
 
 fun RecurringTransactionDto.toEntity(userId: Long) = RecurringTransactionEntity(
@@ -413,7 +415,9 @@ fun RecurringTransactionDto.toEntity(userId: Long) = RecurringTransactionEntity(
     nextExecutionDate = nextExecutionDate,
     isActive = isActive,
     createdAt = createdAt,
-    updatedAt = updatedAt
+    updatedAt = updatedAt,
+    triggerHour = triggerHour,
+    triggerMinute = triggerMinute
 )
 
 /** Voir la doc de tête de ce fichier. `accountId` obligatoire (voir `RecurringTransactionEntity`) :

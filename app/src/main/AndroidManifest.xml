@@ -3,6 +3,21 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <!--
+        Automatisation — heure de déclenchement (voir cahier des charges "Ajouter l'heure de
+        déclenchement à Automatisation", work/AutomationScheduler.kt) :
+        - RECEIVE_BOOT_COMPLETED : nécessaire pour que work/BootCompletedReceiver.kt reçoive la
+          diffusion système au redémarrage du téléphone et reprogramme les alarmes AlarmManager
+          (qui ne survivent jamais à un redémarrage). Pas de permission SCHEDULE_EXACT_ALARM/
+          USE_EXACT_ALARM : choix délibéré (voir AutomationSchedulerImpl.kt), setAndAllowWhileIdle
+          n'en nécessite aucune.
+        - POST_NOTIFICATIONS (Android 13+) : nécessaire pour que work/AutomationNotifier.kt puisse
+          afficher son rappel — demandée à l'exécution depuis RecurringTransactionsFragment
+          (voir sa doc), cette simple déclaration ne l'accorde pas automatiquement.
+    -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <!--
         Visibilité des packages (Android 11+, voir util/external/ExternalAppLauncher) : SEULE
         déclaration nécessaire pour la fonctionnalité "Lancer l'application Mobile Money depuis un
         compte" — rend visibles TOUTES les applications ayant une icône de lancement (même filtre
@@ -50,6 +65,30 @@
                 android:value="androidx.startup"
                 tools:node="remove" />
         </provider>
+
+        <!--
+            Automatisation — heure de déclenchement (voir work/AutomationScheduler.kt et le bloc de
+            permissions en tête de ce fichier).
+            - AutomationAlarmReceiver : exported="false", uniquement destiné aux PendingIntent posés
+              par AutomationSchedulerImpl (voir sa doc) — aucune app tierce ne doit pouvoir déclencher
+              cette diffusion.
+            - BootCompletedReceiver : exported="true", indispensable pour recevoir BOOT_COMPLETED/
+              MY_PACKAGE_REPLACED, tous deux des diffusions PROTÉGÉES (seul le système peut les
+              envoyer, voir sa documentation officielle) — exported="true" ne les rend donc pas
+              usurpables par une app tierce, contrairement à une diffusion non protégée.
+        -->
+        <receiver
+            android:name=".work.AutomationAlarmReceiver"
+            android:exported="false" />
+
+        <receiver
+            android:name=".work.BootCompletedReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
 
         <!--
             windowSoftInputMode="adjustResize" : bonne pratique standard, mais À ELLE SEULE

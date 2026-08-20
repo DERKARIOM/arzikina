@@ -14,8 +14,10 @@ import com.arzikina.ne.data.repository.SavingsGoalRepositoryImpl
 import com.arzikina.ne.data.repository.SessionManagerImpl
 import com.arzikina.ne.data.repository.TransactionRepositoryImpl
 import com.arzikina.ne.data.repository.UserPreferencesRepositoryImpl
+import com.arzikina.ne.work.AutomationSchedulerImpl
 import com.arzikina.ne.domain.repository.AccountRepository
 import com.arzikina.ne.domain.repository.AuthRepository
+import com.arzikina.ne.domain.repository.AutomationScheduler
 import com.arzikina.ne.domain.repository.BackupRepository
 import com.arzikina.ne.domain.repository.BiometricAuthenticator
 import com.arzikina.ne.domain.repository.BudgetRepository
@@ -98,4 +100,8 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindFinancialPlanRepository(impl: FinancialPlanRepositoryImpl): FinancialPlanRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindAutomationScheduler(impl: AutomationSchedulerImpl): AutomationScheduler
 }
