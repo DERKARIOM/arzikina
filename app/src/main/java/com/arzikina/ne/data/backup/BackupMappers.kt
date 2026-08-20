@@ -128,7 +128,8 @@ fun TransactionEntity.toDto() = TransactionDto(
     paymentMethod = paymentMethod?.name,
     createdAt = createdAt,
     feeTransactionId = feeTransactionId,
-    feeType = feeType?.name
+    feeType = feeType?.name,
+    receiptId = receiptId
 )
 
 fun TransactionDto.toEntity(userId: Long) = TransactionEntity(
@@ -151,7 +152,8 @@ fun TransactionDto.toEntity(userId: Long) = TransactionEntity(
     createdAt = createdAt,
     feeTransactionId = feeTransactionId,
     // Même raisonnement que paymentMethod ci-dessus : `null` reste `null`, pas de valeur de repli.
-    feeType = feeType?.let { runCatching { FeeType.valueOf(it) }.getOrNull() }
+    feeType = feeType?.let { runCatching { FeeType.valueOf(it) }.getOrNull() },
+    receiptId = receiptId
 )
 
 /**
@@ -170,20 +172,31 @@ fun TransactionDto.toEntity(userId: Long) = TransactionEntity(
  * bruyamment si l'id référencé est absent de [accountIdMap] (fichier corrompu) plutôt que
  * d'insérer une transaction sans compte valide — l'échec annule tout l'import (transaction Room
  * atomique, voir `BackupRepositoryImpl.importBackup`). Les clés étrangères optionnelles
- * ([transferAccountId], [TransactionDto.categoryId], [TransactionDto.feeTransactionId]) retombent
- * simplement sur `null` si absentes de leur table de correspondance.
+ * ([transferAccountId], [TransactionDto.categoryId], [TransactionDto.feeTransactionId],
+ * [TransactionDto.receiptId]) retombent simplement sur `null` si absentes de leur table de
+ * correspondance.
+ *
+ * [receiptIdMap] : contrairement à [feeTransactionIdMap], entièrement connu dès la 1ère passe (les
+ * reçus sont insérés AVANT les transactions par `BackupRepositoryImpl`, voir sa doc de tête) — mais
+ * DOIT tout de même être passé explicitement à CHAQUE appel de cette fonction, y compris la 2ème
+ * passe (réécriture de [TransactionDto.feeTransactionId]) : le défaut `emptyMap()` ci-dessous
+ * n'existe que pour ne jamais casser un appelant plus ancien, jamais pour être réellement utilisé
+ * une fois [receiptIdMap] connu — l'omettre par erreur à la 2ème passe effacerait silencieusement
+ * un [TransactionDto.receiptId] déjà correctement résolu à la 1ère.
  */
 fun TransactionDto.remapIds(
     newId: Long,
     accountIdMap: Map<Long, Long>,
     categoryIdMap: Map<Long, Long>,
-    feeTransactionIdMap: Map<Long, Long> = emptyMap()
+    feeTransactionIdMap: Map<Long, Long> = emptyMap(),
+    receiptIdMap: Map<Long, Long> = emptyMap()
 ): TransactionDto = copy(
     id = newId,
     accountId = accountIdMap.getValue(accountId),
     transferAccountId = transferAccountId?.let { accountIdMap[it] },
     categoryId = categoryId?.let { categoryIdMap[it] },
-    feeTransactionId = feeTransactionId?.let { feeTransactionIdMap[it] }
+    feeTransactionId = feeTransactionId?.let { feeTransactionIdMap[it] },
+    receiptId = receiptId?.let { receiptIdMap[it] }
 )
 
 fun BudgetEntity.toDto() = BudgetDto(
@@ -582,8 +595,12 @@ fun ReceiptEntity.toDto(pdfBytes: ByteArray) = ReceiptDto(
  * (voir `ReceiptFileStorage.writeBytes`, appelé par `BackupRepositoryImpl.importBackup` AVANT
  * cette fonction) — jamais reconstruits ni recopiés depuis [ReceiptDto.fileSize] ici (fonction pure,
  * aucun accès disque). `id = 0L` : comme toutes les autres tables de ce fichier, un reçu restauré
- * reçoit toujours un nouvel id généré par SQLite (voir la doc de tête de ce fichier) — aucune autre
- * table ne référence l'id d'un reçu, pas de table de correspondance à construire.
+ * reçoit toujours un nouvel id généré par SQLite (voir la doc de tête de ce fichier).
+ *
+ * Depuis `Transaction.receiptId` (cahier des charges "Créer une transaction depuis un reçu") : une
+ * AUTRE table référence désormais l'id d'un reçu — voir [TransactionDto.remapIds]/
+ * `BackupRepositoryImpl`, qui construit `receiptIdMap` à partir des ids retournés par
+ * `ReceiptDao.insertAll` (même principe que `accountIdMap`/`categoryIdMap`).
  */
 fun ReceiptDto.toEntity(userId: Long, localPath: String, fileSize: Long) = ReceiptEntity(
     id = 0L,

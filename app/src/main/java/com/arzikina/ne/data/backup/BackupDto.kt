@@ -148,7 +148,14 @@ data class TransactionDto(
      * transaction de frais correspondante, en une deuxième passe une fois tous les ids connus. */
     val feeTransactionId: Long? = null,
     /** Voir `domain/model/Transaction.feeType`/`FeeType`. */
-    val feeType: String? = null
+    val feeType: String? = null,
+    /** Ajouté après coup (voir `domain/model/Transaction.receiptId`, cahier des charges "Créer une
+     * transaction depuis un reçu") : défaut `null` pour rester compatible avec les fichiers
+     * exportés avant son existence. Réécrit à la restauration comme [feeTransactionId] ci-dessus
+     * (voir `BackupMappers.remapIds`/`BackupRepositoryImpl`) — `receiptIdMap` est cependant déjà
+     * entièrement connu à la 1ère passe (les reçus sont insérés AVANT les transactions), pas besoin
+     * d'une 2ème passe comme pour `feeTransactionId`. */
+    val receiptId: Long? = null
 )
 
 /** [startDate]/[endDate] : période fixe, absents (`null` par défaut) dans toute sauvegarde créée

@@ -32,6 +32,12 @@ object DatePeriods {
     fun toLocalTime(epochMillis: Long): LocalTime =
         Instant.ofEpochMilli(epochMillis).atZone(ZoneId.systemDefault()).toLocalTime()
 
+    /** Combine une date ET une heure en un seul instant — voir [ReceiptTransactionInfoParser],
+     * qui a besoin des DEUX pour reconstituer `Transaction.date` (toujours un seul epoch millis,
+     * jamais deux champs séparés) à partir d'un reçu PDF. Même fuseau local que [toEpochMillis]. */
+    fun toEpochMillis(date: LocalDate, time: LocalTime): Long =
+        date.atTime(time).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
+
     fun isInCurrentMonth(epochMillis: Long, today: LocalDate = LocalDate.now()): Boolean =
         YearMonth.from(toLocalDate(epochMillis)) == YearMonth.from(today)
 

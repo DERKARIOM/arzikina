@@ -30,7 +30,8 @@ class BackupIdRemappingTest {
         accountId: Long = 10L,
         transferAccountId: Long? = null,
         categoryId: Long? = 20L,
-        feeTransactionId: Long? = null
+        feeTransactionId: Long? = null,
+        receiptId: Long? = null
     ) = TransactionDto(
         id = id,
         amount = 1_000L,
@@ -41,7 +42,8 @@ class BackupIdRemappingTest {
         date = 0L,
         description = "",
         createdAt = 0L,
-        feeTransactionId = feeTransactionId
+        feeTransactionId = feeTransactionId,
+        receiptId = receiptId
     )
 
     @Test
@@ -117,6 +119,58 @@ class BackupIdRemappingTest {
         val remapped = dto.remapIds(newId = 100L, accountIdMap = accountIdMap, categoryIdMap = emptyMap(), feeTransactionIdMap = transactionIdMap)
 
         assertEquals(200L, remapped.feeTransactionId)
+    }
+
+    @Test
+    fun `transaction - receiptId reecrit avec le nouvel id quand receiptIdMap est fourni`() {
+        val dto = transactionDto(accountId = 10L, receiptId = 5L)
+        val accountIdMap = mapOf(10L to 110L)
+        val receiptIdMap = mapOf(5L to 205L)
+
+        val remapped = dto.remapIds(
+            newId = 100L,
+            accountIdMap = accountIdMap,
+            categoryIdMap = emptyMap(),
+            receiptIdMap = receiptIdMap
+        )
+
+        assertEquals(205L, remapped.receiptId)
+    }
+
+    @Test
+    fun `transaction - receiptId absent de la map retombe sur null (FK optionnelle)`() {
+        val dto = transactionDto(accountId = 10L, receiptId = 999L)
+        val accountIdMap = mapOf(10L to 110L)
+
+        val remapped = dto.remapIds(
+            newId = 100L,
+            accountIdMap = accountIdMap,
+            categoryIdMap = emptyMap(),
+            receiptIdMap = mapOf(5L to 205L)
+        )
+
+        assertNull(remapped.receiptId)
+    }
+
+    @Test
+    fun `transaction - receiptId omis retombe sur null meme si le dto en avait un (regression 2eme passe)`() {
+        // Verrouille exactement le piège documenté sur TransactionDto.remapIds : oublier de
+        // repasser receiptIdMap (ex. à la 2ème passe qui réécrit feeTransactionId dans
+        // BackupRepositoryImpl) effacerait silencieusement un receiptId déjà correctement résolu.
+        val dto = transactionDto(accountId = 10L, receiptId = 5L, feeTransactionId = 2L)
+        val accountIdMap = mapOf(10L to 110L)
+        val transactionIdMap = mapOf(1L to 100L, 2L to 200L)
+
+        val remapped = dto.remapIds(
+            newId = 100L,
+            accountIdMap = accountIdMap,
+            categoryIdMap = emptyMap(),
+            feeTransactionIdMap = transactionIdMap
+            // receiptIdMap volontairement omis ici.
+        )
+
+        assertEquals(200L, remapped.feeTransactionId)
+        assertNull(remapped.receiptId)
     }
 
     @Test

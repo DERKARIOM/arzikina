@@ -18,7 +18,8 @@ fun TransactionEntity.toDomain(): Transaction = Transaction(
     paymentMethod = paymentMethod,
     createdAt = createdAt,
     feeTransactionId = feeTransactionId,
-    feeType = feeType
+    feeType = feeType,
+    receiptId = receiptId
 )
 
 /** [userId] : fourni par le repository, jamais par l'appelant. */
@@ -38,5 +39,6 @@ fun Transaction.toEntity(userId: Long): TransactionEntity = TransactionEntity(
     paymentMethod = paymentMethod,
     createdAt = createdAt,
     feeTransactionId = feeTransactionId,
-    feeType = feeType
+    feeType = feeType,
+    receiptId = receiptId
 )

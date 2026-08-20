@@ -79,6 +79,37 @@
             </com.google.android.material.card.MaterialCardView>
 
             <!--
+                Préremplissage depuis un reçu PDF (cahier des charges "Créer une transaction
+                depuis un reçu", voir TransactionFormViewModel.applyReceiptPresets) : purement
+                informative (pas cliquable, contrairement à loanLinkedBanner ci-dessus) —
+                affichée UNIQUEMENT à la création, quand ce formulaire a été ouvert depuis
+                "Détail du reçu". Même style que suggestedAmountCard sur fragment_receipt_detail.xml
+                (colorSurfaceVariant) pour rester cohérent avec l'autre bannière de suggestion du
+                projet, plutôt que la couleur d'alerte de loanLinkedBanner (pas un avertissement ici).
+            -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/receiptPrefillBanner"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="@dimen/spacing_m"
+                android:checkable="false"
+                android:visibility="gone"
+                app:cardBackgroundColor="?attr/colorSurfaceVariant"
+                app:cardCornerRadius="@dimen/corner_radius_medium"
+                app:cardElevation="0dp"
+                tools:visibility="visible">
+
+                <TextView
+                    style="@style/TextAppearance.Material3.BodyMedium"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:padding="@dimen/spacing_m"
+                    android:text="@string/transaction_form_receipt_prefill_banner"
+                    android:textColor="?attr/colorOnSurface" />
+
+            </com.google.android.material.card.MaterialCardView>
+
+            <!--
                 Type sous forme de menu déroulant fermé (voir
                 TransactionFormFragment.setUpTypeDropdown), plus compact que
                 l'ancien sélecteur à deux boutons — et prêt à accueillir un
@@ -666,6 +697,45 @@
                         android:maxLines="3" />
 
                 </com.google.android.material.textfield.TextInputLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!--
+                Lien inverse Reçu→Transaction (cahier des charges "Créer une transaction depuis un
+                reçu", voir TransactionFormState.receiptId) : visible UNIQUEMENT en modification,
+                quand la transaction chargée est déjà liée à un reçu (voir
+                TransactionFormViewModel.init, isEditMode) — ouvre "Détail du reçu" (voir
+                TransactionFormFragment.navigateToLinkedReceipt). Jamais affiché à la création : un
+                reçu n'est associé qu'une fois la transaction réellement enregistrée (voir
+                ReceiptDetailViewModel.onAddTransactionClicked, anti-doublon).
+            -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/linkedReceiptRow"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_m"
+                android:checkable="false"
+                android:clickable="true"
+                android:focusable="true"
+                android:theme="@style/ThemeOverlay.Arzikina.OnBalanceCard"
+                android:visibility="gone"
+                app:cardBackgroundColor="@color/arzikina_postcart_background"
+                app:cardCornerRadius="@dimen/corner_radius_medium"
+                app:cardElevation="@dimen/elevation_raised"
+                tools:visibility="visible">
+
+                <TextView
+                    style="@style/TextAppearance.Material3.BodyMedium"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:drawableStart="@drawable/ic_receipt_long_24"
+                    android:drawableEnd="@drawable/ic_chevron_right_24"
+                    android:drawablePadding="@dimen/spacing_m"
+                    android:drawableTint="?attr/colorOnSurfaceVariant"
+                    android:gravity="center_vertical"
+                    android:padding="@dimen/spacing_m"
+                    android:text="@string/transaction_form_linked_receipt_label"
+                    android:textColor="?attr/colorOnSurface" />
+
             </com.google.android.material.card.MaterialCardView>
 
             <!--

@@ -16,6 +16,7 @@ import com.arzikina.ne.databinding.DialogEditReceiptAmountBinding
 import com.arzikina.ne.databinding.DialogRenameReceiptBinding
 import com.arzikina.ne.databinding.FragmentReceiptDetailBinding
 import com.arzikina.ne.domain.model.Receipt
+import com.arzikina.ne.domain.model.Transaction
 import com.arzikina.ne.presentation.components.ConfirmDialogs
 import com.arzikina.ne.presentation.components.NavAnimations
 import com.arzikina.ne.util.AppResult
@@ -26,6 +27,7 @@ import com.arzikina.ne.util.TriggerTimeFormatter
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -62,6 +64,7 @@ class ReceiptDetailFragment : Fragment(R.layout.fragment_receipt_detail) {
         viewBinding.dismissSuggestedAmountButton.setOnClickListener { viewModel.dismissSuggestedAmount() }
         viewBinding.editSuggestedAmountButton.setOnClickListener { showEditAmountDialog() }
         viewBinding.detectAmountButton.setOnClickListener { viewModel.detectAmount() }
+        viewBinding.addTransactionButton.setOnClickListener { viewModel.onAddTransactionClicked() }
 
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -69,6 +72,11 @@ class ReceiptDetailFragment : Fragment(R.layout.fragment_receipt_detail) {
                 launch { viewModel.previewBitmap.collect { bitmap -> renderPreview(bitmap) } }
                 launch { viewModel.suggestedAmountMinor.collect { amount -> renderSuggestedAmount(amount) } }
                 launch { viewModel.detectAmountButtonState.collect { state -> renderDetectAmountButton(state) } }
+                launch {
+                    combine(viewModel.linkedTransaction, viewModel.isPreparingTransaction) { linked, isPreparing ->
+                        linked to isPreparing
+                    }.collect { (linked, isPreparing) -> renderAddTransactionButton(linked, isPreparing) }
+                }
                 launch { viewModel.events.collect { event -> handleEvent(event) } }
             }
         }
@@ -174,13 +182,66 @@ class ReceiptDetailFragment : Fragment(R.layout.fragment_receipt_detail) {
         }
     }
 
+    /**
+     * Voir [ReceiptDetailViewModel.linkedTransaction]/[ReceiptDetailViewModel.isPreparingTransaction] :
+     * libellé du bouton piloté par la présence d'une transaction déjà liée (anti-doublon),
+     * désactivé pendant l'extraction/correspondance déclenchée par un clic (voir
+     * [ReceiptDetailViewModel.onAddTransactionClicked]) — jamais masqué (voir
+     * `fragment_receipt_detail.xml`, commentaire sur `addTransactionButton`). Pilote au passage
+     * `transactionLinkedBadge` (cahier des charges "statut visuel du reçu", même donnée) —
+     * indépendant de [isPreparing] : le badge ne doit pas clignoter pendant une analyse en cours
+     * pour un AUTRE clic (cas rare mais possible si l'utilisateur revient sur cet écran).
+     */
+    private fun renderAddTransactionButton(linkedTransaction: Transaction?, isPreparing: Boolean) {
+        val binding = binding ?: return
+        binding.transactionLinkedBadge.visibility = if (linkedTransaction != null) View.VISIBLE else View.GONE
+        binding.addTransactionButton.isEnabled = !isPreparing
+        binding.addTransactionButton.text = when {
+            isPreparing -> getString(R.string.receipt_detail_add_transaction_loading)
+            linkedTransaction != null -> getString(R.string.receipt_detail_view_transaction_action)
+            else -> getString(R.string.receipt_detail_add_transaction_action)
+        }
+    }
+
     private fun handleEvent(event: ReceiptDetailEvent) {
         val binding = binding ?: return
-        val message = when (event) {
-            ReceiptDetailEvent.ShareFailed -> getString(R.string.receipt_detail_share_failed_message)
-            ReceiptDetailEvent.OpenWithFailed -> getString(R.string.receipt_detail_open_with_failed_message)
+        when (event) {
+            ReceiptDetailEvent.ShareFailed ->
+                Snackbar.make(binding.root, getString(R.string.receipt_detail_share_failed_message), Snackbar.LENGTH_LONG).show()
+            ReceiptDetailEvent.OpenWithFailed ->
+                Snackbar.make(binding.root, getString(R.string.receipt_detail_open_with_failed_message), Snackbar.LENGTH_LONG).show()
+            is ReceiptDetailEvent.OpenLinkedTransaction ->
+                findNavController().navigate(
+                    R.id.transactionFormFragment,
+                    bundleOf("transactionId" to event.transactionId),
+                    NavAnimations.push
+                )
+            is ReceiptDetailEvent.PrefillNewTransaction -> navigateToPrefilledTransactionForm(event.prefill)
         }
-        Snackbar.make(binding.root, message, Snackbar.LENGTH_LONG).show()
+    }
+
+    /**
+     * Voir `nav_graph.xml` (`transactionFormFragment`, arguments `presetXxx`) : chaque champ `null`
+     * de [prefill] est simplement OMIS du bundle plutôt que transmis explicitement — les valeurs par
+     * défaut Navigation (0L/`null`) prennent alors le relais, exactement comme pour une ouverture
+     * normale du formulaire (voir [TransactionPrefill], "non détecté" jamais une valeur inventée).
+     */
+    private fun navigateToPrefilledTransactionForm(prefill: TransactionPrefill) {
+        findNavController().navigate(
+            R.id.transactionFormFragment,
+            bundleOf(
+                "transactionId" to 0L,
+                "presetAmountMinor" to (prefill.amountMinor ?: 0L),
+                "presetFeeAmountMinor" to (prefill.feeAmountMinor ?: 0L),
+                "presetDateTimeMillis" to (prefill.dateTimeMillis ?: 0L),
+                "presetDescription" to prefill.description,
+                "presetCategoryId" to (prefill.categoryId ?: 0L),
+                "presetAccountId" to (prefill.accountId ?: 0L),
+                "presetReceiptId" to prefill.receiptId,
+                "presetType" to prefill.type?.name
+            ),
+            NavAnimations.push
+        )
     }
 
     /**

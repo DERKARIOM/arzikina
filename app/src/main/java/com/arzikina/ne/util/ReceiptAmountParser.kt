@@ -82,8 +82,12 @@ object ReceiptAmountParser {
      * "1500.50") — sinon (ex. "15.000", "10 000 000") tous les séparateurs sont traités comme des
      * regroupements de milliers. Cette règle simple couvre la quasi-totalité des formats rencontrés
      * en pratique (aucun reçu Mobile Money local n'utilise de centimes réels).
+     *
+     * `internal` (et non `private`) : réutilisée telle quelle par [ReceiptTransactionInfoParser]
+     * (extraction des frais) plutôt que dupliquée — même logique de normalisation, un seul besoin
+     * différent (quelle LIGNE du reçu chercher, pas comment convertir le nombre trouvé).
      */
-    private fun normalizeAmountToken(raw: String): Long? {
+    internal fun normalizeAmountToken(raw: String): Long? {
         val cleaned = raw.filter { it.isDigit() || it == '.' || it == ',' }
         val lastSeparatorIndex = cleaned.indexOfLast { it == '.' || it == ',' }
         val isDecimal = lastSeparatorIndex != -1 && cleaned.length - lastSeparatorIndex - 1 == 2
@@ -102,8 +106,12 @@ object ReceiptAmountParser {
 
     /** Minuscules ET sans accents (ex. "à" -> "a") : les reçus n'utilisent pas toujours une
      * accentuation correcte/cohérente, comparer des chaînes déjà "aplaties" des deux côtés évite de
-     * rater un mot-clé pour cette seule raison. */
-    private fun normalizeForMatching(text: String): String {
+     * rater un mot-clé pour cette seule raison.
+     *
+     * `internal` (et non `private`) : réutilisée telle quelle par [ReceiptTransactionMatcher]
+     * (correspondance de catégorie par mot-clé) — même besoin de comparaison insensible aux
+     * accents/casse, pas de raison de dupliquer cette normalisation. */
+    internal fun normalizeForMatching(text: String): String {
         val withoutAccents = Normalizer.normalize(text, Normalizer.Form.NFD).replace(Regex("\\p{Mn}+"), "")
         return withoutAccents.lowercase()
     }

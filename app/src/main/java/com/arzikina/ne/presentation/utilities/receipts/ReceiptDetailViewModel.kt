@@ -9,10 +9,20 @@ import com.arzikina.ne.data.receipts.ReceiptIntentLauncher
 import com.arzikina.ne.data.receipts.ReceiptPdfRenderer
 import com.arzikina.ne.data.receipts.ReceiptTextExtractor
 import com.arzikina.ne.di.IoDispatcher
+import com.arzikina.ne.domain.model.FeeCategoryNames
+import com.arzikina.ne.domain.model.LoanCategoryNames
 import com.arzikina.ne.domain.model.Receipt
+import com.arzikina.ne.domain.model.Transaction
+import com.arzikina.ne.domain.model.TransactionType
+import com.arzikina.ne.domain.repository.AccountRepository
+import com.arzikina.ne.domain.repository.CategoryRepository
 import com.arzikina.ne.domain.repository.ReceiptRepository
+import com.arzikina.ne.domain.repository.TransactionRepository
 import com.arzikina.ne.util.AppResult
 import com.arzikina.ne.util.ReceiptAmountParser
+import com.arzikina.ne.util.ReceiptTransactionInfo
+import com.arzikina.ne.util.ReceiptTransactionInfoParser
+import com.arzikina.ne.util.ReceiptTransactionMatcher
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -24,6 +34,7 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -35,7 +46,37 @@ import javax.inject.Inject
 sealed interface ReceiptDetailEvent {
     data object ShareFailed : ReceiptDetailEvent
     data object OpenWithFailed : ReceiptDetailEvent
+
+    /** Voir [ReceiptDetailViewModel.onAddTransactionClicked] : ce reçu a déjà une transaction liée
+     * (anti-doublon, voir [TransactionRepository.findByReceiptId], lecture ponctuelle AUTORITATIVE
+     * au moment du clic — jamais celle, potentiellement périmée, de [ReceiptDetailViewModel.linkedTransaction])
+     * — `ReceiptDetailFragment` navigue directement vers sa modification plutôt que d'en créer une
+     * deuxième. */
+    data class OpenLinkedTransaction(val transactionId: Long) : ReceiptDetailEvent
+
+    /** Voir [ReceiptDetailViewModel.onAddTransactionClicked] : aucune transaction liée pour
+     * l'instant — `ReceiptDetailFragment` navigue vers la création, préremplie avec [prefill]
+     * (cahier des charges "Créer une transaction depuis un reçu"). */
+    data class PrefillNewTransaction(val prefill: TransactionPrefill) : ReceiptDetailEvent
 }
+
+/**
+ * Données préremplies transmises à `transactionFormFragment` (voir `nav_graph.xml`, chaque
+ * argument `presetXxx`) — un simple regroupement, PAS un nouveau modèle de domaine : reflète
+ * exactement les arguments de navigation disponibles (voir [TransactionFormViewModel.applyReceiptPresets]).
+ * Chaque champ `null` indépendamment signifie "non détecté avec assez de confiance", jamais une
+ * valeur inventée (voir [ReceiptTransactionInfoParser]/[ReceiptTransactionMatcher]).
+ */
+data class TransactionPrefill(
+    val amountMinor: Long?,
+    val feeAmountMinor: Long?,
+    val dateTimeMillis: Long?,
+    val description: String?,
+    val categoryId: Long?,
+    val accountId: Long?,
+    val type: TransactionType?,
+    val receiptId: Long
+)
 
 /**
  * État du bouton "Détecter le montant" (`detectAmountButton`, voir `fragment_receipt_detail.xml`)
@@ -74,6 +115,9 @@ class ReceiptDetailViewModel @Inject constructor(
     private val receiptPdfRenderer: ReceiptPdfRenderer,
     private val receiptIntentLauncher: ReceiptIntentLauncher,
     private val receiptTextExtractor: ReceiptTextExtractor,
+    private val transactionRepository: TransactionRepository,
+    private val accountRepository: AccountRepository,
+    private val categoryRepository: CategoryRepository,
     @IoDispatcher private val ioDispatcher: CoroutineDispatcher
 ) : ViewModel() {
 
@@ -140,6 +184,28 @@ class ReceiptDetailViewModel @Inject constructor(
             started = SharingStarted.WhileSubscribed(stopTimeoutMillis = 5_000),
             initialValue = DetectAmountButtonState.Hidden
         )
+
+    /**
+     * Transaction déjà créée depuis CE reçu (voir [Transaction.receiptId]), s'il y en a une —
+     * dérivée de [TransactionRepository.observeTransactions] (déjà chargé ailleurs dans
+     * l'application pour les soldes de comptes, voir `TransactionFormViewModel.accountBalances`)
+     * plutôt que d'observer une nouvelle requête dédiée. Pilote UNIQUEMENT le libellé du bouton
+     * "Ajouter comme transaction"/"Voir la transaction" (voir `ReceiptDetailFragment`) — la
+     * décision de navigation elle-même revient à [TransactionRepository.findByReceiptId] (lecture
+     * ponctuelle AUTORITATIVE au moment du clic, voir [onAddTransactionClicked]), jamais cette
+     * valeur potentiellement microscopiquement périmée entre deux émissions.
+     */
+    val linkedTransaction: StateFlow<Transaction?> = transactionRepository.observeTransactions()
+        .map { transactions -> transactions.find { it.receiptId == receiptId } }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(stopTimeoutMillis = 5_000), initialValue = null)
+
+    private val _isPreparingTransaction = MutableStateFlow(false)
+
+    /** Voir [onAddTransactionClicked] : extraction du texte + correspondance compte/catégorie, avant
+     * navigation — peut prendre un temps notable sur un gros PDF (même raisonnement que
+     * [isDetectingAmount]) : permet à `ReceiptDetailFragment` de désactiver le bouton et d'afficher
+     * un libellé de progression plutôt que de laisser l'utilisateur taper plusieurs fois. */
+    val isPreparingTransaction: StateFlow<Boolean> = _isPreparingTransaction.asStateFlow()
 
     init {
         loadPreview()
@@ -233,6 +299,76 @@ class ReceiptDetailViewModel @Inject constructor(
      * [detectAmount] plus tard s'il change d'avis, rien n'est définitif. */
     fun dismissSuggestedAmount() {
         _suggestedAmountMinor.value = null
+    }
+
+    /**
+     * Bouton "Ajouter comme transaction" (cahier des charges "Créer une transaction depuis un
+     * reçu") : vérifie D'ABORD l'anti-doublon ([TransactionRepository.findByReceiptId], lecture
+     * ponctuelle AUTORITATIVE — voir [ReceiptDetailEvent.OpenLinkedTransaction]), puis seulement si
+     * aucune transaction n'existe déjà, extrait le texte du reçu ([ReceiptTextExtractor]) et
+     * l'analyse ([ReceiptTransactionInfoParser]) pour proposer une correspondance de compte/
+     * catégorie ([ReceiptTransactionMatcher]) avant de laisser `ReceiptDetailFragment` naviguer vers
+     * le formulaire préRempli ([ReceiptDetailEvent.PrefillNewTransaction]).
+     *
+     * [_isPreparingTransaction] protège contre un double lancement (double-tap), même principe que
+     * [detectAmount]/[_isDetectingAmount].
+     */
+    fun onAddTransactionClicked() {
+        val receipt = (uiState.value as? AppResult.Success)?.data ?: return
+        if (_isPreparingTransaction.value) return
+
+        viewModelScope.launch {
+            _isPreparingTransaction.value = true
+            val existing = transactionRepository.findByReceiptId(receiptId)
+            if (existing != null) {
+                _isPreparingTransaction.value = false
+                _events.emit(ReceiptDetailEvent.OpenLinkedTransaction(existing.id))
+                return@launch
+            }
+
+            val text = withContext(ioDispatcher) {
+                val file = receiptFileStorage.resolveFile(receipt.localPath)
+                receiptTextExtractor.extractText(file)
+            }
+            // Toujours `ReceiptTransactionInfo()` (tous les champs `null`) si le texte n'a pas pu
+            // être extrait — jamais une erreur bloquante : le formulaire s'ouvre alors simplement
+            // vide, exactement comme une création manuelle (voir la doc de tête de
+            // ReceiptTransactionInfoParser, "ne jamais inventer").
+            val info = text?.let { ReceiptTransactionInfoParser.parse(it) } ?: ReceiptTransactionInfo()
+
+            // Correspondance de compte : dépend de Receipt.sourceApp, PAS du texte extrait — reste
+            // tentée même si l'extraction de texte a échoué ci-dessus (voir ReceiptTransactionMatcher).
+            val accounts = accountRepository.observeAccounts().first()
+            val matchedAccount = ReceiptTransactionMatcher.matchAccountBySourceApp(accounts, receipt.sourceApp)
+
+            // Catégorie du type DÉTECTÉ, ou EXPENSE par défaut (même valeur par défaut que
+            // TransactionFormState.type, voir TransactionFormViewModel) : cohérent avec le type
+            // affiché par le formulaire si presetType n'a lui-même pas pu être détecté. Exclut les
+            // catégories système (Prêts/Emprunts, Frais et commissions), jamais choisies
+            // manuellement — même filtrage que TransactionFormViewModel.categories, sans quoi le
+            // mot "Frais" présent sur presque tout reçu Mobile Money pourrait faire correspondre à
+            // tort la catégorie système "Frais et commissions" à la transaction PRINCIPALE.
+            val categoryType = info.transactionType ?: TransactionType.EXPENSE
+            val categories = categoryRepository.observeCategoriesByType(categoryType).first()
+                .filterNot { it.name in LoanCategoryNames.ALL || it.name in FeeCategoryNames.ALL }
+            val matchedCategory = ReceiptTransactionMatcher.matchCategoryByKeyword(categories, text)
+
+            _isPreparingTransaction.value = false
+            _events.emit(
+                ReceiptDetailEvent.PrefillNewTransaction(
+                    TransactionPrefill(
+                        amountMinor = info.amountMinor,
+                        feeAmountMinor = info.feeMinor,
+                        dateTimeMillis = info.dateTimeMillis,
+                        description = info.description,
+                        categoryId = matchedCategory?.id,
+                        accountId = matchedAccount?.id,
+                        type = info.transactionType,
+                        receiptId = receiptId
+                    )
+                )
+            )
+        }
     }
 
     /** Supprime la ligne Room ET le fichier physique (voir [ReceiptRepository.deleteReceipt]) —

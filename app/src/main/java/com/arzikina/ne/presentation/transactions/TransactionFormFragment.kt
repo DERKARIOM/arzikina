@@ -113,6 +113,9 @@ class TransactionFormFragment : Fragment(R.layout.fragment_transaction_form) {
         viewBinding.loanLinkedBanner.setOnClickListener {
             viewModel.formState.value.linkedLoanId?.let { loanId -> navigateToLoanDetail(loanId) }
         }
+        viewBinding.linkedReceiptRow.setOnClickListener {
+            viewModel.formState.value.receiptId?.let { receiptId -> navigateToLinkedReceipt(receiptId) }
+        }
 
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -369,6 +372,11 @@ class TransactionFormFragment : Fragment(R.layout.fragment_transaction_form) {
         // différent — les lignes cliquables (compte, catégorie, date) restent, elles, guardées
         // individuellement dans chaque setUpXxx() ci-dessus (isLoanLinked()).
         binding.loanLinkedBanner.visibility = if (isLoanLinked) View.VISIBLE else View.GONE
+        // Voir la doc de TransactionFormState.receiptId : UNIQUEMENT à la création (une
+        // transaction déjà enregistrée et liée à un reçu affiche plutôt une ligne "Reçu associé"
+        // cliquable, voir Étape 8 à venir — pas cette bannière informative).
+        binding.receiptPrefillBanner.visibility =
+            if (!viewModel.isEditMode && state.receiptId != null) View.VISIBLE else View.GONE
         binding.amountInput.isEnabled = !isLoanLinked
         binding.descriptionInput.isEnabled = !isLoanLinked
         binding.typeField.dropdownInput.isEnabled = !isLoanLinked
@@ -398,6 +406,12 @@ class TransactionFormFragment : Fragment(R.layout.fragment_transaction_form) {
         if (binding.descriptionInput.text?.toString() != state.description) {
             binding.descriptionInput.setText(state.description)
         }
+
+        // Voir la doc de TransactionFormState.receiptId : UNIQUEMENT en modification (un
+        // receiptId présent à la création vient de la bannière "Informations détectées" ci-dessus,
+        // pas d'une transaction déjà associée — voir receiptPrefillBanner).
+        binding.linkedReceiptRow.visibility =
+            if (viewModel.isEditMode && state.receiptId != null) View.VISIBLE else View.GONE
 
         val paymentMethodLabel = state.paymentMethod?.let { getString(it.displayTextRes()) }
             ?: getString(R.string.transaction_form_payment_method_none)
@@ -624,6 +638,19 @@ class TransactionFormFragment : Fragment(R.layout.fragment_transaction_form) {
 
     private fun navigateToNewCategory() {
         findNavController().navigate(R.id.categoryFormFragment, bundleOf("categoryId" to 0L), NavAnimations.push)
+    }
+
+    /** Voir `fragment_transaction_form.xml` (`linkedReceiptRow`) — cahier des charges "Créer une
+     * transaction depuis un reçu", lien inverse. Navigation simple (pas de `popUpTo` particulier,
+     * contrairement à [navigateToLoanDetail]) : revenir en arrière depuis "Détail du reçu" doit
+     * ramener normalement à ce formulaire, toujours valide dans ce cas (contrairement au prêt/
+     * emprunt, qui interdit toute modification de cette transaction). */
+    private fun navigateToLinkedReceipt(receiptId: Long) {
+        findNavController().navigate(
+            R.id.receiptDetailFragment,
+            bundleOf("receiptId" to receiptId),
+            NavAnimations.push
+        )
     }
 
     /** Voir la doc de `TransactionFormState.linkedLoanId` : accès synchrone utilisé par les

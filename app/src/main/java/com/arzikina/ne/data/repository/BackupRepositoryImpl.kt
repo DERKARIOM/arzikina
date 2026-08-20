@@ -294,22 +294,28 @@ class BackupRepositoryImpl @Inject constructor(
                 // correspondance à construire, un simple id neuf par ligne suffit.
                 savingsGoalDao.insertAll(payload.savingsGoals.map { it.toEntity(userId).copy(id = 0L) })
 
-                // Reçus (voir la doc de tête de cette classe) : comme les objectifs d'épargne
-                // ci-dessus, aucune autre table n'y fait référence — pas de table de correspondance
-                // à construire. Chaque PDF est d'abord réécrit sur le disque (nouveau nom UUID, voir
-                // `ReceiptFileStorage.writeBytes`) AVANT que la ligne Room correspondante ne soit
-                // construite avec son [ReceiptEntity.localPath] réel — si `writeBytes` échoue pour un
-                // seul reçu (ex. stockage plein), l'exception remonte et annule TOUTE la transaction
-                // (aucune ligne Room orpheline, voir la doc de classe "soit tout réussit, soit la
-                // base reste inchangée") ; les fichiers déjà écrits pour les reçus précédents dans
-                // cette même boucle deviennent alors simplement des fichiers orphelins invisibles
-                // (aucune ligne Room ne les référence), jamais un risque d'incohérence.
+                // Reçus (voir la doc de tête de cette classe) : depuis `Transaction.receiptId`
+                // (cahier des charges "Créer une transaction depuis un reçu"), UNE AUTRE table fait
+                // désormais référence à l'id d'un reçu — receiptIdMap construite ici, MÊME principe
+                // que accountIdMap/categoryIdMap ci-dessus, et déjà entièrement connue au moment où
+                // les transactions sont insérées plus bas (aucune 2ème passe nécessaire pour ce
+                // pointeur, contrairement à feeTransactionId). Chaque PDF est d'abord réécrit sur le
+                // disque (nouveau nom UUID, voir `ReceiptFileStorage.writeBytes`) AVANT que la ligne
+                // Room correspondante ne soit construite avec son [ReceiptEntity.localPath] réel —
+                // si `writeBytes` échoue pour un seul reçu (ex. stockage plein), l'exception remonte
+                // et annule TOUTE la transaction (aucune ligne Room orpheline, voir la doc de classe
+                // "soit tout réussit, soit la base reste inchangée") ; les fichiers déjà écrits pour
+                // les reçus précédents dans cette même boucle deviennent alors simplement des
+                // fichiers orphelins invisibles (aucune ligne Room ne les référence), jamais un
+                // risque d'incohérence.
                 val receiptEntities = payload.receipts.map { dto ->
                     val bytes = Base64.getDecoder().decode(dto.pdfBase64)
                     val written = receiptFileStorage.writeBytes(bytes)
                     dto.toEntity(userId, localPath = written.relativePath, fileSize = written.fileSize)
                 }
-                receiptDao.insertAll(receiptEntities)
+                val receiptIdMap = payload.receipts
+                    .zip(receiptDao.insertAll(receiptEntities))
+                    .associate { (dto, newId) -> dto.id to newId }
 
                 // Règles récurrentes : avant les transactions (aucune dépendance entre les deux),
                 // mais APRÈS accounts/categories dont elles ont besoin. Les occurrences, elles,
@@ -322,13 +328,16 @@ class BackupRepositoryImpl @Inject constructor(
                     )
                     .associate { (dto, newId) -> dto.id to newId }
 
-                // Transactions, 1ère passe (voir TransactionDto.remapIds) : accountId/categoryId
-                // déjà connus, feeTransactionId encore laissé à `null` (la transaction de frais
-                // qu'il désigne peut être plus loin dans cette même liste, pas encore insérée).
+                // Transactions, 1ère passe (voir TransactionDto.remapIds) : accountId/categoryId/
+                // receiptId déjà connus (comptes, catégories et reçus tous insérés plus haut),
+                // feeTransactionId encore laissé à `null` (la transaction de frais qu'il désigne
+                // peut être plus loin dans cette même liste, pas encore insérée).
                 val transactionIdMap = payload.transactions
                     .zip(
                         transactionDao.insertAll(
-                            payload.transactions.map { it.remapIds(0L, accountIdMap, categoryIdMap).toEntity(userId) }
+                            payload.transactions.map {
+                                it.remapIds(0L, accountIdMap, categoryIdMap, receiptIdMap = receiptIdMap).toEntity(userId)
+                            }
                         )
                     )
                     .associate { (dto, newId) -> dto.id to newId }
@@ -336,12 +345,14 @@ class BackupRepositoryImpl @Inject constructor(
                 // 2ème passe : réécrit feeTransactionId maintenant que la correspondance de TOUTE
                 // la table est connue — une mise à jour ciblée par transaction qui a des frais
                 // (upsert sur un id déjà existant depuis la 1ère passe = UPDATE, jamais une
-                // insertion supplémentaire, voir TransactionDao.insertAll).
+                // insertion supplémentaire, voir TransactionDao.insertAll). receiptIdMap explicitement
+                // repassé ici aussi (voir la doc de TransactionDto.remapIds) : l'omettre effacerait
+                // silencieusement le receiptId déjà résolu à la 1ère passe pour ces lignes.
                 payload.transactions
                     .filter { it.feeTransactionId != null }
                     .forEach { dto ->
                         val newId = transactionIdMap.getValue(dto.id)
-                        val remapped = dto.remapIds(newId, accountIdMap, categoryIdMap, transactionIdMap)
+                        val remapped = dto.remapIds(newId, accountIdMap, categoryIdMap, transactionIdMap, receiptIdMap)
                         transactionDao.upsert(remapped.toEntity(userId))
                     }
 

@@ -21,6 +21,7 @@ import com.arzikina.ne.util.AppResult
 import com.arzikina.ne.util.Constants
 import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 
 /**
@@ -61,7 +62,11 @@ class ReceiptsFragment : Fragment(R.layout.fragment_receipts) {
 
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                launch { viewModel.uiState.collect { state -> render(state) } }
+                launch {
+                    combine(viewModel.uiState, viewModel.receiptIdsWithTransaction) { state, linkedIds ->
+                        state to linkedIds
+                    }.collect { (state, linkedIds) -> render(state, linkedIds) }
+                }
                 launch { viewModel.filters.collect { filters -> renderFilters(filters) } }
                 launch { viewModel.events.collect { event -> handleEvent(event) } }
             }
@@ -130,7 +135,7 @@ class ReceiptsFragment : Fragment(R.layout.fragment_receipts) {
         )
     }
 
-    private fun render(state: AppResult<List<ReceiptDaySection>>) {
+    private fun render(state: AppResult<List<ReceiptDaySection>>, receiptIdsWithTransaction: Set<Long>) {
         val binding = binding ?: return
         if (state !is AppResult.Success) return
 
@@ -138,7 +143,7 @@ class ReceiptsFragment : Fragment(R.layout.fragment_receipts) {
         binding.receiptsList.visibility = if (hasReceipts) View.VISIBLE else View.GONE
         binding.addReceiptButton.visibility = if (hasReceipts) View.VISIBLE else View.GONE
         binding.emptyState.visibility = if (hasReceipts) View.GONE else View.VISIBLE
-        adapter.submitList(state.data.toListRows())
+        adapter.submitList(state.data.toListRows(receiptIdsWithTransaction))
     }
 
     private fun renderFilters(filters: ReceiptFilters) {

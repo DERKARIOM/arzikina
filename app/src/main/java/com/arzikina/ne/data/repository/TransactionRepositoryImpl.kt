@@ -52,6 +52,20 @@ class TransactionRepositoryImpl @Inject constructor(
     override suspend fun getTransaction(id: Long): Transaction? =
         withContext(ioDispatcher) { transactionDao.getById(id, requireCurrentUserId())?.toDomain() }
 
+    override suspend fun findByReceiptId(receiptId: Long): Transaction? =
+        withContext(ioDispatcher) {
+            transactionDao.findByReceiptId(receiptId, requireCurrentUserId())?.toDomain()
+        }
+
+    override fun observeReceiptIdsWithTransaction(): Flow<Set<Long>> =
+        sessionManager.observeCurrentUserId().flatMapLatest { userId ->
+            if (userId == null) {
+                flowOf(emptySet())
+            } else {
+                transactionDao.observeReceiptIdsWithTransaction(userId).map { it.toSet() }
+            }
+        }
+
     override suspend fun saveTransaction(transaction: Transaction, fee: TransactionFee?): Long =
         withContext(ioDispatcher) {
             val userId = requireCurrentUserId()

@@ -35,6 +35,29 @@ interface TransactionDao {
     @Query("UPDATE transactions SET feeTransactionId = NULL WHERE feeTransactionId = :feeTransactionId AND userId = :userId")
     suspend fun clearFeeTransactionReference(feeTransactionId: Long, userId: Long)
 
+    /** Voir `TransactionEntity.receiptId` — utilisé pour l'anti-doublon du bouton "Ajouter comme
+     * transaction" (cahier des charges "Créer une transaction depuis un reçu") : `null` si ce reçu
+     * n'a encore donné lieu à aucune transaction. Au plus une ligne possible en pratique (voir
+     * `TransactionRepositoryImpl.saveTransaction`, qui empêche la création d'une deuxième
+     * transaction pour un même reçu), mais rien ne l'impose au niveau SQL (pas de contrainte
+     * `UNIQUE`) — `getById`-style lecture ponctuelle plutôt qu'un flux, cet appel n'a lieu qu'au
+     * moment du clic sur le bouton, jamais en continu. */
+    @Query("SELECT * FROM transactions WHERE receiptId = :receiptId AND userId = :userId LIMIT 1")
+    suspend fun findByReceiptId(receiptId: Long, userId: Long): TransactionEntity?
+
+    /** Neutralise un pointeur `receiptId` devenu mort — même principe que
+     * [clearFeeTransactionReference], appelé par `ReceiptRepositoryImpl.deleteReceipt` AVANT de
+     * supprimer le reçu (voir `TransactionEntity`, pas de `ForeignKey` vers `receipts`). */
+    @Query("UPDATE transactions SET receiptId = NULL WHERE receiptId = :receiptId AND userId = :userId")
+    suspend fun clearReceiptReference(receiptId: Long, userId: Long)
+
+    /** Voir `TransactionRepository.observeReceiptIdsWithTransaction` — UNE SEULE requête groupée
+     * (`DISTINCT`) pour connaître tous les reçus déjà liés à une transaction, plutôt qu'un appel
+     * [findByReceiptId] par reçu affiché dans "Gestion des reçus" (non-N+1, voir
+     * `ReceiptsViewModel`/`ReceiptsAdapter`, statut visuel du reçu). */
+    @Query("SELECT DISTINCT receiptId FROM transactions WHERE userId = :userId AND receiptId IS NOT NULL")
+    fun observeReceiptIdsWithTransaction(userId: Long): Flow<List<Long>>
+
     /** Retourne l'id de la ligne insérée, ou -1 en cas de mise à jour (voir `AccountDao.upsert`) —
      * nécessaire pour lier une transaction générée automatiquement à un `Loan`/`LoanPayment`
      * (voir `data/repository/LoanRepositoryImpl`). */

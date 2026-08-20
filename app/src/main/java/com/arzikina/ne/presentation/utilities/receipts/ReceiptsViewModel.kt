@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.arzikina.ne.domain.model.Receipt
 import com.arzikina.ne.domain.repository.ReceiptRepository
+import com.arzikina.ne.domain.repository.TransactionRepository
 import com.arzikina.ne.util.AppResult
 import com.arzikina.ne.util.DatePeriods
 import com.arzikina.ne.util.Money
@@ -73,7 +74,8 @@ data class ReceiptFilters(
  */
 @HiltViewModel
 class ReceiptsViewModel @Inject constructor(
-    private val receiptRepository: ReceiptRepository
+    private val receiptRepository: ReceiptRepository,
+    private val transactionRepository: TransactionRepository
 ) : ViewModel() {
 
     private val _filters = MutableStateFlow(ReceiptFilters())
@@ -81,6 +83,18 @@ class ReceiptsViewModel @Inject constructor(
 
     private val _events = MutableSharedFlow<ReceiptImportEvent>()
     val events: SharedFlow<ReceiptImportEvent> = _events.asSharedFlow()
+
+    /**
+     * Ensemble des reçus déjà liés à une transaction (cahier des charges "Créer une transaction
+     * depuis un reçu", statut visuel affiché par [ReceiptsAdapter]) — voir
+     * [TransactionRepository.observeReceiptIdsWithTransaction] pour le raisonnement "non-N+1".
+     * Volontairement SÉPARÉ de [uiState] plutôt que fusionné dedans : [ReceiptDaySection]/
+     * `groupByDay()` restent une notion de pur regroupement par jour, sans rapport avec les
+     * transactions — `ReceiptsFragment` combine les deux au moment de construire les lignes de
+     * liste (voir [com.arzikina.ne.presentation.utilities.receipts.toListRows]).
+     */
+    val receiptIdsWithTransaction: StateFlow<Set<Long>> = transactionRepository.observeReceiptIdsWithTransaction()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(stopTimeoutMillis = 5_000), initialValue = emptySet())
 
     val uiState: StateFlow<AppResult<List<ReceiptDaySection>>> = combine(
         receiptRepository.observeReceipts(),

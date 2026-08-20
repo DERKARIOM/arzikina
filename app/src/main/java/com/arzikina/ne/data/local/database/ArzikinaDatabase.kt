@@ -95,6 +95,9 @@ import com.arzikina.ne.data.local.entity.UserEntity
  * - 21 : Gestion des reçus PDF, table `receipts` (voir [MIGRATION_20_21]/[ReceiptEntity]/
  *   [com.arzikina.ne.domain.model.Receipt]) — indépendante du reste du modèle financier, aucune
  *   clé étrangère.
+ * - 22 : Lien optionnel `receiptId` sur `transactions` (voir [MIGRATION_21_22]/[TransactionEntity]/
+ *   [com.arzikina.ne.domain.model.Transaction.receiptId]) — cahier des charges "Créer une
+ *   transaction depuis un reçu" ; même principe que `feeTransactionId` (pas de `ForeignKey` SQL).
  */
 @Database(
     entities = [
@@ -114,7 +117,7 @@ import com.arzikina.ne.data.local.entity.UserEntity
         FinancialPlanItemEntity::class,
         ReceiptEntity::class
     ],
-    version = 21,
+    version = 22,
     exportSchema = true
 )
 @TypeConverters(Converters::class)

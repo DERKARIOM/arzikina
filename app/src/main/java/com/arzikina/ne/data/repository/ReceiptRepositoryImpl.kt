@@ -1,7 +1,10 @@
 package com.arzikina.ne.data.repository
 
 import android.net.Uri
+import androidx.room.withTransaction
 import com.arzikina.ne.data.local.dao.ReceiptDao
+import com.arzikina.ne.data.local.dao.TransactionDao
+import com.arzikina.ne.data.local.database.ArzikinaDatabase
 import com.arzikina.ne.data.mapper.toDomain
 import com.arzikina.ne.data.mapper.toEntity
 import com.arzikina.ne.data.receipts.ReceiptFileStorage
@@ -22,17 +25,23 @@ import javax.inject.Inject
  * physique (voir doc de tête de l'interface : c'est le SEUL endroit du projet où les deux sont
  * assemblés — [ReceiptFileStorage] ignore totalement Room/[Receipt], voir sa propre doc).
  *
- * Isolation multi-utilisateurs : voir `AccountRepositoryImpl` pour le raisonnement. Pas de
- * `database.withTransaction` ici (contrairement à `RecurringTransactionRepositoryImpl`) : aucune
- * écriture multi-DAO à coordonner pour un reçu (table `receipts` seule, aucune cascade) — un simple
- * `withContext(ioDispatcher)` suffit. La copie de fichier ([ReceiptFileStorage.copyToPrivateStorage])
- * n'est, elle non plus, pas transactionnelle avec l'écriture Room : en cas d'échec Room après une
- * copie réussie, le fichier orphelin reste sur le disque sans ligne associée — cas extrêmement rare
- * (Room en local, jamais réseau) et sans risque pour l'utilisateur (aucune référence brisée visible),
- * contrairement à l'inverse (ligne Room sans fichier) qui est activement évité partout ici.
+ * Isolation multi-utilisateurs : voir `AccountRepositoryImpl` pour le raisonnement.
+ *
+ * [database]/[transactionDao] : nécessaires depuis le lien Reçu→Transaction (voir
+ * `TransactionEntity.receiptId`, cahier des charges "Créer une transaction depuis un reçu") —
+ * [deleteReceipt] doit désormais coordonner DEUX DAO (`database.withTransaction`, même principe que
+ * `TransactionRepositoryImpl`) pour neutraliser un pointeur `receiptId` devenu mort avant de
+ * supprimer la ligne `receipts` elle-même. La copie/suppression de fichier
+ * ([ReceiptFileStorage]) reste, elle, hors de cette transaction (comme avant) : en cas d'échec Room
+ * après une opération fichier réussie, le fichier orphelin reste sur le disque sans ligne associée —
+ * cas extrêmement rare (Room en local, jamais réseau) et sans risque pour l'utilisateur (aucune
+ * référence brisée visible), contrairement à l'inverse (ligne Room sans fichier) qui est activement
+ * évité partout ici.
  */
 class ReceiptRepositoryImpl @Inject constructor(
+    private val database: ArzikinaDatabase,
     private val receiptDao: ReceiptDao,
+    private val transactionDao: TransactionDao,
     private val receiptFileStorage: ReceiptFileStorage,
     private val sessionManager: SessionManager,
     @IoDispatcher private val ioDispatcher: CoroutineDispatcher
@@ -95,7 +104,14 @@ class ReceiptRepositoryImpl @Inject constructor(
         // préfère un fichier orphelin sur le disque (invisible, sans conséquence) plutôt qu'une
         // ligne Room pointant vers un fichier déjà supprimé (visible, cassé) — voir la doc de tête.
         receiptFileStorage.deleteFile(existing.localPath)
-        receiptDao.deleteById(id, userId)
+        database.withTransaction {
+            // Neutralise un pointeur `receiptId` devenu mort AVANT de supprimer le reçu — sans cette
+            // étape, une transaction déjà créée depuis ce reçu (voir `TransactionEntity.receiptId`)
+            // pointerait vers un reçu inexistant (pas de `ForeignKey`, voir sa doc : SQLite ne le
+            // ferait jamais lui-même).
+            transactionDao.clearReceiptReference(id, userId)
+            receiptDao.deleteById(id, userId)
+        }
     }
 
     private suspend fun requireCurrentUserId(): Long =

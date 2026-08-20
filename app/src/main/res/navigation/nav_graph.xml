@@ -91,14 +91,60 @@
             app:argType="long" />
         <!--
             0L = "aucun compte présélectionné" (même convention que
-            transactionId). Renseigné uniquement par AccountDetailFragment,
-            pour pré-remplir le compte quand on ajoute une transaction depuis
-            l'écran "Détail du compte" (voir TransactionFormViewModel).
+            transactionId). Renseigné par AccountDetailFragment (pré-remplissage du compte
+            depuis l'écran "Détail du compte"), et RÉUTILISÉ TEL QUEL par ReceiptDetailFragment
+            (compte détecté par correspondance Mobile Money, voir ReceiptTransactionMatcher,
+            Étape 6 à venir) — voir TransactionFormViewModel.
         -->
         <argument
             android:name="presetAccountId"
             android:defaultValue="0L"
             app:argType="long" />
+        <!--
+            Préremplissage depuis un reçu PDF (cahier des charges "Créer une transaction depuis
+            un reçu") : chaque argument reste INDÉPENDANT et optionnel (0L/`null` = "non
+            détecté", jamais une valeur inventée — voir ReceiptTransactionInfoParser). Renseignés
+            uniquement par ReceiptDetailFragment (Étape 6 à venir) ; ignorés en modification (voir
+            TransactionFormViewModel.init, isEditMode).
+        -->
+        <argument
+            android:name="presetAmountMinor"
+            android:defaultValue="0L"
+            app:argType="long" />
+        <argument
+            android:name="presetFeeAmountMinor"
+            android:defaultValue="0L"
+            app:argType="long" />
+        <argument
+            android:name="presetDateTimeMillis"
+            android:defaultValue="0L"
+            app:argType="long" />
+        <argument
+            android:name="presetDescription"
+            android:defaultValue="@null"
+            app:argType="string"
+            app:nullable="true" />
+        <argument
+            android:name="presetCategoryId"
+            android:defaultValue="0L"
+            app:argType="long" />
+        <argument
+            android:name="presetReceiptId"
+            android:defaultValue="0L"
+            app:argType="long" />
+        <!--
+            Nom de TransactionType (ex. "INCOME"), même convention que initialType sur
+            AccountFormFragment ci-dessus (chaîne nullable, lecture défensive côté ViewModel).
+            DOIT être appliqué avant presetCategoryId (voir TransactionFormViewModel.categories,
+            filtrée par le type COURANT) : un reçu "Crédit" sans ce champ présélectionnerait une
+            catégorie de revenu alors que le formulaire resterait ouvert en Dépense (valeur par
+            défaut de TransactionFormState.type).
+        -->
+        <argument
+            android:name="presetType"
+            android:defaultValue="@null"
+            app:argType="string"
+            app:nullable="true" />
     </fragment>
 
     <fragment

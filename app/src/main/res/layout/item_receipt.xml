@@ -110,6 +110,26 @@
             tools:text="5 000 F CFA"
             tools:visibility="visible" />
 
+        <!-- Voir ReceiptsAdapter.ReceiptListRow.Row.hasLinkedTransaction (cahier des charges
+             "Créer une transaction depuis un reçu", statut visuel) — même chaîne que le badge du
+             Détail du reçu (voir fragment_receipt_detail.xml, transactionLinkedBadge). -->
+        <TextView
+            android:id="@+id/receiptTransactionBadge"
+            style="@style/TextAppearance.Material3.LabelSmall"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/spacing_m"
+            android:layout_marginTop="@dimen/spacing_xs"
+            android:background="@drawable/bg_chip_success"
+            android:paddingHorizontal="@dimen/spacing_s"
+            android:paddingVertical="2dp"
+            android:text="@string/receipt_detail_transaction_linked_badge"
+            android:textColor="@color/white"
+            android:visibility="gone"
+            app:layout_constraintStart_toEndOf="@id/receiptIcon"
+            app:layout_constraintTop_toBottomOf="@id/receiptSourceLine"
+            tools:visibility="visible" />
+
     </androidx.constraintlayout.widget.ConstraintLayout>
 
 </com.google.android.material.card.MaterialCardView>

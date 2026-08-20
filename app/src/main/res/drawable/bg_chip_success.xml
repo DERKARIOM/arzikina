@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Puce "pilule" pour le badge de statut "Transaction enregistrée" (cahier des charges "Créer une
+    transaction depuis un reçu", voir ReceiptDetailFragment/ReceiptsAdapter) — accent plein
+    (arzikina_primary) + texte blanc, MÊME combinaison que shareButton/confirmSuggestedAmountButton
+    (voir forme_radius_10dp.xml + android:textColor="@color/white" dans leurs layouts respectifs) :
+    contrairement à un MaterialButton, un simple TextView ne teinte jamais automatiquement son
+    android:background, donc PAS arzikina_primary_container ici — cette couleur vaut exactement
+    arzikina_on_primary_container dans ce projet (voir colors.xml), un texte dans cette couleur
+    serait invisible sur ce fond.
+
+    android:radius="100dp" : voir bg_budget_card_chip.xml — force un arrondi complet (pilule) quelle
+    que soit la hauteur exacte au moment du rendu (toujours wrap_content, une ligne de texte).
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="@color/arzikina_primary" />
+    <corners android:radius="100dp" />
+</shape>

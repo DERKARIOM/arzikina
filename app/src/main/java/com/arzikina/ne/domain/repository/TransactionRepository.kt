@@ -19,6 +19,18 @@ interface TransactionRepository {
 
     suspend fun getTransaction(id: Long): Transaction?
 
+    /** Voir [Transaction.receiptId] — utilisé par le bouton "Ajouter comme transaction" (cahier des
+     * charges "Créer une transaction depuis un reçu") pour l'anti-doublon : `null` si ce reçu n'a
+     * encore donné lieu à aucune transaction, auquel cas le bouton propose une création ; sinon il
+     * propose d'ouvrir la transaction déjà créée plutôt que d'en générer une deuxième. */
+    suspend fun findByReceiptId(receiptId: Long): Transaction?
+
+    /** Voir [Transaction.receiptId] — ensemble des reçus déjà liés à une transaction (cahier des
+     * charges "Créer une transaction depuis un reçu", statut visuel affiché sur "Gestion des
+     * reçus") : UNE SEULE requête groupée plutôt qu'un [findByReceiptId] par reçu affiché dans la
+     * liste (non-N+1, voir `ReceiptsViewModel`). */
+    fun observeReceiptIdsWithTransaction(): Flow<Set<Long>>
+
     /** Crée la transaction si [Transaction.id] vaut 0, la met à jour sinon. Retourne l'id définitif
      * de la transaction (celui généré à la création, ou [Transaction.id] inchangé pour une mise à
      * jour) — voir [AccountRepository.saveAccount] pour le même principe, utile ici pour lier une

@@ -20,16 +20,29 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 /** Une ligne de liste groupée par jour : soit un en-tête ([Header]), soit un reçu ([Row]) — même
- * principe que `presentation.transactions.TransactionListRow`. */
+ * principe que `presentation.transactions.TransactionListRow`.
+ *
+ * [Row.hasLinkedTransaction] (cahier des charges "Créer une transaction depuis un reçu", statut
+ * visuel) : volontairement porté ici plutôt que sur [Receipt] lui-même — c'est une information
+ * dérivée d'une AUTRE table (`transactions`, voir `TransactionRepository.observeReceiptIdsWithTransaction`),
+ * pas une propriété intrinsèque du reçu (voir [toListRows]).
+ */
 sealed interface ReceiptListRow {
     data class Header(val section: ReceiptDaySection) : ReceiptListRow
-    data class Row(val receipt: Receipt) : ReceiptListRow
+    data class Row(val receipt: Receipt, val hasLinkedTransaction: Boolean) : ReceiptListRow
 }
 
-/** Aplatit [sections] en une liste de lignes prête pour [ReceiptsAdapter]. */
-fun List<ReceiptDaySection>.toListRows(): List<ReceiptListRow> =
+/**
+ * Aplatit [sections] en une liste de lignes prête pour [ReceiptsAdapter], en fusionnant au passage
+ * [receiptIdsWithTransaction] (voir [ReceiptListRow.Row.hasLinkedTransaction]) — seul point du code
+ * où ces deux informations, sources séparées côté [ReceiptsViewModel], se rejoignent.
+ */
+fun List<ReceiptDaySection>.toListRows(receiptIdsWithTransaction: Set<Long>): List<ReceiptListRow> =
     flatMap { section ->
-        listOf(ReceiptListRow.Header(section)) + section.items.map { ReceiptListRow.Row(it) }
+        listOf(ReceiptListRow.Header(section)) +
+            section.items.map { receipt ->
+                ReceiptListRow.Row(receipt, hasLinkedTransaction = receipt.id in receiptIdsWithTransaction)
+            }
     }
 
 /**
@@ -59,7 +72,7 @@ class ReceiptsAdapter(
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
         when (val row = getItem(position)) {
             is ReceiptListRow.Header -> (holder as HeaderViewHolder).bind(row.section)
-            is ReceiptListRow.Row -> (holder as ReceiptViewHolder).bind(row.receipt, onClick)
+            is ReceiptListRow.Row -> (holder as ReceiptViewHolder).bind(row, onClick)
         }
     }
 
@@ -96,8 +109,9 @@ class ReceiptsAdapter(
     }
 
     class ReceiptViewHolder(private val binding: ItemReceiptBinding) : RecyclerView.ViewHolder(binding.root) {
-        fun bind(receipt: Receipt, onClick: (Receipt) -> Unit) {
+        fun bind(row: ReceiptListRow.Row, onClick: (Receipt) -> Unit) {
             val context = binding.root.context
+            val receipt = row.receipt
 
             binding.receiptName.text = receipt.fileName
 
@@ -118,6 +132,10 @@ class ReceiptsAdapter(
             } else {
                 binding.receiptAmount.visibility = View.GONE
             }
+
+            // Cahier des charges "Créer une transaction depuis un reçu", statut visuel — voir
+            // ReceiptListRow.Row.hasLinkedTransaction.
+            binding.receiptTransactionBadge.visibility = if (row.hasLinkedTransaction) View.VISIBLE else View.GONE
 
             binding.root.setOnClickListener { onClick(receipt) }
         }

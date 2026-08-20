@@ -352,6 +352,11 @@
     <string name="transactions_delete_message">Cette action est irréversible.</string>
     <!-- Voir TransactionFormViewModel.TransactionFormState.linkedLoanId. -->
     <string name="transaction_form_loan_linked_banner">Cette transaction fait partie d\'un prêt/emprunt. Touche ici pour la gérer depuis « Détail du prêt/emprunt ».</string>
+    <!-- Voir TransactionFormViewModel.applyReceiptPresets — création uniquement, jamais en modification. -->
+    <string name="transaction_form_receipt_prefill_banner">✨ Informations détectées depuis le reçu — vérifie-les avant d\'enregistrer.</string>
+    <!-- Voir TransactionFormState.receiptId (chargé en modification, Étape 1/5 de "Créer une
+         transaction depuis un reçu") — ligne cliquable, visible UNIQUEMENT en modification. -->
+    <string name="transaction_form_linked_receipt_label">📄 Reçu associé</string>
     <string name="transaction_form_title_add">Nouvelle transaction</string>
     <string name="transaction_form_title_edit">Modifier la transaction</string>
     <string name="transaction_form_type_label">Type</string>
@@ -952,6 +957,15 @@
          qu'aucun montant n'est enregistré et qu'aucune suggestion n'est déjà affichée. -->
     <string name="receipt_detail_detect_amount_action">Détecter le montant</string>
     <string name="receipt_detail_detect_amount_loading">Détection en cours…</string>
+
+    <!-- Voir ReceiptDetailViewModel.linkedTransaction/onAddTransactionClicked (cahier des charges
+         "Créer une transaction depuis un reçu"). -->
+    <string name="receipt_detail_add_transaction_action">Ajouter comme transaction</string>
+    <string name="receipt_detail_view_transaction_action">Voir la transaction</string>
+    <string name="receipt_detail_add_transaction_loading">Analyse en cours…</string>
+    <!-- Voir ReceiptDetailViewModel.linkedTransaction / ReceiptsAdapter.ReceiptListRow.Row.hasLinkedTransaction
+         — même chaîne utilisée dans le détail du reçu ET dans la liste (voir item_receipt.xml). -->
+    <string name="receipt_detail_transaction_linked_badge">✓ Transaction enregistrée</string>
 
     <!--
         Gestion des reçus — visualiseur PDF plein écran (voir

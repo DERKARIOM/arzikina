@@ -351,6 +351,46 @@
 
             </com.google.android.material.card.MaterialCardView>
 
+            <!-- ==================== Statut : transaction liée ====================
+                 Visible uniquement si ReceiptDetailViewModel.linkedTransaction n'est pas `null`
+                 (cahier des charges "Créer une transaction depuis un reçu", statut visuel) — même
+                 donnée que celle qui pilote déjà le libellé de addTransactionButton ci-dessous,
+                 affichée ICI EN PLUS sous forme de badge explicite (voir
+                 ReceiptDetailFragment.renderTransactionLinkedBadge). -->
+            <TextView
+                android:id="@+id/transactionLinkedBadge"
+                style="@style/TextAppearance.Material3.LabelLarge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_m"
+                android:background="@drawable/bg_chip_success"
+                android:gravity="center_vertical"
+                android:paddingHorizontal="@dimen/spacing_s"
+                android:paddingVertical="6dp"
+                android:text="@string/receipt_detail_transaction_linked_badge"
+                android:textColor="@color/white"
+                android:visibility="gone"
+                tools:visibility="visible" />
+
+            <!-- ==================== Ajouter comme transaction ====================
+                 Cahier des charges "Créer une transaction depuis un reçu" : libellé piloté par
+                 ReceiptDetailViewModel.linkedTransaction ("Ajouter comme transaction" / "Voir la
+                 transaction", anti-doublon) — voir ReceiptDetailFragment.renderAddTransactionButton.
+                 Désactivé pendant ReceiptDetailViewModel.isPreparingTransaction (extraction en
+                 cours), jamais masqué : toujours actionnable, même sans aucune donnée détectée
+                 (le formulaire s'ouvre alors simplement vide, comme une création manuelle). -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/addTransactionButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_m"
+                android:background="@drawable/forme_radius_10dp"
+                android:text="@string/receipt_detail_add_transaction_action"
+                android:textColor="@color/white"
+                app:icon="@drawable/ic_add_24"
+                app:iconTint="@color/white"
+                tools:text="Ajouter comme transaction" />
+
         </LinearLayout>
 
     </androidx.core.widget.NestedScrollView>

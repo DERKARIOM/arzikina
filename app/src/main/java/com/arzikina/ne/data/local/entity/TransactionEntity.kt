@@ -42,6 +42,10 @@ import com.arzikina.ne.domain.model.TransactionType
  * est garantie au niveau applicatif par `TransactionRepositoryImpl`, dans le même esprit que la
  * suppression en cascade déjà gérée à la main pour les comptes/prêts (voir
  * `AccountRepositoryImpl.deleteAccount`).
+ *
+ * `receiptId` (voir [com.arzikina.ne.domain.model.Transaction.receiptId], [MIGRATION_21_22]) :
+ * même raisonnement que `feeTransactionId` ci-dessus — SANS `ForeignKey` vers `receipts` (table
+ * d'une autre fonctionnalité, cascade gérée à la main par `ReceiptRepositoryImpl.deleteReceipt`).
  */
 @Entity(
     tableName = "transactions",
@@ -64,7 +68,10 @@ import com.arzikina.ne.domain.model.TransactionType
             childColumns = ["categoryId"]
         )
     ],
-    indices = [Index("accountId"), Index("transferAccountId"), Index("categoryId"), Index("userId")]
+    indices = [
+        Index("accountId"), Index("transferAccountId"), Index("categoryId"), Index("userId"),
+        Index("receiptId")
+    ]
 )
 data class TransactionEntity(
     @PrimaryKey(autoGenerate = true)
@@ -89,5 +96,8 @@ data class TransactionEntity(
      * cette classe (pas de `ForeignKey`, cascade gérée par le repository). */
     val feeTransactionId: Long? = null,
     /** Voir [com.arzikina.ne.domain.model.Transaction.feeType]. */
-    val feeType: FeeType? = null
+    val feeType: FeeType? = null,
+    /** Voir [com.arzikina.ne.domain.model.Transaction.receiptId] et la doc de tête de cette classe
+     * (pas de `ForeignKey`, cascade gérée par le repository). */
+    val receiptId: Long? = null
 )

@@ -91,7 +91,19 @@ data class TransactionFormState(
      * tous deux dans ce cas (voir leur doc), [TransactionFormFragment] désactive aussi les champs
      * et affiche une bannière redirigeant vers "Détail du prêt/emprunt".
      */
-    val linkedLoanId: Long? = null
+    val linkedLoanId: Long? = null,
+    /**
+     * Voir [Transaction.receiptId] — `null` sauf : (a) en modification, si la transaction chargée
+     * est déjà liée à un reçu (voir [TransactionFormViewModel.init]) ; (b) en création, si ce
+     * formulaire a été ouvert depuis "Détail du reçu" via `presetReceiptId` (voir
+     * [TransactionFormViewModel.applyReceiptPresets], cahier des charges "Créer une transaction
+     * depuis un reçu"). Piloté ici (pas de nouveau champ séparé) pour rester disponible dès
+     * [save] sans logique supplémentaire. Sert aussi de condition d'affichage à la bannière
+     * "✨ Informations détectées depuis le reçu" (cas (b) uniquement, voir
+     * [TransactionFormFragment]) et, plus tard, à la ligne "Reçu associé" en modification
+     * (cas (a), Étape 8 à venir).
+     */
+    val receiptId: Long? = null
 )
 
 sealed interface TransactionFormEvent {
@@ -173,7 +185,8 @@ class TransactionFormViewModel @Inject constructor(
                             dateTimeMillis = transaction.date,
                             description = transaction.description,
                             paymentMethod = transaction.paymentMethod,
-                            createdAt = transaction.createdAt
+                            createdAt = transaction.createdAt,
+                            receiptId = transaction.receiptId
                         )
                     }
                     // Voir la doc de [TransactionFormState.linkedLoanId] : résolu après le reste de
@@ -203,12 +216,68 @@ class TransactionFormViewModel @Inject constructor(
             }
         } else {
             // Pré-remplit le compte quand ce formulaire est ouvert depuis
-            // "Détail du compte" (voir AccountDetailFragment.navigateToNewTransactionForm) :
+            // "Détail du compte" (voir AccountDetailFragment.navigateToNewTransactionForm), OU
+            // depuis "Détail du reçu" (voir applyReceiptPresets ci-dessous, MÊME argument) :
             // 0L = "aucun compte présélectionné", même convention que transactionId.
             val presetAccountId = savedStateHandle.get<Long>(PRESET_ACCOUNT_ID_ARG) ?: 0L
             if (presetAccountId != 0L) {
                 _formState.update { it.copy(accountId = presetAccountId) }
             }
+            applyReceiptPresets(savedStateHandle)
+        }
+    }
+
+    /**
+     * Préremplissage depuis un reçu PDF (cahier des charges "Créer une transaction depuis un
+     * reçu", voir `nav_graph.xml` pour la doc de chaque argument) — UNIQUEMENT à la création
+     * (voir [init]), jamais en modification. Chaque champ reste indépendant : `null`/absent
+     * signifie simplement "non détecté avec assez de confiance" (voir
+     * `ReceiptTransactionInfoParser`, "ne jamais inventer"), pas une erreur — les champs non
+     * fournis gardent leur valeur par défaut habituelle, l'utilisateur les complète comme pour
+     * n'importe quelle transaction créée manuellement.
+     *
+     * Une seule mise à jour d'état atomique (plutôt qu'un `update` par champ) : [type] doit être
+     * appliqué EN MÊME TEMPS que [categoryId] (voir [categories], filtrée par `state.type` —
+     * appliquer l'un sans l'autre exposerait un instant une catégorie du mauvais type).
+     */
+    private fun applyReceiptPresets(savedStateHandle: SavedStateHandle) {
+        val amountMinor = savedStateHandle.get<Long>(PRESET_AMOUNT_MINOR_ARG)?.takeIf { it > 0L }
+        val feeAmountMinor = savedStateHandle.get<Long>(PRESET_FEE_AMOUNT_MINOR_ARG)?.takeIf { it > 0L }
+        val dateTimeMillis = savedStateHandle.get<Long>(PRESET_DATE_TIME_MILLIS_ARG)?.takeIf { it > 0L }
+        val description = savedStateHandle.get<String>(PRESET_DESCRIPTION_ARG)?.takeIf { it.isNotBlank() }
+        val categoryId = savedStateHandle.get<Long>(PRESET_CATEGORY_ID_ARG)?.takeIf { it > 0L }
+        val receiptId = savedStateHandle.get<Long>(PRESET_RECEIPT_ID_ARG)?.takeIf { it > 0L }
+        val type = savedStateHandle.get<String>(PRESET_TYPE_ARG)
+            ?.let { raw -> TransactionType.entries.find { it.name == raw } }
+
+        // Ouverture normale du formulaire (bouton "+" habituel) : tous les arguments valent leur
+        // défaut, rien à faire plutôt qu'un `update` sans effet.
+        if (amountMinor == null && feeAmountMinor == null && dateTimeMillis == null && description == null &&
+            categoryId == null && receiptId == null && type == null
+        ) {
+            return
+        }
+
+        _formState.update { state ->
+            state.copy(
+                amountInput = amountMinor?.let { Money.formatMajorUnits(it) } ?: state.amountInput,
+                type = type ?: state.type,
+                categoryId = categoryId ?: state.categoryId,
+                dateTimeMillis = dateTimeMillis ?: state.dateTimeMillis,
+                // Traitée comme une saisie CONFIRMÉE (voir isDescriptionAutoFilled = false), pas
+                // une auto-génération : ne doit jamais être silencieusement écrasée/effacée par
+                // autoFillTransferDescription (sans objet ici — un reçu ne produit jamais
+                // TRANSFER, voir ReceiptTransactionInfoParser — mais correct par principe).
+                description = description ?: state.description,
+                isDescriptionAutoFilled = if (description != null) false else state.isDescriptionAutoFilled,
+                hasFee = feeAmountMinor != null,
+                feeAmountInput = feeAmountMinor?.let { Money.formatMajorUnits(it) } ?: state.feeAmountInput,
+                // "Par défaut le compte source" (même règle que onHasFeeToggle), lu sur l'état
+                // COURANT : presetAccountId (voir ci-dessus) a déjà été appliqué au moment où ce
+                // `update` s'exécute (deux appels synchrones dans le même bloc init).
+                feeAccountId = if (feeAmountMinor != null && state.feeAccountId == 0L) state.accountId else state.feeAccountId,
+                receiptId = receiptId ?: state.receiptId
+            )
         }
     }
 
@@ -440,7 +509,8 @@ class TransactionFormViewModel @Inject constructor(
                     date = state.dateTimeMillis,
                     description = state.description.trim(),
                     paymentMethod = state.paymentMethod,
-                    createdAt = state.createdAt ?: System.currentTimeMillis()
+                    createdAt = state.createdAt ?: System.currentTimeMillis(),
+                    receiptId = state.receiptId
                 ),
                 fee = fee
             )
@@ -464,5 +534,12 @@ class TransactionFormViewModel @Inject constructor(
     private companion object {
         const val TRANSACTION_ID_ARG = "transactionId"
         const val PRESET_ACCOUNT_ID_ARG = "presetAccountId"
+        const val PRESET_AMOUNT_MINOR_ARG = "presetAmountMinor"
+        const val PRESET_FEE_AMOUNT_MINOR_ARG = "presetFeeAmountMinor"
+        const val PRESET_DATE_TIME_MILLIS_ARG = "presetDateTimeMillis"
+        const val PRESET_DESCRIPTION_ARG = "presetDescription"
+        const val PRESET_CATEGORY_ID_ARG = "presetCategoryId"
+        const val PRESET_RECEIPT_ID_ARG = "presetReceiptId"
+        const val PRESET_TYPE_ARG = "presetType"
     }
 }

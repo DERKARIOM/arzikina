@@ -38,6 +38,13 @@ package com.arzikina.ne.domain.model
  * @param feeType présent UNIQUEMENT sur la transaction DE FRAIS pointée par [feeTransactionId]
  * d'une autre transaction (voir [FeeType]) ; `null` partout ailleurs, y compris sur la transaction
  * principale qui la référence.
+ * @param receiptId présent UNIQUEMENT si cette transaction a été créée depuis un reçu PDF (voir
+ * cahier des charges "Créer une transaction depuis un reçu", [com.arzikina.ne.domain.model.Receipt]) —
+ * `null` pour une transaction saisie manuellement. Distinct de [receiptPhotoUri] (chemin d'une
+ * simple photo, champ plus ancien et non lié au système de reçus PDF) : ce champ-ci pointe vers un
+ * véritable [Receipt.id]. Sans contrainte de clé étrangère SQL (voir [feeTransactionId] pour le
+ * même raisonnement) — la cohérence est garantie par `ReceiptRepositoryImpl.deleteReceipt`, qui
+ * efface ce pointeur avant de supprimer le reçu associé.
  */
 data class Transaction(
     val id: Long = 0L,
@@ -54,7 +61,8 @@ data class Transaction(
     val paymentMethod: PaymentMethod? = null,
     val createdAt: Long,
     val feeTransactionId: Long? = null,
-    val feeType: FeeType? = null
+    val feeType: FeeType? = null,
+    val receiptId: Long? = null
 )
 
 /**
