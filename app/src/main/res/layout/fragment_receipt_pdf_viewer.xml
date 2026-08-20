@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Visualiseur PDF plein écran (voir presentation/utilities/receipts/ReceiptPdfViewerFragment) —
+    cahier des charges "Gestion des reçus", section 7 : toutes les pages, navigation
+    Précédent/Suivant + indicateur "page X / Y" (PAS de balayage ViewPager2 : aucune bibliothèque/
+    dépendance supplémentaire nécessaire pour cette première version, voir ReceiptPdfRenderer —
+    rendu natif page par page à la demande).
+
+    PAS de zoom/pan (aucun composant de ce type déjà présent dans le projet, voir cahier des
+    charges section 7 "ne pas ajouter une bibliothèque inutilement" — s'applique aussi à une
+    dépendance de zoom tierce) : limitation acceptée pour cette première version.
+-->
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="?attr/colorSurface">
+
+    <com.google.android.material.appbar.MaterialToolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:background="?attr/colorSurface"
+        app:layout_constraintTop_toTopOf="parent"
+        app:navigationIcon="@drawable/ic_arrow_back_24"
+        app:titleTextColor="?attr/colorOnSurface"
+        tools:title="Facture_electricite_aout.pdf" />
+
+    <FrameLayout
+        android:id="@+id/pageContainer"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:background="?attr/colorSurfaceVariant"
+        app:layout_constraintBottom_toTopOf="@id/navigationBar"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/toolbar">
+
+        <ImageView
+            android:id="@+id/pageImage"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:contentDescription="@null"
+            android:padding="@dimen/spacing_s"
+            android:scaleType="fitCenter"
+            android:visibility="gone"
+            tools:visibility="visible" />
+
+        <ProgressBar
+            android:id="@+id/loadingIndicator"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            tools:visibility="gone" />
+
+        <TextView
+            android:id="@+id/unavailableText"
+            style="@style/TextAppearance.Material3.BodyMedium"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:text="@string/receipt_detail_preview_unavailable"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            android:visibility="gone"
+            tools:visibility="gone" />
+
+    </FrameLayout>
+
+    <!-- Masquée si le PDF n'a qu'une seule page (voir ReceiptPdfViewerFragment.render) : une
+         navigation Précédent/Suivant n'a alors aucun sens. -->
+    <LinearLayout
+        android:id="@+id/navigationBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingHorizontal="@dimen/spacing_m"
+        android:paddingVertical="@dimen/spacing_s"
+        app:layout_constraintBottom_toBottomOf="parent"
+        tools:visibility="visible">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/previousPageButton"
+            style="@style/Widget.Material3.Button.IconButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:contentDescription="@string/receipt_viewer_previous_action"
+            app:icon="@drawable/ic_arrow_back_24"
+            app:iconTint="?attr/colorOnSurface" />
+
+        <TextView
+            android:id="@+id/pageIndicatorText"
+            style="@style/TextAppearance.Material3.TitleSmall"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:textColor="?attr/colorOnSurface"
+            tools:text="2 / 5" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/nextPageButton"
+            style="@style/Widget.Material3.Button.IconButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:contentDescription="@string/receipt_viewer_next_action"
+            app:icon="@drawable/ic_chevron_right_24"
+            app:iconTint="?attr/colorOnSurface" />
+
+    </LinearLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

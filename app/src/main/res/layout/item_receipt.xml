@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Carte d'un reçu — cahier des charges "Gestion des reçus", section 5 : icône PDF, nom, date/heure,
+    taille, provenance, montant si disponible. Carte CLAIRE individuelle (`?attr/colorSurface`, PAS
+    le fond "postcard" sombre d'item_loan.xml/item_transaction_compact.xml) — voir
+    item_receipt_day_header.xml pour le raisonnement complet ("espace de gestion des documents").
+
+    Toute la carte est cliquable (ouvre "Détail du reçu", voir ReceiptsAdapter) — pas de bouton
+    dédié, même convention que item_account.xml/item_loan.xml. Le clic n'est câblé qu'à partir de
+    l'Étape 6/8 (écran de détail + navigation) ; l'Étape 5 pose déjà le callback dans l'adapter.
+-->
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/receiptCard"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginHorizontal="@dimen/spacing_m"
+    android:layout_marginTop="@dimen/spacing_s"
+    android:checkable="false"
+    android:clickable="true"
+    android:focusable="true"
+    app:cardBackgroundColor="?attr/colorSurface"
+    app:cardCornerRadius="@dimen/corner_radius_medium"
+    app:cardElevation="@dimen/elevation_raised"
+    app:rippleColor="?attr/colorPrimary"
+    app:strokeColor="?attr/colorOutlineVariant"
+    app:strokeWidth="1dp">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="@dimen/spacing_m">
+
+        <ImageView
+            android:id="@+id/receiptIcon"
+            android:layout_width="@dimen/icon_size_large"
+            android:layout_height="@dimen/icon_size_large"
+            android:background="@drawable/bg_icon_circle"
+            android:backgroundTint="?attr/colorPrimary"
+            android:contentDescription="@null"
+            android:padding="@dimen/spacing_s"
+            android:src="@drawable/ic_receipt_long_24"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:tint="@android:color/white" />
+
+        <TextView
+            android:id="@+id/receiptName"
+            style="@style/TextAppearance.Material3.TitleSmall"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/spacing_m"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textColor="?attr/colorOnSurface"
+            android:textStyle="bold"
+            app:layout_constraintEnd_toStartOf="@id/receiptAmount"
+            app:layout_constraintStart_toEndOf="@id/receiptIcon"
+            app:layout_constraintTop_toTopOf="@id/receiptIcon"
+            tools:text="Facture_electricite_aout.pdf" />
+
+        <!-- "15:41 · 2,3 Mo" — voir ReceiptsAdapter.HeaderViewHolder pour le regroupement par jour
+             (la date complète n'est donc pas répétée ici, seulement l'heure). -->
+        <TextView
+            android:id="@+id/receiptMetaLine"
+            style="@style/TextAppearance.Material3.BodySmall"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/spacing_m"
+            android:layout_marginTop="2dp"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            app:layout_constraintEnd_toStartOf="@id/receiptAmount"
+            app:layout_constraintStart_toEndOf="@id/receiptIcon"
+            app:layout_constraintTop_toBottomOf="@id/receiptName"
+            tools:text="15:41 · 2,3 Mo" />
+
+        <!-- Provenance — jamais inventée (voir Receipt.sourceName/@string/receipt_source_unknown,
+             cahier des charges section 3). -->
+        <TextView
+            android:id="@+id/receiptSourceLine"
+            style="@style/TextAppearance.Material3.BodySmall"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/spacing_m"
+            android:layout_marginTop="1dp"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            app:layout_constraintEnd_toStartOf="@id/receiptAmount"
+            app:layout_constraintStart_toEndOf="@id/receiptIcon"
+            app:layout_constraintTop_toBottomOf="@id/receiptMetaLine"
+            tools:text="Orange Money" />
+
+        <!-- Visible uniquement si Receipt.amountMinor est renseigné (toujours `null` dans cette
+             première version, voir sa doc) — posé dès maintenant pour ne pas retoucher ce layout le
+             jour où une extraction viendra le renseigner. -->
+        <TextView
+            android:id="@+id/receiptAmount"
+            style="@style/TextAppearance.Material3.TitleSmall"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="?attr/colorOnSurface"
+            android:textStyle="bold"
+            android:visibility="gone"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="@id/receiptIcon"
+            tools:text="5 000 F CFA"
+            tools:visibility="visible" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</com.google.android.material.card.MaterialCardView>

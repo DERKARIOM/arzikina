@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Chemins exposés par le FileProvider (voir AndroidManifest.xml, util/Constants.FILE_PROVIDER_AUTHORITY_SUFFIX)
+    — cahier des charges "Gestion des reçus", section 17/18 : stockage privé UNIQUEMENT, jamais le
+    stockage public.
+
+    `files-path` désigne `context.filesDir` (voir data/receipts/ReceiptFileStorage) : seul le
+    sous-dossier `receipts/` est exposé, pas l'intégralité de `filesDir` (ex. la base Room y vit
+    aussi, voir Constants.DATABASE_NAME — ne doit jamais être accessible via une URI content://).
+-->
+<paths xmlns:android="http://schemas.android.com/apk/res-auto">
+    <files-path
+        name="receipts"
+        path="receipts/" />
+</paths>

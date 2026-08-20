@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    En-tête de section jour pour la liste des reçus (voir ReceiptsAdapter.HeaderViewHolder) — PAS le
+    même layout que item_transaction_day_header.xml (fond "postcard" sombre pensé pour se raccorder
+    aux lignes de transaction sous lui) : les reçus s'affichent en cartes CLAIRES individuelles (voir
+    item_receipt.xml, cahier des charges "Gestion des reçus" section 19, "véritable espace de gestion
+    des documents", pas un style financier) — un simple libellé de section, sans fond ni total (les
+    reçus n'ont pas de somme journalière pertinente, contrairement aux transactions).
+-->
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:paddingHorizontal="@dimen/spacing_m"
+    android:paddingTop="@dimen/spacing_m"
+    android:paddingBottom="@dimen/spacing_xs">
+
+    <!-- "Aujourd'hui"/"Hier" — GONE pour les jours plus anciens (voir HeaderViewHolder.bind), auquel
+         cas dayDate (contraint à sa suite) reprend naturellement sa place en début de ligne. -->
+    <TextView
+        android:id="@+id/dayRelativeLabel"
+        style="@style/TextAppearance.Material3.LabelLarge"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textColor="?attr/colorOnSurface"
+        android:textStyle="bold"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:text="Aujourd'hui" />
+
+    <TextView
+        android:id="@+id/dayDate"
+        style="@style/TextAppearance.Material3.LabelMedium"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/spacing_xs"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        app:layout_constraintBottom_toBottomOf="@id/dayRelativeLabel"
+        app:layout_constraintStart_toEndOf="@id/dayRelativeLabel"
+        app:layout_constraintTop_toTopOf="@id/dayRelativeLabel"
+        tools:text="12/08/2026" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>
