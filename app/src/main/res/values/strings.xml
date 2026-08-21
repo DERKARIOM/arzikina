@@ -800,7 +800,7 @@
     <string name="recurring_transactions_summary_upcoming">À venir</string>
     <string name="recurring_transactions_summary_total">Total</string>
     <string name="recurring_transactions_summary_pending_label">À enregistrer</string>
-    <string name="recurring_transactions_summary_upcoming_label">Automatiques</string>
+    <string name="recurring_transactions_summary_upcoming_label">Automatique</string>
     <string name="recurring_transactions_summary_total_label">Récurrentes</string>
     <string name="recurring_transactions_pending_title">À traiter</string>
     <string name="recurring_transactions_upcoming_title">À venir</string>
