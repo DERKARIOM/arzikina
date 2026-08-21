@@ -40,6 +40,8 @@
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/statusFilterAll"
+                app:cornerRadius="10dp"
+                android:textColor="@color/white"
                 style="?attr/materialButtonOutlinedStyle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -52,6 +54,8 @@
                 android:id="@+id/statusFilterUpcoming"
                 style="?attr/materialButtonOutlinedStyle"
                 android:layout_width="wrap_content"
+                app:cornerRadius="10dp"
+                android:textColor="@color/white"
                 android:layout_height="wrap_content"
                 android:checkable="true"
                 android:text="@string/budget_filter_upcoming"
@@ -62,6 +66,8 @@
                 style="?attr/materialButtonOutlinedStyle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                app:cornerRadius="10dp"
+                android:textColor="@color/white"
                 android:checkable="true"
                 android:text="@string/budget_filter_ongoing"
                 android:textSize="12sp" />
@@ -70,6 +76,8 @@
                 android:id="@+id/statusFilterCompleted"
                 style="?attr/materialButtonOutlinedStyle"
                 android:layout_width="wrap_content"
+                app:cornerRadius="10dp"
+                android:textColor="@color/white"
                 android:layout_height="wrap_content"
                 android:checkable="true"
                 android:text="@string/budget_filter_completed"
