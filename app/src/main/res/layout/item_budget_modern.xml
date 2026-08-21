@@ -262,6 +262,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:textSize="10dp"
+            android:visibility="invisible"
             android:layout_marginTop="@dimen/spacing_xs"
             android:textColor="@color/white"
             android:textStyle="bold"
