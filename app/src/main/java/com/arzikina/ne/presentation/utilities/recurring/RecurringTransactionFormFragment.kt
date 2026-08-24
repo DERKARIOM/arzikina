@@ -25,6 +25,7 @@ import com.arzikina.ne.presentation.components.AccountPickerDialog
 import com.arzikina.ne.presentation.components.ConfirmDialogs
 import com.arzikina.ne.presentation.transactions.displayTextRes
 import com.arzikina.ne.util.Money
+import com.arzikina.ne.util.MoneyInputFormatter
 import com.arzikina.ne.util.TriggerTimeFormatter
 import com.google.android.material.datepicker.MaterialDatePicker
 import com.google.android.material.timepicker.MaterialTimePicker
@@ -182,7 +183,7 @@ class RecurringTransactionFormFragment : Fragment(R.layout.fragment_recurring_tr
     }
 
     private fun setUpInputs(binding: FragmentRecurringTransactionFormBinding) {
-        binding.amountInput.doAfterTextChanged { text -> viewModel.onAmountChange(text?.toString().orEmpty()) }
+        MoneyInputFormatter.attach(binding.amountInput) { formatted -> viewModel.onAmountChange(formatted) }
         binding.descriptionInput.doAfterTextChanged { text -> viewModel.onDescriptionChange(text?.toString().orEmpty()) }
     }
 

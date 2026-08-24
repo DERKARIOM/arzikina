@@ -3,7 +3,6 @@ package com.arzikina.ne.presentation.budget
 import android.os.Bundle
 import android.view.View
 import androidx.annotation.StringRes
-import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
@@ -16,6 +15,7 @@ import com.arzikina.ne.domain.model.BudgetPeriod
 import com.arzikina.ne.domain.model.Category
 import com.arzikina.ne.domain.model.SupportedCurrency
 import com.arzikina.ne.presentation.components.ConfirmDialogs
+import com.arzikina.ne.util.MoneyInputFormatter
 import com.arzikina.ne.util.QuickDateRange
 import com.google.android.material.datepicker.MaterialDatePicker
 import dagger.hilt.android.AndroidEntryPoint
@@ -120,9 +120,7 @@ class BudgetFormFragment : Fragment(R.layout.fragment_budget_form) {
     }
 
     private fun setUpInputs(binding: FragmentBudgetFormBinding) {
-        binding.limitInput.doAfterTextChanged { text ->
-            viewModel.onLimitChange(text?.toString().orEmpty())
-        }
+        MoneyInputFormatter.attach(binding.limitInput) { formatted -> viewModel.onLimitChange(formatted) }
     }
 
     private fun setUpQuickRangeGroup(binding: FragmentBudgetFormBinding) {

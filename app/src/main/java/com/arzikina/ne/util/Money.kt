@@ -20,9 +20,21 @@ import java.util.Locale
 object Money {
     private const val MINOR_UNITS_PER_MAJOR = 100
 
-    /** Retourne `null` si [input] n'est pas un nombre positif valide. */
+    /**
+     * Retourne `null` si [input] n'est pas un nombre positif valide.
+     *
+     * Tolère, en plus du séparateur décimal (`,` ou `.`), un séparateur de
+     * milliers sous forme d'espace — espace normale, insécable (` `) ou
+     * fine insécable (` `, utilisée par certaines implémentations de
+     * `NumberFormat` pour la locale française). Ces espaces sont uniquement
+     * des séparateurs visuels et sont retirés avant l'analyse : "10 000",
+     * "10 000" et "10000" sont strictement équivalents ici. Permet de
+     * coller directement un montant déjà formaté (voir [formatForInput]) ou
+     * copié depuis un affichage (voir [formatAmount]).
+     */
     fun parseToMinorUnits(input: String): Long? {
-        val normalized = input.trim().replace(',', '.')
+        val withoutThousandsSeparators = input.filterNot { it.isWhitespace() || Character.isSpaceChar(it) }
+        val normalized = withoutThousandsSeparators.replace(',', '.')
         if (normalized.isEmpty()) return null
         val value = normalized.toBigDecimalOrNull() ?: return null
         if (value.signum() < 0) return null
@@ -33,15 +45,64 @@ object Money {
 
     /**
      * Format BRUT et ré-analysable (voir [parseToMinorUnits]) : toujours 2
-     * décimales, jamais de séparateur de milliers. Réservé aux champs de
-     * saisie éditables (Montant, Limite de budget, Solde initial...) — PAS à
-     * l'affichage (voir [format]/[formatAmount]), qui a des règles différentes
-     * et incompatibles avec une ré-analyse (séparateur de milliers, décimales
-     * masquées si nulles).
+     * décimales, jamais de séparateur de milliers. Ancien format de
+     * préremplissage des champs de saisie éditables — remplacé par
+     * [formatForInput] (voir sa doc), conservé pour compatibilité des appels
+     * pas encore migrés (axes de graphiques, exports...).
      */
     fun formatMajorUnits(minorUnits: Long): String {
         val major = BigDecimal(minorUnits).divide(BigDecimal(MINOR_UNITS_PER_MAJOR))
         return major.setScale(2, RoundingMode.HALF_UP).toPlainString()
+    }
+
+    /**
+     * Formate un montant pour un champ de saisie ÉDITABLE : séparateur de
+     * milliers (espace normale, `' '`) et décimales affichées SEULEMENT si
+     * réellement non nulles — mêmes règles visuelles que [formatAmount], mais
+     * garanties ré-analysables par [parseToMinorUnits] (espace normale
+     * uniquement, jamais de symbole de devise). Utilisé pour préremplir un
+     * champ en mode édition (ex. "10 000,50" plutôt que l'ancien "10000.50"
+     * de [formatMajorUnits]) ; partage son algorithme de regroupement avec le
+     * formatage en direct pendant la frappe (voir `MoneyInputFormatter`) —
+     * une seule implémentation du regroupement par milliers dans tout le
+     * projet.
+     */
+    fun formatForInput(minorUnits: Long): String {
+        val absMinor = kotlin.math.abs(minorUnits)
+        val sign = if (minorUnits < 0) "-" else ""
+        val majorPart = absMinor / MINOR_UNITS_PER_MAJOR
+        val centsPart = absMinor % MINOR_UNITS_PER_MAJOR
+        val groupedMajor = groupThousands(majorPart.toString())
+        return if (centsPart != 0L) {
+            "$sign$groupedMajor,${centsPart.toString().padStart(2, '0')}"
+        } else {
+            "$sign$groupedMajor"
+        }
+    }
+
+    /**
+     * Insère une espace normale tous les 3 chiffres en partant de la droite.
+     * [digits] doit contenir uniquement des chiffres (pas de signe, pas de
+     * séparateur décimal) — utilisé par [formatForInput] et, en Étape 2, par
+     * le formateur de saisie en direct : c'est l'UNIQUE algorithme de
+     * regroupement par milliers du projet.
+     */
+    internal fun groupThousands(digits: String): String {
+        if (digits.length <= 3) return digits
+        val startOffset = digits.length % 3
+        val builder = StringBuilder()
+        if (startOffset != 0) {
+            builder.append(digits, 0, startOffset)
+            builder.append(' ')
+        }
+        var i = startOffset
+        while (i < digits.length) {
+            val end = i + 3
+            builder.append(digits, i, end)
+            if (end < digits.length) builder.append(' ')
+            i = end
+        }
+        return builder.toString()
     }
 
     /** Conversion numérique (non formatée) en unité majeure, pour les axes de graphiques. */

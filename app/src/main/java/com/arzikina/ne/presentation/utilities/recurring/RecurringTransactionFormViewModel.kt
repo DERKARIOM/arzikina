@@ -121,7 +121,7 @@ class RecurringTransactionFormViewModel @Inject constructor(
                     _formState.update {
                         it.copy(
                             type = rule.type,
-                            amountInput = Money.formatMajorUnits(rule.amount),
+                            amountInput = Money.formatForInput(rule.amount),
                             accountId = rule.accountId,
                             categoryId = rule.categoryId ?: 0L,
                             description = rule.description,

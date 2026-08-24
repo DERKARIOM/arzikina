@@ -117,7 +117,7 @@ class FinancialPlanItemConvertViewModel @Inject constructor(
                     itemName = item.name,
                     plannedAmount = item.amount,
                     categoryId = item.categoryId ?: 0L,
-                    actualAmountInput = Money.formatMajorUnits(item.amount),
+                    actualAmountInput = Money.formatForInput(item.amount),
                     descriptionInput = item.name,
                     dateMillis = item.plannedDate ?: System.currentTimeMillis()
                 )

@@ -32,6 +32,7 @@ import com.arzikina.ne.presentation.components.ConfirmDialogs
 import com.arzikina.ne.presentation.components.NavAnimations
 import com.arzikina.ne.util.Constants
 import com.arzikina.ne.util.Money
+import com.arzikina.ne.util.MoneyInputFormatter
 import com.google.android.material.color.MaterialColors
 import com.google.android.material.datepicker.MaterialDatePicker
 import com.google.android.material.timepicker.MaterialTimePicker
@@ -263,9 +264,7 @@ class TransactionFormFragment : Fragment(R.layout.fragment_transaction_form) {
     }
 
     private fun setUpInputs(binding: FragmentTransactionFormBinding) {
-        binding.amountInput.doAfterTextChanged { text ->
-            viewModel.onAmountChange(text?.toString().orEmpty())
-        }
+        MoneyInputFormatter.attach(binding.amountInput) { formatted -> viewModel.onAmountChange(formatted) }
         binding.descriptionInput.doAfterTextChanged { text ->
             viewModel.onDescriptionChange(text?.toString().orEmpty())
         }
@@ -313,9 +312,7 @@ class TransactionFormFragment : Fragment(R.layout.fragment_transaction_form) {
     }
 
     private fun setUpFeeInputs(binding: FragmentTransactionFormBinding) {
-        binding.feeAmountInput.doAfterTextChanged { text ->
-            viewModel.onFeeAmountChange(text?.toString().orEmpty())
-        }
+        MoneyInputFormatter.attach(binding.feeAmountInput) { formatted -> viewModel.onFeeAmountChange(formatted) }
         binding.feeDescriptionInput.doAfterTextChanged { text ->
             viewModel.onFeeDescriptionChange(text?.toString().orEmpty())
         }

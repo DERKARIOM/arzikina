@@ -95,8 +95,8 @@ class FinancialPlanFormViewModel @Inject constructor(
                     _formState.update {
                         it.copy(
                             nameInput = plan.name,
-                            availableAmountInput = Money.formatMajorUnits(plan.availableAmount),
-                            targetAmountInput = plan.targetAmount?.let { amount -> Money.formatMajorUnits(amount) }.orEmpty(),
+                            availableAmountInput = Money.formatForInput(plan.availableAmount),
+                            targetAmountInput = plan.targetAmount?.let { amount -> Money.formatForInput(amount) }.orEmpty(),
                             periodType = plan.periodType,
                             startDate = plan.startDate ?: System.currentTimeMillis(),
                             endDate = plan.endDate ?: plan.startDate ?: System.currentTimeMillis(),

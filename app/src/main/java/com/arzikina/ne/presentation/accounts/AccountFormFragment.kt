@@ -21,6 +21,7 @@ import com.arzikina.ne.presentation.components.ColorPickerAdapter
 import com.arzikina.ne.presentation.components.ConfirmDialogs
 import com.arzikina.ne.presentation.components.ExternalAppPickerDialog
 import com.arzikina.ne.presentation.components.IconPickerAdapter
+import com.arzikina.ne.util.MoneyInputFormatter
 import com.arzikina.ne.util.external.ExternalAppInfo
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
@@ -127,9 +128,7 @@ class AccountFormFragment : Fragment(R.layout.fragment_account_form) {
         binding.nameInput.doAfterTextChanged { text ->
             viewModel.onNameChange(text?.toString().orEmpty())
         }
-        binding.balanceInput.doAfterTextChanged { text ->
-            viewModel.onInitialBalanceChange(text?.toString().orEmpty())
-        }
+        MoneyInputFormatter.attach(binding.balanceInput) { formatted -> viewModel.onInitialBalanceChange(formatted) }
         binding.cardNumberInput.doAfterTextChanged { text ->
             viewModel.onCardNumberChange(text?.toString().orEmpty())
         }

@@ -144,7 +144,7 @@ class AccountFormViewModel @Inject constructor(
                             icon = account.icon,
                             colorArgb = account.colorArgb,
                             currencyCode = account.currencyCode,
-                            initialBalanceInput = Money.formatMajorUnits(account.initialBalance),
+                            initialBalanceInput = Money.formatForInput(account.initialBalance),
                             createdAt = account.createdAt,
                             type = account.type,
                             // Expiration éditable normalement (elle EST conservée, contrairement

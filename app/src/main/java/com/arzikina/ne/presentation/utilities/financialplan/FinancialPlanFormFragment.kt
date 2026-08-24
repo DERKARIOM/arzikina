@@ -18,6 +18,7 @@ import com.arzikina.ne.domain.model.PlanPeriodType
 import com.arzikina.ne.presentation.components.ColorPickerAdapter
 import com.arzikina.ne.presentation.components.ConfirmDialogs
 import com.arzikina.ne.presentation.components.IconPickerAdapter
+import com.arzikina.ne.util.MoneyInputFormatter
 import com.google.android.material.datepicker.MaterialDatePicker
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
@@ -106,12 +107,8 @@ class FinancialPlanFormFragment : Fragment(R.layout.fragment_financial_plan_form
         binding.nameInput.doAfterTextChanged { text ->
             viewModel.onNameChange(text?.toString().orEmpty())
         }
-        binding.availableAmountInput.doAfterTextChanged { text ->
-            viewModel.onAvailableAmountChange(text?.toString().orEmpty())
-        }
-        binding.targetAmountInput.doAfterTextChanged { text ->
-            viewModel.onTargetAmountChange(text?.toString().orEmpty())
-        }
+        MoneyInputFormatter.attach(binding.availableAmountInput) { formatted -> viewModel.onAvailableAmountChange(formatted) }
+        MoneyInputFormatter.attach(binding.targetAmountInput) { formatted -> viewModel.onTargetAmountChange(formatted) }
     }
 
     /** Liste FERMÉE et fixe, 1-à-1 avec [PlanPeriodType.entries] — même principe que

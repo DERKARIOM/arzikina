@@ -175,7 +175,7 @@ class RecurringOccurrenceQueueViewModel @Inject constructor(
             it.copy(
                 editState = OccurrenceEditState(
                     type = rule.type,
-                    amountInput = Money.formatMajorUnits(rule.amount),
+                    amountInput = Money.formatForInput(rule.amount),
                     accountId = rule.accountId,
                     categoryId = rule.categoryId ?: 0L,
                     description = rule.description,

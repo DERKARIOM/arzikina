@@ -20,6 +20,7 @@ import com.arzikina.ne.domain.model.SupportedCurrency
 import com.arzikina.ne.presentation.accounts.AccountIconMapper
 import com.arzikina.ne.presentation.components.AccountPickerDialog
 import com.arzikina.ne.util.Money
+import com.arzikina.ne.util.MoneyInputFormatter
 import com.google.android.material.datepicker.MaterialDatePicker
 import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
@@ -94,7 +95,7 @@ class LoanPaymentFormFragment : Fragment(R.layout.fragment_loan_payment_form) {
     }
 
     private fun setUpInputs(binding: FragmentLoanPaymentFormBinding) {
-        binding.amountInput.doAfterTextChanged { text -> viewModel.onAmountChange(text?.toString().orEmpty()) }
+        MoneyInputFormatter.attach(binding.amountInput) { formatted -> viewModel.onAmountChange(formatted) }
         binding.noteInput.doAfterTextChanged { text -> viewModel.onNoteChange(text?.toString().orEmpty()) }
     }
 

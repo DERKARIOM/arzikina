@@ -22,6 +22,7 @@ import com.arzikina.ne.presentation.components.AccountPickerDialog
 import com.arzikina.ne.presentation.components.CategoryPickerDialog
 import com.arzikina.ne.util.Constants
 import com.arzikina.ne.util.Money
+import com.arzikina.ne.util.MoneyInputFormatter
 import com.google.android.material.datepicker.MaterialDatePicker
 import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
@@ -87,7 +88,7 @@ class FinancialPlanItemConvertFragment : Fragment(R.layout.fragment_financial_pl
     }
 
     private fun setUpInputs(binding: FragmentFinancialPlanItemConvertBinding) {
-        binding.amountInput.doAfterTextChanged { text -> viewModel.onActualAmountChange(text?.toString().orEmpty()) }
+        MoneyInputFormatter.attach(binding.amountInput) { formatted -> viewModel.onActualAmountChange(formatted) }
         binding.descriptionInput.doAfterTextChanged { text -> viewModel.onDescriptionChange(text?.toString().orEmpty()) }
     }
 

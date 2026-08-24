@@ -110,7 +110,7 @@ class BudgetFormViewModel @Inject constructor(
                             isLegacyRecurring = budget.startDate == null,
                             startDate = budget.startDate,
                             endDate = budget.endDate,
-                            limitInput = Money.formatMajorUnits(budget.limitAmount),
+                            limitInput = Money.formatForInput(budget.limitAmount),
                             currencyCode = budget.currencyCode,
                             createdAt = budget.createdAt
                         )

@@ -174,7 +174,7 @@ class TransactionFormViewModel @Inject constructor(
                 transactionRepository.getTransaction(transactionId)?.let { transaction ->
                     _formState.update {
                         it.copy(
-                            amountInput = Money.formatMajorUnits(transaction.amount),
+                            amountInput = Money.formatForInput(transaction.amount),
                             type = transaction.type,
                             accountId = transaction.accountId,
                             transferAccountId = transaction.transferAccountId ?: 0L,
@@ -203,7 +203,7 @@ class TransactionFormViewModel @Inject constructor(
                             _formState.update {
                                 it.copy(
                                     hasFee = true,
-                                    feeAmountInput = Money.formatMajorUnits(feeTransaction.amount),
+                                    feeAmountInput = Money.formatForInput(feeTransaction.amount),
                                     feeType = feeTransaction.feeType ?: FeeType.OTHER,
                                     feeAccountId = feeTransaction.accountId,
                                     isFeeAccountAutoFilled = feeTransaction.accountId == transaction.accountId,
@@ -260,7 +260,7 @@ class TransactionFormViewModel @Inject constructor(
 
         _formState.update { state ->
             state.copy(
-                amountInput = amountMinor?.let { Money.formatMajorUnits(it) } ?: state.amountInput,
+                amountInput = amountMinor?.let { Money.formatForInput(it) } ?: state.amountInput,
                 type = type ?: state.type,
                 categoryId = categoryId ?: state.categoryId,
                 dateTimeMillis = dateTimeMillis ?: state.dateTimeMillis,
@@ -271,7 +271,7 @@ class TransactionFormViewModel @Inject constructor(
                 description = description ?: state.description,
                 isDescriptionAutoFilled = if (description != null) false else state.isDescriptionAutoFilled,
                 hasFee = feeAmountMinor != null,
-                feeAmountInput = feeAmountMinor?.let { Money.formatMajorUnits(it) } ?: state.feeAmountInput,
+                feeAmountInput = feeAmountMinor?.let { Money.formatForInput(it) } ?: state.feeAmountInput,
                 // "Par défaut le compte source" (même règle que onHasFeeToggle), lu sur l'état
                 // COURANT : presetAccountId (voir ci-dessus) a déjà été appliqué au moment où ce
                 // `update` s'exécute (deux appels synchrones dans le même bloc init).
@@ -296,7 +296,7 @@ class TransactionFormViewModel @Inject constructor(
         _formState.update { state ->
             val currentMinor = Money.parseToMinorUnits(state.amountInput) ?: 0L
             val newMinor = currentMinor + majorUnits * 100
-            state.copy(amountInput = Money.formatMajorUnits(newMinor), amountError = null)
+            state.copy(amountInput = Money.formatForInput(newMinor), amountError = null)
         }
     }
 

@@ -132,7 +132,7 @@ class FinancialPlanItemFormViewModel @Inject constructor(
                         planName = plan.name,
                         planRemainingAmount = remainingAmount,
                         nameInput = item.name,
-                        amountInput = Money.formatMajorUnits(item.amount),
+                        amountInput = Money.formatForInput(item.amount),
                         categoryId = item.categoryId ?: 0L,
                         descriptionInput = item.description.orEmpty(),
                         hasDate = item.plannedDate != null,

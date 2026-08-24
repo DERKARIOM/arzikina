@@ -23,6 +23,7 @@ import com.arzikina.ne.util.AppResult
 import com.arzikina.ne.util.DatePeriods
 import com.arzikina.ne.util.FileSizeFormatter
 import com.arzikina.ne.util.Money
+import com.arzikina.ne.util.MoneyInputFormatter
 import com.arzikina.ne.util.TriggerTimeFormatter
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
@@ -287,7 +288,11 @@ class ReceiptDetailFragment : Fragment(R.layout.fragment_receipt_detail) {
     private fun showEditAmountDialog() {
         val suggested = viewModel.suggestedAmountMinor.value ?: return
         val dialogBinding = DialogEditReceiptAmountBinding.inflate(layoutInflater)
-        dialogBinding.editAmountInput.setText(Money.formatMajorUnits(suggested))
+        // Pas de ViewModel pour ce champ (voir la doc de tête) : MoneyInputFormatter.attach exige
+        // tout de même un callback (lambda vide ici, sans effet) — la valeur saisie est relue
+        // directement sur le champ au clic du bouton positif ci-dessous, comme avant.
+        MoneyInputFormatter.attach(dialogBinding.editAmountInput) {}
+        dialogBinding.editAmountInput.setText(Money.formatForInput(suggested))
 
         val dialog = MaterialAlertDialogBuilder(requireContext())
             .setTitle(R.string.receipt_detail_edit_amount_title)

@@ -28,6 +28,7 @@ import com.arzikina.ne.presentation.components.AccountPickerDialog
 import com.arzikina.ne.presentation.components.ConfirmDialogs
 import com.arzikina.ne.presentation.transactions.displayTextRes
 import com.arzikina.ne.util.Money
+import com.arzikina.ne.util.MoneyInputFormatter
 import com.google.android.material.datepicker.MaterialDatePicker
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.combine
@@ -150,7 +151,7 @@ class RecurringOccurrenceQueueDialogFragment : DialogFragment() {
             latestCategories.getOrNull(position)?.let { viewModel.onEditCategoryChange(it.id) }
         }
 
-        binding.editAmountInput.doAfterTextChanged { text -> viewModel.onEditAmountChange(text?.toString().orEmpty()) }
+        MoneyInputFormatter.attach(binding.editAmountInput) { formatted -> viewModel.onEditAmountChange(formatted) }
 
         binding.editAccountRow.setOnClickListener {
             AccountPickerDialog.show(
