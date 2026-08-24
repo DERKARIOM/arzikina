@@ -78,25 +78,19 @@ object TransactionItemBinder {
         }
 
         // Un transfert n'est ni un revenu ni une dépense (voir TransactionType.TRANSFER, exclu
-        // des totaux revenus/dépenses partout ailleurs) : signe +/- selon le sens réel de ce côté
-        // (isTransferReceived, voir TransactionUiItem), mais couleur PRIMARY dédiée plutôt que
-        // vert/rouge, pour ne pas le confondre visuellement avec un vrai revenu/une vraie dépense.
-        val isCredit = item.transaction.type == TransactionType.INCOME || (isTransfer && item.isTransferReceived)
+        // des totaux revenus/dépenses partout ailleurs) : ton TRANSFER dédié (couleur PRIMARY),
+        // jamais vert/rouge, pour ne pas le confondre visuellement avec un vrai revenu/une vraie
+        // dépense — plus de signe +/- affiché nulle part (voir TransactionAmountDisplay.kt), le
+        // sens réel du transfert (isTransferReceived) ne joue donc plus sur cet affichage.
+        val tone = when {
+            isTransfer -> TransactionAmountTone.TRANSFER
+            item.transaction.type == TransactionType.INCOME -> TransactionAmountTone.INCOME
+            else -> TransactionAmountTone.EXPENSE
+        }
         val amountCurrency = item.account?.currencyCode
-        val formattedAmount = amountCurrency?.let {
-            Money.format(CurrencyAmount(it, item.transaction.amount))
-        } ?: Money.formatAmount(item.transaction.amount)
-        binding.amount.text = "${if (isCredit) "+" else "-"}$formattedAmount"
-        binding.amount.setTextColor(
-            ContextCompat.getColor(
-                context,
-                when {
-                    isTransfer -> R.color.arzikina_primary
-                    isCredit -> R.color.income_green
-                    else -> R.color.expense_red
-                }
-            )
-        )
+        val amountDisplay = transactionAmountDisplay(item.transaction.amount, amountCurrency, tone)
+        binding.amount.text = amountDisplay.text
+        binding.amount.setTextColor(ContextCompat.getColor(context, amountDisplay.colorRes))
 
         if (item.runningBalance != null && amountCurrency != null) {
             binding.runningBalance.visibility = View.VISIBLE

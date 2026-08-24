@@ -6,12 +6,12 @@ import android.view.View
 import androidx.core.content.ContextCompat
 import com.arzikina.ne.R
 import com.arzikina.ne.databinding.ItemTransactionCompactBinding
-import com.arzikina.ne.domain.model.CurrencyAmount
 import com.arzikina.ne.domain.model.OccurrenceStatus
 import com.arzikina.ne.domain.model.TransactionType
 import com.arzikina.ne.presentation.categories.CategoryIconMapper
+import com.arzikina.ne.presentation.transactions.TransactionAmountTone
+import com.arzikina.ne.presentation.transactions.transactionAmountDisplay
 import com.arzikina.ne.util.DatePeriods
-import com.arzikina.ne.util.Money
 import com.arzikina.ne.util.TriggerTimeFormatter
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -46,22 +46,18 @@ object RecurringOccurrenceItemBinder {
         binding.subtitle.visibility = View.VISIBLE
         binding.subtitle.text = subtitleFor(context, item, section)
 
-        val isCredit = rule.type == TransactionType.INCOME
+        // Plus de signe +/- (voir TransactionAmountDisplay.kt) : une occurrence REJETÉE garde son
+        // ton NEUTRE (gris) même si sa règle est un revenu/une dépense normal, exactement comme
+        // avant — seule la présentation change, pas les cas déjà couverts.
+        val tone = when {
+            item.status == OccurrenceStatus.REJECTED -> TransactionAmountTone.NEUTRAL
+            rule.type == TransactionType.INCOME -> TransactionAmountTone.INCOME
+            else -> TransactionAmountTone.EXPENSE
+        }
         val amountCurrency = item.account?.currencyCode
-        val formattedAmount = amountCurrency?.let {
-            Money.format(CurrencyAmount(it, rule.amount))
-        } ?: Money.formatAmount(rule.amount)
-        binding.amount.text = "${if (isCredit) "+" else "-"}$formattedAmount"
-        binding.amount.setTextColor(
-            ContextCompat.getColor(
-                context,
-                when {
-                    item.status == OccurrenceStatus.REJECTED -> R.color.arzikina_on_balance_card_variant
-                    isCredit -> R.color.income_green
-                    else -> R.color.expense_red
-                }
-            )
-        )
+        val amountDisplay = transactionAmountDisplay(rule.amount, amountCurrency, tone)
+        binding.amount.text = amountDisplay.text
+        binding.amount.setTextColor(ContextCompat.getColor(context, amountDisplay.colorRes))
 
         binding.runningBalance.visibility = View.GONE
     }

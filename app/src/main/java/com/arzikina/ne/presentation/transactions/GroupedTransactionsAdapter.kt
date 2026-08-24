@@ -10,10 +10,8 @@ import androidx.recyclerview.widget.RecyclerView
 import com.arzikina.ne.R
 import com.arzikina.ne.databinding.ItemTransactionCompactBinding
 import com.arzikina.ne.databinding.ItemTransactionDayHeaderBinding
-import com.arzikina.ne.domain.model.CurrencyAmount
 import com.arzikina.ne.domain.model.TransactionType
 import com.arzikina.ne.util.DayLabel
-import com.arzikina.ne.util.Money
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -83,10 +81,10 @@ class GroupedTransactionsAdapter(
      * [LocalDate.now] plutôt que stockée sur [DayLabel], qui n'en a pas
      * besoin ailleurs). [dayRelativeLabel] n'apparaît que pour
      * Aujourd'hui/Hier. [dayTotal] est le total NET de la journée (revenus -
-     * dépenses) ; formaté avec la devise du premier compte rencontré ce
-     * jour-là — limite acceptée si une journée mélange plusieurs devises (cas
-     * rare), même compromis que documenté ailleurs dans l'app (ex. widget
-     * revenu/dépense du Dashboard).
+     * dépenses), SANS signe +/- (voir [computeDayTotal]) ; formaté avec la
+     * devise du premier compte rencontré ce jour-là — limite acceptée si une
+     * journée mélange plusieurs devises (cas rare), même compromis que
+     * documenté ailleurs dans l'app (ex. widget revenu/dépense du Dashboard).
      */
     class HeaderViewHolder(private val binding: ItemTransactionDayHeaderBinding) : RecyclerView.ViewHolder(binding.root) {
         fun bind(section: TransactionDaySection) {
@@ -111,26 +109,27 @@ class GroupedTransactionsAdapter(
             val total = computeDayTotal(section.items)
             if (total != null) {
                 binding.dayTotal.visibility = View.VISIBLE
-                binding.dayTotal.text = total.formatted
+                binding.dayTotal.text = total.text
                 binding.dayTotal.setTextColor(ContextCompat.getColor(context, total.colorRes))
             } else {
                 binding.dayTotal.visibility = View.GONE
             }
         }
 
-        private fun computeDayTotal(items: List<TransactionUiItem>): DayTotal? {
+        /**
+         * Total NET de la journée (revenus - dépenses), affiché SANS signe +/- (voir
+         * TransactionAmountDisplay.kt) : seule la couleur porte désormais le sens, exactement
+         * comme pour une transaction individuelle — un jour net négatif reste rouge, net positif
+         * reste vert, mais "10 000 CFA" seul plutôt que "-10 000 CFA"/"+10 000 CFA".
+         */
+        private fun computeDayTotal(items: List<TransactionUiItem>): TransactionAmountDisplay? {
             val currencyCode = items.firstNotNullOfOrNull { it.account?.currencyCode } ?: return null
             val net = items.sumOf { item ->
                 if (item.transaction.type == TransactionType.INCOME) item.transaction.amount else -item.transaction.amount
             }
-            val formatted = Money.format(CurrencyAmount(currencyCode, kotlin.math.abs(net)))
-            return DayTotal(
-                formatted = "${if (net < 0) "-" else "+"}$formatted",
-                colorRes = if (net < 0) R.color.expense_red else R.color.income_green
-            )
+            val tone = if (net < 0) TransactionAmountTone.EXPENSE else TransactionAmountTone.INCOME
+            return transactionAmountDisplay(net, currencyCode, tone)
         }
-
-        private data class DayTotal(val formatted: String, val colorRes: Int)
 
         private companion object {
             val dateFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy", Locale.FRENCH)
