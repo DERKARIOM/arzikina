@@ -13,6 +13,9 @@ import com.arzikina.ne.data.repository.ReceiptRepositoryImpl
 import com.arzikina.ne.data.repository.RecurringTransactionRepositoryImpl
 import com.arzikina.ne.data.repository.SavingsGoalRepositoryImpl
 import com.arzikina.ne.data.repository.SessionManagerImpl
+import com.arzikina.ne.data.repository.SyncAuthRepositoryImpl
+import com.arzikina.ne.data.repository.TokenProvider
+import com.arzikina.ne.data.repository.TokenProviderImpl
 import com.arzikina.ne.data.repository.TransactionRepositoryImpl
 import com.arzikina.ne.data.repository.UserPreferencesRepositoryImpl
 import com.arzikina.ne.work.AutomationSchedulerImpl
@@ -30,6 +33,7 @@ import com.arzikina.ne.domain.repository.ReceiptRepository
 import com.arzikina.ne.domain.repository.RecurringTransactionRepository
 import com.arzikina.ne.domain.repository.SavingsGoalRepository
 import com.arzikina.ne.domain.repository.SessionManager
+import com.arzikina.ne.domain.repository.SyncAuthRepository
 import com.arzikina.ne.domain.repository.TransactionRepository
 import com.arzikina.ne.domain.repository.UserPreferencesRepository
 import dagger.Binds
@@ -110,4 +114,18 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindReceiptRepository(impl: ReceiptRepositoryImpl): ReceiptRepository
+
+    /** Connexion au serveur de synchronisation (voir `domain/repository/SyncAuthRepository.kt`) —
+     *  à ne pas confondre avec [bindAuthRepository] ci-dessus (authentification LOCALE). */
+    @Binds
+    @Singleton
+    abstract fun bindSyncAuthRepository(impl: SyncAuthRepositoryImpl): SyncAuthRepository
+
+    /** Partage le même stockage que [bindSyncAuthRepository] via `SyncAuthStore` (voir la KDoc de
+     *  [TokenProviderImpl]) — contrat interne à la couche data, réservé au futur intercepteur
+     *  réseau. Classe séparée de [SyncAuthRepositoryImpl] (une seule instance par interface :
+     *  Single Responsibility, voir `SyncAuthStore` pour la logique partagée). */
+    @Binds
+    @Singleton
+    abstract fun bindTokenProvider(impl: TokenProviderImpl): TokenProvider
 }

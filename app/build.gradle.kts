@@ -103,6 +103,11 @@ dependencies {
     // Sauvegarde et restauration (export/import JSON)
     implementation(libs.kotlinx.serialization.json)
 
+    // Réseau (client de l'API de synchronisation, voir data/remote/ et
+    // docs/sync/AUDIT-ET-ARCHITECTURE-SYNC.md) : OkHttp seul, pas de Retrofit — voir
+    // gradle/libs.versions.toml pour le diagnostic complet.
+    implementation(libs.okhttp)
+
     // Chargement d'images (photo de reçu)
     implementation(libs.coil)
 

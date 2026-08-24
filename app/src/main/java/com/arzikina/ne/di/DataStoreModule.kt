@@ -14,6 +14,7 @@ import javax.inject.Singleton
 
 private const val PREFERENCES_DATASTORE_NAME = "arzikina_preferences"
 private const val SESSION_DATASTORE_NAME = "arzikina_session"
+private const val SYNC_AUTH_DATASTORE_NAME = "arzikina_sync_auth"
 
 private val Context.preferencesDataStore: DataStore<Preferences> by preferencesDataStore(
     name = PREFERENCES_DATASTORE_NAME
@@ -21,6 +22,10 @@ private val Context.preferencesDataStore: DataStore<Preferences> by preferencesD
 
 private val Context.sessionDataStore: DataStore<Preferences> by preferencesDataStore(
     name = SESSION_DATASTORE_NAME
+)
+
+private val Context.syncAuthDataStore: DataStore<Preferences> by preferencesDataStore(
+    name = SYNC_AUTH_DATASTORE_NAME
 )
 
 /**
@@ -31,6 +36,18 @@ private val Context.sessionDataStore: DataStore<Preferences> by preferencesDataS
 @Qualifier
 @Retention(AnnotationRetention.BINARY)
 annotation class SessionDataStore
+
+/**
+ * DataStore dédié à la session du serveur de synchronisation (token chiffré + métadonnées, voir
+ * [com.arzikina.ne.data.repository.SyncAuthStore]) — distinct de [SessionDataStore] :
+ * ce dernier mémorise QUEL PROFIL LOCAL est connecté sur cet appareil (voir `SessionManager`),
+ * celui-ci mémorise si CE PROFIL est connecté au serveur de synchronisation. Deux préoccupations
+ * indépendantes qui peuvent évoluer séparément (ex. déconnexion du serveur sans déconnecter le
+ * profil local, et inversement).
+ */
+@Qualifier
+@Retention(AnnotationRetention.BINARY)
+annotation class SyncAuthDataStore
 
 /**
  * Fournit les [DataStore] de préférences utilisateur (thème, devise
@@ -56,4 +73,11 @@ object DataStoreModule {
     fun provideSessionDataStore(
         @ApplicationContext context: Context
     ): DataStore<Preferences> = context.sessionDataStore
+
+    @SyncAuthDataStore
+    @Provides
+    @Singleton
+    fun provideSyncAuthDataStore(
+        @ApplicationContext context: Context
+    ): DataStore<Preferences> = context.syncAuthDataStore
 }

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Autorise le trafic HTTP en clair (cleartext), bloqué par défaut depuis Android 9 (API 28)
+    pour tout targetSdk >= 28, UNIQUEMENT vers l'IP du serveur Arzikina de développement (voir
+    data/remote/RemoteConfig.kt) — jamais globalement (pas de
+    android:usesCleartextTraffic="true" sur <application>, qui autoriserait n'importe quel
+    domaine en clair).
+
+    TEMPORAIRE (voir docs/sync/AUDIT-ET-ARCHITECTURE-SYNC.md, section 6.4) : ce fichier devient
+    inutile — à supprimer, pas juste à laisser en place — le jour où le serveur passera derrière
+    un nom de domaine avec un vrai certificat TLS et que RemoteConfig.BASE_URL basculera en
+    https://. Jusque-là, ce trafic circule en clair sur le réseau LAN local uniquement — ne pas
+    utiliser Arzikina sur un réseau non maîtrisé tant que ce fichier existe.
+-->
+<network-security-config>
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="false">192.168.49.1</domain>
+    </domain-config>
+</network-security-config>

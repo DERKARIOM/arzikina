@@ -49,6 +49,17 @@ kotlinxCoroutines = "1.11.0"
 # Sauvegarde / export JSON
 kotlinxSerializationJson = "1.10.0"
 
+# Réseau (client HTTP pour l'API de synchronisation, voir data/remote/) : OkHttp SEUL, PAS
+# Retrofit. Diagnostic KSP confirmé (docs/sync/AUDIT-ET-ARCHITECTURE-SYNC.md) — un simple
+# `@Provides fun provide(retrofit: Retrofit): X = retrofit.create(X::class.java)` suffit SEUL à
+# faire échouer KSP/Dagger ("X could not be resolved"), peu importe le nom/package de X, confirmé
+# aussi bien avec Retrofit 3.0.0 (entièrement réécrit en Kotlin) qu'avec 2.11.0 (Java) — donc pas
+# une question de version Retrofit. `SyncAuthApi` (voir data/remote/api/) construit ses requêtes
+# manuellement via OkHttp + kotlinx.serialization (déjà utilisé pour la sauvegarde/restauration),
+# en classe concrète `@Inject`-constructible — schéma déjà éprouvé sans problème dans ce
+# diagnostic (voir `SyncAuthStore`).
+okhttp = "4.12.0"
+
 # Images (photo de reçu)
 coil = "3.5.0"
 
@@ -113,6 +124,9 @@ kotlinx-coroutines-android = { group = "org.jetbrains.kotlinx", name = "kotlinx-
 
 # Sérialisation JSON (sauvegarde/restauration)
 kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinxSerializationJson" }
+
+# Réseau (voir data/remote/ — fondation du chantier de synchronisation serveur)
+okhttp = { group = "com.squareup.okhttp3", name = "okhttp", version.ref = "okhttp" }
 
 # Coil (chargement d'images - photo de reçu), variante Views (ImageView.load).
 # Pas de module réseau : seules des URI locales (photos de reçu) sont chargées.
