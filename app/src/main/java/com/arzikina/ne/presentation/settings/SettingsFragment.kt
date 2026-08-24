@@ -55,6 +55,7 @@ class SettingsFragment : Fragment(R.layout.fragment_settings) {
         setUpTransactionsSection(viewBinding)
         setUpBudgetFinanceSection(viewBinding)
         setUpBackupSection(viewBinding)
+        setUpSyncSection(viewBinding)
         setUpAboutSection(viewBinding)
 
         viewLifecycleOwner.lifecycleScope.launch {
@@ -220,14 +221,30 @@ class SettingsFragment : Fragment(R.layout.fragment_settings) {
         )
     }
 
+    /** Simple raccourci vers [SyncLoginFragment] (voir `domain/repository/SyncAuthRepository.kt`)
+     *  — icône dédiée `ic_sync_24` (distincte de `ic_cloud_backup_24` utilisée par
+     *  [setUpBackupSection] juste au-dessus, pour ne pas laisser croire qu'il s'agit de la même
+     *  fonctionnalité). Portée volontairement limitée à la connexion pour cette étape : pas
+     *  encore d'affichage d'un état "déjà connecté" ici (voir la doc de classe de
+     *  [SyncLoginFragment]). */
+    private fun setUpSyncSection(binding: FragmentSettingsBinding) {
+        bindNavigationRow(
+            row = binding.syncRow,
+            iconRes = R.drawable.ic_sync_24,
+            titleRes = R.string.settings_sync_row_title,
+            subtitleRes = R.string.settings_sync_row_subtitle,
+            destinationId = R.id.syncLoginFragment
+        )
+    }
+
     /**
      * Factorise le motif répété par TOUTES les lignes de navigation pure de cet écran (icône +
      * titre + sous-titre + clic → destination) — évite la duplication quasi identique qui existait
-     * jusqu'ici sur 10 lignes distinctes (changePasswordRow, securityQuestionRow, accountsRow,
+     * jusqu'ici sur 11 lignes distinctes (changePasswordRow, securityQuestionRow, accountsRow,
      * transactionsRow, categoriesRow, recurringRow, budgetRow, loansRow, statisticsRow,
-     * backupRow). Volontairement PAS utilisé par `biometricLockRow` (switch, pas de navigation) ni
-     * `languageRow` (ligne désactivée, voir sa doc) : ces deux-là restent des cas particuliers
-     * gérés explicitement.
+     * backupRow, syncRow). Volontairement PAS utilisé par `biometricLockRow` (switch, pas de
+     * navigation) ni `languageRow` (ligne désactivée, voir sa doc) : ces deux-là restent des cas
+     * particuliers gérés explicitement.
      */
     private fun bindNavigationRow(
         row: ItemSettingsRowBinding,

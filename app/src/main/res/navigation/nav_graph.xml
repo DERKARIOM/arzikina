@@ -495,6 +495,18 @@
         tools:layout="@layout/fragment_backup" />
 
     <!--
+        Connexion au serveur de synchronisation (voir presentation/settings/SyncLoginFragment,
+        atteint depuis Paramètres > Synchronisation) — même famille que backupFragment ci-dessus
+        (sous-écran de Paramètres avec flèche retour), DISTINCT de loginFragment tout en haut de ce
+        fichier (authentification LOCALE, point d'entrée de l'app).
+    -->
+    <fragment
+        android:id="@+id/syncLoginFragment"
+        android:name="com.arzikina.ne.presentation.settings.SyncLoginFragment"
+        android:label="@string/sync_login_title"
+        tools:layout="@layout/fragment_sync_login" />
+
+    <!--
         "Gestion des reçus" (voir presentation/utilities/receipts/ReceiptsFragment), atteint depuis
         le bloc Utilitaires du Dashboard/"Tous les utilitaires" (voir UtilityCatalog), même principe
         que loansFragment/financialPlansFragment ci-dessus.

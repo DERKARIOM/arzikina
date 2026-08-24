@@ -144,6 +144,26 @@
     <string name="login_error_invalid_credentials">Identifiant ou mot de passe incorrect</string>
     <string name="login_forgot_password_action">Mot de passe oublié ?</string>
 
+    <!--
+        Connexion au serveur de synchronisation (voir presentation/settings/SyncLoginFragment,
+        domain/repository/SyncAuthRepository.kt) — DISTINCTE de l'authentification locale
+        ci-dessus (login_*) : comptes provisionnés côté serveur, pas depuis l'app.
+    -->
+    <string name="settings_section_sync">Synchronisation</string>
+    <string name="settings_sync_row_title">Serveur de synchronisation</string>
+    <string name="settings_sync_row_subtitle">Se connecter pour synchroniser tes données</string>
+    <string name="sync_login_title">Connexion au serveur</string>
+    <string name="sync_login_subtitle">Connecte-toi à ton compte de synchronisation Arzikina</string>
+    <string name="sync_login_identifier_label">E-mail ou nom d\'utilisateur</string>
+    <string name="sync_login_password_label">Mot de passe</string>
+    <string name="sync_login_submit_action">Se connecter</string>
+    <string name="sync_login_success_message">Connecté au serveur de synchronisation</string>
+    <!-- Générique (identifiant OU mot de passe incorrect), même raisonnement que
+         login_error_invalid_credentials ci-dessus. -->
+    <string name="sync_login_error_invalid_credentials">Identifiant ou mot de passe incorrect</string>
+    <string name="sync_login_error_network">Impossible de joindre le serveur, vérifie ta connexion</string>
+    <string name="sync_login_error_server">Le serveur a rencontré une erreur, réessaie plus tard</string>
+
     <!-- Authentification — Mot de passe oublié -->
     <string name="forgot_password_title">Mot de passe oublié</string>
     <string name="forgot_password_step1_subtitle">Entre ton e-mail ou nom d\'utilisateur pour continuer</string>
