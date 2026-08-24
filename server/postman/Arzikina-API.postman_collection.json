@@ -1,0 +1,134 @@
+{
+  "info": {
+    "name": "Arzikina API",
+    "description": "Collection de test pour l'API de synchronisation Arzikina (server/api). Couvre les endpoints câblés à ce stade : authentification par token, pull/push incrémental sur `categories` (seule entité branchée pour l'instant — voir docs/sync/AUDIT-ET-ARCHITECTURE-SYNC.md, section 10).\n\nUtilisation :\n1. Ajuster la variable de collection `baseUrl` si besoin (par défaut : le serveur local du réseau LAN, port 2222).\n2. Lancer d'abord \"Auth > Login\" — le token reçu est automatiquement enregistré dans la variable de collection `token` (script de test), les requêtes suivantes l'utilisent sans copier-coller manuel.\n3. Un utilisateur de test doit déjà exister en base (voir le commentaire en tête de `api/auth/login.php` — pas d'endpoint d'inscription pour l'instant).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://192.168.49.1:2222/arzikina",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "userId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "lastPullServerTime",
+      "value": "0",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identifier\": \"test\",\n  \"password\": \"test\",\n  \"deviceId\": \"postman-test-device\",\n  \"deviceLabel\": \"Postman\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login.php",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login.php"]
+            },
+            "description": "Corps attendu : identifier (username ou email), password, deviceId/deviceLabel optionnels. Renvoie { token, userId, expiresAt }. Voir api/auth/login.php pour le SQL de création d'un utilisateur de test."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const body = pm.response.json();",
+                  "    pm.collectionVariables.set('token', body.token);",
+                  "    pm.collectionVariables.set('userId', body.userId);",
+                  "    pm.test('Login OK — token recu', () => pm.expect(body.token).to.be.a('string'));",
+                  "} else {",
+                  "    pm.test('Login a echoue — voir le corps de la reponse', () => {",
+                  "        pm.expect.fail(pm.response.text());",
+                  "    });",
+                  "}"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Sync",
+      "item": [
+        {
+          "name": "Pull - categories",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/sync/pull.php?entity_type=categories&updated_after={{lastPullServerTime}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "sync", "pull.php"],
+              "query": [
+                { "key": "entity_type", "value": "categories" },
+                { "key": "updated_after", "value": "{{lastPullServerTime}}" }
+              ]
+            },
+            "description": "Pull incremental : renvoie les categories de l'utilisateur authentifie modifiees strictement apres `updated_after` (millis). Mettre `updated_after=0` pour un premier pull complet."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const body = pm.response.json();",
+                  "    pm.collectionVariables.set('lastPullServerTime', body.serverTime);",
+                  "    pm.test('Pull OK', () => pm.expect(body.entities).to.be.an('array'));",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Push - categories (CREATE)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"entityType\": \"categories\",\n  \"operations\": [\n    {\n      \"operation\": \"CREATE\",\n      \"entity\": {\n        \"id\": \"{{$guid}}\",\n        \"name\": \"Test Postman\",\n        \"icon\": \"ic_category_default\",\n        \"colorArgb\": -16776961,\n        \"type\": \"EXPENSE\",\n        \"createdAt\": {{$timestamp}}000,\n        \"updatedAt\": {{$timestamp}}000\n      }\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/sync/push.php",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "sync", "push.php"]
+            },
+            "description": "Envoie une operation CREATE sur categories. `id` doit etre un UUID (voir {{$guid}}, variable dynamique Postman). `results[0].serverEntity` contient l'etat final cote serveur a appliquer localement."
+          }
+        }
+      ]
+    }
+  ]
+}

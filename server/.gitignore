@@ -1,0 +1,9 @@
+# Filet de sécurité : si jamais une vraie copie des fichiers de secrets atterrit ici par erreur
+# (au lieu de /home/Admin/ sur le serveur, où elle doit rester), Git l'ignore quand même — voir
+# config/secrets.example.php et docs/sync/AUDIT-ET-ARCHITECTURE-SYNC.md, section 24.
+config_arzikina.php
+config_arzikina_secrets.php
+secrets.php
+.env
+.env.*
+!secrets.example.php

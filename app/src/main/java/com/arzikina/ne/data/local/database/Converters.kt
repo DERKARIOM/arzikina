@@ -19,6 +19,8 @@ import com.arzikina.ne.domain.model.PlanStatus
 import com.arzikina.ne.domain.model.RecurringFrequency
 import com.arzikina.ne.domain.model.RepaymentMode
 import com.arzikina.ne.domain.model.SecurityQuestion
+import com.arzikina.ne.domain.model.SyncOperation
+import com.arzikina.ne.domain.model.SyncStatus
 import com.arzikina.ne.domain.model.TransactionType
 
 /**
@@ -143,4 +145,17 @@ class Converters {
 
     @TypeConverter
     fun toPlanItemStatus(value: String): PlanItemStatus = PlanItemStatus.valueOf(value)
+
+    /** Voir `data/local/entity/SyncQueueEntity`. */
+    @TypeConverter
+    fun fromSyncOperation(operation: SyncOperation): String = operation.name
+
+    @TypeConverter
+    fun toSyncOperation(value: String): SyncOperation = SyncOperation.valueOf(value)
+
+    @TypeConverter
+    fun fromSyncStatus(status: SyncStatus): String = status.name
+
+    @TypeConverter
+    fun toSyncStatus(value: String): SyncStatus = SyncStatus.valueOf(value)
 }

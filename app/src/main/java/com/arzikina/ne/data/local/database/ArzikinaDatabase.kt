@@ -16,6 +16,7 @@ import com.arzikina.ne.data.local.dao.ReceiptDao
 import com.arzikina.ne.data.local.dao.RecurringTransactionDao
 import com.arzikina.ne.data.local.dao.RecurringTransactionOccurrenceDao
 import com.arzikina.ne.data.local.dao.SavingsGoalDao
+import com.arzikina.ne.data.local.dao.SyncQueueDao
 import com.arzikina.ne.data.local.dao.TransactionDao
 import com.arzikina.ne.data.local.dao.UserDao
 import com.arzikina.ne.data.local.entity.AccountEntity
@@ -31,6 +32,7 @@ import com.arzikina.ne.data.local.entity.ReceiptEntity
 import com.arzikina.ne.data.local.entity.RecurringTransactionEntity
 import com.arzikina.ne.data.local.entity.RecurringTransactionOccurrenceEntity
 import com.arzikina.ne.data.local.entity.SavingsGoalEntity
+import com.arzikina.ne.data.local.entity.SyncQueueEntity
 import com.arzikina.ne.data.local.entity.TransactionEntity
 import com.arzikina.ne.data.local.entity.UserEntity
 
@@ -98,6 +100,15 @@ import com.arzikina.ne.data.local.entity.UserEntity
  * - 22 : Lien optionnel `receiptId` sur `transactions` (voir [MIGRATION_21_22]/[TransactionEntity]/
  *   [com.arzikina.ne.domain.model.Transaction.receiptId]) — cahier des charges "Créer une
  *   transaction depuis un reçu" ; même principe que `feeTransactionId` (pas de `ForeignKey` SQL).
+ * - 23 : Colonnes de synchronisation (`syncId`, `updatedAt`, `deletedAt`, `version`) sur 13 des 15
+ *   tables, ÉTAPE PUREMENT LOCALE du chantier de synchronisation multi-appareils (voir
+ *   [MIGRATION_22_23], `docs/sync/AUDIT-ET-ARCHITECTURE-SYNC.md`) — `card_secrets` volontairement
+ *   exclue (décision 6.2, secret non transportable) et `users` également exclue, pour une raison
+ *   différente (limitation du toolchain Room/KSP2 constatée en pratique — voir section 6.5).
+ *   Aucun Sync Engine, aucune `sync_queue` : schéma seul.
+ * - 24 : Table `sync_queue`, la file d'attente locale des écritures en attente d'envoi au serveur
+ *   (voir [MIGRATION_23_24]/[SyncQueueEntity]) — TOUJOURS aucun effet visible : table créée mais
+ *   vide, aucun repository n'y écrit encore, aucun Sync Engine ne la lit encore.
  */
 @Database(
     entities = [
@@ -115,9 +126,10 @@ import com.arzikina.ne.data.local.entity.UserEntity
         RecurringTransactionOccurrenceEntity::class,
         FinancialPlanEntity::class,
         FinancialPlanItemEntity::class,
-        ReceiptEntity::class
+        ReceiptEntity::class,
+        SyncQueueEntity::class
     ],
-    version = 22,
+    version = 24,
     exportSchema = true
 )
 @TypeConverters(Converters::class)
@@ -137,4 +149,5 @@ abstract class ArzikinaDatabase : RoomDatabase() {
     abstract fun financialPlanDao(): FinancialPlanDao
     abstract fun financialPlanItemDao(): FinancialPlanItemDao
     abstract fun receiptDao(): ReceiptDao
+    abstract fun syncQueueDao(): SyncQueueDao
 }

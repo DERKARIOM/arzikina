@@ -70,7 +70,7 @@ import com.arzikina.ne.domain.model.TransactionType
     ],
     indices = [
         Index("accountId"), Index("transferAccountId"), Index("categoryId"), Index("userId"),
-        Index("receiptId")
+        Index("receiptId"), Index(value = ["syncId"], unique = true)
     ]
 )
 data class TransactionEntity(
@@ -99,5 +99,17 @@ data class TransactionEntity(
     val feeType: FeeType? = null,
     /** Voir [com.arzikina.ne.domain.model.Transaction.receiptId] et la doc de tête de cette classe
      * (pas de `ForeignKey`, cascade gérée par le repository). */
-    val receiptId: Long? = null
+    val receiptId: Long? = null,
+    /** UUID partagé Android/API/MySQL pour la synchronisation multi-appareils — additif, voir
+     * `docs/sync/AUDIT-ET-ARCHITECTURE-SYNC.md` (section 6.3, option B). `null` tant que cette
+     * ligne n'a jamais été envoyée au serveur. */
+    val syncId: String? = null,
+    /** Horodatage de dernière modification, pour la détection de conflit lors de la
+     * synchronisation (Last-Write-Wins, section 9 du document ci-dessus). `0L` par défaut, rattrapé
+     * à [createdAt] pour les lignes existantes par `MIGRATION_22_23`. */
+    val updatedAt: Long = 0L,
+    /** Suppression douce (section 8 du document ci-dessus) : `null` = ligne active. */
+    val deletedAt: Long? = null,
+    /** Compteur de version optimiste, pour la détection de conflit côté serveur (section 9). */
+    val version: Int = 1
 )

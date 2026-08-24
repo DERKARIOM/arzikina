@@ -40,7 +40,7 @@ import com.arzikina.ne.domain.model.TransactionType
             childColumns = ["categoryId"]
         )
     ],
-    indices = [Index("accountId"), Index("categoryId"), Index("userId")]
+    indices = [Index("accountId"), Index("categoryId"), Index("userId"), Index(value = ["syncId"], unique = true)]
 )
 data class RecurringTransactionEntity(
     @PrimaryKey(autoGenerate = true)
@@ -71,5 +71,15 @@ data class RecurringTransactionEntity(
     val createdAt: Long,
     val updatedAt: Long,
     val triggerHour: Int,
-    val triggerMinute: Int
+    val triggerMinute: Int,
+    /** UUID partagé Android/API/MySQL pour la synchronisation multi-appareils — additif, voir
+     * `docs/sync/AUDIT-ET-ARCHITECTURE-SYNC.md` (section 6.3, option B). `null` tant que cette
+     * ligne n'a jamais été envoyée au serveur. */
+    val syncId: String? = null,
+    /** Suppression douce (section 8 du document ci-dessus) : `null` = ligne active. */
+    val deletedAt: Long? = null,
+    /** Compteur de version optimiste, pour la détection de conflit côté serveur (section 9). Le
+     * champ [updatedAt] existant ci-dessus sert désormais aussi de base à cette stratégie
+     * Last-Write-Wins. */
+    val version: Int = 1
 )

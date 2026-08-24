@@ -37,7 +37,7 @@ import com.arzikina.ne.domain.model.RepaymentMode
             onDelete = ForeignKey.CASCADE
         )
     ],
-    indices = [Index("personId"), Index("accountId"), Index("userId")]
+    indices = [Index("personId"), Index("accountId"), Index("userId"), Index(value = ["syncId"], unique = true)]
 )
 data class LoanEntity(
     @PrimaryKey(autoGenerate = true)
@@ -61,5 +61,15 @@ data class LoanEntity(
     /** Voir [com.arzikina.ne.domain.model.Loan.transactionId] : transaction de décaissement initial,
      * toujours renseignée (créée atomiquement avec ce prêt/emprunt). Pas de contrainte
      * `FOREIGN KEY` vers `transactions` (même raisonnement que [LoanPaymentEntity.transactionId]). */
-    val transactionId: Long
+    val transactionId: Long,
+    /** UUID partagé Android/API/MySQL pour la synchronisation multi-appareils — additif, voir
+     * `docs/sync/AUDIT-ET-ARCHITECTURE-SYNC.md` (section 6.3, option B). `null` tant que cette
+     * ligne n'a jamais été envoyée au serveur. */
+    val syncId: String? = null,
+    /** Suppression douce (section 8 du document ci-dessus) : `null` = ligne active. */
+    val deletedAt: Long? = null,
+    /** Compteur de version optimiste, pour la détection de conflit côté serveur (section 9). Le
+     * champ [updatedAt] existant ci-dessus sert désormais aussi de base à cette stratégie
+     * Last-Write-Wins. */
+    val version: Int = 1
 )

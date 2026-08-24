@@ -37,7 +37,8 @@ import com.arzikina.ne.domain.model.OccurrenceStatus
     ],
     indices = [
         Index("userId"),
-        Index(value = ["recurringTransactionId", "scheduledDate"], unique = true)
+        Index(value = ["recurringTransactionId", "scheduledDate"], unique = true),
+        Index(value = ["syncId"], unique = true)
     ]
 )
 data class RecurringTransactionOccurrenceEntity(
@@ -52,5 +53,17 @@ data class RecurringTransactionOccurrenceEntity(
     /** Horodatage de la décision utilisateur (Enregistrer/Modifier/Rejeter), `NULL` tant que
      * [status] reste [OccurrenceStatus.PENDING]. */
     val processedAt: Long?,
-    val createdAt: Long
+    val createdAt: Long,
+    /** UUID partagé Android/API/MySQL pour la synchronisation multi-appareils — additif, voir
+     * `docs/sync/AUDIT-ET-ARCHITECTURE-SYNC.md` (section 6.3, option B). `null` tant que cette
+     * ligne n'a jamais été envoyée au serveur. */
+    val syncId: String? = null,
+    /** Horodatage de dernière modification, pour la détection de conflit lors de la
+     * synchronisation (Last-Write-Wins, section 9 du document ci-dessus). `0L` par défaut, rattrapé
+     * à [createdAt] pour les lignes existantes par `MIGRATION_22_23`. */
+    val updatedAt: Long = 0L,
+    /** Suppression douce (section 8 du document ci-dessus) : `null` = ligne active. */
+    val deletedAt: Long? = null,
+    /** Compteur de version optimiste, pour la détection de conflit côté serveur (section 9). */
+    val version: Int = 1
 )

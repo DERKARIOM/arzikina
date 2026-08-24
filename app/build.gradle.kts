@@ -45,7 +45,18 @@ android {
 // (voir instructions projet : "Prévois les migrations de base de données dès le début").
 ksp {
     arg("room.schemaLocation", "$projectDir/schemas")
-    arg("room.generateKotlin", "true")
+    // Désactivé temporairement (était "true") — diagnostic de l'erreur KSP
+    // `[MissingType]` sur UserEntity apparue lors de la migration 22→23 (voir
+    // docs/sync/AUDIT-ET-ARCHITECTURE-SYNC.md, chantier synchronisation, étape 1).
+    // La génération de code Kotlin par Room (plutôt que Java) est plus récente et
+    // moins éprouvée avec KSP2 (Kotlin 2.4.0 / KSP 2.3.9 ici) — hypothèse la plus
+    // probable vu que l'erreur est isolée à la SEULE entité utilisant
+    // `@ColumnInfo(collate = ...)`, sans aucune ligne d'erreur Kotlin sous-jacente
+    // (les 14 entités modifiées de façon identique n'ont pas ce problème). À
+    // confirmer par un rebuild ; si ça règle le problème, décider ensemble si on
+    // repasse en Kotlin plus tard (nouvelle version de Room/KSP) ou si on reste en
+    // Java définitivement — pas une décision à prendre seul de façon permanente.
+    arg("room.generateKotlin", "false")
 }
 
 dependencies {
