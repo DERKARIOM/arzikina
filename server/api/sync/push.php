@@ -24,13 +24,14 @@ require_once __DIR__ . '/../middleware/auth_middleware.php';
  * ligne modifiée. La réponse préserve l'ORDRE du tableau `operations` reçu : `results[i]`
  * correspond toujours à `operations[i]`.
  *
- * `categories` et `savings_goals` sont câblées pour l'instant — voir `pull.php` pour la même
- * décision. Le découpage en petites fonctions ci-dessous (`createCategory`/`createSavingsGoal`,
- * `upsertExistingCategory`/`upsertExistingSavingsGoal`...) n'est TOUJOURS PAS extrait vers
- * `services/` malgré ce deuxième cas d'usage réel : les deux entités sont trop proches (une seule
- * table simple chacune) pour qu'un motif d'abstraction fiable s'en dégage encore clairement — voir
- * cahier des charges sur l'architecture évolutive, qui demande d'anticiper sans sur-construire
- * prématurément. À reconsidérer à une TROISIÈME entité (règle de trois).
+ * `categories`, `savings_goals` et `financial_plans` sont câblées pour l'instant — voir `pull.php`
+ * pour la même décision. Le découpage en petites fonctions ci-dessous
+ * (`createCategory`/`createSavingsGoal`/`createFinancialPlan`,
+ * `upsertExistingCategory`/`upsertExistingSavingsGoal`/`upsertExistingFinancialPlan`...) n'est
+ * TOUJOURS PAS extrait vers `services/` malgré cette TROISIÈME entité (règle de trois normalement
+ * atteinte ici) : la généralisation est traitée comme une étape SÉPARÉE et délibérément différée
+ * (voir le plan validé), pour ne jamais mélanger une nouvelle fonctionnalité et un refactor
+ * comportemental dans le même changement à vérifier.
  *
  * SÉCURITÉ — `entity.userId` (ou toute variante), même présent dans le payload, est TOUJOURS
  * IGNORÉ : le propriétaire réel de chaque écriture est TOUJOURS celui du token (voir
@@ -60,7 +61,7 @@ if (!is_array($body) || !isset($body['entityType'], $body['operations']) || !is_
 }
 
 $entityType = (string) $body['entityType'];
-$supportedEntityTypes = ['categories', 'savings_goals'];
+$supportedEntityTypes = ['categories', 'savings_goals', 'financial_plans'];
 if (!in_array($entityType, $supportedEntityTypes, true)) {
     sendError('unsupported_entity_type', "Type d'entité non pris en charge pour l'instant : $entityType", 400);
 }
@@ -75,6 +76,7 @@ foreach ($body['operations'] as $operation) {
     $results[] = match ($entityType) {
         'categories' => applyCategoryOperation($pdo, $userId, (string) $operation['operation'], $operation['entity']),
         'savings_goals' => applySavingsGoalOperation($pdo, $userId, (string) $operation['operation'], $operation['entity']),
+        'financial_plans' => applyFinancialPlanOperation($pdo, $userId, (string) $operation['operation'], $operation['entity']),
     };
 }
 
@@ -354,6 +356,155 @@ function fetchSavingsGoalRow(PDO $pdo, string $userId, string $id): ?array
     $stmt = $pdo->prepare(
         'SELECT id, user_id, name, target_amount, current_amount, currency_code, deadline, created_at, updated_at, deleted_at, version
          FROM savings_goals WHERE id = :id AND user_id = :user_id LIMIT 1'
+    );
+    $stmt->execute(['id' => $id, 'user_id' => $userId]);
+    $row = $stmt->fetch();
+    return $row === false ? null : $row;
+}
+
+/**
+ * `financial_plans` — même schéma que `categories`/`savings_goals` ci-dessus. QUATRE champs
+ * NULLABLE (`description`, `target_amount`, `start_date`, `end_date`, voir
+ * `database/migrations/001_initial_schema.sql`) : `array_key_exists` (pas `isset`) pour chacun dans
+ * `upsertExistingFinancialPlan`, même raisonnement que `deadline` pour `savings_goals`. Les
+ * dépenses prévues (`financial_plan_items`) ne sont PAS synchronisées à cette étape — seule la
+ * planification elle-même l'est (voir le plan validé).
+ */
+function applyFinancialPlanOperation(PDO $pdo, string $userId, string $operationType, array $entity): array
+{
+    $id = (string) ($entity['id'] ?? '');
+    if ($id === '') {
+        $id = generateUuidV4();
+    }
+
+    $nowMillis = (int) round(microtime(true) * 1000);
+
+    switch ($operationType) {
+        case 'CREATE':
+            return createFinancialPlan($pdo, $userId, $id, $entity, $nowMillis);
+
+        case 'UPDATE':
+        case 'DELETE':
+            return upsertExistingFinancialPlan($pdo, $userId, $id, $operationType, $entity, $nowMillis);
+
+        default:
+            return ['status' => 'error', 'errorCode' => 'invalid_operation_type', 'entityId' => $id];
+    }
+}
+
+function createFinancialPlan(PDO $pdo, string $userId, string $id, array $entity, int $nowMillis): array
+{
+    $existing = fetchFinancialPlanRow($pdo, $userId, $id);
+    if ($existing !== null) {
+        return ['status' => 'accepted', 'entityId' => $id, 'serverEntity' => toCamelCaseRow($existing)];
+    }
+
+    $stmt = $pdo->prepare(
+        'INSERT INTO financial_plans (id, user_id, name, description, available_amount, target_amount,
+             period_type, start_date, end_date, icon, color_argb, status, created_at, updated_at, deleted_at, version)
+         VALUES (:id, :user_id, :name, :description, :available_amount, :target_amount,
+             :period_type, :start_date, :end_date, :icon, :color_argb, :status, :created_at, :updated_at, NULL, 1)'
+    );
+    $stmt->execute([
+        'id' => $id,
+        'user_id' => $userId,
+        'name' => (string) ($entity['name'] ?? ''),
+        'description' => isset($entity['description']) ? (string) $entity['description'] : null,
+        'available_amount' => (int) ($entity['availableAmount'] ?? 0),
+        'target_amount' => isset($entity['targetAmount']) ? (int) $entity['targetAmount'] : null,
+        'period_type' => (string) ($entity['periodType'] ?? ''),
+        'start_date' => isset($entity['startDate']) ? (int) $entity['startDate'] : null,
+        'end_date' => isset($entity['endDate']) ? (int) $entity['endDate'] : null,
+        'icon' => (string) ($entity['icon'] ?? ''),
+        'color_argb' => (int) ($entity['colorArgb'] ?? 0),
+        'status' => (string) ($entity['status'] ?? ''),
+        'created_at' => (int) ($entity['createdAt'] ?? $nowMillis),
+        'updated_at' => (int) ($entity['updatedAt'] ?? $nowMillis),
+    ]);
+
+    $row = fetchFinancialPlanRow($pdo, $userId, $id);
+    return ['status' => 'accepted', 'entityId' => $id, 'serverEntity' => toCamelCaseRow($row)];
+}
+
+function upsertExistingFinancialPlan(PDO $pdo, string $userId, string $id, string $operationType, array $entity, int $nowMillis): array
+{
+    $current = fetchFinancialPlanRow($pdo, $userId, $id);
+    if ($current === null) {
+        return ['status' => 'error', 'errorCode' => 'not_found', 'entityId' => $id];
+    }
+
+    $baseVersion = isset($entity['baseVersion']) ? (int) $entity['baseVersion'] : null;
+    $incomingUpdatedAt = (int) ($entity['updatedAt'] ?? $nowMillis);
+    $currentVersion = (int) $current['version'];
+    $currentUpdatedAt = (int) $current['updated_at'];
+
+    $hasConflict = $baseVersion !== null && $baseVersion !== $currentVersion;
+
+    if ($hasConflict && $currentUpdatedAt >= $incomingUpdatedAt) {
+        logConflict($pdo, $userId, 'financial_plans', $id, $entity, $current, $nowMillis);
+        return ['status' => 'conflict_resolved', 'entityId' => $id, 'serverEntity' => toCamelCaseRow($current)];
+    }
+
+    if ($hasConflict) {
+        logConflict($pdo, $userId, 'financial_plans', $id, $current, $entity, $nowMillis);
+    }
+
+    if ($operationType === 'DELETE') {
+        $stmt = $pdo->prepare(
+            'UPDATE financial_plans SET deleted_at = :deleted_at, updated_at = :updated_at, version = version + 1
+             WHERE id = :id AND user_id = :user_id'
+        );
+        $stmt->execute([
+            'deleted_at' => $incomingUpdatedAt,
+            'updated_at' => $incomingUpdatedAt,
+            'id' => $id,
+            'user_id' => $userId,
+        ]);
+    } else {
+        $stmt = $pdo->prepare(
+            'UPDATE financial_plans
+             SET name = :name, description = :description, available_amount = :available_amount,
+                 target_amount = :target_amount, period_type = :period_type, start_date = :start_date,
+                 end_date = :end_date, icon = :icon, color_argb = :color_argb, status = :status,
+                 updated_at = :updated_at, deleted_at = NULL, version = version + 1
+             WHERE id = :id AND user_id = :user_id'
+        );
+        $stmt->execute([
+            'name' => (string) ($entity['name'] ?? $current['name']),
+            'description' => array_key_exists('description', $entity)
+                ? ($entity['description'] !== null ? (string) $entity['description'] : null)
+                : $current['description'],
+            'available_amount' => (int) ($entity['availableAmount'] ?? $current['available_amount']),
+            'target_amount' => array_key_exists('targetAmount', $entity)
+                ? ($entity['targetAmount'] !== null ? (int) $entity['targetAmount'] : null)
+                : $current['target_amount'],
+            'period_type' => (string) ($entity['periodType'] ?? $current['period_type']),
+            'start_date' => array_key_exists('startDate', $entity)
+                ? ($entity['startDate'] !== null ? (int) $entity['startDate'] : null)
+                : $current['start_date'],
+            'end_date' => array_key_exists('endDate', $entity)
+                ? ($entity['endDate'] !== null ? (int) $entity['endDate'] : null)
+                : $current['end_date'],
+            'icon' => (string) ($entity['icon'] ?? $current['icon']),
+            'color_argb' => (int) ($entity['colorArgb'] ?? $current['color_argb']),
+            'status' => (string) ($entity['status'] ?? $current['status']),
+            'updated_at' => $incomingUpdatedAt,
+            'id' => $id,
+            'user_id' => $userId,
+        ]);
+    }
+
+    $row = fetchFinancialPlanRow($pdo, $userId, $id);
+    $status = $hasConflict ? 'conflict_resolved' : 'accepted';
+    return ['status' => $status, 'entityId' => $id, 'serverEntity' => toCamelCaseRow($row)];
+}
+
+function fetchFinancialPlanRow(PDO $pdo, string $userId, string $id): ?array
+{
+    $stmt = $pdo->prepare(
+        'SELECT id, user_id, name, description, available_amount, target_amount, period_type,
+             start_date, end_date, icon, color_argb, status, created_at, updated_at, deleted_at, version
+         FROM financial_plans WHERE id = :id AND user_id = :user_id LIMIT 1'
     );
     $stmt->execute(['id' => $id, 'user_id' => $userId]);
     $row = $stmt->fetch();

@@ -16,10 +16,11 @@ require_once __DIR__ . '/../middleware/auth_middleware.php';
  * complet de la table (docs/sync/AUDIT-ET-ARCHITECTURE-SYNC.md, section 10 : "pull incrémental via
  * updated_after").
  *
- * `categories` et `savings_goals` sont câblées pour l'instant (voir la doc de tête de `push.php`
- * pour la même décision et sa justification). `entity_type` est déjà un paramètre — pas juste
- * "pull categories" en dur — pour que l'extension future n'ait pas besoin de changer la FORME de
- * cette route, seulement d'ajouter un `case` dans le switch ci-dessous (confirmé par cet ajout).
+ * `categories`, `savings_goals` et `financial_plans` sont câblées pour l'instant (voir la doc de
+ * tête de `push.php` pour la même décision et sa justification). `entity_type` est déjà un
+ * paramètre — pas juste "pull categories" en dur — pour que l'extension future n'ait pas besoin de
+ * changer la FORME de cette route, seulement d'ajouter un `case` dans le switch ci-dessous
+ * (confirmé par ce troisième ajout).
  *
  * Réponse : { "entities": [...], "serverTime": <millis> }. `serverTime` (horloge du SERVEUR, pas
  * de l'appareil) est la valeur que l'appareil doit conserver comme `updated_after` pour son
@@ -60,6 +61,19 @@ switch ($entityType) {
         $stmt = $pdo->prepare(
             "SELECT id, user_id, name, target_amount, current_amount, currency_code, deadline, created_at, updated_at, deleted_at, version
              FROM savings_goals
+             WHERE user_id = :user_id AND updated_at > :updated_after
+             ORDER BY updated_at ASC
+             LIMIT $batchLimit"
+        );
+        $stmt->execute(['user_id' => $userId, 'updated_after' => $updatedAfter]);
+        $rows = $stmt->fetchAll();
+        break;
+
+    case 'financial_plans':
+        $stmt = $pdo->prepare(
+            "SELECT id, user_id, name, description, available_amount, target_amount, period_type,
+                 start_date, end_date, icon, color_argb, status, created_at, updated_at, deleted_at, version
+             FROM financial_plans
              WHERE user_id = :user_id AND updated_at > :updated_after
              ORDER BY updated_at ASC
              LIMIT $batchLimit"

@@ -1,19 +1,26 @@
 package com.arzikina.ne.data.repository
 
 import com.arzikina.ne.data.local.dao.CategoryDao
+import com.arzikina.ne.data.local.dao.FinancialPlanDao
 import com.arzikina.ne.data.local.dao.SavingsGoalDao
 import com.arzikina.ne.data.local.dao.SyncQueueDao
 import com.arzikina.ne.data.local.entity.CategoryEntity
+import com.arzikina.ne.data.local.entity.FinancialPlanEntity
 import com.arzikina.ne.data.local.entity.SavingsGoalEntity
 import com.arzikina.ne.data.local.entity.SyncQueueEntity
 import com.arzikina.ne.data.remote.api.SyncApi
 import com.arzikina.ne.data.remote.dto.CategoryServerStateDto
 import com.arzikina.ne.data.remote.dto.CategorySyncPayload
+import com.arzikina.ne.data.remote.dto.FinancialPlanServerStateDto
+import com.arzikina.ne.data.remote.dto.FinancialPlanSyncPayload
 import com.arzikina.ne.data.remote.dto.SavingsGoalServerStateDto
 import com.arzikina.ne.data.remote.dto.SavingsGoalSyncPayload
 import com.arzikina.ne.data.remote.dto.SyncPushOperationDto
 import com.arzikina.ne.data.remote.dto.SyncPushRequestDto
 import com.arzikina.ne.domain.model.CategoryIcon
+import com.arzikina.ne.domain.model.FinancialPlanIcon
+import com.arzikina.ne.domain.model.PlanPeriodType
+import com.arzikina.ne.domain.model.PlanStatus
 import com.arzikina.ne.domain.model.SyncEngineResult
 import com.arzikina.ne.domain.model.SyncOperation
 import com.arzikina.ne.domain.model.SyncPullResult
@@ -34,24 +41,28 @@ import javax.inject.Singleton
 
 /**
  * Voir [SyncEngine] pour le contrat et l'étape actuelle. [SUPPORTED_ENTITY_TYPES] (`categories`,
- * `savings_goals`) sont traitées en DUR ici — même choix que `server/api/sync/push.php` côté
- * serveur (voir sa doc de tête) : pas d'abstraction générique par type d'entité tant qu'une
- * TROISIÈME entité ne vient pas confirmer le motif à en extraire (règle de trois). Seule la boucle
- * EXTERNE (drainage de la file, pagination, curseur, transitions de statut) est déjà partagée entre
- * les deux — voir [pushBatch]/[pullEntityType] — seules [applyCategoryServerState]/
- * [applySavingsGoalServerState] (et la construction du payload, faite en amont par chaque
+ * `savings_goals`, `financial_plans`) sont traitées en DUR ici — même choix que
+ * `server/api/sync/push.php` côté serveur (voir sa doc de tête) : la règle de trois est atteinte
+ * avec `financial_plans`, mais la généralisation reste volontairement une étape SÉPARÉE et
+ * différée (voir le plan validé), pour ne jamais mélanger une nouvelle entité et un refactor
+ * comportemental dans le même changement à vérifier. Seule la boucle EXTERNE (drainage de la file,
+ * pagination, curseur, transitions de statut) est déjà partagée entre les trois — voir
+ * [pushBatch]/[pullEntityType] — seules [applyCategoryServerState]/[applySavingsGoalServerState]/
+ * [applyFinancialPlanServerState] (et la construction du payload, faite en amont par chaque
  * repository) diffèrent réellement par entité.
  *
- * Dépend directement de [CategoryDao]/[SavingsGoalDao] (couche DATA vers couche DATA, jamais via
- * leurs repositories respectifs, qui filtrent par utilisateur COURANT et masquent volontairement
- * `syncId`/`version` au domaine — voir leur KDoc) : ce moteur doit pouvoir relire/écrire ces champs
- * bruts, y compris sur des lignes déjà supprimées (voir `getBySyncId` de chaque DAO).
+ * Dépend directement de [CategoryDao]/[SavingsGoalDao]/[FinancialPlanDao] (couche DATA vers couche
+ * DATA, jamais via leurs repositories respectifs, qui filtrent par utilisateur COURANT et masquent
+ * volontairement `syncId`/`version` au domaine — voir leur KDoc) : ce moteur doit pouvoir
+ * relire/écrire ces champs bruts, y compris sur des lignes déjà supprimées (voir `getBySyncId` de
+ * chaque DAO).
  */
 @Singleton
 class SyncEngineImpl @Inject constructor(
     private val syncQueueDao: SyncQueueDao,
     private val categoryDao: CategoryDao,
     private val savingsGoalDao: SavingsGoalDao,
+    private val financialPlanDao: FinancialPlanDao,
     private val syncApi: SyncApi,
     private val syncCursorStore: SyncCursorStore,
     private val syncQueueEnqueuer: SyncQueueEnqueuer,
@@ -59,8 +70,24 @@ class SyncEngineImpl @Inject constructor(
     private val json: Json
 ) : SyncEngine {
 
+    /**
+     * `PENDING` ET `FAILED` (pas seulement `PENDING`) : sans ce second statut, une entrée passée en
+     * échec une fois (ex. serveur temporairement indisponible, bug côté serveur depuis corrigé)
+     * n'était plus JAMAIS retentée — bug réel rencontré en pratique lors du câblage de
+     * `financial_plans` (déploiement serveur momentanément désynchronisé de l'app). `SYNCING`/
+     * `SYNCED` restent exclus (déjà en cours ou déjà confirmées).
+     *
+     * RISQUE ASSUMÉ ET SIGNALÉ : une entrée en échec pour une raison PERMANENTE (donnée invalide
+     * qui ne passera jamais côté serveur, pas un simple souci réseau/déploiement transitoire) sera
+     * retentée INDÉFINIMENT à chaque appel — manuel (`SettingsViewModel.syncNow`) ou automatique
+     * (toutes les [com.arzikina.ne.work.SyncWorkScheduler.INTERVAL_HOURS] heures). `retryCount`
+     * (voir `SyncQueueEntity`) est déjà suivi mais volontairement PAS encore utilisé pour plafonner
+     * ces tentatives — à revisiter dans une étape dédiée si ce cas se présente réellement en
+     * pratique (voir `retryCount` incrémenté à chaque échec par [markFailed], prêt à servir de base
+     * à une limite future).
+     */
     override suspend fun pushPendingChanges(): SyncEngineResult {
-        val pendingEntries = syncQueueDao.getByStatus(SyncStatus.PENDING)
+        val pendingEntries = syncQueueDao.getByStatus(SyncStatus.PENDING) + syncQueueDao.getByStatus(SyncStatus.FAILED)
         if (pendingEntries.isEmpty()) return SyncEngineResult(pushed = 0, succeeded = 0, failed = 0)
 
         var succeeded = 0
@@ -203,6 +230,8 @@ class SyncEngineImpl @Inject constructor(
                 applyCategoryServerState(json.decodeFromJsonElement(CategoryServerStateDto.serializer(), element), allowCreate)
             "savings_goals" ->
                 applySavingsGoalServerState(json.decodeFromJsonElement(SavingsGoalServerStateDto.serializer(), element), allowCreate)
+            "financial_plans" ->
+                applyFinancialPlanServerState(json.decodeFromJsonElement(FinancialPlanServerStateDto.serializer(), element), allowCreate)
         }
     }
 
@@ -282,6 +311,7 @@ class SyncEngineImpl @Inject constructor(
         val userId = sessionManager.getCurrentUserIdOnce() ?: return
         enqueueUnsyncedCategories(userId)
         enqueueUnsyncedSavingsGoals(userId)
+        enqueueUnsyncedFinancialPlans(userId)
     }
 
     /**
@@ -341,6 +371,68 @@ class SyncEngineImpl @Inject constructor(
         }
     }
 
+    /** Voir [applyCategoryServerState] — même logique, appliquée à `financial_plans`. Les dépenses
+     *  prévues (`financial_plan_items`) ne sont PAS touchées ici : elles ne sont pas synchronisées
+     *  à cette étape (voir la KDoc de tête). */
+    private suspend fun applyFinancialPlanServerState(state: FinancialPlanServerStateDto, allowCreate: Boolean) {
+        val local = financialPlanDao.getBySyncId(state.id)
+        if (local == null && !allowCreate) return
+        val userId = local?.userId ?: sessionManager.getCurrentUserIdOnce() ?: return
+
+        financialPlanDao.upsert(
+            FinancialPlanEntity(
+                id = local?.id ?: 0L,
+                userId = userId,
+                name = state.name,
+                description = state.description,
+                availableAmount = state.availableAmount,
+                targetAmount = state.targetAmount,
+                periodType = runCatching { PlanPeriodType.valueOf(state.periodType) }.getOrDefault(local?.periodType ?: PlanPeriodType.NONE),
+                startDate = state.startDate,
+                endDate = state.endDate,
+                icon = runCatching { FinancialPlanIcon.valueOf(state.icon) }.getOrDefault(local?.icon ?: FinancialPlanIcon.WALLET),
+                colorArgb = state.colorArgb,
+                status = runCatching { PlanStatus.valueOf(state.status) }.getOrDefault(local?.status ?: PlanStatus.ACTIVE),
+                createdAt = state.createdAt,
+                syncId = state.id,
+                updatedAt = state.updatedAt,
+                deletedAt = state.deletedAt,
+                version = state.version
+            )
+        )
+    }
+
+    /** Voir [enqueueUnsyncedCategories] — même logique, appliquée à `financial_plans`. */
+    private suspend fun enqueueUnsyncedFinancialPlans(userId: Long) {
+        financialPlanDao.getUnsyncedForUser(userId).forEach { plan ->
+            val entity = plan.copy(syncId = UUID.randomUUID().toString())
+            financialPlanDao.upsert(entity)
+
+            val payload = FinancialPlanSyncPayload(
+                id = requireNotNull(entity.syncId),
+                baseVersion = null,
+                name = entity.name,
+                description = entity.description,
+                availableAmount = entity.availableAmount,
+                targetAmount = entity.targetAmount,
+                periodType = entity.periodType.name,
+                startDate = entity.startDate,
+                endDate = entity.endDate,
+                icon = entity.icon.name,
+                colorArgb = entity.colorArgb,
+                status = entity.status.name,
+                createdAt = entity.createdAt,
+                updatedAt = entity.updatedAt
+            )
+            syncQueueEnqueuer.enqueue(
+                entityType = "financial_plans",
+                entitySyncId = payload.id,
+                operation = SyncOperation.CREATE,
+                payloadJson = json.encodeToString(FinancialPlanSyncPayload.serializer(), payload)
+            )
+        }
+    }
+
     private suspend fun markSyncing(entries: List<SyncQueueEntity>) {
         entries.forEach { syncQueueDao.update(it.copy(status = SyncStatus.SYNCING)) }
     }
@@ -368,7 +460,7 @@ class SyncEngineImpl @Inject constructor(
     }
 
     private companion object {
-        val SUPPORTED_ENTITY_TYPES = setOf("categories", "savings_goals")
+        val SUPPORTED_ENTITY_TYPES = setOf("categories", "savings_goals", "financial_plans")
         const val MAX_ERROR_MESSAGE_LENGTH = 200
     }
 }
