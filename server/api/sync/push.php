@@ -24,14 +24,14 @@ require_once __DIR__ . '/../middleware/auth_middleware.php';
  * ligne modifiée. La réponse préserve l'ORDRE du tableau `operations` reçu : `results[i]`
  * correspond toujours à `operations[i]`.
  *
- * `categories`, `savings_goals` et `financial_plans` sont câblées pour l'instant — voir `pull.php`
- * pour la même décision. Le découpage en petites fonctions ci-dessous
- * (`createCategory`/`createSavingsGoal`/`createFinancialPlan`,
- * `upsertExistingCategory`/`upsertExistingSavingsGoal`/`upsertExistingFinancialPlan`...) n'est
- * TOUJOURS PAS extrait vers `services/` malgré cette TROISIÈME entité (règle de trois normalement
- * atteinte ici) : la généralisation est traitée comme une étape SÉPARÉE et délibérément différée
- * (voir le plan validé), pour ne jamais mélanger une nouvelle fonctionnalité et un refactor
- * comportemental dans le même changement à vérifier.
+ * `categories`, `savings_goals`, `financial_plans` et `persons` sont câblées pour l'instant — voir
+ * `pull.php` pour la même décision. Le découpage en petites fonctions ci-dessous
+ * (`createCategory`/`createSavingsGoal`/`createFinancialPlan`/`createPerson`,
+ * `upsertExistingCategory`/`upsertExistingSavingsGoal`/`upsertExistingFinancialPlan`/
+ * `upsertExistingPerson`...) n'est TOUJOURS PAS extrait vers `services/` malgré cette QUATRIÈME
+ * entité : la généralisation reste une étape SÉPARÉE et délibérément différée (voir le plan validé
+ * à la règle de trois), pour ne jamais mélanger une nouvelle entité et un refactor comportemental
+ * dans le même changement à vérifier.
  *
  * SÉCURITÉ — `entity.userId` (ou toute variante), même présent dans le payload, est TOUJOURS
  * IGNORÉ : le propriétaire réel de chaque écriture est TOUJOURS celui du token (voir
@@ -61,7 +61,7 @@ if (!is_array($body) || !isset($body['entityType'], $body['operations']) || !is_
 }
 
 $entityType = (string) $body['entityType'];
-$supportedEntityTypes = ['categories', 'savings_goals', 'financial_plans'];
+$supportedEntityTypes = ['categories', 'savings_goals', 'financial_plans', 'persons'];
 if (!in_array($entityType, $supportedEntityTypes, true)) {
     sendError('unsupported_entity_type', "Type d'entité non pris en charge pour l'instant : $entityType", 400);
 }
@@ -77,6 +77,7 @@ foreach ($body['operations'] as $operation) {
         'categories' => applyCategoryOperation($pdo, $userId, (string) $operation['operation'], $operation['entity']),
         'savings_goals' => applySavingsGoalOperation($pdo, $userId, (string) $operation['operation'], $operation['entity']),
         'financial_plans' => applyFinancialPlanOperation($pdo, $userId, (string) $operation['operation'], $operation['entity']),
+        'persons' => applyPersonOperation($pdo, $userId, (string) $operation['operation'], $operation['entity']),
     };
 }
 
@@ -505,6 +506,127 @@ function fetchFinancialPlanRow(PDO $pdo, string $userId, string $id): ?array
         'SELECT id, user_id, name, description, available_amount, target_amount, period_type,
              start_date, end_date, icon, color_argb, status, created_at, updated_at, deleted_at, version
          FROM financial_plans WHERE id = :id AND user_id = :user_id LIMIT 1'
+    );
+    $stmt->execute(['id' => $id, 'user_id' => $userId]);
+    $row = $stmt->fetch();
+    return $row === false ? null : $row;
+}
+
+/**
+ * `persons` — même schéma que `categories`/`savings_goals`/`financial_plans` ci-dessus. UN SEUL
+ * champ NULLABLE (`phone`, voir `database/migrations/001_initial_schema.sql`) : `array_key_exists`
+ * (pas `isset`) dans `upsertExistingPerson`, même raisonnement que `deadline`/`description` sur les
+ * autres entités. Les prêts/emprunts (`loans`) ne sont PAS synchronisés à cette étape — seule la
+ * personne elle-même l'est (voir le plan validé) ; côté Android, leur suppression reste physique et
+ * explicite (voir `PersonRepositoryImpl.deletePerson`), inchangée par ce câblage.
+ */
+function applyPersonOperation(PDO $pdo, string $userId, string $operationType, array $entity): array
+{
+    $id = (string) ($entity['id'] ?? '');
+    if ($id === '') {
+        $id = generateUuidV4();
+    }
+
+    $nowMillis = (int) round(microtime(true) * 1000);
+
+    switch ($operationType) {
+        case 'CREATE':
+            return createPerson($pdo, $userId, $id, $entity, $nowMillis);
+
+        case 'UPDATE':
+        case 'DELETE':
+            return upsertExistingPerson($pdo, $userId, $id, $operationType, $entity, $nowMillis);
+
+        default:
+            return ['status' => 'error', 'errorCode' => 'invalid_operation_type', 'entityId' => $id];
+    }
+}
+
+function createPerson(PDO $pdo, string $userId, string $id, array $entity, int $nowMillis): array
+{
+    $existing = fetchPersonRow($pdo, $userId, $id);
+    if ($existing !== null) {
+        return ['status' => 'accepted', 'entityId' => $id, 'serverEntity' => toCamelCaseRow($existing)];
+    }
+
+    $stmt = $pdo->prepare(
+        'INSERT INTO persons (id, user_id, name, phone, created_at, updated_at, deleted_at, version)
+         VALUES (:id, :user_id, :name, :phone, :created_at, :updated_at, NULL, 1)'
+    );
+    $stmt->execute([
+        'id' => $id,
+        'user_id' => $userId,
+        'name' => (string) ($entity['name'] ?? ''),
+        'phone' => isset($entity['phone']) ? (string) $entity['phone'] : null,
+        'created_at' => (int) ($entity['createdAt'] ?? $nowMillis),
+        'updated_at' => (int) ($entity['updatedAt'] ?? $nowMillis),
+    ]);
+
+    $row = fetchPersonRow($pdo, $userId, $id);
+    return ['status' => 'accepted', 'entityId' => $id, 'serverEntity' => toCamelCaseRow($row)];
+}
+
+function upsertExistingPerson(PDO $pdo, string $userId, string $id, string $operationType, array $entity, int $nowMillis): array
+{
+    $current = fetchPersonRow($pdo, $userId, $id);
+    if ($current === null) {
+        return ['status' => 'error', 'errorCode' => 'not_found', 'entityId' => $id];
+    }
+
+    $baseVersion = isset($entity['baseVersion']) ? (int) $entity['baseVersion'] : null;
+    $incomingUpdatedAt = (int) ($entity['updatedAt'] ?? $nowMillis);
+    $currentVersion = (int) $current['version'];
+    $currentUpdatedAt = (int) $current['updated_at'];
+
+    $hasConflict = $baseVersion !== null && $baseVersion !== $currentVersion;
+
+    if ($hasConflict && $currentUpdatedAt >= $incomingUpdatedAt) {
+        logConflict($pdo, $userId, 'persons', $id, $entity, $current, $nowMillis);
+        return ['status' => 'conflict_resolved', 'entityId' => $id, 'serverEntity' => toCamelCaseRow($current)];
+    }
+
+    if ($hasConflict) {
+        logConflict($pdo, $userId, 'persons', $id, $current, $entity, $nowMillis);
+    }
+
+    if ($operationType === 'DELETE') {
+        $stmt = $pdo->prepare(
+            'UPDATE persons SET deleted_at = :deleted_at, updated_at = :updated_at, version = version + 1
+             WHERE id = :id AND user_id = :user_id'
+        );
+        $stmt->execute([
+            'deleted_at' => $incomingUpdatedAt,
+            'updated_at' => $incomingUpdatedAt,
+            'id' => $id,
+            'user_id' => $userId,
+        ]);
+    } else {
+        $stmt = $pdo->prepare(
+            'UPDATE persons
+             SET name = :name, phone = :phone, updated_at = :updated_at, deleted_at = NULL, version = version + 1
+             WHERE id = :id AND user_id = :user_id'
+        );
+        $stmt->execute([
+            'name' => (string) ($entity['name'] ?? $current['name']),
+            'phone' => array_key_exists('phone', $entity)
+                ? ($entity['phone'] !== null ? (string) $entity['phone'] : null)
+                : $current['phone'],
+            'updated_at' => $incomingUpdatedAt,
+            'id' => $id,
+            'user_id' => $userId,
+        ]);
+    }
+
+    $row = fetchPersonRow($pdo, $userId, $id);
+    $status = $hasConflict ? 'conflict_resolved' : 'accepted';
+    return ['status' => $status, 'entityId' => $id, 'serverEntity' => toCamelCaseRow($row)];
+}
+
+function fetchPersonRow(PDO $pdo, string $userId, string $id): ?array
+{
+    $stmt = $pdo->prepare(
+        'SELECT id, user_id, name, phone, created_at, updated_at, deleted_at, version
+         FROM persons WHERE id = :id AND user_id = :user_id LIMIT 1'
     );
     $stmt->execute(['id' => $id, 'user_id' => $userId]);
     $row = $stmt->fetch();

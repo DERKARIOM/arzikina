@@ -13,7 +13,7 @@ import kotlinx.coroutines.flow.Flow
  * ÉTAPE ACTUELLE — voir `SyncEngineImpl` : déclenché manuellement (bouton "Synchroniser
  * maintenant", voir `SettingsViewModel.syncNow`) ET automatiquement (périodique + retour de
  * connectivité, voir `work/SyncWorkScheduler.kt`/`work/SyncConnectivityObserver.kt`). Traite
- * `categories`, `savings_goals` et `financial_plans` des deux côtés — voir
+ * `categories`, `savings_goals`, `financial_plans` et `persons` des deux côtés — voir
  * `SUPPORTED_ENTITY_TYPES` dans `SyncEngineImpl` pour la liste à jour, étendue au fil des étapes
  * dédiées.
  */

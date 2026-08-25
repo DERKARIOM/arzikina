@@ -2,10 +2,12 @@ package com.arzikina.ne.data.repository
 
 import com.arzikina.ne.data.local.dao.CategoryDao
 import com.arzikina.ne.data.local.dao.FinancialPlanDao
+import com.arzikina.ne.data.local.dao.PersonDao
 import com.arzikina.ne.data.local.dao.SavingsGoalDao
 import com.arzikina.ne.data.local.dao.SyncQueueDao
 import com.arzikina.ne.data.local.entity.CategoryEntity
 import com.arzikina.ne.data.local.entity.FinancialPlanEntity
+import com.arzikina.ne.data.local.entity.PersonEntity
 import com.arzikina.ne.data.local.entity.SavingsGoalEntity
 import com.arzikina.ne.data.local.entity.SyncQueueEntity
 import com.arzikina.ne.data.remote.api.SyncApi
@@ -13,6 +15,8 @@ import com.arzikina.ne.data.remote.dto.CategoryServerStateDto
 import com.arzikina.ne.data.remote.dto.CategorySyncPayload
 import com.arzikina.ne.data.remote.dto.FinancialPlanServerStateDto
 import com.arzikina.ne.data.remote.dto.FinancialPlanSyncPayload
+import com.arzikina.ne.data.remote.dto.PersonServerStateDto
+import com.arzikina.ne.data.remote.dto.PersonSyncPayload
 import com.arzikina.ne.data.remote.dto.SavingsGoalServerStateDto
 import com.arzikina.ne.data.remote.dto.SavingsGoalSyncPayload
 import com.arzikina.ne.data.remote.dto.SyncPushOperationDto
@@ -41,21 +45,21 @@ import javax.inject.Singleton
 
 /**
  * Voir [SyncEngine] pour le contrat et l'étape actuelle. [SUPPORTED_ENTITY_TYPES] (`categories`,
- * `savings_goals`, `financial_plans`) sont traitées en DUR ici — même choix que
- * `server/api/sync/push.php` côté serveur (voir sa doc de tête) : la règle de trois est atteinte
- * avec `financial_plans`, mais la généralisation reste volontairement une étape SÉPARÉE et
- * différée (voir le plan validé), pour ne jamais mélanger une nouvelle entité et un refactor
- * comportemental dans le même changement à vérifier. Seule la boucle EXTERNE (drainage de la file,
- * pagination, curseur, transitions de statut) est déjà partagée entre les trois — voir
- * [pushBatch]/[pullEntityType] — seules [applyCategoryServerState]/[applySavingsGoalServerState]/
- * [applyFinancialPlanServerState] (et la construction du payload, faite en amont par chaque
- * repository) diffèrent réellement par entité.
+ * `savings_goals`, `financial_plans`, `persons`) sont traitées en DUR ici — même choix que
+ * `server/api/sync/push.php` côté serveur (voir sa doc de tête) : la généralisation reste
+ * volontairement une étape SÉPARÉE et différée (voir le plan validé), pour ne jamais mélanger une
+ * nouvelle entité et un refactor comportemental dans le même changement à vérifier. Seule la
+ * boucle EXTERNE (drainage de la file, pagination, curseur, transitions de statut) est déjà
+ * partagée entre les quatre — voir [pushBatch]/[pullEntityType] — seules
+ * [applyCategoryServerState]/[applySavingsGoalServerState]/[applyFinancialPlanServerState]/
+ * [applyPersonServerState] (et la construction du payload, faite en amont par chaque repository)
+ * diffèrent réellement par entité.
  *
- * Dépend directement de [CategoryDao]/[SavingsGoalDao]/[FinancialPlanDao] (couche DATA vers couche
- * DATA, jamais via leurs repositories respectifs, qui filtrent par utilisateur COURANT et masquent
- * volontairement `syncId`/`version` au domaine — voir leur KDoc) : ce moteur doit pouvoir
- * relire/écrire ces champs bruts, y compris sur des lignes déjà supprimées (voir `getBySyncId` de
- * chaque DAO).
+ * Dépend directement de [CategoryDao]/[SavingsGoalDao]/[FinancialPlanDao]/[PersonDao] (couche DATA
+ * vers couche DATA, jamais via leurs repositories respectifs, qui filtrent par utilisateur COURANT
+ * et masquent volontairement `syncId`/`version` au domaine — voir leur KDoc) : ce moteur doit
+ * pouvoir relire/écrire ces champs bruts, y compris sur des lignes déjà supprimées (voir
+ * `getBySyncId` de chaque DAO).
  */
 @Singleton
 class SyncEngineImpl @Inject constructor(
@@ -63,6 +67,7 @@ class SyncEngineImpl @Inject constructor(
     private val categoryDao: CategoryDao,
     private val savingsGoalDao: SavingsGoalDao,
     private val financialPlanDao: FinancialPlanDao,
+    private val personDao: PersonDao,
     private val syncApi: SyncApi,
     private val syncCursorStore: SyncCursorStore,
     private val syncQueueEnqueuer: SyncQueueEnqueuer,
@@ -232,6 +237,8 @@ class SyncEngineImpl @Inject constructor(
                 applySavingsGoalServerState(json.decodeFromJsonElement(SavingsGoalServerStateDto.serializer(), element), allowCreate)
             "financial_plans" ->
                 applyFinancialPlanServerState(json.decodeFromJsonElement(FinancialPlanServerStateDto.serializer(), element), allowCreate)
+            "persons" ->
+                applyPersonServerState(json.decodeFromJsonElement(PersonServerStateDto.serializer(), element), allowCreate)
         }
     }
 
@@ -312,6 +319,7 @@ class SyncEngineImpl @Inject constructor(
         enqueueUnsyncedCategories(userId)
         enqueueUnsyncedSavingsGoals(userId)
         enqueueUnsyncedFinancialPlans(userId)
+        enqueueUnsyncedPersons(userId)
     }
 
     /**
@@ -433,6 +441,52 @@ class SyncEngineImpl @Inject constructor(
         }
     }
 
+    /** Voir [applyCategoryServerState] — même logique, appliquée à `persons`. Les prêts/emprunts
+     *  (`loans`) ne sont PAS touchés ici : ils ne sont pas synchronisés à cette étape (voir la KDoc
+     *  de tête). */
+    private suspend fun applyPersonServerState(state: PersonServerStateDto, allowCreate: Boolean) {
+        val local = personDao.getBySyncId(state.id)
+        if (local == null && !allowCreate) return
+        val userId = local?.userId ?: sessionManager.getCurrentUserIdOnce() ?: return
+
+        personDao.upsert(
+            PersonEntity(
+                id = local?.id ?: 0L,
+                userId = userId,
+                name = state.name,
+                phone = state.phone,
+                createdAt = state.createdAt,
+                syncId = state.id,
+                updatedAt = state.updatedAt,
+                deletedAt = state.deletedAt,
+                version = state.version
+            )
+        )
+    }
+
+    /** Voir [enqueueUnsyncedCategories] — même logique, appliquée à `persons`. */
+    private suspend fun enqueueUnsyncedPersons(userId: Long) {
+        personDao.getUnsyncedForUser(userId).forEach { person ->
+            val entity = person.copy(syncId = UUID.randomUUID().toString())
+            personDao.upsert(entity)
+
+            val payload = PersonSyncPayload(
+                id = requireNotNull(entity.syncId),
+                baseVersion = null,
+                name = entity.name,
+                phone = entity.phone,
+                createdAt = entity.createdAt,
+                updatedAt = entity.updatedAt
+            )
+            syncQueueEnqueuer.enqueue(
+                entityType = "persons",
+                entitySyncId = payload.id,
+                operation = SyncOperation.CREATE,
+                payloadJson = json.encodeToString(PersonSyncPayload.serializer(), payload)
+            )
+        }
+    }
+
     private suspend fun markSyncing(entries: List<SyncQueueEntity>) {
         entries.forEach { syncQueueDao.update(it.copy(status = SyncStatus.SYNCING)) }
     }
@@ -460,7 +514,7 @@ class SyncEngineImpl @Inject constructor(
     }
 
     private companion object {
-        val SUPPORTED_ENTITY_TYPES = setOf("categories", "savings_goals", "financial_plans")
+        val SUPPORTED_ENTITY_TYPES = setOf("categories", "savings_goals", "financial_plans", "persons")
         const val MAX_ERROR_MESSAGE_LENGTH = 200
     }
 }
