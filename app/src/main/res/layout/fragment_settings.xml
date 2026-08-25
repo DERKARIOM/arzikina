@@ -456,6 +456,15 @@
                         android:id="@+id/syncRow"
                         layout="@layout/item_settings_row" />
 
+                    <com.google.android.material.divider.MaterialDivider
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="@dimen/spacing_m" />
+
+                    <include
+                        android:id="@+id/syncNowRow"
+                        layout="@layout/item_settings_row" />
+
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 

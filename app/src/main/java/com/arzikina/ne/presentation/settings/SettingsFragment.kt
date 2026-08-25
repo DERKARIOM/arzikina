@@ -22,6 +22,7 @@ import com.arzikina.ne.domain.model.SupportedCurrency
 import com.arzikina.ne.presentation.components.NavAnimations
 import com.arzikina.ne.presentation.profile.BiometricLockUiState
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 
@@ -62,6 +63,8 @@ class SettingsFragment : Fragment(R.layout.fragment_settings) {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch { viewModel.uiState.collect { state -> render(viewBinding, state) } }
                 launch { viewModel.biometricLockState.collect { state -> renderBiometricLock(viewBinding, state) } }
+                launch { viewModel.syncNowState.collect { state -> renderSyncNow(viewBinding, state) } }
+                launch { viewModel.events.collect { event -> handleEvent(viewBinding, event) } }
             }
         }
     }
@@ -221,12 +224,15 @@ class SettingsFragment : Fragment(R.layout.fragment_settings) {
         )
     }
 
-    /** Simple raccourci vers [SyncLoginFragment] (voir `domain/repository/SyncAuthRepository.kt`)
-     *  — icône dédiée `ic_sync_24` (distincte de `ic_cloud_backup_24` utilisée par
-     *  [setUpBackupSection] juste au-dessus, pour ne pas laisser croire qu'il s'agit de la même
-     *  fonctionnalité). Portée volontairement limitée à la connexion pour cette étape : pas
-     *  encore d'affichage d'un état "déjà connecté" ici (voir la doc de classe de
-     *  [SyncLoginFragment]). */
+    /** `syncRow` : simple raccourci vers [SyncLoginFragment] (voir
+     *  `domain/repository/SyncAuthRepository.kt`) — icône dédiée `ic_sync_24` (distincte de
+     *  `ic_cloud_backup_24` utilisée par [setUpBackupSection] juste au-dessus, pour ne pas laisser
+     *  croire qu'il s'agit de la même fonctionnalité). Portée volontairement limitée à la
+     *  connexion pour cette étape : pas encore d'affichage d'un état "déjà connecté" ici (voir la
+     *  doc de classe de [SyncLoginFragment]).
+     *
+     *  `syncNowRow` : PAS [bindNavigationRow] (pas de destination, action ponctuelle qui reste sur
+     *  cet écran) — voir [SettingsViewModel.syncNow]/[renderSyncNow]. */
     private fun setUpSyncSection(binding: FragmentSettingsBinding) {
         bindNavigationRow(
             row = binding.syncRow,
@@ -235,6 +241,11 @@ class SettingsFragment : Fragment(R.layout.fragment_settings) {
             subtitleRes = R.string.settings_sync_row_subtitle,
             destinationId = R.id.syncLoginFragment
         )
+
+        binding.syncNowRow.rowIcon.setImageResource(R.drawable.ic_sync_24)
+        binding.syncNowRow.rowTitle.setText(R.string.settings_sync_now_title)
+        binding.syncNowRow.rowSubtitle.setText(R.string.settings_sync_now_subtitle)
+        binding.syncNowRow.root.setOnClickListener { viewModel.syncNow() }
     }
 
     /**
@@ -304,6 +315,32 @@ class SettingsFragment : Fragment(R.layout.fragment_settings) {
                 R.string.profile_biometric_lock_unavailable_description
             }
         )
+    }
+
+    /** Remplace le chevron de `syncNowRow` par `rowProgress` pendant l'envoi (voir la doc de
+     *  `item_settings_row.xml`) — désactive aussi la ligne entière : un second tap pendant un envoi
+     *  en cours serait ignoré côté ViewModel (voir `SettingsViewModel.syncNow`) mais autant ne pas
+     *  laisser croire qu'il déclenche quoi que ce soit. */
+    private fun renderSyncNow(binding: FragmentSettingsBinding, state: SyncNowUiState) {
+        binding.syncNowRow.root.isEnabled = !state.isSyncing
+        binding.syncNowRow.rowChevron.visibility = if (state.isSyncing) View.GONE else View.VISIBLE
+        binding.syncNowRow.rowProgress.visibility = if (state.isSyncing) View.VISIBLE else View.GONE
+        binding.syncNowRow.rowSubtitle.text = if (state.isSyncing) {
+            getString(R.string.settings_sync_now_in_progress)
+        } else {
+            getString(R.string.settings_sync_now_subtitle)
+        }
+    }
+
+    private fun handleEvent(binding: FragmentSettingsBinding, event: SettingsEvent) {
+        val message = when (event) {
+            is SettingsEvent.SyncFinished -> when {
+                event.result.pushed == 0 -> getString(R.string.settings_sync_now_nothing_pending)
+                else -> getString(R.string.settings_sync_now_result, event.result.succeeded, event.result.failed)
+            }
+            is SettingsEvent.SyncError -> getString(R.string.settings_sync_now_error)
+        }
+        Snackbar.make(binding.root, message, Snackbar.LENGTH_LONG).show()
     }
 
     private fun render(binding: FragmentSettingsBinding, state: SettingsUiState) {

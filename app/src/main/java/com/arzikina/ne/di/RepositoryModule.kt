@@ -14,6 +14,7 @@ import com.arzikina.ne.data.repository.RecurringTransactionRepositoryImpl
 import com.arzikina.ne.data.repository.SavingsGoalRepositoryImpl
 import com.arzikina.ne.data.repository.SessionManagerImpl
 import com.arzikina.ne.data.repository.SyncAuthRepositoryImpl
+import com.arzikina.ne.data.repository.SyncEngineImpl
 import com.arzikina.ne.data.repository.TokenProvider
 import com.arzikina.ne.data.repository.TokenProviderImpl
 import com.arzikina.ne.data.repository.TransactionRepositoryImpl
@@ -34,6 +35,7 @@ import com.arzikina.ne.domain.repository.RecurringTransactionRepository
 import com.arzikina.ne.domain.repository.SavingsGoalRepository
 import com.arzikina.ne.domain.repository.SessionManager
 import com.arzikina.ne.domain.repository.SyncAuthRepository
+import com.arzikina.ne.domain.repository.SyncEngine
 import com.arzikina.ne.domain.repository.TransactionRepository
 import com.arzikina.ne.domain.repository.UserPreferencesRepository
 import dagger.Binds
@@ -128,4 +130,10 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindTokenProvider(impl: TokenProviderImpl): TokenProvider
+
+    /** Voir la doc de tête de [SyncEngine] et [SyncEngineImpl] — aucun appelant à cette étape
+     *  (fondation posée à l'avance), le déclenchement viendra dans une étape dédiée. */
+    @Binds
+    @Singleton
+    abstract fun bindSyncEngine(impl: SyncEngineImpl): SyncEngine
 }

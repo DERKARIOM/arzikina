@@ -1,15 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
     Ligne de réglage générique, réutilisée dans toutes les sections de fragment_settings.xml (voir
-    sa doc) — trois zones traînantes MUTUELLEMENT EXCLUSIVES, l'appelant choisit laquelle afficher
-    par code (les deux autres restent GONE) :
+    sa doc) — quatre zones traînantes MUTUELLEMENT EXCLUSIVES, l'appelant choisit laquelle afficher
+    par code (les autres restent GONE) :
     - rowChevron seul : ligne de NAVIGATION pure (ex. "Mes comptes").
     - rowValue + rowChevron : ligne de navigation qui montre la valeur actuelle avant d'y accéder
       (ex. "Devise" → "XOF").
     - rowSwitch seul : réglage ON/OFF direct, sans écran/dialogue supplémentaire.
+    - rowProgress seul : ACTION ponctuelle en cours (ex. "Synchroniser maintenant", voir
+      `SettingsFragment.setUpSyncSection`) — remplace temporairement rowChevron, même convention
+      que `loginButton`/`progressIndicator` de fragment_login.xml.
 
     trailingBarrier calcule sa position à partir des SEULES vues effectivement visibles parmi ces
-    trois (`app:barrierAllowsGoneWidgets="false"`, indispensable : son défaut `true` ferait quand
+    quatre (`app:barrierAllowsGoneWidgets="false"`, indispensable : son défaut `true` ferait quand
     même compter une vue GONE dans le calcul, décalant le titre/sous-titre — bug déjà rencontré et
     corrigé sur fragment_account_detail.xml, voir sa doc pour le détail du mécanisme).
 -->
@@ -104,12 +107,23 @@
         app:thumbTint="@color/switch_thumb_tint"
         app:trackTint="@color/switch_track_tint"/>
 
+    <com.google.android.material.progressindicator.CircularProgressIndicator
+        android:id="@+id/rowProgress"
+        android:layout_width="@dimen/icon_size_default"
+        android:layout_height="@dimen/icon_size_default"
+        android:indeterminate="true"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:trackColor="@android:color/transparent" />
+
     <androidx.constraintlayout.widget.Barrier
         android:id="@+id/trailingBarrier"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         app:barrierAllowsGoneWidgets="false"
         app:barrierDirection="start"
-        app:constraint_referenced_ids="rowValue,rowChevron,rowSwitch" />
+        app:constraint_referenced_ids="rowValue,rowChevron,rowSwitch,rowProgress" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

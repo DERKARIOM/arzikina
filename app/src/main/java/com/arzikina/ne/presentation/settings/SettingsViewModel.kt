@@ -2,17 +2,22 @@ package com.arzikina.ne.presentation.settings
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.arzikina.ne.domain.model.SyncEngineResult
 import com.arzikina.ne.domain.model.ThemeMode
 import com.arzikina.ne.domain.repository.AuthRepository
 import com.arzikina.ne.domain.repository.BiometricAuthenticator
 import com.arzikina.ne.domain.repository.SessionManager
+import com.arzikina.ne.domain.repository.SyncEngine
 import com.arzikina.ne.domain.repository.UserPreferencesRepository
 import com.arzikina.ne.presentation.profile.BiometricLockUiState
 import com.arzikina.ne.util.Constants
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
@@ -37,6 +42,18 @@ data class SettingsUiState(
     val currencyCode: String = Constants.DEFAULT_CURRENCY_CODE
 )
 
+/** Voir [SettingsViewModel.syncNowState] pour le raisonnement sur cet état séparé. */
+data class SyncNowUiState(
+    val isSyncing: Boolean = false
+)
+
+/** Événement ponctuel (Snackbar) suite à [SettingsViewModel.syncNow] — même principe que
+ *  `BackupEvent` ([BackupViewModel]). */
+sealed interface SettingsEvent {
+    data class SyncFinished(val result: SyncEngineResult) : SettingsEvent
+    data class SyncError(val message: String) : SettingsEvent
+}
+
 /**
  * ViewModel de l'écran Paramètres. Volontairement séparé de [BackupViewModel] (préférences vs
  * sauvegarde/restauration, deux responsabilités indépendantes qui ne partagent que le même écran
@@ -52,8 +69,19 @@ class SettingsViewModel @Inject constructor(
     private val userPreferencesRepository: UserPreferencesRepository,
     authRepository: AuthRepository,
     sessionManager: SessionManager,
-    private val biometricAuthenticator: BiometricAuthenticator
+    private val biometricAuthenticator: BiometricAuthenticator,
+    private val syncEngine: SyncEngine
 ) : ViewModel() {
+
+    private val _events = MutableSharedFlow<SettingsEvent>()
+    val events: SharedFlow<SettingsEvent> = _events.asSharedFlow()
+
+    /** Séparé de [uiState] pour la même raison que [biometricLockState] ci-dessous : [uiState] est
+     *  entièrement reconstruit à chaque émission de `combine`, ce qui écraserait [isSyncing] à
+     *  `false` en plein milieu d'une synchronisation dès que les préférences/l'utilisateur émettent
+     *  pour une tout autre raison. */
+    private val _syncNowState = MutableStateFlow(SyncNowUiState())
+    val syncNowState: StateFlow<SyncNowUiState> = _syncNowState.asStateFlow()
 
     /**
      * Réutilise TEL QUEL [com.arzikina.ne.presentation.profile.BiometricLockUiState] (voir sa
@@ -113,5 +141,23 @@ class SettingsViewModel @Inject constructor(
      * réglage lui-même, la session locale déjà active suffit. */
     fun onBiometricLockToggle(enabled: Boolean) {
         viewModelScope.launch { userPreferencesRepository.setBiometricLockEnabled(enabled) }
+    }
+
+    /**
+     * Voir [com.arzikina.ne.domain.repository.SyncEngine] pour l'étape actuelle (aucun
+     * déclenchement automatique, cette méthode est le premier appelant réel). Ignore un appel
+     * pendant qu'une synchronisation est déjà en cours (même garde que [BackupViewModel] sur
+     * export/import) — évite un double envoi du même lot si l'utilisateur tape deux fois avant que
+     * la ligne n'affiche son indicateur.
+     */
+    fun syncNow() {
+        if (_syncNowState.value.isSyncing) return
+        viewModelScope.launch {
+            _syncNowState.update { it.copy(isSyncing = true) }
+            runCatching { syncEngine.pushPendingChanges() }
+                .onSuccess { _events.emit(SettingsEvent.SyncFinished(it)) }
+                .onFailure { _events.emit(SettingsEvent.SyncError(it.message ?: "Erreur inconnue")) }
+            _syncNowState.update { it.copy(isSyncing = false) }
+        }
     }
 }

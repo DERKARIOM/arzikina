@@ -1,5 +1,6 @@
 package com.arzikina.ne.data.remote
 
+import com.arzikina.ne.data.remote.interceptor.SyncAuthInterceptor
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -7,7 +8,15 @@ import dagger.hilt.components.SingletonComponent
 import kotlinx.serialization.json.Json
 import okhttp3.OkHttpClient
 import java.util.concurrent.TimeUnit
+import javax.inject.Qualifier
 import javax.inject.Singleton
+
+/** Client HTTP authentifié (voir [SyncAuthInterceptor]) — réservé aux appels sous `api/sync/`
+ *  ([com.arzikina.ne.data.remote.api.SyncApi]). Jamais utilisé par
+ *  [com.arzikina.ne.data.remote.api.SyncAuthApi] (`login.php`, pas encore de token à poser). */
+@Qualifier
+@Retention(AnnotationRetention.BINARY)
+annotation class SyncHttpClient
 
 /**
  * Câblage réseau (OkHttp) pour l'API de synchronisation Arzikina — voir
@@ -46,4 +55,16 @@ object NetworkModule {
         .readTimeout(TIMEOUT_SECONDS, TimeUnit.SECONDS)
         .writeTimeout(TIMEOUT_SECONDS, TimeUnit.SECONDS)
         .build()
+
+    /** Dérivé du client de base (mêmes timeouts) + [SyncAuthInterceptor] — voir sa doc et celle de
+     *  [SyncHttpClient]. `newBuilder()` : partage le même pool de connexions que le client de base
+     *  plutôt que d'en ouvrir un second, voir la documentation officielle OkHttp sur la réutilisation
+     *  d'un `OkHttpClient` existant via `newBuilder()`. */
+    @Provides
+    @Singleton
+    @SyncHttpClient
+    fun provideSyncOkHttpClient(baseClient: OkHttpClient, interceptor: SyncAuthInterceptor): OkHttpClient =
+        baseClient.newBuilder()
+            .addInterceptor(interceptor)
+            .build()
 }

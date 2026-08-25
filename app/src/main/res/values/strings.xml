@@ -164,6 +164,17 @@
     <string name="sync_login_error_network">Impossible de joindre le serveur, vérifie ta connexion</string>
     <string name="sync_login_error_server">Le serveur a rencontré une erreur, réessaie plus tard</string>
 
+    <!-- Ligne "Synchroniser maintenant" (voir SettingsFragment.setUpSyncSection,
+         SettingsViewModel.syncNow) — DISTINCTE de settings_sync_row_title/subtitle ci-dessus
+         (connexion), même carte Synchronisation. -->
+    <string name="settings_sync_now_title">Synchroniser maintenant</string>
+    <string name="settings_sync_now_subtitle">Envoie les modifications en attente vers le serveur</string>
+    <string name="settings_sync_now_in_progress">Synchronisation en cours…</string>
+    <!-- %1$d = nombre de modifications envoyées avec succès, %2$d = en erreur. -->
+    <string name="settings_sync_now_result">%1$d synchronisée(s), %2$d en erreur</string>
+    <string name="settings_sync_now_nothing_pending">Rien à synchroniser</string>
+    <string name="settings_sync_now_error">Synchronisation impossible, réessaie plus tard</string>
+
     <!-- Authentification — Mot de passe oublié -->
     <string name="forgot_password_title">Mot de passe oublié</string>
     <string name="forgot_password_step1_subtitle">Entre ton e-mail ou nom d\'utilisateur pour continuer</string>
