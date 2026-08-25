@@ -24,11 +24,13 @@ require_once __DIR__ . '/../middleware/auth_middleware.php';
  * ligne modifiée. La réponse préserve l'ORDRE du tableau `operations` reçu : `results[i]`
  * correspond toujours à `operations[i]`.
  *
- * SEULE `categories` est câblée pour l'instant — voir `pull.php` pour la même décision. Le
- * découpage en petites fonctions ci-dessous (`createCategory`, `upsertExistingCategory`...) n'est
- * PAS encore extrait vers `services/` : on évite d'imposer une abstraction générique avant d'avoir
- * un DEUXIÈME cas d'usage réel (une deuxième entité) qui la justifie réellement — voir cahier des
- * charges sur l'architecture évolutive, qui demande d'anticiper sans sur-construire prématurément.
+ * `categories` et `savings_goals` sont câblées pour l'instant — voir `pull.php` pour la même
+ * décision. Le découpage en petites fonctions ci-dessous (`createCategory`/`createSavingsGoal`,
+ * `upsertExistingCategory`/`upsertExistingSavingsGoal`...) n'est TOUJOURS PAS extrait vers
+ * `services/` malgré ce deuxième cas d'usage réel : les deux entités sont trop proches (une seule
+ * table simple chacune) pour qu'un motif d'abstraction fiable s'en dégage encore clairement — voir
+ * cahier des charges sur l'architecture évolutive, qui demande d'anticiper sans sur-construire
+ * prématurément. À reconsidérer à une TROISIÈME entité (règle de trois).
  *
  * SÉCURITÉ — `entity.userId` (ou toute variante), même présent dans le payload, est TOUJOURS
  * IGNORÉ : le propriétaire réel de chaque écriture est TOUJOURS celui du token (voir
@@ -58,7 +60,8 @@ if (!is_array($body) || !isset($body['entityType'], $body['operations']) || !is_
 }
 
 $entityType = (string) $body['entityType'];
-if ($entityType !== 'categories') {
+$supportedEntityTypes = ['categories', 'savings_goals'];
+if (!in_array($entityType, $supportedEntityTypes, true)) {
     sendError('unsupported_entity_type', "Type d'entité non pris en charge pour l'instant : $entityType", 400);
 }
 
@@ -69,7 +72,10 @@ foreach ($body['operations'] as $operation) {
         continue;
     }
 
-    $results[] = applyCategoryOperation($pdo, $userId, (string) $operation['operation'], $operation['entity']);
+    $results[] = match ($entityType) {
+        'categories' => applyCategoryOperation($pdo, $userId, (string) $operation['operation'], $operation['entity']),
+        'savings_goals' => applySavingsGoalOperation($pdo, $userId, (string) $operation['operation'], $operation['entity']),
+    };
 }
 
 sendJson(['results' => $results, 'serverTime' => (int) round(microtime(true) * 1000)]);
@@ -224,4 +230,132 @@ function logConflict(PDO $pdo, string $userId, string $entityType, string $entit
         'winning_payload' => json_encode($winningPayload, JSON_UNESCAPED_UNICODE),
         'created_at' => $nowMillis,
     ]);
+}
+
+/**
+ * `savings_goals` — même schéma que `categories` ci-dessus (voir la doc de tête sur la décision de
+ * dupliquer plutôt que de généraliser à cette étape). `deadline` est le seul champ NULLABLE de
+ * cette entité : `array_key_exists` (pas `isset`) dans `upsertExistingSavingsGoal` pour distinguer
+ * "l'appareil n'a pas envoyé ce champ" (conserver la valeur actuelle) de "l'appareil a explicitement
+ * mis `deadline` à `null`" (effacer l'échéance) — `isset` traiterait les deux cas identiquement.
+ */
+function applySavingsGoalOperation(PDO $pdo, string $userId, string $operationType, array $entity): array
+{
+    $id = (string) ($entity['id'] ?? '');
+    if ($id === '') {
+        $id = generateUuidV4();
+    }
+
+    $nowMillis = (int) round(microtime(true) * 1000);
+
+    switch ($operationType) {
+        case 'CREATE':
+            return createSavingsGoal($pdo, $userId, $id, $entity, $nowMillis);
+
+        case 'UPDATE':
+        case 'DELETE':
+            return upsertExistingSavingsGoal($pdo, $userId, $id, $operationType, $entity, $nowMillis);
+
+        default:
+            return ['status' => 'error', 'errorCode' => 'invalid_operation_type', 'entityId' => $id];
+    }
+}
+
+function createSavingsGoal(PDO $pdo, string $userId, string $id, array $entity, int $nowMillis): array
+{
+    $existing = fetchSavingsGoalRow($pdo, $userId, $id);
+    if ($existing !== null) {
+        return ['status' => 'accepted', 'entityId' => $id, 'serverEntity' => toCamelCaseRow($existing)];
+    }
+
+    $stmt = $pdo->prepare(
+        'INSERT INTO savings_goals (id, user_id, name, target_amount, current_amount, currency_code, deadline, created_at, updated_at, deleted_at, version)
+         VALUES (:id, :user_id, :name, :target_amount, :current_amount, :currency_code, :deadline, :created_at, :updated_at, NULL, 1)'
+    );
+    $stmt->execute([
+        'id' => $id,
+        'user_id' => $userId,
+        'name' => (string) ($entity['name'] ?? ''),
+        'target_amount' => (int) ($entity['targetAmount'] ?? 0),
+        'current_amount' => (int) ($entity['currentAmount'] ?? 0),
+        'currency_code' => (string) ($entity['currencyCode'] ?? ''),
+        'deadline' => isset($entity['deadline']) ? (int) $entity['deadline'] : null,
+        'created_at' => (int) ($entity['createdAt'] ?? $nowMillis),
+        'updated_at' => (int) ($entity['updatedAt'] ?? $nowMillis),
+    ]);
+
+    $row = fetchSavingsGoalRow($pdo, $userId, $id);
+    return ['status' => 'accepted', 'entityId' => $id, 'serverEntity' => toCamelCaseRow($row)];
+}
+
+function upsertExistingSavingsGoal(PDO $pdo, string $userId, string $id, string $operationType, array $entity, int $nowMillis): array
+{
+    $current = fetchSavingsGoalRow($pdo, $userId, $id);
+    if ($current === null) {
+        return ['status' => 'error', 'errorCode' => 'not_found', 'entityId' => $id];
+    }
+
+    $baseVersion = isset($entity['baseVersion']) ? (int) $entity['baseVersion'] : null;
+    $incomingUpdatedAt = (int) ($entity['updatedAt'] ?? $nowMillis);
+    $currentVersion = (int) $current['version'];
+    $currentUpdatedAt = (int) $current['updated_at'];
+
+    $hasConflict = $baseVersion !== null && $baseVersion !== $currentVersion;
+
+    if ($hasConflict && $currentUpdatedAt >= $incomingUpdatedAt) {
+        logConflict($pdo, $userId, 'savings_goals', $id, $entity, $current, $nowMillis);
+        return ['status' => 'conflict_resolved', 'entityId' => $id, 'serverEntity' => toCamelCaseRow($current)];
+    }
+
+    if ($hasConflict) {
+        logConflict($pdo, $userId, 'savings_goals', $id, $current, $entity, $nowMillis);
+    }
+
+    if ($operationType === 'DELETE') {
+        $stmt = $pdo->prepare(
+            'UPDATE savings_goals SET deleted_at = :deleted_at, updated_at = :updated_at, version = version + 1
+             WHERE id = :id AND user_id = :user_id'
+        );
+        $stmt->execute([
+            'deleted_at' => $incomingUpdatedAt,
+            'updated_at' => $incomingUpdatedAt,
+            'id' => $id,
+            'user_id' => $userId,
+        ]);
+    } else {
+        $stmt = $pdo->prepare(
+            'UPDATE savings_goals
+             SET name = :name, target_amount = :target_amount, current_amount = :current_amount,
+                 currency_code = :currency_code, deadline = :deadline, updated_at = :updated_at,
+                 deleted_at = NULL, version = version + 1
+             WHERE id = :id AND user_id = :user_id'
+        );
+        $stmt->execute([
+            'name' => (string) ($entity['name'] ?? $current['name']),
+            'target_amount' => (int) ($entity['targetAmount'] ?? $current['target_amount']),
+            'current_amount' => (int) ($entity['currentAmount'] ?? $current['current_amount']),
+            'currency_code' => (string) ($entity['currencyCode'] ?? $current['currency_code']),
+            'deadline' => array_key_exists('deadline', $entity)
+                ? ($entity['deadline'] !== null ? (int) $entity['deadline'] : null)
+                : $current['deadline'],
+            'updated_at' => $incomingUpdatedAt,
+            'id' => $id,
+            'user_id' => $userId,
+        ]);
+    }
+
+    $row = fetchSavingsGoalRow($pdo, $userId, $id);
+    $status = $hasConflict ? 'conflict_resolved' : 'accepted';
+    return ['status' => $status, 'entityId' => $id, 'serverEntity' => toCamelCaseRow($row)];
+}
+
+function fetchSavingsGoalRow(PDO $pdo, string $userId, string $id): ?array
+{
+    $stmt = $pdo->prepare(
+        'SELECT id, user_id, name, target_amount, current_amount, currency_code, deadline, created_at, updated_at, deleted_at, version
+         FROM savings_goals WHERE id = :id AND user_id = :user_id LIMIT 1'
+    );
+    $stmt->execute(['id' => $id, 'user_id' => $userId]);
+    $row = $stmt->fetch();
+    return $row === false ? null : $row;
 }

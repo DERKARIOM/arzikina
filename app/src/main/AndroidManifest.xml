@@ -22,8 +22,14 @@
         le serveur de synchronisation. android:networkSecurityConfig ci-dessous (sur <application>)
         autorise le trafic en clair UNIQUEMENT vers l'IP de ce serveur — voir
         res/xml/network_security_config.xml.
+
+        ACCESS_NETWORK_STATE : permission "normale" (accordée à l'installation, jamais de demande
+        à l'exécution) requise par work/SyncConnectivityObserver.kt pour enregistrer un
+        ConnectivityManager.NetworkCallback — déclenche le Sync Engine dès le retour d'une
+        connexion réseau, en complément du filet de sécurité périodique (voir work/SyncWorkScheduler.kt).
     -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
     <!--
         Visibilité des packages (Android 11+, voir util/external/ExternalAppLauncher) : SEULE

@@ -6,6 +6,8 @@ import androidx.work.Configuration
 import com.arzikina.ne.domain.repository.AutomationScheduler
 import com.arzikina.ne.domain.repository.RecurringTransactionRepository
 import com.arzikina.ne.work.RecurringOccurrencesScheduler
+import com.arzikina.ne.work.SyncConnectivityObserver
+import com.arzikina.ne.work.SyncWorkScheduler
 import com.tom_roush.pdfbox.android.PDFBoxResourceLoader
 import dagger.hilt.android.HiltAndroidApp
 import kotlinx.coroutines.CoroutineScope
@@ -60,6 +62,9 @@ class ArzikinaApplication : Application(), Configuration.Provider {
     @Inject
     lateinit var automationScheduler: AutomationScheduler
 
+    @Inject
+    lateinit var syncConnectivityObserver: SyncConnectivityObserver
+
     override val workManagerConfiguration: Configuration
         get() = Configuration.Builder()
             .setWorkerFactory(workerFactory)
@@ -70,6 +75,8 @@ class ArzikinaApplication : Application(), Configuration.Provider {
         PDFBoxResourceLoader.init(applicationContext)
         RecurringOccurrencesScheduler.schedule(this)
         rescheduleActiveAutomations()
+        SyncWorkScheduler.schedulePeriodic(this)
+        syncConnectivityObserver.start()
     }
 
     private fun rescheduleActiveAutomations() {

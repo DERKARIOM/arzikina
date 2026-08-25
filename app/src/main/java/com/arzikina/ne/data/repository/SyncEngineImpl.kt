@@ -1,11 +1,14 @@
 package com.arzikina.ne.data.repository
 
 import com.arzikina.ne.data.local.dao.CategoryDao
+import com.arzikina.ne.data.local.dao.SavingsGoalDao
 import com.arzikina.ne.data.local.dao.SyncQueueDao
 import com.arzikina.ne.data.local.entity.CategoryEntity
+import com.arzikina.ne.data.local.entity.SavingsGoalEntity
 import com.arzikina.ne.data.local.entity.SyncQueueEntity
 import com.arzikina.ne.data.remote.api.SyncApi
 import com.arzikina.ne.data.remote.dto.CategoryServerStateDto
+import com.arzikina.ne.data.remote.dto.SavingsGoalServerStateDto
 import com.arzikina.ne.data.remote.dto.SyncPushOperationDto
 import com.arzikina.ne.data.remote.dto.SyncPushRequestDto
 import com.arzikina.ne.domain.model.CategoryIcon
@@ -17,27 +20,32 @@ import com.arzikina.ne.domain.model.TransactionType
 import com.arzikina.ne.domain.repository.SessionManager
 import com.arzikina.ne.domain.repository.SyncEngine
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.decodeFromJsonElement
 import java.io.IOException
 import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * Voir [SyncEngine] pour le contrat et l'étape actuelle. Seul [SUPPORTED_ENTITY_TYPE] (`categories`)
- * est traité en dur ici — même choix que `server/api/sync/push.php` côté serveur (voir sa doc de
- * tête) : pas d'abstraction générique par type d'entité tant qu'une SEULE entité n'est câblée, pour
- * ne pas imposer une forme qu'un deuxième cas d'usage réel pourrait remettre en cause.
+ * Voir [SyncEngine] pour le contrat et l'étape actuelle. [SUPPORTED_ENTITY_TYPES] (`categories`,
+ * `savings_goals`) sont traitées en DUR ici — même choix que `server/api/sync/push.php` côté
+ * serveur (voir sa doc de tête) : pas d'abstraction générique par type d'entité tant qu'une
+ * TROISIÈME entité ne vient pas confirmer le motif à en extraire (règle de trois). Seule la boucle
+ * EXTERNE (drainage de la file, pagination, curseur, transitions de statut) est déjà partagée entre
+ * les deux — voir [pushBatch]/[pullEntityType] — seules [applyCategoryServerState]/
+ * [applySavingsGoalServerState] (et la construction du payload, faite en amont par chaque
+ * repository) diffèrent réellement par entité.
  *
- * Dépend directement de [CategoryDao] (couche DATA vers couche DATA, jamais via
- * [com.arzikina.ne.domain.repository.CategoryRepository], qui filtre par utilisateur COURANT et
- * masque volontairement `syncId`/`version` au domaine — voir sa KDoc) : ce moteur doit pouvoir
- * relire/écrire ces champs bruts, y compris sur des lignes déjà supprimées (voir
- * [CategoryDao.getBySyncId]).
+ * Dépend directement de [CategoryDao]/[SavingsGoalDao] (couche DATA vers couche DATA, jamais via
+ * leurs repositories respectifs, qui filtrent par utilisateur COURANT et masquent volontairement
+ * `syncId`/`version` au domaine — voir leur KDoc) : ce moteur doit pouvoir relire/écrire ces champs
+ * bruts, y compris sur des lignes déjà supprimées (voir `getBySyncId` de chaque DAO).
  */
 @Singleton
 class SyncEngineImpl @Inject constructor(
     private val syncQueueDao: SyncQueueDao,
     private val categoryDao: CategoryDao,
+    private val savingsGoalDao: SavingsGoalDao,
     private val syncApi: SyncApi,
     private val syncCursorStore: SyncCursorStore,
     private val sessionManager: SessionManager,
@@ -59,12 +67,14 @@ class SyncEngineImpl @Inject constructor(
     }
 
     /**
-     * Un type d'entité NON encore câblé (rien d'autre que `categories` aujourd'hui) est
-     * silencieusement ignoré — ses entrées restent `PENDING`, rien n'est perdu, elles seront
-     * traitées le jour où ce type sera câblé ici, sans migration de données nécessaire.
+     * Un type d'entité NON encore câblé est silencieusement ignoré — ses entrées restent
+     * `PENDING`, rien n'est perdu, elles seront traitées le jour où ce type sera câblé ici, sans
+     * migration de données nécessaire. La construction de la requête est déjà générique
+     * (`payloadJson` pré-sérialisé par le repository d'origine, voir `SyncQueueEnqueuer`) — seule
+     * l'application du résultat ([applyServerEntity]) dépend du type d'entité.
      */
     private suspend fun pushBatch(entityType: String, entries: List<SyncQueueEntity>): Pair<Int, Int> {
-        if (entityType != SUPPORTED_ENTITY_TYPE) return 0 to 0
+        if (entityType !in SUPPORTED_ENTITY_TYPES) return 0 to 0
 
         markSyncing(entries)
 
@@ -98,8 +108,8 @@ class SyncEngineImpl @Inject constructor(
                     if (entry.operation == SyncOperation.DELETE && result.errorCode == "not_found") {
                         // Idempotent : le serveur ne connaissait déjà pas cette ligne (jamais
                         // envoyée avec succès avant sa suppression, voir la KDoc de
-                        // CategoryRepositoryImpl.deleteCategory) — l'état voulu (absente du
-                        // serveur) est déjà atteint, ce n'est pas un échec.
+                        // CategoryRepositoryImpl.deleteCategory/SavingsGoalRepositoryImpl.deleteSavingsGoal)
+                        // — l'état voulu (absente du serveur) est déjà atteint, ce n'est pas un échec.
                         markSynced(entry)
                         succeeded++
                     } else {
@@ -111,12 +121,9 @@ class SyncEngineImpl @Inject constructor(
                     try {
                         // allowCreate = false : un résultat de PUSH ne concerne jamais que des
                         // lignes que CET appareil possède déjà localement (c'est lui qui les a
-                        // envoyées) — contrairement à pullRemoteChanges ci-dessous, qui peut
-                        // recevoir des lignes jamais vues sur cet appareil (voir sa KDoc).
-                        val state = result.serverEntity?.let {
-                            json.decodeFromJsonElement(CategoryServerStateDto.serializer(), it)
-                        }
-                        if (state != null) applyCategoryServerState(state, allowCreate = false)
+                        // envoyées) — contrairement à pullEntityType ci-dessous, qui peut recevoir
+                        // des lignes jamais vues sur cet appareil (voir sa KDoc).
+                        result.serverEntity?.let { applyServerEntity(entityType, it, allowCreate = false) }
                         markSynced(entry)
                         succeeded++
                     } catch (e: Exception) {
@@ -129,57 +136,77 @@ class SyncEngineImpl @Inject constructor(
         return succeeded to failed
     }
 
+    /** Voir [SyncEngine.pullRemoteChanges] — chaque type d'entité a son PROPRE curseur
+     *  ([SyncCursorStore]), donc son propre appel à [pullEntityType]. */
+    override suspend fun pullRemoteChanges(): SyncPullResult {
+        var received = 0
+        var applied = 0
+        SUPPORTED_ENTITY_TYPES.forEach { entityType ->
+            val (entityReceived, entityApplied) = pullEntityType(entityType)
+            received += entityReceived
+            applied += entityApplied
+        }
+        return SyncPullResult(received = received, applied = applied)
+    }
+
     /**
-     * Voir [SyncEngine.pullRemoteChanges]. Boucle jusqu'à recevoir un lot VIDE (plutôt que de
-     * s'appuyer sur la constante "500" du plafond serveur, voir la doc de tête de `pull.php`) : un
-     * lot plus petit que le plafond signifie "tout reçu", et un lot vide déclenché par une relance
-     * après un lot plein exact ne coûte qu'un aller-retour réseau supplémentaire, sans risque de
-     * boucle infinie ni de lecture incomplète.
+     * Boucle jusqu'à recevoir un lot VIDE pour [entityType] (plutôt que de s'appuyer sur la
+     * constante "500" du plafond serveur, voir la doc de tête de `pull.php`) : un lot plus petit
+     * que le plafond signifie "tout reçu", et un lot vide déclenché par une relance après un lot
+     * plein exact ne coûte qu'un aller-retour réseau supplémentaire, sans risque de boucle infinie
+     * ni de lecture incomplète.
      *
      * Le curseur ([SyncCursorStore]) avance APRÈS CHAQUE lot appliqué (pas seulement à la fin) :
      * une interruption (perte réseau, app tuée) entre deux lots ne fait jamais retraiter ceux déjà
      * appliqués au prochain pull.
      */
-    override suspend fun pullRemoteChanges(): SyncPullResult {
+    private suspend fun pullEntityType(entityType: String): Pair<Int, Int> {
         var received = 0
         var applied = 0
-        var cursor = syncCursorStore.getLastPulledAt(SUPPORTED_ENTITY_TYPE)
+        var cursor = syncCursorStore.getLastPulledAt(entityType)
 
         while (true) {
             val response = try {
-                syncApi.pull(SUPPORTED_ENTITY_TYPE, cursor)
+                syncApi.pull(entityType, cursor)
             } catch (e: IOException) {
                 break // Échec réseau/serveur : le curseur n'a pas avancé, rien n'est perdu.
             }
 
             response.entities.forEach { element ->
                 received++
-                runCatching {
-                    val state = json.decodeFromJsonElement(CategoryServerStateDto.serializer(), element)
-                    applyCategoryServerState(state, allowCreate = true)
-                }.onSuccess { applied++ }
+                runCatching { applyServerEntity(entityType, element, allowCreate = true) }.onSuccess { applied++ }
                 // Ligne malformée ignorée silencieusement (voir SyncPullResult.received/applied) :
-                // ne bloque jamais le reste du lot.
+                // ne bloque jamais le reste du lot, ni les autres types d'entité.
             }
 
             cursor = response.serverTime
-            syncCursorStore.setLastPulledAt(SUPPORTED_ENTITY_TYPE, cursor)
+            syncCursorStore.setLastPulledAt(entityType, cursor)
 
             if (response.entities.isEmpty()) break
         }
 
-        return SyncPullResult(received = received, applied = applied)
+        return received to applied
+    }
+
+    /** Décode [element] selon [entityType] puis délègue à la fonction d'application dédiée — SEUL
+     *  point de dispatch par type d'entité de cette classe (voir la doc de tête). */
+    private suspend fun applyServerEntity(entityType: String, element: JsonElement, allowCreate: Boolean) {
+        when (entityType) {
+            "categories" ->
+                applyCategoryServerState(json.decodeFromJsonElement(CategoryServerStateDto.serializer(), element), allowCreate)
+            "savings_goals" ->
+                applySavingsGoalServerState(json.decodeFromJsonElement(SavingsGoalServerStateDto.serializer(), element), allowCreate)
+        }
     }
 
     /**
-     * Applique l'état confirmé par le serveur sur la ligne locale correspondant à [state.id]
-     * (`syncId`) — partagé par [pushPendingChanges] (résultat d'un envoi) et [pullRemoteChanges]
-     * (changement distant). [allowCreate] : `false` depuis un résultat de push (voir son appel
-     * ci-dessus) ; `true` depuis un pull, où la ligne peut être totalement INCONNUE de cet appareil
-     * (créée sur un autre appareil, ou existante avant l'installation courante) — dans ce cas
-     * [com.arzikina.ne.domain.repository.SessionManager.getCurrentUserIdOnce] fournit le `userId`
-     * LOCAL (jamais celui du serveur, voir la KDoc de [CategoryServerStateDto]) de la nouvelle
-     * ligne Room.
+     * Applique l'état confirmé par le serveur sur la ligne locale correspondant à `state.id`
+     * (`syncId`) — partagé par [pushBatch] (résultat d'un envoi) et [pullEntityType] (changement
+     * distant). [allowCreate] : `false` depuis un résultat de push ; `true` depuis un pull, où la
+     * ligne peut être totalement INCONNUE de cet appareil (créée sur un autre appareil, ou
+     * existante avant l'installation courante) — dans ce cas
+     * [SessionManager.getCurrentUserIdOnce] fournit le `userId` LOCAL (jamais celui du serveur,
+     * voir la KDoc de [CategoryServerStateDto]) de la nouvelle ligne Room.
      */
     private suspend fun applyCategoryServerState(state: CategoryServerStateDto, allowCreate: Boolean) {
         val local = categoryDao.getBySyncId(state.id)
@@ -194,6 +221,30 @@ class SyncEngineImpl @Inject constructor(
                 icon = runCatching { CategoryIcon.valueOf(state.icon) }.getOrDefault(local?.icon ?: CategoryIcon.OTHER),
                 colorArgb = state.colorArgb,
                 type = runCatching { TransactionType.valueOf(state.type) }.getOrDefault(local?.type ?: TransactionType.EXPENSE),
+                createdAt = state.createdAt,
+                syncId = state.id,
+                updatedAt = state.updatedAt,
+                deletedAt = state.deletedAt,
+                version = state.version
+            )
+        )
+    }
+
+    /** Voir [applyCategoryServerState] — même logique, appliquée à `savings_goals`. */
+    private suspend fun applySavingsGoalServerState(state: SavingsGoalServerStateDto, allowCreate: Boolean) {
+        val local = savingsGoalDao.getBySyncId(state.id)
+        if (local == null && !allowCreate) return
+        val userId = local?.userId ?: sessionManager.getCurrentUserIdOnce() ?: return
+
+        savingsGoalDao.upsert(
+            SavingsGoalEntity(
+                id = local?.id ?: 0L,
+                userId = userId,
+                name = state.name,
+                targetAmount = state.targetAmount,
+                currentAmount = state.currentAmount,
+                currencyCode = state.currencyCode,
+                deadline = state.deadline,
                 createdAt = state.createdAt,
                 syncId = state.id,
                 updatedAt = state.updatedAt,
@@ -230,7 +281,7 @@ class SyncEngineImpl @Inject constructor(
     }
 
     private companion object {
-        const val SUPPORTED_ENTITY_TYPE = "categories"
+        val SUPPORTED_ENTITY_TYPES = setOf("categories", "savings_goals")
         const val MAX_ERROR_MESSAGE_LENGTH = 200
     }
 }
