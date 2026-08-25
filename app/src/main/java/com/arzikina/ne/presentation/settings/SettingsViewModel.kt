@@ -3,6 +3,7 @@ package com.arzikina.ne.presentation.settings
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.arzikina.ne.domain.model.SyncEngineResult
+import com.arzikina.ne.domain.model.SyncPullResult
 import com.arzikina.ne.domain.model.ThemeMode
 import com.arzikina.ne.domain.repository.AuthRepository
 import com.arzikina.ne.domain.repository.BiometricAuthenticator
@@ -48,9 +49,12 @@ data class SyncNowUiState(
 )
 
 /** Événement ponctuel (Snackbar) suite à [SettingsViewModel.syncNow] — même principe que
- *  `BackupEvent` ([BackupViewModel]). */
+ *  `BackupEvent` ([BackupViewModel]). [SyncFinished] porte les DEUX résultats (push et pull, voir
+ *  [SettingsViewModel.syncNow] qui enchaîne toujours les deux) : un seul événement plutôt que deux
+ *  émissions distinctes, pour que [SettingsFragment] affiche un seul Snackbar résumant l'aller-retour
+ *  complet, jamais deux Snackbars successifs pour une seule action utilisateur. */
 sealed interface SettingsEvent {
-    data class SyncFinished(val result: SyncEngineResult) : SettingsEvent
+    data class SyncFinished(val pushResult: SyncEngineResult, val pullResult: SyncPullResult) : SettingsEvent
     data class SyncError(val message: String) : SettingsEvent
 }
 
@@ -145,17 +149,27 @@ class SettingsViewModel @Inject constructor(
 
     /**
      * Voir [com.arzikina.ne.domain.repository.SyncEngine] pour l'étape actuelle (aucun
-     * déclenchement automatique, cette méthode est le premier appelant réel). Ignore un appel
-     * pendant qu'une synchronisation est déjà en cours (même garde que [BackupViewModel] sur
-     * export/import) — évite un double envoi du même lot si l'utilisateur tape deux fois avant que
-     * la ligne n'affiche son indicateur.
+     * déclenchement automatique, cette méthode est le premier appelant réel). Enchaîne TOUJOURS
+     * push PUIS pull (voir la KDoc de [com.arzikina.ne.domain.repository.SyncEngine.pullRemoteChanges]
+     * sur cet ordre) — un aller-retour complet à chaque tap, jamais l'un sans l'autre. Si le push
+     * lève une exception, le pull n'est PAS tenté (voir `runCatching` : la première exception
+     * interrompt le bloc) — inutile de recevoir avant d'avoir confirmé l'envoi, et l'utilisateur
+     * peut simplement retaper.
+     *
+     * Ignore un appel pendant qu'une synchronisation est déjà en cours (même garde que
+     * [BackupViewModel] sur export/import) — évite un double envoi du même lot si l'utilisateur
+     * tape deux fois avant que la ligne n'affiche son indicateur.
      */
     fun syncNow() {
         if (_syncNowState.value.isSyncing) return
         viewModelScope.launch {
             _syncNowState.update { it.copy(isSyncing = true) }
-            runCatching { syncEngine.pushPendingChanges() }
-                .onSuccess { _events.emit(SettingsEvent.SyncFinished(it)) }
+            runCatching {
+                val pushResult = syncEngine.pushPendingChanges()
+                val pullResult = syncEngine.pullRemoteChanges()
+                pushResult to pullResult
+            }
+                .onSuccess { (pushResult, pullResult) -> _events.emit(SettingsEvent.SyncFinished(pushResult, pullResult)) }
                 .onFailure { _events.emit(SettingsEvent.SyncError(it.message ?: "Erreur inconnue")) }
             _syncNowState.update { it.copy(isSyncing = false) }
         }

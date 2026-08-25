@@ -170,8 +170,9 @@
     <string name="settings_sync_now_title">Synchroniser maintenant</string>
     <string name="settings_sync_now_subtitle">Envoie les modifications en attente vers le serveur</string>
     <string name="settings_sync_now_in_progress">Synchronisation en cours…</string>
-    <!-- %1$d = nombre de modifications envoyées avec succès, %2$d = en erreur. -->
-    <string name="settings_sync_now_result">%1$d synchronisée(s), %2$d en erreur</string>
+    <!-- %1$d = envoyées avec succès (push), %2$d = en erreur (push), %3$d = reçues et appliquées
+         (pull) — voir SettingsViewModel.syncNow, qui enchaîne toujours push PUIS pull. -->
+    <string name="settings_sync_now_result">%1$d envoyée(s), %2$d en erreur, %3$d reçue(s)</string>
     <string name="settings_sync_now_nothing_pending">Rien à synchroniser</string>
     <string name="settings_sync_now_error">Synchronisation impossible, réessaie plus tard</string>
 

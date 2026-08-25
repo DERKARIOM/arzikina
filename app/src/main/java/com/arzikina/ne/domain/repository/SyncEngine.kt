@@ -1,16 +1,17 @@
 package com.arzikina.ne.domain.repository
 
 import com.arzikina.ne.domain.model.SyncEngineResult
+import com.arzikina.ne.domain.model.SyncPullResult
 
 /**
- * Vide la file d'attente locale (`sync_queue`, voir `data/local/entity/SyncQueueEntity.kt`) vers le
- * serveur de synchronisation — voir docs/sync/AUDIT-ET-ARCHITECTURE-SYNC.md, section 8.
+ * Synchronise la file d'attente locale (`sync_queue`, voir `data/local/entity/SyncQueueEntity.kt`)
+ * avec le serveur de synchronisation, dans les deux sens — voir
+ * docs/sync/AUDIT-ET-ARCHITECTURE-SYNC.md, section 8 (envoi) et section 10 (réception).
  *
- * ÉTAPE ACTUELLE — voir `SyncEngineImpl` : rien n'appelle encore [pushPendingChanges]
- * automatiquement (pas de WorkManager, pas de déclenchement sur connectivité) et seul `categories`
- * est traité. Fondation posée à l'avance (même raisonnement que `SyncQueueEntity` en son temps),
- * le déclenchement (bouton manuel d'abord, automatique ensuite) et les entités restantes suivront
- * dans des étapes dédiées séparées.
+ * ÉTAPE ACTUELLE — voir `SyncEngineImpl` : déclenché manuellement (bouton "Synchroniser
+ * maintenant", voir `SettingsViewModel.syncNow`), rien d'automatique encore (pas de WorkManager, pas
+ * de déclenchement sur connectivité), et seul `categories` est traité des deux côtés. Le
+ * déclenchement automatique et les entités restantes suivront dans des étapes dédiées séparées.
  */
 interface SyncEngine {
 
@@ -22,4 +23,15 @@ interface SyncEngine {
      * entrée n'empêche pas le traitement des autres (voir `SyncEngineImpl`).
      */
     suspend fun pushPendingChanges(): SyncEngineResult
+
+    /**
+     * Reçoit et applique localement les changements distants (autres appareils, ou données
+     * antérieures à l'installation courante) survenus depuis le dernier pull réussi (voir
+     * `SyncCursorStore`, `SyncApi.pull`) — pull INCRÉMENTAL, jamais un dump complet. À appeler
+     * APRÈS [pushPendingChanges] (voir `SettingsViewModel.syncNow`) : les propres modifications de
+     * cet appareil doivent être envoyées et confirmées avant de recevoir celles des autres, pour
+     * un état final cohérent plus rapidement (les deux convergent de toute façon vers le même état
+     * quel que soit l'ordre, voir `push.php`/`pull.php`, mais éviter un aller-retour inutile).
+     */
+    suspend fun pullRemoteChanges(): SyncPullResult
 }

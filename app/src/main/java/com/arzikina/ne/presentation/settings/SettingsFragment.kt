@@ -335,8 +335,14 @@ class SettingsFragment : Fragment(R.layout.fragment_settings) {
     private fun handleEvent(binding: FragmentSettingsBinding, event: SettingsEvent) {
         val message = when (event) {
             is SettingsEvent.SyncFinished -> when {
-                event.result.pushed == 0 -> getString(R.string.settings_sync_now_nothing_pending)
-                else -> getString(R.string.settings_sync_now_result, event.result.succeeded, event.result.failed)
+                event.pushResult.pushed == 0 && event.pullResult.received == 0 ->
+                    getString(R.string.settings_sync_now_nothing_pending)
+                else -> getString(
+                    R.string.settings_sync_now_result,
+                    event.pushResult.succeeded,
+                    event.pushResult.failed,
+                    event.pullResult.applied
+                )
             }
             is SettingsEvent.SyncError -> getString(R.string.settings_sync_now_error)
         }

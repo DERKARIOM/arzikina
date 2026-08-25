@@ -2,6 +2,7 @@ package com.arzikina.ne.data.repository
 
 import com.arzikina.ne.data.local.dao.CategoryDao
 import com.arzikina.ne.data.local.dao.SyncQueueDao
+import com.arzikina.ne.data.local.entity.CategoryEntity
 import com.arzikina.ne.data.local.entity.SyncQueueEntity
 import com.arzikina.ne.data.remote.api.SyncApi
 import com.arzikina.ne.data.remote.dto.CategoryServerStateDto
@@ -10,11 +11,12 @@ import com.arzikina.ne.data.remote.dto.SyncPushRequestDto
 import com.arzikina.ne.domain.model.CategoryIcon
 import com.arzikina.ne.domain.model.SyncEngineResult
 import com.arzikina.ne.domain.model.SyncOperation
+import com.arzikina.ne.domain.model.SyncPullResult
 import com.arzikina.ne.domain.model.SyncStatus
 import com.arzikina.ne.domain.model.TransactionType
+import com.arzikina.ne.domain.repository.SessionManager
 import com.arzikina.ne.domain.repository.SyncEngine
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.decodeFromJsonElement
 import java.io.IOException
 import javax.inject.Inject
@@ -37,6 +39,8 @@ class SyncEngineImpl @Inject constructor(
     private val syncQueueDao: SyncQueueDao,
     private val categoryDao: CategoryDao,
     private val syncApi: SyncApi,
+    private val syncCursorStore: SyncCursorStore,
+    private val sessionManager: SessionManager,
     private val json: Json
 ) : SyncEngine {
 
@@ -105,7 +109,14 @@ class SyncEngineImpl @Inject constructor(
                 }
                 else -> {
                     try {
-                        applyServerState(result.serverEntity)
+                        // allowCreate = false : un résultat de PUSH ne concerne jamais que des
+                        // lignes que CET appareil possède déjà localement (c'est lui qui les a
+                        // envoyées) — contrairement à pullRemoteChanges ci-dessous, qui peut
+                        // recevoir des lignes jamais vues sur cet appareil (voir sa KDoc).
+                        val state = result.serverEntity?.let {
+                            json.decodeFromJsonElement(CategoryServerStateDto.serializer(), it)
+                        }
+                        if (state != null) applyCategoryServerState(state, allowCreate = false)
                         markSynced(entry)
                         succeeded++
                     } catch (e: Exception) {
@@ -116,6 +127,80 @@ class SyncEngineImpl @Inject constructor(
             }
         }
         return succeeded to failed
+    }
+
+    /**
+     * Voir [SyncEngine.pullRemoteChanges]. Boucle jusqu'à recevoir un lot VIDE (plutôt que de
+     * s'appuyer sur la constante "500" du plafond serveur, voir la doc de tête de `pull.php`) : un
+     * lot plus petit que le plafond signifie "tout reçu", et un lot vide déclenché par une relance
+     * après un lot plein exact ne coûte qu'un aller-retour réseau supplémentaire, sans risque de
+     * boucle infinie ni de lecture incomplète.
+     *
+     * Le curseur ([SyncCursorStore]) avance APRÈS CHAQUE lot appliqué (pas seulement à la fin) :
+     * une interruption (perte réseau, app tuée) entre deux lots ne fait jamais retraiter ceux déjà
+     * appliqués au prochain pull.
+     */
+    override suspend fun pullRemoteChanges(): SyncPullResult {
+        var received = 0
+        var applied = 0
+        var cursor = syncCursorStore.getLastPulledAt(SUPPORTED_ENTITY_TYPE)
+
+        while (true) {
+            val response = try {
+                syncApi.pull(SUPPORTED_ENTITY_TYPE, cursor)
+            } catch (e: IOException) {
+                break // Échec réseau/serveur : le curseur n'a pas avancé, rien n'est perdu.
+            }
+
+            response.entities.forEach { element ->
+                received++
+                runCatching {
+                    val state = json.decodeFromJsonElement(CategoryServerStateDto.serializer(), element)
+                    applyCategoryServerState(state, allowCreate = true)
+                }.onSuccess { applied++ }
+                // Ligne malformée ignorée silencieusement (voir SyncPullResult.received/applied) :
+                // ne bloque jamais le reste du lot.
+            }
+
+            cursor = response.serverTime
+            syncCursorStore.setLastPulledAt(SUPPORTED_ENTITY_TYPE, cursor)
+
+            if (response.entities.isEmpty()) break
+        }
+
+        return SyncPullResult(received = received, applied = applied)
+    }
+
+    /**
+     * Applique l'état confirmé par le serveur sur la ligne locale correspondant à [state.id]
+     * (`syncId`) — partagé par [pushPendingChanges] (résultat d'un envoi) et [pullRemoteChanges]
+     * (changement distant). [allowCreate] : `false` depuis un résultat de push (voir son appel
+     * ci-dessus) ; `true` depuis un pull, où la ligne peut être totalement INCONNUE de cet appareil
+     * (créée sur un autre appareil, ou existante avant l'installation courante) — dans ce cas
+     * [com.arzikina.ne.domain.repository.SessionManager.getCurrentUserIdOnce] fournit le `userId`
+     * LOCAL (jamais celui du serveur, voir la KDoc de [CategoryServerStateDto]) de la nouvelle
+     * ligne Room.
+     */
+    private suspend fun applyCategoryServerState(state: CategoryServerStateDto, allowCreate: Boolean) {
+        val local = categoryDao.getBySyncId(state.id)
+        if (local == null && !allowCreate) return
+        val userId = local?.userId ?: sessionManager.getCurrentUserIdOnce() ?: return
+
+        categoryDao.upsert(
+            CategoryEntity(
+                id = local?.id ?: 0L,
+                userId = userId,
+                name = state.name,
+                icon = runCatching { CategoryIcon.valueOf(state.icon) }.getOrDefault(local?.icon ?: CategoryIcon.OTHER),
+                colorArgb = state.colorArgb,
+                type = runCatching { TransactionType.valueOf(state.type) }.getOrDefault(local?.type ?: TransactionType.EXPENSE),
+                createdAt = state.createdAt,
+                syncId = state.id,
+                updatedAt = state.updatedAt,
+                deletedAt = state.deletedAt,
+                version = state.version
+            )
+        )
     }
 
     private suspend fun markSyncing(entries: List<SyncQueueEntity>) {
@@ -142,26 +227,6 @@ class SyncEngineImpl @Inject constructor(
                 )
             )
         }
-    }
-
-    /** Applique l'état confirmé par le serveur sur la ligne locale (voir la KDoc de
-     *  [com.arzikina.ne.data.remote.dto.SyncPushResultDto]) — `null`/lignes introuvables ignorées
-     *  silencieusement (rien à appliquer, ou ligne déjà absente localement). */
-    private suspend fun applyServerState(serverEntity: JsonElement?) {
-        val state = serverEntity?.let { json.decodeFromJsonElement(CategoryServerStateDto.serializer(), it) } ?: return
-        val local = categoryDao.getBySyncId(state.id) ?: return
-        categoryDao.upsert(
-            local.copy(
-                name = state.name,
-                icon = runCatching { CategoryIcon.valueOf(state.icon) }.getOrDefault(local.icon),
-                colorArgb = state.colorArgb,
-                type = runCatching { TransactionType.valueOf(state.type) }.getOrDefault(local.type),
-                createdAt = state.createdAt,
-                updatedAt = state.updatedAt,
-                deletedAt = state.deletedAt,
-                version = state.version
-            )
-        )
     }
 
     private companion object {
