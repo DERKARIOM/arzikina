@@ -41,6 +41,13 @@ interface CategoryDao {
     @Query("SELECT * FROM categories WHERE syncId = :syncId LIMIT 1")
     suspend fun getBySyncId(syncId: String): CategoryEntity?
 
+    /** Réservé à [com.arzikina.ne.data.repository.SyncEngineImpl.enqueueUnsyncedLocalData] :
+     * lignes actives (`deletedAt IS NULL`) jamais proposées à la synchronisation — créées par un
+     * chemin qui contourne `CategoryRepositoryImpl.saveCategory` (ex. `NewUserDefaultDataSeeder` à
+     * l'inscription, `BackupRepositoryImpl` lors d'une restauration), donc sans `syncId`. */
+    @Query("SELECT * FROM categories WHERE userId = :userId AND deletedAt IS NULL AND syncId IS NULL")
+    suspend fun getUnsyncedForUser(userId: Long): List<CategoryEntity>
+
     /** Utilisé par `LoanRepositoryImpl` pour retrouver l'une des 4 catégories par défaut Prêts/
      * Emprunts (voir `DefaultCategories`) par son nom exact — l'icône seule ([CategoryIcon.LOAN])
      * ne suffit pas à les distinguer : deux d'entre elles partagent le même [TransactionType]

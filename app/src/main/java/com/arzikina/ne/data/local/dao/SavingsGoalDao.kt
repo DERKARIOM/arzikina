@@ -29,6 +29,13 @@ interface SavingsGoalDao {
     @Query("SELECT * FROM savings_goals WHERE syncId = :syncId LIMIT 1")
     suspend fun getBySyncId(syncId: String): SavingsGoalEntity?
 
+    /** Réservé à [com.arzikina.ne.data.repository.SyncEngineImpl.enqueueUnsyncedLocalData] — voir
+     * la KDoc de `CategoryDao.getUnsyncedForUser` (même raisonnement, `BackupRepositoryImpl` étant
+     * ici le seul chemin de contournement connu, aucun seeder par défaut n'existe pour cette
+     * entité). */
+    @Query("SELECT * FROM savings_goals WHERE userId = :userId AND deletedAt IS NULL AND syncId IS NULL")
+    suspend fun getUnsyncedForUser(userId: Long): List<SavingsGoalEntity>
+
     @Upsert
     suspend fun upsert(goal: SavingsGoalEntity)
 

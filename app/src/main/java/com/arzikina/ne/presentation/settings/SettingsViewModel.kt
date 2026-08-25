@@ -4,10 +4,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.arzikina.ne.domain.model.SyncEngineResult
 import com.arzikina.ne.domain.model.SyncPullResult
+import com.arzikina.ne.domain.model.SyncQueueStatus
 import com.arzikina.ne.domain.model.ThemeMode
 import com.arzikina.ne.domain.repository.AuthRepository
 import com.arzikina.ne.domain.repository.BiometricAuthenticator
 import com.arzikina.ne.domain.repository.SessionManager
+import com.arzikina.ne.domain.repository.SyncAuthRepository
 import com.arzikina.ne.domain.repository.SyncEngine
 import com.arzikina.ne.domain.repository.UserPreferencesRepository
 import com.arzikina.ne.presentation.profile.BiometricLockUiState
@@ -48,6 +50,23 @@ data class SyncNowUiState(
     val isSyncing: Boolean = false
 )
 
+/**
+ * Niveaux affichés par l'indicateur visuel de `syncRow` (voir [SettingsViewModel.syncIndicatorState]).
+ * [HIDDEN] : aucune session serveur active — ne rien afficher plutôt qu'un état qui ne
+ * correspondrait à rien de réel (voir la KDoc de [com.arzikina.ne.domain.repository.SyncAuthRepository]
+ * sur la synchronisation comme fonctionnalité additive, jamais un prérequis). Ordre de priorité des
+ * trois autres niveaux — voir [SettingsViewModel.syncIndicatorState] : [ERROR] avant [SYNCING] avant
+ * [PENDING], le cas le plus actionnable prenant toujours le dessus sur les autres.
+ */
+enum class SyncIndicatorLevel { HIDDEN, UP_TO_DATE, PENDING, SYNCING, ERROR }
+
+/** [pendingCount] uniquement utile quand [level] vaut [SyncIndicatorLevel.PENDING] (voir
+ *  `SettingsFragment.renderSyncIndicator`) — `0` par défaut ailleurs, jamais lu dans ce cas. */
+data class SyncIndicatorUiState(
+    val level: SyncIndicatorLevel = SyncIndicatorLevel.HIDDEN,
+    val pendingCount: Int = 0
+)
+
 /** Événement ponctuel (Snackbar) suite à [SettingsViewModel.syncNow] — même principe que
  *  `BackupEvent` ([BackupViewModel]). [SyncFinished] porte les DEUX résultats (push et pull, voir
  *  [SettingsViewModel.syncNow] qui enchaîne toujours les deux) : un seul événement plutôt que deux
@@ -74,7 +93,8 @@ class SettingsViewModel @Inject constructor(
     authRepository: AuthRepository,
     sessionManager: SessionManager,
     private val biometricAuthenticator: BiometricAuthenticator,
-    private val syncEngine: SyncEngine
+    private val syncEngine: SyncEngine,
+    private val syncAuthRepository: SyncAuthRepository
 ) : ViewModel() {
 
     private val _events = MutableSharedFlow<SettingsEvent>()
@@ -86,6 +106,42 @@ class SettingsViewModel @Inject constructor(
      *  pour une tout autre raison. */
     private val _syncNowState = MutableStateFlow(SyncNowUiState())
     val syncNowState: StateFlow<SyncNowUiState> = _syncNowState.asStateFlow()
+
+    /**
+     * Indicateur EN CONTINU de l'état de synchronisation, affiché dans `rowValue` de `syncRow`
+     * (voir `SettingsFragment.renderSyncIndicator`) — StateFlow séparé de [uiState] pour la même
+     * raison que [syncNowState]/[biometricLockState] ci-dessus. Combine la session serveur active
+     * ([SyncAuthRepository.observeActiveSession]) et l'état de la file
+     * ([SyncEngine.observeQueueStatus]) : sans session, [SyncIndicatorLevel.HIDDEN] quel que soit
+     * le contenu de la file (elle peut légitimement contenir des entrées `PENDING` accumulées avant
+     * toute connexion — rien à signaler tant que la synchronisation n'est pas activée).
+     *
+     * Priorité [SyncIndicatorLevel.ERROR] > [SyncIndicatorLevel.SYNCING] > [SyncIndicatorLevel.PENDING] :
+     * une erreur reste le cas le plus actionnable, à ne jamais masquer par un décompte `PENDING`
+     * qui inclurait ces mêmes entrées en échec (une entrée `FAILED` n'est PAS `PENDING`, voir
+     * `SyncStatus`, donc les deux décomptes ne se chevauchent jamais — cet ordre est une garde
+     * supplémentaire, pas une nécessité stricte ici).
+     */
+    val syncIndicatorState: StateFlow<SyncIndicatorUiState> = combine(
+        syncAuthRepository.observeActiveSession(),
+        syncEngine.observeQueueStatus()
+    ) { session, queueStatus ->
+        if (session == null) {
+            SyncIndicatorUiState(level = SyncIndicatorLevel.HIDDEN)
+        } else {
+            val level = when {
+                queueStatus.failed > 0 -> SyncIndicatorLevel.ERROR
+                queueStatus.syncing > 0 -> SyncIndicatorLevel.SYNCING
+                queueStatus.pending > 0 -> SyncIndicatorLevel.PENDING
+                else -> SyncIndicatorLevel.UP_TO_DATE
+            }
+            SyncIndicatorUiState(level = level, pendingCount = queueStatus.pending)
+        }
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(stopTimeoutMillis = 5_000),
+        initialValue = SyncIndicatorUiState()
+    )
 
     /**
      * Réutilise TEL QUEL [com.arzikina.ne.presentation.profile.BiometricLockUiState] (voir sa

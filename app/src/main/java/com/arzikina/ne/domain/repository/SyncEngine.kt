@@ -2,6 +2,8 @@ package com.arzikina.ne.domain.repository
 
 import com.arzikina.ne.domain.model.SyncEngineResult
 import com.arzikina.ne.domain.model.SyncPullResult
+import com.arzikina.ne.domain.model.SyncQueueStatus
+import kotlinx.coroutines.flow.Flow
 
 /**
  * Synchronise la file d'attente locale (`sync_queue`, voir `data/local/entity/SyncQueueEntity.kt`)
@@ -9,9 +11,10 @@ import com.arzikina.ne.domain.model.SyncPullResult
  * docs/sync/AUDIT-ET-ARCHITECTURE-SYNC.md, section 8 (envoi) et section 10 (réception).
  *
  * ÉTAPE ACTUELLE — voir `SyncEngineImpl` : déclenché manuellement (bouton "Synchroniser
- * maintenant", voir `SettingsViewModel.syncNow`), rien d'automatique encore (pas de WorkManager, pas
- * de déclenchement sur connectivité), et seul `categories` est traité des deux côtés. Le
- * déclenchement automatique et les entités restantes suivront dans des étapes dédiées séparées.
+ * maintenant", voir `SettingsViewModel.syncNow`) ET automatiquement (périodique + retour de
+ * connectivité, voir `work/SyncWorkScheduler.kt`/`work/SyncConnectivityObserver.kt`). Traite
+ * `categories` et `savings_goals` des deux côtés — voir `SUPPORTED_ENTITY_TYPES` dans
+ * `SyncEngineImpl` pour la liste à jour, étendue au fil des étapes dédiées.
  */
 interface SyncEngine {
 
@@ -34,4 +37,29 @@ interface SyncEngine {
      * quel que soit l'ordre, voir `push.php`/`pull.php`, mais éviter un aller-retour inutile).
      */
     suspend fun pullRemoteChanges(): SyncPullResult
+
+    /**
+     * État EN CONTINU de `sync_queue`, tous types d'entités confondus — voir [SyncQueueStatus].
+     * Pour le futur indicateur visuel de synchronisation (écran Paramètres), PAS pour piloter la
+     * synchronisation elle-même (ni [pushPendingChanges] ni [pullRemoteChanges] ne s'appuient
+     * dessus). Se met à jour en direct après toute exécution de l'un ou l'autre, qu'elle soit
+     * déclenchée manuellement ou automatiquement.
+     */
+    fun observeQueueStatus(): Flow<SyncQueueStatus>
+
+    /**
+     * Rattrapage ("backfill") : enfile en `CREATE` toute donnée locale de l'utilisateur COURANT
+     * jamais proposée à la synchronisation — voir `CategoryDao.getUnsyncedForUser`/
+     * `SavingsGoalDao.getUnsyncedForUser`. Nécessaire car certains chemins d'écriture contournent
+     * volontairement les repositories câblés sur `sync_queue` (`NewUserDefaultDataSeeder` à
+     * l'inscription, `BackupRepositoryImpl` lors d'une restauration) : leurs lignes existent
+     * localement mais n'ont jamais généré d'entrée de file, donc jamais atteint le serveur.
+     *
+     * Appelé une fois après un [com.arzikina.ne.domain.repository.SyncAuthRepository.login] réussi
+     * (voir `SyncAuthRepositoryImpl`) : c'est le moment où la synchronisation vient de s'activer
+     * pour cet appareil — sans cet appel, les données déjà présentes avant la connexion resteraient
+     * indéfiniment invisibles du serveur (rien ne les modifie jamais après coup pour les faire
+     * entrer en file via [pushPendingChanges] seul).
+     */
+    suspend fun enqueueUnsyncedLocalData()
 }

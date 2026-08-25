@@ -10,6 +10,7 @@ import com.arzikina.ne.domain.model.SyncAuthError
 import com.arzikina.ne.domain.model.SyncAuthResult
 import com.arzikina.ne.domain.model.SyncSession
 import com.arzikina.ne.domain.repository.SyncAuthRepository
+import com.arzikina.ne.domain.repository.SyncEngine
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.Flow
@@ -32,6 +33,7 @@ class SyncAuthRepositoryImpl @Inject constructor(
     private val authApi: SyncAuthApi,
     @ApplicationContext private val context: Context,
     private val store: SyncAuthStore,
+    private val syncEngine: SyncEngine,
     @IoDispatcher private val ioDispatcher: CoroutineDispatcher
 ) : SyncAuthRepository {
 
@@ -55,6 +57,13 @@ class SyncAuthRepositoryImpl @Inject constructor(
                 rawToken = response.token,
                 expiresAt = response.expiresAt
             )
+
+            // Best-effort via runCatching : la session est déjà valide et sauvegardée à ce stade
+            // (voir juste au-dessus) — une exception ici ne doit JAMAIS remonter jusqu'aux blocs
+            // catch ci-dessous ni transformer ce login en échec, l'utilisateur EST connecté. Voir
+            // SyncEngine.enqueueUnsyncedLocalData pour le raisonnement complet (données locales
+            // créées en dehors des repositories câblés sur sync_queue, ex. catégories par défaut).
+            runCatching { syncEngine.enqueueUnsyncedLocalData() }
 
             SyncAuthResult.Success(SyncSession(serverUserId = response.userId, expiresAt = response.expiresAt))
         } catch (e: HttpFailureException) {

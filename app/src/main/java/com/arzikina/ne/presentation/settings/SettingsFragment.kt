@@ -7,6 +7,7 @@ import android.view.View
 import androidx.annotation.DrawableRes
 import androidx.annotation.IdRes
 import androidx.annotation.StringRes
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
@@ -64,6 +65,7 @@ class SettingsFragment : Fragment(R.layout.fragment_settings) {
                 launch { viewModel.uiState.collect { state -> render(viewBinding, state) } }
                 launch { viewModel.biometricLockState.collect { state -> renderBiometricLock(viewBinding, state) } }
                 launch { viewModel.syncNowState.collect { state -> renderSyncNow(viewBinding, state) } }
+                launch { viewModel.syncIndicatorState.collect { state -> renderSyncIndicator(viewBinding, state) } }
                 launch { viewModel.events.collect { event -> handleEvent(viewBinding, event) } }
             }
         }
@@ -330,6 +332,29 @@ class SettingsFragment : Fragment(R.layout.fragment_settings) {
         } else {
             getString(R.string.settings_sync_now_subtitle)
         }
+    }
+
+    /** Peuple `rowValue` de `syncRow` (voir `item_settings_row.xml`, motif "valeur actuelle +
+     *  chevron" déjà utilisé par `currencyRow`/`themeRow`) — le chevron reste toujours visible,
+     *  cette ligne continue de naviguer vers [SyncLoginFragment] quel que soit l'état affiché ici.
+     *  [SyncIndicatorLevel.HIDDEN] (pas de session active) : `rowValue` masqué, aucun changement
+     *  visuel par rapport à avant cette étape. */
+    private fun renderSyncIndicator(binding: FragmentSettingsBinding, state: SyncIndicatorUiState) {
+        val row = binding.syncRow.rowValue
+        if (state.level == SyncIndicatorLevel.HIDDEN) {
+            row.visibility = View.GONE
+            return
+        }
+        row.visibility = View.VISIBLE
+        row.text = when (state.level) {
+            SyncIndicatorLevel.HIDDEN -> "" // Inatteignable ici (voir le retour anticipé ci-dessus).
+            SyncIndicatorLevel.UP_TO_DATE -> getString(R.string.settings_sync_indicator_up_to_date)
+            SyncIndicatorLevel.PENDING -> getString(R.string.settings_sync_indicator_pending, state.pendingCount)
+            SyncIndicatorLevel.SYNCING -> getString(R.string.settings_sync_indicator_syncing)
+            SyncIndicatorLevel.ERROR -> getString(R.string.settings_sync_indicator_error)
+        }
+        val colorRes = if (state.level == SyncIndicatorLevel.ERROR) R.color.arzikina_error else R.color.arzikina_on_surface_variant
+        row.setTextColor(ContextCompat.getColor(requireContext(), colorRes))
     }
 
     private fun handleEvent(binding: FragmentSettingsBinding, event: SettingsEvent) {

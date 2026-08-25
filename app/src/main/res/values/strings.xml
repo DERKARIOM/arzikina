@@ -176,6 +176,14 @@
     <string name="settings_sync_now_nothing_pending">Rien à synchroniser</string>
     <string name="settings_sync_now_error">Synchronisation impossible, réessaie plus tard</string>
 
+    <!-- Indicateur visuel dans rowValue de syncRow (voir SettingsViewModel.syncIndicatorState,
+         SettingsFragment.renderSyncIndicator) — masqué (rowValue GONE) sans session active, aucune
+         chaîne dédiée à ce cas. %d = nombre d'entrées en attente pour settings_sync_indicator_pending. -->
+    <string name="settings_sync_indicator_up_to_date">À jour</string>
+    <string name="settings_sync_indicator_pending">%d en attente</string>
+    <string name="settings_sync_indicator_syncing">Synchronisation…</string>
+    <string name="settings_sync_indicator_error">Erreur de synchronisation</string>
+
     <!-- Authentification — Mot de passe oublié -->
     <string name="forgot_password_title">Mot de passe oublié</string>
     <string name="forgot_password_step1_subtitle">Entre ton e-mail ou nom d\'utilisateur pour continuer</string>

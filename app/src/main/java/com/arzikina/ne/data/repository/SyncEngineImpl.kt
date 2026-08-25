@@ -8,21 +8,27 @@ import com.arzikina.ne.data.local.entity.SavingsGoalEntity
 import com.arzikina.ne.data.local.entity.SyncQueueEntity
 import com.arzikina.ne.data.remote.api.SyncApi
 import com.arzikina.ne.data.remote.dto.CategoryServerStateDto
+import com.arzikina.ne.data.remote.dto.CategorySyncPayload
 import com.arzikina.ne.data.remote.dto.SavingsGoalServerStateDto
+import com.arzikina.ne.data.remote.dto.SavingsGoalSyncPayload
 import com.arzikina.ne.data.remote.dto.SyncPushOperationDto
 import com.arzikina.ne.data.remote.dto.SyncPushRequestDto
 import com.arzikina.ne.domain.model.CategoryIcon
 import com.arzikina.ne.domain.model.SyncEngineResult
 import com.arzikina.ne.domain.model.SyncOperation
 import com.arzikina.ne.domain.model.SyncPullResult
+import com.arzikina.ne.domain.model.SyncQueueStatus
 import com.arzikina.ne.domain.model.SyncStatus
 import com.arzikina.ne.domain.model.TransactionType
 import com.arzikina.ne.domain.repository.SessionManager
 import com.arzikina.ne.domain.repository.SyncEngine
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.decodeFromJsonElement
 import java.io.IOException
+import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -48,6 +54,7 @@ class SyncEngineImpl @Inject constructor(
     private val savingsGoalDao: SavingsGoalDao,
     private val syncApi: SyncApi,
     private val syncCursorStore: SyncCursorStore,
+    private val syncQueueEnqueuer: SyncQueueEnqueuer,
     private val sessionManager: SessionManager,
     private val json: Json
 ) : SyncEngine {
@@ -252,6 +259,86 @@ class SyncEngineImpl @Inject constructor(
                 version = state.version
             )
         )
+    }
+
+    /**
+     * Voir [SyncEngine.observeQueueStatus]. Volontairement TOUS types d'entités confondus (pas de
+     * paramètre [entityType]) : l'indicateur visuel visé (écran Paramètres) affiche un état global
+     * unique de la synchronisation, pas un état par entité — inutile d'exposer cette granularité à
+     * la Présentation pour l'instant. `combine` (pas trois collectes séparées côté appelant) :
+     * une seule émission recomposée à chaque changement de N'IMPORTE LEQUEL des trois décomptes,
+     * jamais un état partiellement à jour.
+     */
+    override fun observeQueueStatus(): Flow<SyncQueueStatus> = combine(
+        syncQueueDao.observeCountByStatus(SyncStatus.PENDING),
+        syncQueueDao.observeCountByStatus(SyncStatus.SYNCING),
+        syncQueueDao.observeCountByStatus(SyncStatus.FAILED)
+    ) { pending, syncing, failed -> SyncQueueStatus(pending = pending, syncing = syncing, failed = failed) }
+
+    /** Voir [SyncEngine.enqueueUnsyncedLocalData]. Ne fait rien silencieusement sans utilisateur
+     *  courant (même garde que [applyCategoryServerState]/[applySavingsGoalServerState]) : cet
+     *  appel suit toujours un `login` réussi, un utilisateur devrait donc déjà être connu. */
+    override suspend fun enqueueUnsyncedLocalData() {
+        val userId = sessionManager.getCurrentUserIdOnce() ?: return
+        enqueueUnsyncedCategories(userId)
+        enqueueUnsyncedSavingsGoals(userId)
+    }
+
+    /**
+     * Construit et enfile le payload `CREATE` pour chaque catégorie locale sans `syncId` — même
+     * construction que `CategoryRepositoryImpl.enqueueCategorySync` (duplication assumée, voir la
+     * doc de tête de cette classe sur la règle de trois). Le `syncId` généré est PERSISTÉ (`upsert`)
+     * avant l'enfilage, contrairement au filet de sécurité de `deleteCategory` : cette ligne reste
+     * active, un futur [pushBatch]/[pullEntityType] doit pouvoir la retrouver par ce même `syncId`.
+     */
+    private suspend fun enqueueUnsyncedCategories(userId: Long) {
+        categoryDao.getUnsyncedForUser(userId).forEach { category ->
+            val entity = category.copy(syncId = UUID.randomUUID().toString())
+            categoryDao.upsert(entity)
+
+            val payload = CategorySyncPayload(
+                id = requireNotNull(entity.syncId),
+                baseVersion = null,
+                name = entity.name,
+                icon = entity.icon.name,
+                colorArgb = entity.colorArgb,
+                type = entity.type.name,
+                createdAt = entity.createdAt,
+                updatedAt = entity.updatedAt
+            )
+            syncQueueEnqueuer.enqueue(
+                entityType = "categories",
+                entitySyncId = payload.id,
+                operation = SyncOperation.CREATE,
+                payloadJson = json.encodeToString(CategorySyncPayload.serializer(), payload)
+            )
+        }
+    }
+
+    /** Voir [enqueueUnsyncedCategories] — même logique, appliquée à `savings_goals`. */
+    private suspend fun enqueueUnsyncedSavingsGoals(userId: Long) {
+        savingsGoalDao.getUnsyncedForUser(userId).forEach { goal ->
+            val entity = goal.copy(syncId = UUID.randomUUID().toString())
+            savingsGoalDao.upsert(entity)
+
+            val payload = SavingsGoalSyncPayload(
+                id = requireNotNull(entity.syncId),
+                baseVersion = null,
+                name = entity.name,
+                targetAmount = entity.targetAmount,
+                currentAmount = entity.currentAmount,
+                currencyCode = entity.currencyCode,
+                deadline = entity.deadline,
+                createdAt = entity.createdAt,
+                updatedAt = entity.updatedAt
+            )
+            syncQueueEnqueuer.enqueue(
+                entityType = "savings_goals",
+                entitySyncId = payload.id,
+                operation = SyncOperation.CREATE,
+                payloadJson = json.encodeToString(SavingsGoalSyncPayload.serializer(), payload)
+            )
+        }
     }
 
     private suspend fun markSyncing(entries: List<SyncQueueEntity>) {
