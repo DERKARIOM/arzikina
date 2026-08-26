@@ -7,24 +7,44 @@ import androidx.room.Upsert
 import com.arzikina.ne.data.local.entity.TransactionEntity
 import kotlinx.coroutines.flow.Flow
 
-/** Voir `data/local/dao/AccountDao` pour le raisonnement sur le filtrage systématique par `userId`. */
+/**
+ * Voir `data/local/dao/AccountDao` pour le raisonnement sur le filtrage systématique par `userId`.
+ *
+ * Suppression DOUCE (voir `CategoryDao`/`AccountDao` pour le raisonnement complet, même principe) :
+ * toutes les lectures ci-dessous filtrent `deletedAt IS NULL`, [deleteById] reste néanmoins
+ * DISPONIBLE (contrairement à `AccountDao`/`PersonDao`, qui l'ont retiré) — voir sa KDoc pour le
+ * raisonnement : plusieurs repositories composent encore ce DAO directement pour des suppressions
+ * en cascade PUREMENT LOCALES sur des lignes jamais destinées elles-mêmes à porter un `syncId`
+ * propre tant que l'étape 17 (câblage complet) n'est pas terminée — voir son suivi dans
+ * `docs/sync/AUDIT-ET-ARCHITECTURE-SYNC.md`.
+ */
 @Dao
 interface TransactionDao {
 
-    @Query("SELECT * FROM transactions WHERE userId = :userId ORDER BY date DESC")
+    @Query("SELECT * FROM transactions WHERE userId = :userId AND deletedAt IS NULL ORDER BY date DESC")
     fun observeAllForUser(userId: Long): Flow<List<TransactionEntity>>
 
-    @Query("SELECT * FROM transactions WHERE id = :id AND userId = :userId")
+    @Query("SELECT * FROM transactions WHERE id = :id AND userId = :userId AND deletedAt IS NULL")
     suspend fun getById(id: Long, userId: Long): TransactionEntity?
+
+    /** Réservé à `SyncEngineImpl` — voir la KDoc de `CategoryDao.getBySyncId` (même raisonnement,
+     * volontairement SANS filtre `deletedAt IS NULL` ni `userId`). */
+    @Query("SELECT * FROM transactions WHERE syncId = :syncId LIMIT 1")
+    suspend fun getBySyncId(syncId: String): TransactionEntity?
+
+    /** Réservé à `SyncEngineImpl.enqueueUnsyncedLocalData` — voir la KDoc de
+     * `CategoryDao.getUnsyncedForUser` (même raisonnement). */
+    @Query("SELECT * FROM transactions WHERE userId = :userId AND deletedAt IS NULL AND syncId IS NULL")
+    suspend fun getUnsyncedForUser(userId: Long): List<TransactionEntity>
 
     /** Utilisé par `AccountRepositoryImpl.deleteAccount` pour anticiper la cascade SQL sur
      * `accountId` (voir `TransactionEntity`) avant de supprimer le compte. */
-    @Query("SELECT * FROM transactions WHERE accountId = :accountId AND userId = :userId")
+    @Query("SELECT * FROM transactions WHERE accountId = :accountId AND userId = :userId AND deletedAt IS NULL")
     suspend fun getAllForAccount(accountId: Long, userId: Long): List<TransactionEntity>
 
     /** Même besoin que [getAllForAccount], côté `transferAccountId` (compte DESTINATION d'un
      * virement, voir `TransactionEntity.transferAccountId`) — également en `CASCADE`. */
-    @Query("SELECT * FROM transactions WHERE transferAccountId = :accountId AND userId = :userId")
+    @Query("SELECT * FROM transactions WHERE transferAccountId = :accountId AND userId = :userId AND deletedAt IS NULL")
     suspend fun getAllForTransferAccount(accountId: Long, userId: Long): List<TransactionEntity>
 
     /** Neutralise un pointeur `feeTransactionId` devenu mort : voir `AccountRepositoryImpl.deleteAccount`,
@@ -42,7 +62,7 @@ interface TransactionDao {
      * transaction pour un même reçu), mais rien ne l'impose au niveau SQL (pas de contrainte
      * `UNIQUE`) — `getById`-style lecture ponctuelle plutôt qu'un flux, cet appel n'a lieu qu'au
      * moment du clic sur le bouton, jamais en continu. */
-    @Query("SELECT * FROM transactions WHERE receiptId = :receiptId AND userId = :userId LIMIT 1")
+    @Query("SELECT * FROM transactions WHERE receiptId = :receiptId AND userId = :userId AND deletedAt IS NULL LIMIT 1")
     suspend fun findByReceiptId(receiptId: Long, userId: Long): TransactionEntity?
 
     /** Neutralise un pointeur `receiptId` devenu mort — même principe que
@@ -55,7 +75,7 @@ interface TransactionDao {
      * (`DISTINCT`) pour connaître tous les reçus déjà liés à une transaction, plutôt qu'un appel
      * [findByReceiptId] par reçu affiché dans "Gestion des reçus" (non-N+1, voir
      * `ReceiptsViewModel`/`ReceiptsAdapter`, statut visuel du reçu). */
-    @Query("SELECT DISTINCT receiptId FROM transactions WHERE userId = :userId AND receiptId IS NOT NULL")
+    @Query("SELECT DISTINCT receiptId FROM transactions WHERE userId = :userId AND receiptId IS NOT NULL AND deletedAt IS NULL")
     fun observeReceiptIdsWithTransaction(userId: Long): Flow<List<Long>>
 
     /** Retourne l'id de la ligne insérée, ou -1 en cas de mise à jour (voir `AccountDao.upsert`) —
@@ -73,8 +93,22 @@ interface TransactionDao {
     @Insert
     suspend fun insertAll(transactions: List<TransactionEntity>): List<Long>
 
+    /** Suppression PHYSIQUE — voir la doc de tête. Reste utilisée par plusieurs repositories
+     * (`LoanRepositoryImpl`, `RecurringTransactionRepositoryImpl`, `AccountRepositoryImpl`,
+     * `PersonRepositoryImpl`) pour des transactions générées automatiquement et supprimées en
+     * cascade applicative, PAS ENCORE toutes basculées vers [softDeleteById] + enfilage sync — voir
+     * le plan de l'étape 17 (`docs/sync/AUDIT-ET-ARCHITECTURE-SYNC.md`). Chaque site d'appel sera
+     * revu individuellement : une transaction déjà envoyée au serveur (donc porteuse d'un `syncId`)
+     * ne doit PLUS jamais être purgée par cette méthode une fois son repository câblé, sous peine de
+     * réapparaître au prochain pull d'un autre appareil (le serveur, lui, ignorerait toujours cette
+     * suppression). */
     @Query("DELETE FROM transactions WHERE id = :id AND userId = :userId")
     suspend fun deleteById(id: Long, userId: Long)
+
+    /** Suppression DOUCE (voir la doc de tête) : `deletedAt`/`updatedAt` seulement, même principe
+     * que `CategoryDao.softDeleteById`/`AccountDao.softDeleteById`. */
+    @Query("UPDATE transactions SET deletedAt = :deletedAt, updatedAt = :deletedAt WHERE id = :id AND userId = :userId")
+    suspend fun softDeleteById(id: Long, userId: Long, deletedAt: Long)
 
     /** Utilisé uniquement par la restauration d'une sauvegarde : ne purge QUE les données de [userId]. */
     @Query("DELETE FROM transactions WHERE userId = :userId")

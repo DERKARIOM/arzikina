@@ -21,7 +21,9 @@ declare(strict_types=1);
  *   - `db` : nom de colonne MySQL (snake_case).
  *   - `payload` : clé correspondante dans le JSON envoyé par l'app Android (camelCase, voir
  *     `data/remote/dto/*SyncPayload.kt`).
- *   - `type` : `'string'` ou `'int'` — pilote le cast PHP appliqué à la valeur.
+ *   - `type` : `'string'`, `'int'` ou `'float'` (ce dernier introduit pour `transactions.latitude`/
+ *     `longitude`, les premiers champs non-entiers de ce registre) — pilote le cast PHP appliqué à
+ *     la valeur, voir `castConfiguredValue`/`defaultForConfiguredType` dans `push.php`.
  *   - `nullable` : `true` si la colonne MySQL accepte `NULL` — pilote la distinction
  *     `array_key_exists` ("champ non envoyé, conserver la valeur actuelle") vs "champ envoyé
  *     explicitement à `null`" (effacer) lors d'une mise à jour, voir `upsertExistingEntityRow`.
@@ -93,6 +95,36 @@ const ENTITY_CONFIGS = [
             // (`castConfiguredValue`, voir `push.php`) : pas de type booléen dédié, `'int'` suffit.
             ['db' => 'is_excluded_from_statistics', 'payload' => 'isExcludedFromStatistics', 'type' => 'int', 'nullable' => false],
             ['db' => 'mobile_money_package_name', 'payload' => 'mobileMoneyPackageName', 'type' => 'string', 'nullable' => true],
+        ],
+    ],
+    // Étape 17 : `Transaction` référence d'AUTRES lignes synchronisées (compte, catégorie,
+    // transfert, transaction de frais) — voir `data/remote/dto/TransactionSyncPayload.kt` pour le
+    // raisonnement complet. Ces colonnes stockent le `syncId` (UUID) de la ligne référencée, PAS
+    // son `id` MySQL (qui EST déjà ce même UUID, voir `id CHAR(36)` sur chaque table métier) :
+    // aucune résolution supplémentaire n'est nécessaire ici, cast `'string'` simple, comme n'importe
+    // quelle autre colonne — mais AUCUNE `FOREIGN KEY` réelle (même principe que `loans.transaction_id`/
+    // `loan_payments.transaction_id`, voir docs/sync/AUDIT-ET-ARCHITECTURE-SYNC.md, 10bis) : la
+    // ligne référencée peut arriver dans un push ULTÉRIEUR (ex. compte tout juste créé hors ligne),
+    // une contrainte stricte ferait échouer cette transaction au lieu de la laisser attendre.
+    'transactions' => [
+        'table' => 'transactions',
+        'columns' => [
+            ['db' => 'amount', 'payload' => 'amount', 'type' => 'int', 'nullable' => false],
+            ['db' => 'type', 'payload' => 'type', 'type' => 'string', 'nullable' => false],
+            // Noms de colonnes CONFORMES à database/migrations/001_initial_schema.sql (pas de
+            // suffixe `_sync_id` : ces colonnes CHAR(36) SONT déjà l'UUID/syncId de la ligne
+            // référencée — seule la clé du payload JSON, côté Android, porte ce suffixe pour rester
+            // explicite sur ce qu'elle transporte, voir `TransactionSyncPayload.kt`).
+            ['db' => 'account_id', 'payload' => 'accountSyncId', 'type' => 'string', 'nullable' => false],
+            ['db' => 'transfer_account_id', 'payload' => 'transferAccountSyncId', 'type' => 'string', 'nullable' => true],
+            ['db' => 'category_id', 'payload' => 'categorySyncId', 'type' => 'string', 'nullable' => true],
+            ['db' => 'date', 'payload' => 'date', 'type' => 'int', 'nullable' => false],
+            ['db' => 'description', 'payload' => 'description', 'type' => 'string', 'nullable' => false],
+            ['db' => 'latitude', 'payload' => 'latitude', 'type' => 'float', 'nullable' => true],
+            ['db' => 'longitude', 'payload' => 'longitude', 'type' => 'float', 'nullable' => true],
+            ['db' => 'payment_method', 'payload' => 'paymentMethod', 'type' => 'string', 'nullable' => true],
+            ['db' => 'fee_transaction_id', 'payload' => 'feeTransactionSyncId', 'type' => 'string', 'nullable' => true],
+            ['db' => 'fee_type', 'payload' => 'feeType', 'type' => 'string', 'nullable' => true],
         ],
     ],
 ];

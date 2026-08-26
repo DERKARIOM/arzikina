@@ -7,6 +7,7 @@ import com.arzikina.ne.data.local.dao.PersonDao
 import com.arzikina.ne.data.local.dao.TransactionDao
 import com.arzikina.ne.data.local.database.ArzikinaDatabase
 import com.arzikina.ne.data.local.entity.PersonEntity
+import com.arzikina.ne.data.local.entity.TransactionEntity
 import com.arzikina.ne.data.mapper.toDomain
 import com.arzikina.ne.data.mapper.toEntity
 import com.arzikina.ne.data.remote.dto.PersonSyncPayload
@@ -32,7 +33,10 @@ import javax.inject.Inject
  * [deletePerson] dépend de [LoanDao]/[LoanPaymentDao]/[TransactionDao] (pas seulement de
  * [PersonDao]) : voir la doc de [PersonRepository.deletePerson] — la cascade SQLite
  * `persons` → `loans` → `loan_payments` ne suffit pas, il faut aussi nettoyer les transactions
- * Arzikina liées, qu'aucune contrainte de clé étrangère ne peut atteindre.
+ * Arzikina liées, qu'aucune contrainte de clé étrangère ne peut atteindre. [TransactionSyncEnqueuer]
+ * injecté pour la même raison que `LoanRepositoryImpl`/`AccountRepositoryImpl` (voir sa KDoc de
+ * tête) : `Loan`/`LoanPayment` restent des suppressions PHYSIQUES non synchronisées, seules leurs
+ * transactions Arzikina liées doivent désormais être enfilées en `DELETE`.
  */
 class PersonRepositoryImpl @Inject constructor(
     private val database: ArzikinaDatabase,
@@ -42,6 +46,7 @@ class PersonRepositoryImpl @Inject constructor(
     private val transactionDao: TransactionDao,
     private val sessionManager: SessionManager,
     private val syncQueueEnqueuer: SyncQueueEnqueuer,
+    private val transactionSyncEnqueuer: TransactionSyncEnqueuer,
     private val json: Json,
     @IoDispatcher private val ioDispatcher: CoroutineDispatcher
 ) : PersonRepository {
@@ -102,20 +107,40 @@ class PersonRepositoryImpl @Inject constructor(
         val userId = requireCurrentUserId()
         val existing = personDao.getById(id, userId) ?: return@withContext
         val now = System.currentTimeMillis()
+        val pendingSyncOps = mutableListOf<Pair<TransactionEntity, SyncOperation>>()
 
         database.withTransaction {
             loanDao.getAllForPerson(id, userId).forEach { loan ->
                 loanPaymentDao.getAllForLoan(loan.id, userId).forEach { payment ->
-                    transactionDao.deleteById(payment.transactionId, userId)
+                    val paymentTransaction = transactionDao.getById(payment.transactionId, userId)
+                    transactionDao.softDeleteById(payment.transactionId, userId, now)
+                    if (paymentTransaction != null) {
+                        pendingSyncOps += paymentTransaction.copy(
+                            syncId = paymentTransaction.syncId ?: UUID.randomUUID().toString(),
+                            deletedAt = now,
+                            updatedAt = now
+                        ) to SyncOperation.DELETE
+                    }
                 }
-                transactionDao.deleteById(loan.transactionId, userId)
+                val loanTransaction = transactionDao.getById(loan.transactionId, userId)
+                transactionDao.softDeleteById(loan.transactionId, userId, now)
+                if (loanTransaction != null) {
+                    pendingSyncOps += loanTransaction.copy(
+                        syncId = loanTransaction.syncId ?: UUID.randomUUID().toString(),
+                        deletedAt = now,
+                        updatedAt = now
+                    ) to SyncOperation.DELETE
+                }
                 // Suppression PHYSIQUE explicite (cascade SQLite `ForeignKey.CASCADE` de
                 // `loans.personId` inopérante sur le softDeleteById ci-dessous) — cascade toujours
-                // elle-même sur `loan_payments` via `loanId`, relation intacte.
+                // elle-même sur `loan_payments` via `loanId`, relation intacte. `Loan` lui-même n'est
+                // pas une entité synchronisée (voir la KDoc de tête) : pas d'enfilage ici.
                 loanDao.deleteById(loan.id, userId)
             }
             personDao.softDeleteById(id, userId, now)
         }
+
+        pendingSyncOps.forEach { (entity, operation) -> transactionSyncEnqueuer.enqueue(entity, operation) }
         enqueuePersonSync(
             existing.copy(syncId = existing.syncId ?: UUID.randomUUID().toString(), deletedAt = now, updatedAt = now),
             operation = SyncOperation.DELETE

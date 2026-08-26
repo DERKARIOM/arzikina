@@ -70,6 +70,6 @@ $stmt->execute(['user_id' => $userId, 'updated_after' => $updatedAfter]);
 $rows = $stmt->fetchAll();
 
 sendJson([
-    'entities' => array_map('toCamelCaseRow', $rows),
+    'entities' => array_map(static fn (array $row): array => toCamelCaseRow($row, $entityConfig), $rows),
     'serverTime' => (int) round(microtime(true) * 1000),
 ]);

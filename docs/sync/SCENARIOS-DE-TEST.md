@@ -8,7 +8,8 @@ et 9 de ce même audit) : file `sync_queue`, Last-Write-Wins avec journal `sync_
 suppression douce, backfill au login, retry des entrées `FAILED`, déclenchement automatique.
 
 Statut de chaque scénario tenu à jour au fil des exécutions (✅ validé / ❌ bug trouvé / ⏳ pas encore
-testé). Entités disponibles pour les tests : `categories`, `savings_goals`, `financial_plans`.
+testé). Entités disponibles pour les tests : `categories`, `savings_goals`, `financial_plans`,
+`persons`, `accounts`.
 
 Outils utiles : bouton **Synchroniser maintenant** (Paramètres), indicateur d'état sur `syncRow`,
 Database Inspector d'Android Studio (table `sync_queue`, colonnes `status`/`errorMessage`), la
@@ -54,6 +55,16 @@ collection Postman `Arzikina-Sync-API` (Push/Pull manuels), et l'accès direct �
    (`financial_plan_items`) associées disparaissent aussi de l'écran (suppression douce en cascade
    explicite, voir `FinancialPlanRepositoryImpl.deletePlan`) — cette table n'est pas synchronisée,
    la vérification se fait uniquement en local.
+6. **Spécifique à `accounts`** (cascade la plus complexe, voir `AccountRepositoryImpl.deleteAccount`,
+   étape 16.1) : avant de supprimer, crée un compte avec au moins une transaction simple, un prêt
+   dont ce compte est le compte principal, ET un remboursement fait DEPUIS ce compte pour un prêt
+   dont le compte principal est différent. Après suppression, vérifie en base (Database Inspector) :
+   - `accounts` : la ligne existe TOUJOURS, avec `deletedAt` renseigné (jamais un `DELETE`).
+   - `transactions`/`loans`/`loan_payments` liés : supprimés PHYSIQUEMENT (ces tables ne sont pas
+     synchronisées, une vraie suppression reste correcte) — aucune ligne orpheline référençant ce
+     compte.
+   - le prêt dont le compte principal était DIFFÉRENT : son `amountRepaid`/`remainingAmount`/`status`
+     ont bien été recalculés (le remboursement fait depuis le compte supprimé ne compte plus).
 
 ---
 
@@ -107,6 +118,26 @@ collection Postman `Arzikina-Sync-API` (Push/Pull manuels), et l'accès direct �
 
 Déjà validé une première fois involontairement (déploiement serveur en retard sur
 `financial_plans`) — à rejouer une fois plus tard pour confirmer que ce n'était pas un hasard.
+
+### Addendum — deux bugs réels trouvés lors du câblage de `transactions` (étape 17.6)
+
+1. **`SYNCING` bloqué indéfiniment** : `SyncEngineImpl.pushBatch` ne rattrapait que `IOException`
+   autour de l'appel réseau. Une réponse serveur non-JSON valide (ex. avertissement PHP mélangé au
+   corps JSON) levait une `SerializationException`, jamais rattrapée — les entrées restaient
+   `SYNCING` pour toujours (exclues de `isEligibleForRetry`, qui ne relit que `PENDING`/`FAILED`).
+   Corrigé : `catch (e: Exception)` (avec `catch (e: CancellationException) { throw e }` avant, pour
+   ne pas casser l'annulation de coroutine).
+2. **`accountSyncId` manquant côté réponse serveur** : `toCamelCaseRow` (côté PHP,
+   `utils/case_convert.php`) convertissait mécaniquement `account_id` → `accountId`, jamais
+   `accountSyncId` — alors que `TransactionServerStateDto` (côté Kotlin) exige ce nom de champ (voir
+   `entity_sync_configs.php`, colonne `account_id` / clé payload `accountSyncId`). Toutes les
+   entités précédentes coïncidaient par hasard (`color_argb` → `colorArgb` des deux façons) ;
+   `transactions` est la première à casser cette coïncidence. Corrigé : `toCamelCaseRow` prend
+   désormais `$config` en paramètre et utilise `$col['payload']` pour les colonnes spécifiques à
+   l'entité.
+
+À revalider : relancer une synchronisation complète de `transactions` (l'app affichait « Erreur de
+synchronisation » à cause du bug 2 avant ce correctif) et confirmer le retour à « À jour ».
 
 ---
 

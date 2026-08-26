@@ -7,6 +7,7 @@ import com.arzikina.ne.data.local.dao.TransactionDao
 import com.arzikina.ne.data.local.database.ArzikinaDatabase
 import com.arzikina.ne.data.local.entity.RecurringTransactionEntity
 import com.arzikina.ne.data.local.entity.RecurringTransactionOccurrenceEntity
+import com.arzikina.ne.data.local.entity.TransactionEntity
 import com.arzikina.ne.data.mapper.toDomain
 import com.arzikina.ne.data.mapper.toEntity
 import com.arzikina.ne.di.IoDispatcher
@@ -14,6 +15,7 @@ import com.arzikina.ne.domain.model.OccurrenceStatus
 import com.arzikina.ne.domain.model.PaymentMethod
 import com.arzikina.ne.domain.model.RecurringTransaction
 import com.arzikina.ne.domain.model.RecurringTransactionOccurrence
+import com.arzikina.ne.domain.model.SyncOperation
 import com.arzikina.ne.domain.model.Transaction
 import com.arzikina.ne.domain.model.TransactionType
 import com.arzikina.ne.domain.model.computeNextExecutionDate
@@ -27,6 +29,7 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
+import java.util.UUID
 import javax.inject.Inject
 
 /**
@@ -39,7 +42,10 @@ import javax.inject.Inject
  * via [ArzikinaDatabase.withTransaction] — même mécanisme que `LoanRepositoryImpl`.
  *
  * Dépend directement de [TransactionDao] (pas de `TransactionRepository`) : voir la doc de
- * `LoanRepositoryImpl` pour le même choix.
+ * `LoanRepositoryImpl` pour le même choix. [TransactionSyncEnqueuer] injecté pour la même raison
+ * que `LoanRepositoryImpl` (voir sa KDoc de tête) — `RecurringTransactionEntity`/
+ * `RecurringTransactionOccurrenceEntity` ne sont PAS des entités synchronisées à cette étape, seules
+ * les transactions Arzikina générées par [acceptOccurrence]/[acceptOccurrenceWithChanges] le sont.
  *
  * Travaille avec les entités Room directement dans ses méthodes d'écriture (jamais de conversion
  * `toDomain()`/`toEntity()` intermédiaire inutile) : seules les méthodes de LECTURE PUBLIQUE
@@ -62,6 +68,7 @@ class RecurringTransactionRepositoryImpl @Inject constructor(
     private val transactionDao: TransactionDao,
     private val sessionManager: SessionManager,
     private val automationScheduler: AutomationScheduler,
+    private val transactionSyncEnqueuer: TransactionSyncEnqueuer,
     @IoDispatcher private val ioDispatcher: CoroutineDispatcher
 ) : RecurringTransactionRepository {
 
@@ -147,14 +154,30 @@ class RecurringTransactionRepositoryImpl @Inject constructor(
 
     override suspend fun deleteRecurringTransaction(id: Long) = withContext(ioDispatcher) {
         val userId = requireCurrentUserId()
+        val pendingSyncOps = mutableListOf<Pair<TransactionEntity, SyncOperation>>()
+        val now = System.currentTimeMillis()
+
         database.withTransaction {
             recurringTransactionDao.getById(id, userId) ?: return@withTransaction
             occurrenceDao.getAllForRecurringTransaction(id, userId)
                 .mapNotNull { it.transactionId }
-                .forEach { transactionDao.deleteById(it, userId) }
-            // Supprime aussi, en cascade SQLite, tout l'historique d'occurrences de cette règle.
+                .forEach { transactionId ->
+                    val transaction = transactionDao.getById(transactionId, userId)
+                    transactionDao.softDeleteById(transactionId, userId, now)
+                    if (transaction != null) {
+                        pendingSyncOps += transaction.copy(
+                            syncId = transaction.syncId ?: UUID.randomUUID().toString(),
+                            deletedAt = now,
+                            updatedAt = now
+                        ) to SyncOperation.DELETE
+                    }
+                }
+            // Supprime aussi, en cascade SQLite, tout l'historique d'occurrences de cette règle
+            // (`RecurringTransactionOccurrenceEntity` n'est pas une entité synchronisée à cette étape).
             recurringTransactionDao.deleteById(id, userId)
         }
+
+        pendingSyncOps.forEach { (entity, operation) -> transactionSyncEnqueuer.enqueue(entity, operation) }
         // Toujours appelé, même si la règle n'existait déjà plus ci-dessus (voir la doc de
         // `AutomationScheduler.cancel` : ne lève jamais d'exception si aucune alarme n'était
         // programmée) — voir cahier des charges section 7 : une suppression doit annuler le
@@ -164,28 +187,33 @@ class RecurringTransactionRepositoryImpl @Inject constructor(
 
     override suspend fun acceptOccurrence(occurrenceId: Long): Long = withContext(ioDispatcher) {
         val userId = requireCurrentUserId()
-        database.withTransaction {
+        var pendingSyncOp: Pair<TransactionEntity, SyncOperation>? = null
+
+        val result = database.withTransaction {
             val occurrence = pendingOccurrenceOrThrow(occurrenceId, userId)
             val rule = recurringTransactionDao.getById(occurrence.recurringTransactionId, userId)
                 ?: error("Transaction récurrente introuvable.")
             val now = System.currentTimeMillis()
-            val transactionId = transactionDao.upsert(
-                Transaction(
-                    amount = rule.amount,
-                    type = rule.type,
-                    accountId = rule.accountId,
-                    categoryId = rule.categoryId,
-                    date = occurrence.scheduledDate,
-                    description = rule.description,
-                    paymentMethod = rule.paymentMethod,
-                    createdAt = now
-                ).toEntity(userId)
-            )
+            val transactionEntity = Transaction(
+                amount = rule.amount,
+                type = rule.type,
+                accountId = rule.accountId,
+                categoryId = rule.categoryId,
+                date = occurrence.scheduledDate,
+                description = rule.description,
+                paymentMethod = rule.paymentMethod,
+                createdAt = now
+            ).toEntity(userId).copy(syncId = UUID.randomUUID().toString(), updatedAt = now)
+            val transactionId = transactionDao.upsert(transactionEntity)
+            pendingSyncOp = transactionEntity.copy(id = transactionId) to SyncOperation.CREATE
             occurrenceDao.upsert(
                 occurrence.copy(status = OccurrenceStatus.ACCEPTED, transactionId = transactionId, processedAt = now)
             )
             transactionId
         }
+
+        pendingSyncOp?.let { (entity, operation) -> transactionSyncEnqueuer.enqueue(entity, operation) }
+        result
     }
 
     override suspend fun acceptOccurrenceWithChanges(
@@ -199,26 +227,31 @@ class RecurringTransactionRepositoryImpl @Inject constructor(
         paymentMethod: PaymentMethod?
     ): Long = withContext(ioDispatcher) {
         val userId = requireCurrentUserId()
-        database.withTransaction {
+        var pendingSyncOp: Pair<TransactionEntity, SyncOperation>? = null
+
+        val result = database.withTransaction {
             val occurrence = pendingOccurrenceOrThrow(occurrenceId, userId)
             val now = System.currentTimeMillis()
-            val transactionId = transactionDao.upsert(
-                Transaction(
-                    amount = amount,
-                    type = type,
-                    accountId = accountId,
-                    categoryId = categoryId,
-                    date = date,
-                    description = description,
-                    paymentMethod = paymentMethod,
-                    createdAt = now
-                ).toEntity(userId)
-            )
+            val transactionEntity = Transaction(
+                amount = amount,
+                type = type,
+                accountId = accountId,
+                categoryId = categoryId,
+                date = date,
+                description = description,
+                paymentMethod = paymentMethod,
+                createdAt = now
+            ).toEntity(userId).copy(syncId = UUID.randomUUID().toString(), updatedAt = now)
+            val transactionId = transactionDao.upsert(transactionEntity)
+            pendingSyncOp = transactionEntity.copy(id = transactionId) to SyncOperation.CREATE
             occurrenceDao.upsert(
                 occurrence.copy(status = OccurrenceStatus.MODIFIED, transactionId = transactionId, processedAt = now)
             )
             transactionId
         }
+
+        pendingSyncOp?.let { (entity, operation) -> transactionSyncEnqueuer.enqueue(entity, operation) }
+        result
     }
 
     // Type de retour Unit explicite (contrairement aux autres méthodes de cette classe) : sans lui,

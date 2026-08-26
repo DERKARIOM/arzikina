@@ -6,12 +6,14 @@ import com.arzikina.ne.data.local.dao.FinancialPlanDao
 import com.arzikina.ne.data.local.dao.PersonDao
 import com.arzikina.ne.data.local.dao.SavingsGoalDao
 import com.arzikina.ne.data.local.dao.SyncQueueDao
+import com.arzikina.ne.data.local.dao.TransactionDao
 import com.arzikina.ne.data.local.entity.AccountEntity
 import com.arzikina.ne.data.local.entity.CategoryEntity
 import com.arzikina.ne.data.local.entity.FinancialPlanEntity
 import com.arzikina.ne.data.local.entity.PersonEntity
 import com.arzikina.ne.data.local.entity.SavingsGoalEntity
 import com.arzikina.ne.data.local.entity.SyncQueueEntity
+import com.arzikina.ne.data.local.entity.TransactionEntity
 import com.arzikina.ne.data.remote.api.SyncApi
 import com.arzikina.ne.data.remote.dto.AccountServerStateDto
 import com.arzikina.ne.data.remote.dto.AccountSyncPayload
@@ -25,10 +27,13 @@ import com.arzikina.ne.data.remote.dto.SavingsGoalServerStateDto
 import com.arzikina.ne.data.remote.dto.SavingsGoalSyncPayload
 import com.arzikina.ne.data.remote.dto.SyncPushOperationDto
 import com.arzikina.ne.data.remote.dto.SyncPushRequestDto
+import com.arzikina.ne.data.remote.dto.TransactionServerStateDto
 import com.arzikina.ne.domain.model.AccountIcon
 import com.arzikina.ne.domain.model.AccountType
 import com.arzikina.ne.domain.model.CategoryIcon
+import com.arzikina.ne.domain.model.FeeType
 import com.arzikina.ne.domain.model.FinancialPlanIcon
+import com.arzikina.ne.domain.model.PaymentMethod
 import com.arzikina.ne.domain.model.PlanPeriodType
 import com.arzikina.ne.domain.model.PlanStatus
 import com.arzikina.ne.domain.model.SyncEngineResult
@@ -39,6 +44,7 @@ import com.arzikina.ne.domain.model.SyncStatus
 import com.arzikina.ne.domain.model.TransactionType
 import com.arzikina.ne.domain.repository.SessionManager
 import com.arzikina.ne.domain.repository.SyncEngine
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.serialization.json.Json
@@ -51,22 +57,24 @@ import javax.inject.Singleton
 
 /**
  * Voir [SyncEngine] pour le contrat et l'étape actuelle. [SUPPORTED_ENTITY_TYPES] (`categories`,
- * `savings_goals`, `financial_plans`, `persons`, `accounts`) sont traitées en DUR ici — même choix
- * que côté serveur AVANT sa généralisation (étape 14, voir `entity_sync_configs.php`) : côté
- * Android, cette duplication reste volontairement ASSUMÉE (voir le plan validé de l'étape 14,
+ * `savings_goals`, `financial_plans`, `persons`, `accounts`, `transactions`) sont traitées en DUR
+ * ici — même choix que côté serveur AVANT sa généralisation (étape 14, voir `entity_sync_configs.php`) :
+ * côté Android, cette duplication reste volontairement ASSUMÉE (voir le plan validé de l'étape 14,
  * "Android reste dupliqué") — Room exige des `@Entity` concrets sans supertype commun sans
  * introduire une nouvelle couche d'abstraction, et la vérification à la compilation de Kotlin rend
  * cette duplication plus sûre ici qu'en PHP dynamique. Seule la boucle EXTERNE (drainage de la
- * file, pagination, curseur, transitions de statut) est déjà partagée entre les cinq — voir
+ * file, pagination, curseur, transitions de statut) est déjà partagée entre les six — voir
  * [pushBatch]/[pullEntityType] — seules [applyCategoryServerState]/[applySavingsGoalServerState]/
- * [applyFinancialPlanServerState]/[applyPersonServerState]/[applyAccountServerState] (et la
- * construction du payload, faite en amont par chaque repository) diffèrent réellement par entité.
+ * [applyFinancialPlanServerState]/[applyPersonServerState]/[applyAccountServerState]/
+ * [applyTransactionServerState] (et la construction du payload, faite en amont par chaque
+ * repository, ou par [TransactionSyncEnqueuer] pour `transactions` — voir sa KDoc) diffèrent
+ * réellement par entité.
  *
- * Dépend directement de [CategoryDao]/[SavingsGoalDao]/[FinancialPlanDao]/[PersonDao]/[AccountDao]
- * (couche DATA vers couche DATA, jamais via leurs repositories respectifs, qui filtrent par
- * utilisateur COURANT et masquent volontairement `syncId`/`version` au domaine — voir leur KDoc) :
- * ce moteur doit pouvoir relire/écrire ces champs bruts, y compris sur des lignes déjà supprimées
- * (voir `getBySyncId` de chaque DAO).
+ * Dépend directement de [CategoryDao]/[SavingsGoalDao]/[FinancialPlanDao]/[PersonDao]/[AccountDao]/
+ * [TransactionDao] (couche DATA vers couche DATA, jamais via leurs repositories respectifs, qui
+ * filtrent par utilisateur COURANT et masquent volontairement `syncId`/`version` au domaine — voir
+ * leur KDoc) : ce moteur doit pouvoir relire/écrire ces champs bruts, y compris sur des lignes déjà
+ * supprimées (voir `getBySyncId` de chaque DAO).
  */
 @Singleton
 class SyncEngineImpl @Inject constructor(
@@ -76,9 +84,11 @@ class SyncEngineImpl @Inject constructor(
     private val financialPlanDao: FinancialPlanDao,
     private val personDao: PersonDao,
     private val accountDao: AccountDao,
+    private val transactionDao: TransactionDao,
     private val syncApi: SyncApi,
     private val syncCursorStore: SyncCursorStore,
     private val syncQueueEnqueuer: SyncQueueEnqueuer,
+    private val transactionSyncEnqueuer: TransactionSyncEnqueuer,
     private val sessionManager: SessionManager,
     private val json: Json
 ) : SyncEngine {
@@ -126,19 +136,38 @@ class SyncEngineImpl @Inject constructor(
 
         markSyncing(entries)
 
-        val request = SyncPushRequestDto(
-            entityType = entityType,
-            operations = entries.map { entry ->
-                SyncPushOperationDto(operation = entry.operation.name, entity = json.parseToJsonElement(entry.payloadJson))
-            }
-        )
-
+        // Bloc volontairement large (construction de la requête ET appel réseau ET décodage de la
+        // réponse) sous UN SEUL `catch (e: Exception)` — pas seulement `IOException` comme avant.
+        // Bug réel rencontré en pratique (voir docs/sync/SCENARIOS-DE-TEST.md, addendum
+        // "SYNCING bloqué") : `SyncApi.push` peut lever une `SerializationException` (réponse
+        // serveur non-JSON valide, ex. avertissement PHP mélangé au corps JSON — situation vécue
+        // pendant le déboguage de `entity_sync_configs.php`/étape 17.4), qui N'HÉRITE PAS de
+        // `IOException` et n'était donc jamais rattrapée : les entrées restaient marquées `SYNCING`
+        // pour toujours (exclues de [isEligibleForRetry], qui ne relit que `PENDING`/`FAILED`) —
+        // plus jamais retentées, indicateur "Synchronisation…" bloqué indéfiniment côté
+        // `SettingsViewModel.syncIndicatorState`. Toute exception ICI, quelle que soit sa nature,
+        // doit désormais faire repasser le lot en `FAILED` : jamais un abandon silencieux.
         val response = try {
+            val request = SyncPushRequestDto(
+                entityType = entityType,
+                operations = entries.map { entry ->
+                    SyncPushOperationDto(operation = entry.operation.name, entity = json.parseToJsonElement(entry.payloadJson))
+                }
+            )
             syncApi.push(request)
-        } catch (e: IOException) {
-            // Échec réseau/serveur global (voir la KDoc de SyncStatus) : toutes les entrées du lot
-            // repassent FAILED, aucune n'est perdue — une future planification (WorkManager) les
-            // reprendra.
+        } catch (e: CancellationException) {
+            // JAMAIS avalée par le `catch (e: Exception)` ci-dessous : une annulation de coroutine
+            // (écran fermé pendant le push, `viewModelScope` détruit) doit continuer à se propager
+            // normalement, pas être traitée comme un échec métier — sinon `markFailed` s'exécuterait
+            // sur un lot potentiellement déjà repris par une AUTRE tentative de synchronisation, et
+            // la coroutine annulée resterait active plus longtemps que prévu (violerait la
+            // "structured concurrency" de Kotlin, voir la documentation officielle de
+            // `CancellationException`).
+            throw e
+        } catch (e: Exception) {
+            // Échec réseau/serveur/décodage global (voir la KDoc de SyncStatus) : toutes les
+            // entrées du lot repassent FAILED, aucune n'est perdue — une future planification
+            // (WorkManager) ou un nouveau tap sur "Synchroniser maintenant" les reprendra.
             markFailed(entries, errorMessage = e.message)
             return 0 to entries.size
         }
@@ -250,6 +279,8 @@ class SyncEngineImpl @Inject constructor(
                 applyPersonServerState(json.decodeFromJsonElement(PersonServerStateDto.serializer(), element), allowCreate)
             "accounts" ->
                 applyAccountServerState(json.decodeFromJsonElement(AccountServerStateDto.serializer(), element), allowCreate)
+            "transactions" ->
+                applyTransactionServerState(json.decodeFromJsonElement(TransactionServerStateDto.serializer(), element), allowCreate)
         }
     }
 
@@ -332,6 +363,12 @@ class SyncEngineImpl @Inject constructor(
         enqueueUnsyncedFinancialPlans(userId)
         enqueueUnsyncedPersons(userId)
         enqueueUnsyncedAccounts(userId)
+        // TOUJOURS EN DERNIER (voir la KDoc de tête de [TransactionSyncEnqueuer]) : une transaction
+        // référence un compte/une catégorie par leur `syncId` — celui-ci doit déjà être PERSISTÉ (et
+        // idéalement déjà enfilé) au moment où la transaction l'est à son tour, sans quoi
+        // [TransactionSyncEnqueuer] devrait recourir à son filet de sécurité (génération d'un
+        // `syncId` non lui-même enfilé, voir sa KDoc) au lieu du cas normal ci-dessus.
+        enqueueUnsyncedTransactions(userId)
     }
 
     /**
@@ -573,6 +610,72 @@ class SyncEngineImpl @Inject constructor(
     }
 
     /**
+     * DIFFÉRENT de toutes les fonctions `applyXServerState` précédentes : `Transaction` référence
+     * d'autres entités synchronisées par leur `syncId`, jamais par un `id` Room local (voir la KDoc
+     * de tête de `TransactionSyncPayload.kt`). Résolution INVERSE ici — `accountSyncId` →
+     * `accountId` local, etc., via `getBySyncId` de chaque DAO concerné.
+     *
+     * [state.accountSyncId] introuvable localement (compte pas encore connu sur CET appareil) :
+     * ligne ignorée silencieusement, comme n'importe quelle entrée malformée (voir la KDoc de
+     * [pullEntityType]) — ne devrait quasiment jamais arriver grâce à l'ordre de
+     * [SUPPORTED_ENTITY_TYPES] (`transactions` toujours EN DERNIER, voir sa KDoc), qui garantit que
+     * les comptes/catégories référencés ont déjà été reçus (pull) ou confirmés (push) AVANT cette
+     * transaction.
+     *
+     * [TransactionEntity.receiptPhotoUri]/[TransactionEntity.receiptId] : JAMAIS renseignés par le
+     * serveur (hors du champ de la synchronisation, voir la KDoc de tête de
+     * `TransactionSyncPayload.kt`) — la valeur LOCALE existante est préservée ([local]), `null` pour
+     * une transaction totalement nouvelle sur cet appareil.
+     */
+    private suspend fun applyTransactionServerState(state: TransactionServerStateDto, allowCreate: Boolean) {
+        val local = transactionDao.getBySyncId(state.id)
+        if (local == null && !allowCreate) return
+        val userId = local?.userId ?: sessionManager.getCurrentUserIdOnce() ?: return
+
+        val accountId = accountDao.getBySyncId(state.accountSyncId)?.id ?: return
+        val transferAccountId = state.transferAccountSyncId?.let { accountDao.getBySyncId(it)?.id }
+        val categoryId = state.categorySyncId?.let { categoryDao.getBySyncId(it)?.id }
+        val feeTransactionId = state.feeTransactionSyncId?.let { transactionDao.getBySyncId(it)?.id }
+
+        transactionDao.upsert(
+            TransactionEntity(
+                id = local?.id ?: 0L,
+                userId = userId,
+                amount = state.amount,
+                type = runCatching { TransactionType.valueOf(state.type) }.getOrDefault(local?.type ?: TransactionType.EXPENSE),
+                accountId = accountId,
+                transferAccountId = transferAccountId,
+                categoryId = categoryId,
+                date = state.date,
+                description = state.description,
+                receiptPhotoUri = local?.receiptPhotoUri,
+                latitude = state.latitude,
+                longitude = state.longitude,
+                paymentMethod = state.paymentMethod?.let { runCatching { PaymentMethod.valueOf(it) }.getOrNull() },
+                createdAt = state.createdAt,
+                feeTransactionId = feeTransactionId,
+                feeType = state.feeType?.let { runCatching { FeeType.valueOf(it) }.getOrNull() },
+                receiptId = local?.receiptId,
+                syncId = state.id,
+                updatedAt = state.updatedAt,
+                deletedAt = state.deletedAt,
+                version = state.version
+            )
+        )
+    }
+
+    /** Voir [enqueueUnsyncedCategories] pour le principe général — PLUS SIMPLE ici : la construction
+     *  du payload (résolution `id` → `syncId`, filet de sécurité inclus) est déjà entièrement prise
+     *  en charge par [TransactionSyncEnqueuer] (voir sa KDoc de tête), jamais dupliquée ici. */
+    private suspend fun enqueueUnsyncedTransactions(userId: Long) {
+        transactionDao.getUnsyncedForUser(userId).forEach { transaction ->
+            val entity = transaction.copy(syncId = UUID.randomUUID().toString())
+            transactionDao.upsert(entity)
+            transactionSyncEnqueuer.enqueue(entity, SyncOperation.CREATE)
+        }
+    }
+
+    /**
      * `true` si [entry] (déjà en `FAILED`) a suffisamment attendu depuis sa dernière tentative pour
      * être retentée maintenant — voir [RETRY_BACKOFF_MILLIS] pour la progression exacte.
      * `lastAttemptAt == null` (ne devrait pas arriver pour une entrée `FAILED`, [markFailed] le
@@ -612,7 +715,13 @@ class SyncEngineImpl @Inject constructor(
     }
 
     private companion object {
-        val SUPPORTED_ENTITY_TYPES = setOf("categories", "savings_goals", "financial_plans", "persons", "accounts")
+        /** `transactions` DOIT rester le DERNIER élément — voir la KDoc de
+         *  [enqueueUnsyncedLocalData]/[applyTransactionServerState] : `Transaction` référence
+         *  d'autres entités synchronisées par leur `syncId`, qui doivent déjà être connues (pull) ou
+         *  déjà persistées (push/backfill) au moment où elle est traitée à son tour. `setOf` (donc
+         *  `LinkedHashSet`) préserve l'ordre d'insertion — [pullRemoteChanges] itère dans CET ordre. */
+        val SUPPORTED_ENTITY_TYPES =
+            setOf("categories", "savings_goals", "financial_plans", "persons", "accounts", "transactions")
         const val MAX_ERROR_MESSAGE_LENGTH = 200
 
         /** Délai minimal (ms) avant de retenter une entrée `FAILED`, indexé sur `retryCount - 1` —

@@ -101,11 +101,13 @@ function applyEntityOperation(PDO $pdo, array $config, string $entityType, strin
 }
 
 /** Cast PHP appliqué à une valeur de payload selon le `type` déclaré dans `ENTITY_CONFIGS`
- *  (`'int'`/`'string'`) — les deux seuls types utilisés par les entités actuelles. */
-function castConfiguredValue(mixed $value, string $type): int|string
+ *  (`'int'`/`'string'`/`'float'` — ce dernier introduit à l'étape 17 pour `transactions.latitude`/
+ *  `longitude`, premiers champs non-entiers de ce registre). */
+function castConfiguredValue(mixed $value, string $type): int|string|float
 {
     return match ($type) {
         'int' => (int) $value,
+        'float' => (float) $value,
         default => (string) $value,
     };
 }
@@ -113,10 +115,11 @@ function castConfiguredValue(mixed $value, string $type): int|string
 /** Valeur par défaut pour une colonne NON nullable absente du payload (ne devrait quasiment
  *  jamais arriver, le Sync Engine Android envoie toujours ses champs requis — filet de sécurité
  *  plutôt qu'un cas attendu). */
-function defaultForConfiguredType(string $type): int|string
+function defaultForConfiguredType(string $type): int|string|float
 {
     return match ($type) {
         'int' => 0,
+        'float' => 0.0,
         default => '',
     };
 }
@@ -128,7 +131,7 @@ function createEntityRow(PDO $pdo, array $config, string $userId, string $id, ar
     // l'état actuel, comme si la création avait réussi du premier coup. Évite un doublon silencieux.
     $existing = fetchEntityRow($pdo, $config, $userId, $id);
     if ($existing !== null) {
-        return ['status' => 'accepted', 'entityId' => $id, 'serverEntity' => toCamelCaseRow($existing)];
+        return ['status' => 'accepted', 'entityId' => $id, 'serverEntity' => toCamelCaseRow($existing, $config)];
     }
 
     $dbColumns = array_map(static fn (array $c): string => $c['db'], $config['columns']);
@@ -156,7 +159,7 @@ function createEntityRow(PDO $pdo, array $config, string $userId, string $id, ar
     $stmt->execute($params);
 
     $row = fetchEntityRow($pdo, $config, $userId, $id);
-    return ['status' => 'accepted', 'entityId' => $id, 'serverEntity' => toCamelCaseRow($row)];
+    return ['status' => 'accepted', 'entityId' => $id, 'serverEntity' => toCamelCaseRow($row, $config)];
 }
 
 /**
@@ -183,7 +186,7 @@ function upsertExistingEntityRow(PDO $pdo, array $config, string $entityType, st
     // la ligne serveur n'est PAS modifiée — l'appareil doit adopter `serverEntity` tel quel.
     if ($hasConflict && $currentUpdatedAt >= $incomingUpdatedAt) {
         logConflict($pdo, $userId, $entityType, $id, $entity, $current, $nowMillis);
-        return ['status' => 'conflict_resolved', 'entityId' => $id, 'serverEntity' => toCamelCaseRow($current)];
+        return ['status' => 'conflict_resolved', 'entityId' => $id, 'serverEntity' => toCamelCaseRow($current, $config)];
     }
 
     if ($hasConflict) {
@@ -232,7 +235,7 @@ function upsertExistingEntityRow(PDO $pdo, array $config, string $entityType, st
 
     $row = fetchEntityRow($pdo, $config, $userId, $id);
     $status = $hasConflict ? 'conflict_resolved' : 'accepted';
-    return ['status' => $status, 'entityId' => $id, 'serverEntity' => toCamelCaseRow($row)];
+    return ['status' => $status, 'entityId' => $id, 'serverEntity' => toCamelCaseRow($row, $config)];
 }
 
 /** Colonnes IMPLICITES (`id`, `user_id`, `created_at`, `updated_at`, `deleted_at`, `version`) +

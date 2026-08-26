@@ -53,6 +53,7 @@ class AccountRepositoryImpl @Inject constructor(
     private val transactionDao: TransactionDao,
     private val sessionManager: SessionManager,
     private val syncQueueEnqueuer: SyncQueueEnqueuer,
+    private val transactionSyncEnqueuer: TransactionSyncEnqueuer,
     private val json: Json,
     @IoDispatcher private val ioDispatcher: CoroutineDispatcher
 ) : AccountRepository {
@@ -132,10 +133,13 @@ class AccountRepositoryImpl @Inject constructor(
      *      `ForeignKey`, voir `TransactionEntity`) — neutralisé au lieu d'être laissé pendant.
      * 4. Toutes les transactions restantes référençant ce compte (`accountId` OU
      *    `transferAccountId`) sont supprimées explicitement (voir [cleanUpFeeLinksBeforeAccountCascade],
-     *    qui retourne désormais ce lot). Les transactions déjà supprimées aux points 1/2 y
-     *    réapparaissent (même compte) : `transactionDao.deleteById` sur une ligne déjà absente ne
-     *    fait rien, ce doublon est donc inoffensif et volontairement laissé tel quel plutôt que de
-     *    complexifier le filtrage.
+     *    qui retourne désormais ce lot). Les transactions déjà traitées aux points 1/2 y
+     *    réapparaissent (même compte) : explicitement EXCLUES via `alreadyHandledIds` avant ce lot,
+     *    pour ne jamais les enfiler DEUX fois en synchronisation (voir [softDeleteAndEnqueue]).
+     *
+     * Chaque suppression de transaction ci-dessus est désormais DOUCE ([softDeleteAndEnqueue],
+     * `TransactionDao.softDeleteById`) et enfilée pour la synchronisation (étape 17, voir
+     * `TransactionSyncEnqueuer`) — plus une suppression physique silencieuse.
      *
      * Duplique volontairement une partie de la logique de [com.arzikina.ne.data.repository.LoanRepositoryImpl.deleteLoan]/
      * `.deletePayment` plutôt que d'en dépendre : un repository ne doit pas dépendre d'un autre
@@ -146,16 +150,21 @@ class AccountRepositoryImpl @Inject constructor(
         val userId = requireCurrentUserId()
         val existing = accountDao.getById(id, userId) ?: return@withContext
         val now = System.currentTimeMillis()
+        // Toute transaction Arzikina purgée en cascade ci-dessous doit désormais être enfilée
+        // (étape 17 : `Transaction` est une entité synchronisée) — voir `TransactionSyncEnqueuer`.
+        // Enfilée APRÈS le `database.withTransaction`, jamais dedans (même principe que
+        // `TransactionRepositoryImpl`/`LoanRepositoryImpl`).
+        val pendingSyncOps = mutableListOf<Pair<TransactionEntity, SyncOperation>>()
 
         database.withTransaction {
-            val disappearingTransactions = cleanUpFeeLinksBeforeAccountCascade(id, userId)
+            val disappearingTransactions = cleanUpFeeLinksBeforeAccountCascade(id, userId, now, pendingSyncOps)
 
             loanDao.getAllForAccount(id, userId).forEach { loan ->
                 loanPaymentDao.getAllForLoan(loan.id, userId).forEach { payment ->
-                    transactionDao.deleteById(payment.transactionId, userId)
+                    softDeleteAndEnqueue(payment.transactionId, userId, now, pendingSyncOps)
                     loanPaymentDao.deleteById(payment.id, userId)
                 }
-                transactionDao.deleteById(loan.transactionId, userId)
+                softDeleteAndEnqueue(loan.transactionId, userId, now, pendingSyncOps)
                 loanDao.deleteById(loan.id, userId)
             }
 
@@ -165,7 +174,7 @@ class AccountRepositoryImpl @Inject constructor(
                 // le recalculer, il n'existera plus.
                 if (loan.accountId == id) return@forEach
 
-                transactionDao.deleteById(payment.transactionId, userId)
+                softDeleteAndEnqueue(payment.transactionId, userId, now, pendingSyncOps)
                 val recalcNow = System.currentTimeMillis()
                 val newAmountRepaid = (loan.amountRepaid - payment.amount).coerceAtLeast(0L)
                 val newStatus = computeLoanStatus(loan.amount, newAmountRepaid, loan.startDate, loan.dueDate, recalcNow)
@@ -180,12 +189,18 @@ class AccountRepositoryImpl @Inject constructor(
                 loanPaymentDao.deleteById(payment.id, userId)
             }
 
+            // Certaines de ces transactions ont déjà été traitées ci-dessus (même compte, voir la
+            // doc de [cleanUpFeeLinksBeforeAccountCascade]) : ne jamais les enfiler DEUX fois.
+            val alreadyHandledIds = pendingSyncOps.map { it.first.id }.toSet()
             disappearingTransactions.forEach { transaction ->
-                transactionDao.deleteById(transaction.id, userId)
+                if (transaction.id in alreadyHandledIds) return@forEach
+                softDeleteAndEnqueue(transaction.id, userId, now, pendingSyncOps, prefetched = transaction)
             }
 
             accountDao.softDeleteById(id, userId, now)
         }
+
+        pendingSyncOps.forEach { (entity, operation) -> transactionSyncEnqueuer.enqueue(entity, operation) }
         enqueueAccountSync(
             existing.copy(syncId = existing.syncId ?: UUID.randomUUID().toString(), deletedAt = now, updatedAt = now),
             operation = SyncOperation.DELETE
@@ -193,18 +208,43 @@ class AccountRepositoryImpl @Inject constructor(
     }
 
     /**
+     * Suppression DOUCE d'une transaction ([TransactionDao.softDeleteById], remplace l'ancien
+     * `deleteById` — voir la doc de tête de [deleteAccount]) + accumulation dans [pendingSyncOps]
+     * pour l'enfilage `DELETE` après la transaction Room. [prefetched] évite une lecture redondante
+     * quand l'appelant a déjà la ligne sous la main (voir [cleanUpFeeLinksBeforeAccountCascade]).
+     * Ne fait rien si la ligne n'existe déjà plus (filet de sécurité, ne devrait pas arriver).
+     */
+    private suspend fun softDeleteAndEnqueue(
+        transactionId: Long,
+        userId: Long,
+        now: Long,
+        pendingSyncOps: MutableList<Pair<TransactionEntity, SyncOperation>>,
+        prefetched: TransactionEntity? = null
+    ) {
+        val transaction = prefetched ?: transactionDao.getById(transactionId, userId) ?: return
+        transactionDao.softDeleteById(transactionId, userId, now)
+        pendingSyncOps += transaction.copy(
+            syncId = transaction.syncId ?: UUID.randomUUID().toString(),
+            deletedAt = now,
+            updatedAt = now
+        ) to SyncOperation.DELETE
+    }
+
+    /**
      * Voir le point 3 de la doc de [deleteAccount]. Rassemble toute transaction sur le point de
      * disparaître à cause de CE compte — `accountId` (compte principal) ET `transferAccountId`
      * (compte destination d'un virement, voir `TransactionEntity`), dédupliquée par id (les deux
      * colonnes ne peuvent normalement pas désigner le même compte pour une même ligne) — neutralise
-     * les deux sens du lien de frais, puis RETOURNE ce lot pour que [deleteAccount] le supprime
-     * explicitement (point 4) plutôt que de compter sur une `CASCADE` SQL — inopérante de toute façon
-     * depuis que la suppression du compte est une suppression DOUCE (`softDeleteById`, jamais un
-     * `DELETE`).
+     * les deux sens du lien de frais (suppression DOUCE + enfilage pour la transaction de frais sur
+     * un AUTRE compte, voir [softDeleteAndEnqueue]), puis RETOURNE ce lot pour que [deleteAccount]
+     * le supprime explicitement (point 4) plutôt que de compter sur une `CASCADE` SQL — inopérante
+     * de toute façon depuis que la suppression du compte est une suppression DOUCE.
      */
     private suspend fun cleanUpFeeLinksBeforeAccountCascade(
         accountId: Long,
-        userId: Long
+        userId: Long,
+        now: Long,
+        pendingSyncOps: MutableList<Pair<TransactionEntity, SyncOperation>>
     ): List<TransactionEntity> {
         val disappearing = (
             transactionDao.getAllForAccount(accountId, userId) +
@@ -215,10 +255,11 @@ class AccountRepositoryImpl @Inject constructor(
         disappearing.forEach { transaction ->
             // Cette transaction est elle-même PARENTE de frais sur un AUTRE compte (survivant) :
             // sa transaction de frais doit disparaître avec elle. Si cette dernière disparaît de
-            // toute façon dans ce même lot (déjà dans `disappearingIds`), rien à faire de plus.
+            // toute façon dans ce même lot (déjà dans `disappearingIds`), rien à faire de plus (elle
+            // sera traitée par le lot lui-même, voir l'appelant).
             transaction.feeTransactionId?.let { feeTransactionId ->
                 if (feeTransactionId !in disappearingIds) {
-                    transactionDao.deleteById(feeTransactionId, userId)
+                    softDeleteAndEnqueue(feeTransactionId, userId, now, pendingSyncOps)
                 }
             }
             // Cette transaction est peut-être elle-même une ligne de FRAIS référencée par une

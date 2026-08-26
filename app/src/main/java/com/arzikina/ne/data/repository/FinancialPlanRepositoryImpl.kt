@@ -6,6 +6,7 @@ import com.arzikina.ne.data.local.dao.FinancialPlanItemDao
 import com.arzikina.ne.data.local.dao.TransactionDao
 import com.arzikina.ne.data.local.database.ArzikinaDatabase
 import com.arzikina.ne.data.local.entity.FinancialPlanEntity
+import com.arzikina.ne.data.local.entity.TransactionEntity
 import com.arzikina.ne.data.mapper.toDomain
 import com.arzikina.ne.data.mapper.toEntity
 import com.arzikina.ne.data.remote.dto.FinancialPlanSyncPayload
@@ -46,7 +47,8 @@ import javax.inject.Inject
  * Dépend directement de [TransactionDao] (pas de `TransactionRepository`) pour
  * [convertItemToTransaction] — même raisonnement que `LoanRepositoryImpl` (voir sa doc) : un
  * repository ne doit pas dépendre d'un autre repository pour rester libre de composer plusieurs
- * DAO dans une seule transaction Room.
+ * DAO dans une seule transaction Room. [TransactionSyncEnqueuer] injecté pour la même raison (voir
+ * sa KDoc de tête) : ce repository est l'un des cinq qui écrivent des transactions.
  */
 class FinancialPlanRepositoryImpl @Inject constructor(
     private val database: ArzikinaDatabase,
@@ -55,6 +57,7 @@ class FinancialPlanRepositoryImpl @Inject constructor(
     private val transactionDao: TransactionDao,
     private val sessionManager: SessionManager,
     private val syncQueueEnqueuer: SyncQueueEnqueuer,
+    private val transactionSyncEnqueuer: TransactionSyncEnqueuer,
     private val json: Json,
     @IoDispatcher private val ioDispatcher: CoroutineDispatcher
 ) : FinancialPlanRepository {
@@ -191,7 +194,9 @@ class FinancialPlanRepositoryImpl @Inject constructor(
         description: String
     ): Long = withContext(ioDispatcher) {
         val userId = requireCurrentUserId()
-        database.withTransaction {
+        var pendingSyncOp: Pair<TransactionEntity, SyncOperation>? = null
+
+        val result = database.withTransaction {
             val item = financialPlanItemDao.getById(itemId, userId) ?: error("Dépense prévue introuvable.")
             check(item.transactionId == null) { "Cette dépense prévue a déjà été convertie en transaction." }
             // Étape 11 : une dépense annulée n'a plus lieu d'être honorée — garde de dernier
@@ -200,17 +205,17 @@ class FinancialPlanRepositoryImpl @Inject constructor(
             check(item.status != PlanItemStatus.CANCELLED) { "Cette dépense prévue a été annulée." }
 
             val now = System.currentTimeMillis()
-            val transactionId = transactionDao.upsert(
-                Transaction(
-                    amount = actualAmount,
-                    type = TransactionType.EXPENSE,
-                    accountId = accountId,
-                    categoryId = categoryId,
-                    date = date,
-                    description = description,
-                    createdAt = now
-                ).toEntity(userId)
-            )
+            val transactionEntity = Transaction(
+                amount = actualAmount,
+                type = TransactionType.EXPENSE,
+                accountId = accountId,
+                categoryId = categoryId,
+                date = date,
+                description = description,
+                createdAt = now
+            ).toEntity(userId).copy(syncId = UUID.randomUUID().toString(), updatedAt = now)
+            val transactionId = transactionDao.upsert(transactionEntity)
+            pendingSyncOp = transactionEntity.copy(id = transactionId) to SyncOperation.CREATE
             financialPlanItemDao.upsert(
                 item.copy(
                     transactionId = transactionId,
@@ -221,6 +226,9 @@ class FinancialPlanRepositoryImpl @Inject constructor(
             )
             transactionId
         }
+
+        pendingSyncOp?.let { (entity, operation) -> transactionSyncEnqueuer.enqueue(entity, operation) }
+        result
     }
 
     private suspend fun requireCurrentUserId(): Long =

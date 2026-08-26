@@ -24,6 +24,16 @@
       "key": "lastPullServerTime",
       "value": "0",
       "type": "string"
+    },
+    {
+      "key": "accountSyncId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "categorySyncId",
+      "value": "",
+      "type": "string"
     }
   ],
   "item": [
@@ -126,6 +136,99 @@
               "path": ["api", "sync", "push.php"]
             },
             "description": "Envoie une operation CREATE sur categories. `id` doit etre un UUID (voir {{$guid}}, variable dynamique Postman). `results[0].serverEntity` contient l'etat final cote serveur a appliquer localement."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const body = pm.response.json();",
+                  "    pm.collectionVariables.set('categorySyncId', body.results[0].entityId);",
+                  "    pm.test('Push categories OK', () => pm.expect(body.results[0].status).to.be.oneOf(['accepted', 'conflict_resolved']));",
+                  "} else {",
+                  "    pm.test('Push categories a echoue', () => pm.expect.fail(pm.response.text()));",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Push - accounts (CREATE)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"entityType\": \"accounts\",\n  \"operations\": [\n    {\n      \"operation\": \"CREATE\",\n      \"entity\": {\n        \"id\": \"{{$guid}}\",\n        \"name\": \"Compte Postman\",\n        \"icon\": \"CASH\",\n        \"colorArgb\": -16776961,\n        \"currencyCode\": \"XOF\",\n        \"initialBalanceMinor\": 100000,\n        \"type\": \"CASH\",\n        \"cardLastFourDigits\": null,\n        \"cardExpiryMonth\": null,\n        \"cardExpiryYear\": null,\n        \"isExcludedFromStatistics\": false,\n        \"mobileMoneyPackageName\": null,\n        \"createdAt\": {{$timestamp}}000,\n        \"updatedAt\": {{$timestamp}}000\n      }\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/sync/push.php",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "sync", "push.php"]
+            },
+            "description": "Envoie une operation CREATE sur accounts, prealable necessaire au test de Push - transactions ci-dessous (accountSyncId)."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const body = pm.response.json();",
+                  "    pm.collectionVariables.set('accountSyncId', body.results[0].entityId);",
+                  "    pm.test('Push accounts OK', () => pm.expect(body.results[0].status).to.be.oneOf(['accepted', 'conflict_resolved']));",
+                  "} else {",
+                  "    pm.test('Push accounts a echoue', () => pm.expect.fail(pm.response.text()));",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Push - transactions (CREATE)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"entityType\": \"transactions\",\n  \"operations\": [\n    {\n      \"operation\": \"CREATE\",\n      \"entity\": {\n        \"id\": \"{{$guid}}\",\n        \"amount\": 5000,\n        \"type\": \"EXPENSE\",\n        \"accountSyncId\": \"{{accountSyncId}}\",\n        \"transferAccountSyncId\": null,\n        \"categorySyncId\": \"{{categorySyncId}}\",\n        \"date\": {{$timestamp}}000,\n        \"description\": \"Transaction Postman\",\n        \"latitude\": null,\n        \"longitude\": null,\n        \"paymentMethod\": null,\n        \"feeTransactionSyncId\": null,\n        \"feeType\": null,\n        \"createdAt\": {{$timestamp}}000,\n        \"updatedAt\": {{$timestamp}}000\n      }\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/sync/push.php",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "sync", "push.php"]
+            },
+            "description": "Lancer APRES 'Push - accounts (CREATE)' et 'Push - categories (CREATE)' (dans cet ordre, une seule fois chacun) : ce test consomme accountSyncId/categorySyncId captures automatiquement par leurs scripts de test respectifs. `results[0].serverEntity` doit renvoyer les memes accountSyncId/categorySyncId envoyes, `status: accepted`."
+          }
+        },
+        {
+          "name": "Pull - transactions",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/sync/pull.php?entity_type=transactions&updated_after=0",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "sync", "pull.php"],
+              "query": [
+                { "key": "entity_type", "value": "transactions" },
+                { "key": "updated_after", "value": "0" }
+              ]
+            },
+            "description": "Pull complet (updated_after=0) de toutes les transactions de l'utilisateur authentifie — verifie que la transaction creee par 'Push - transactions (CREATE)' apparait bien, avec ses accountSyncId/categorySyncId."
           }
         }
       ]
