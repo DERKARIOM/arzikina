@@ -452,4 +452,29 @@ CREATE TABLE IF NOT EXISTS sync_conflicts (
     CONSTRAINT fk_sync_conflicts_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
+-- =============================================================================================
+-- 10. PRÉFÉRENCES UTILISATEUR (étape 22 du chantier de synchronisation)
+-- =============================================================================================
+
+-- Table NOUVELLE, sans entité Room source (voir `UserPreferencesEntity`/
+-- `UserPreferencesRepositoryImpl`, DataStore Preferences côté Android) : SEULS `theme_mode`/
+-- `currency_code` sont synchronisés — `biometric_lock_enabled` reste EXCLUSIVEMENT local à chaque
+-- appareil (jamais transporté, voir la doc de l'entité Android), volontairement absent d'ici.
+-- `uq_user_preferences_user` : AU PLUS une ligne par utilisateur, contrairement à toutes les autres
+-- tables ci-dessus (plusieurs lignes par utilisateur y sont normales) — voir la KDoc de tête de
+-- `UserPreferencesEntity`.
+CREATE TABLE IF NOT EXISTS user_preferences (
+    id CHAR(36) NOT NULL,
+    user_id CHAR(36) NOT NULL,
+    theme_mode VARCHAR(16) NOT NULL,
+    currency_code CHAR(3) NOT NULL,
+    created_at BIGINT NOT NULL,
+    updated_at BIGINT NOT NULL,
+    deleted_at BIGINT NULL,
+    version INT NOT NULL DEFAULT 1,
+    PRIMARY KEY (id),
+    UNIQUE KEY uq_user_preferences_user (user_id),
+    CONSTRAINT fk_user_preferences_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
+
 -- `card_secrets` : ABSENTE, intentionnellement (voir doc de tête de ce fichier, décision 6.2).

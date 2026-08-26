@@ -223,4 +223,41 @@ const ENTITY_CONFIGS = [
             ['db' => 'fee_type', 'payload' => 'feeType', 'type' => 'string', 'nullable' => true],
         ],
     ],
+    // Étape 21 : `FinancialPlanItem` référence sa planification parente (`plan_id`, jamais nulle),
+    // une catégorie (`category_id`, nullable — voir `FinancialPlanItemEntity.categoryId`) ET, une
+    // fois convertie en dépense réelle, sa transaction (`transaction_id`, nullable — `NULL` tant que
+    // `FinancialPlanRepositoryImpl.convertItemToTransaction` n'a pas été appelé) — même raisonnement
+    // que `recurring_transaction_occurrences` ci-dessus. Contraintes `fk_plan_items_plan`/
+    // `fk_plan_items_category` du schéma initial à supprimer avant déploiement.
+    'financial_plan_items' => [
+        'table' => 'financial_plan_items',
+        'columns' => [
+            ['db' => 'plan_id', 'payload' => 'planSyncId', 'type' => 'string', 'nullable' => false],
+            ['db' => 'name', 'payload' => 'name', 'type' => 'string', 'nullable' => false],
+            ['db' => 'amount', 'payload' => 'amount', 'type' => 'int', 'nullable' => false],
+            ['db' => 'actual_amount', 'payload' => 'actualAmount', 'type' => 'int', 'nullable' => true],
+            ['db' => 'category_id', 'payload' => 'categorySyncId', 'type' => 'string', 'nullable' => true],
+            ['db' => 'description', 'payload' => 'description', 'type' => 'string', 'nullable' => true],
+            ['db' => 'planned_date', 'payload' => 'plannedDate', 'type' => 'int', 'nullable' => true],
+            ['db' => 'priority', 'payload' => 'priority', 'type' => 'string', 'nullable' => false],
+            ['db' => 'status', 'payload' => 'status', 'type' => 'string', 'nullable' => false],
+            ['db' => 'transaction_id', 'payload' => 'transactionSyncId', 'type' => 'string', 'nullable' => true],
+        ],
+    ],
+    // Étape 22 : `UserPreferences` (pas d'entité Room source, voir `UserPreferencesEntity`/
+    // `UserPreferencesRepositoryImpl` côté Android, DataStore Preferences) — la SEULE entité de ce
+    // registre SANS AUCUNE référence croisée (aucune colonne `*_id`/`*SyncId`) : `user_id` reste la
+    // colonne IMPLICITE habituelle (l'utilisateur AUTHENTIFIÉ courant, jamais une autre ligne
+    // référencée par un `syncId`), donc `fk_user_preferences_user` n'a PAS besoin d'être supprimée
+    // avant déploiement (contrairement à `fk_budgets_category`/`fk_loans_person`/etc. ci-dessus) —
+    // cette contrainte est garantie satisfaite par construction, comme pour toutes les autres tables
+    // de ce registre. `biometric_lock_enabled` reste EXCLU (voir la doc de la table MySQL,
+    // `database/migrations/001_initial_schema.sql`, section 10).
+    'user_preferences' => [
+        'table' => 'user_preferences',
+        'columns' => [
+            ['db' => 'theme_mode', 'payload' => 'themeMode', 'type' => 'string', 'nullable' => false],
+            ['db' => 'currency_code', 'payload' => 'currencyCode', 'type' => 'string', 'nullable' => false],
+        ],
+    ],
 ];

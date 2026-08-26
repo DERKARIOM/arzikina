@@ -10,7 +10,7 @@ suppression douce, backfill au login, retry des entrées `FAILED`, déclenchemen
 Statut de chaque scénario tenu à jour au fil des exécutions (✅ validé / ❌ bug trouvé / ⏳ pas encore
 testé). Entités disponibles pour les tests : `categories`, `savings_goals`, `financial_plans`,
 `persons`, `accounts`, `transactions`, `budgets`, `loans`, `loan_payments`, `recurring_transactions`,
-`recurring_transaction_occurrences`.
+`recurring_transaction_occurrences`, `financial_plan_items`, `user_preferences`.
 
 Outils utiles : bouton **Synchroniser maintenant** (Paramètres), indicateur d'état sur `syncRow`,
 Database Inspector d'Android Studio (table `sync_queue`, colonnes `status`/`errorMessage`), la
@@ -80,6 +80,50 @@ correspondent tous aux vrais `syncId` — jamais une chaîne vide. Vérifie auss
 (une `UPDATE` distincte de `recurring_transactions`, `version` incrémentée) — c'est un effet de bord
 de `generateMissingOccurrences`, pas une action utilisateur directe, facile à oublier de tester.
 
+**Spécifique à `financial_plan_items`** (références croisées, voir
+`FinancialPlanItemSyncPayload.kt` et `SyncEngineImpl.applyFinancialPlanItemServerState`, étape 21) :
+avant de tester, supprime les 2 contraintes réelles côté MySQL (voir
+`database/migrations/001_initial_schema.sql`) :
+```sql
+ALTER TABLE financial_plan_items DROP FOREIGN KEY fk_plan_items_plan;
+ALTER TABLE financial_plan_items DROP FOREIGN KEY fk_plan_items_category;
+```
+Crée une planification avec une dépense prévue (catégorie encore jamais synchronisée, dans la
+foulée, sans synchroniser entre les deux), puis convertis-la en transaction réelle
+(`convertItemToTransaction`). Synchronise, puis vérifie côté serveur (Postman Pull
+`financial_plan_items`) que `planSyncId`/`categorySyncId`/`transactionSyncId` correspondent tous aux
+vrais `syncId` — jamais une chaîne vide. Vérifie aussi que `transactionId`/`actualAmount`/`status`
+apparaissent bien à jour CÔTÉ SERVEUR après la conversion (une `UPDATE` distincte de
+`financial_plan_items`, `version` incrémentée) — effet de bord de `convertItemToTransaction`, pas
+une simple sauvegarde, facile à oublier de tester (même piège que la génération d'occurrences
+ci-dessus).
+
+**Spécifique à `user_preferences`** (étape 22, voir `UserPreferencesRepositoryImpl` et
+`SyncEngineImpl.applyUserPreferencesServerState`) : AUCUN `DROP FOREIGN KEY` nécessaire — seule
+entité de ce registre sans référence croisée (`fk_user_preferences_user` reste active, voir la doc
+de `entity_sync_configs.php`). Déploie `entity_sync_configs.php` ET la nouvelle table MySQL
+(`database/migrations/001_initial_schema.sql`, section 10) avant de tester.
+1. Sur l'appareil A, change le thème (Système/Clair/Sombre) dans Paramètres. Synchronise, vérifie
+   côté serveur (Postman Pull `user_preferences`) qu'une ligne existe avec le bon `themeMode`.
+2. Sur l'appareil B (même compte, déjà connecté), synchronise : le thème choisi sur A doit
+   s'appliquer sur B après le pull (voir `MainActivity.applyStoredThemeMode`, qui nécessite un
+   `recreate()` ou redémarrage pour un effet immédiat, voir sa KDoc).
+3. Change la devise principale sur B : vérifie côté serveur que `version` a progressé (`UPDATE`, pas
+   un nouveau `CREATE`) et que `themeMode` (non touché par ce changement) reste bien celui d'A.
+4. **Spécifique à la migration en douceur** (voir la KDoc de tête de `UserPreferencesRepositoryImpl`)
+   : sur un appareil ayant déjà un thème/devise choisis AVANT l'étape 22 (DataStore seul, aucune
+   ligne Room), ouvre l'app APRÈS la mise à jour SANS toucher à Paramètres — le thème déjà choisi
+   doit rester appliqué (pas de réinitialisation silencieuse vers Système/XOF). Ouvre ensuite
+   Paramètres et change la devise : vérifie que la nouvelle ligne Room créée reprend bien
+   l'ANCIEN thème DataStore (pas Système) en plus de la nouvelle devise.
+5. Déconnecte-toi (retour à l'écran de connexion) : le thème choisi doit rester appliqué sur cet
+   écran (lecture DataStore de secours, voir la KDoc de tête de `UserPreferencesRepositoryImpl`) —
+   aucune régression visible sans session active.
+
+**Aucun scénario 3 (suppression douce) pour cette entité** : `deletedAt` existe par cohérence de
+schéma mais aucune fonctionnalité ne supprime une ligne `user_preferences` (voir la KDoc de tête de
+`UserPreferencesEntity`) — rien à tester sur ce point.
+
 ---
 
 ## 2. Modification simple + propagation
@@ -140,6 +184,20 @@ de `generateMissingOccurrences`, pas une action utilisateur directe, facile à o
      points 6/7 si un résolveur utilisait `getById` au lieu de `getByIdIncludingDeleted` — ici non
      applicable, `deleteRecurringTransaction` enfile chaque ligne AVANT que la suivante ne la
      référence comme déjà supprimée, à revérifier si le code évolue).
+9. **Spécifique à `financial_plan_items`** (étape 21.4, voir
+   `FinancialPlanRepositoryImpl.deletePlan`) : avant de supprimer, crée une planification avec au
+   moins une dépense prévue déjà convertie en transaction (donc avec `transactionId` renseigné) ET
+   une dépense encore "À prévoir". Après suppression de la planification, vérifie en base (Database
+   Inspector) :
+   - `financial_plans` : la ligne existe TOUJOURS, avec `deletedAt` renseigné.
+   - `financial_plan_items` : TOUTES les dépenses prévues (converties ET "À prévoir") sont
+     SOFT-supprimées — la cascade SQLite `CASCADE` ne se déclenche jamais sur cet `UPDATE`, voir la
+     KDoc de `FinancialPlanItemDao.softDeleteById`.
+   - synchronise : aucune entrée `FAILED` dans `sync_queue` — RÉGRESSION CRITIQUE À VÉRIFIER (bug de
+     timing de cascade identique à l'étape 19.5b, corrigé PROACTIVEMENT à l'étape 21.1 via
+     `FinancialPlanDao.getByIdIncludingDeleted` : la planification est déjà soft-supprimée au moment
+     où `resolvePlanSyncId` est appelé pour chaque dépense prévue, voir
+     `FinancialPlanRepositoryImpl.deletePlan`).
 
 ---
 
@@ -194,6 +252,20 @@ de `generateMissingOccurrences`, pas une action utilisateur directe, facile à o
 Déjà validé une première fois involontairement (déploiement serveur en retard sur
 `financial_plans`) — à rejouer une fois plus tard pour confirmer que ce n'était pas un hasard.
 
+### Addendum — pull interrompu pour toutes les entités par une seule défaillante (étape 22.5b)
+
+`SyncEngineImpl.pullEntityType` ne rattrapait que `IOException` autour de l'appel réseau — symétrique
+au bug "SYNCING bloqué" ci-dessous, mais côté pull, jamais corrigé jusqu'ici. Une réponse serveur non
+conforme pour UN SEUL type d'entité (table/entrée `entity_sync_configs.php` pas encore déployée,
+par exemple `user_preferences` à l'étape 22) levait une `SerializationException`, jamais rattrapée :
+elle remontait à travers `pullRemoteChanges` (boucle sur `SUPPORTED_ENTITY_TYPES` sans `try/catch`)
+jusqu'à `SettingsViewModel.syncNow`, affichant "Synchronisation impossible, réessaie plus tard" et
+interrompant la synchronisation de TOUTES les entités, pas seulement celle en cause. Corrigé :
+`catch (e: Exception)` (avec `catch (e: CancellationException) { throw e }` avant).
+
+À revalider : après déploiement complet du serveur (toutes les entités jusqu'à `user_preferences`),
+confirmer qu'un tap sur "Synchroniser maintenant" aboutit à "À jour" sans ce message générique.
+
 ### Addendum — deux bugs réels trouvés lors du câblage de `transactions` (étape 17.6)
 
 1. **`SYNCING` bloqué indéfiniment** : `SyncEngineImpl.pushBatch` ne rattrapait que `IOException`
@@ -232,9 +304,9 @@ synchronisation » à cause du bug 2 avant ce correctif) et confirmer le retour 
 
 | # | Scénario | Statut | Notes |
 |---|----------|--------|-------|
-| 1 | Création + propagation | ✅ (categories/savings_goals/financial_plans/persons/accounts/transactions/budgets/loans/loan_payments) — ⏳ `recurring_transactions`/`recurring_transaction_occurrences` | Étape 20 : voir l'addendum "Spécifique à `recurring_transactions`/`recurring_transaction_occurrences`" — nécessite les 3 `ALTER TABLE ... DROP FOREIGN KEY` avant test |
+| 1 | Création + propagation | ✅ (categories/savings_goals/financial_plans/persons/accounts/transactions/budgets/loans/loan_payments/recurring_transactions/recurring_transaction_occurrences/financial_plan_items) — ⏳ `user_preferences` | Étape 22 : voir l'addendum "Spécifique à `user_preferences`" — AUCUN `DROP FOREIGN KEY` nécessaire (particularité), mais migration Room 24→25 + nouvelle table MySQL à déployer |
 | 2 | Modification + propagation | ✅ | |
-| 3 | Suppression douce + propagation | ✅ (categories/.../accounts/persons pré-étape 20) — ⏳ point 8 (recurring_transactions, étape 20.4) | Régression critique déjà revalidée : `getByIdIncludingDeleted` (étape 19.5b) |
+| 3 | Suppression douce + propagation | ✅ (categories/.../accounts/persons/recurring_transactions/financial_plan_items pré-étape 22) — N/A pour `user_preferences` (aucune suppression possible, voir l'addendum du scénario 1) | Régression critique déjà revalidée deux fois : `getByIdIncludingDeleted` (étapes 19.5b et 21.1) |
 | 4 | Conflit (LWW) | ✅ | |
 | 5 | Mode hors-ligne prolongé | ✅ | |
 | 6 | Déclenchement automatique | ✅ | |

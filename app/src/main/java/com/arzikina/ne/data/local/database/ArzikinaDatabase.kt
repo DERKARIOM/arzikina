@@ -19,6 +19,7 @@ import com.arzikina.ne.data.local.dao.SavingsGoalDao
 import com.arzikina.ne.data.local.dao.SyncQueueDao
 import com.arzikina.ne.data.local.dao.TransactionDao
 import com.arzikina.ne.data.local.dao.UserDao
+import com.arzikina.ne.data.local.dao.UserPreferencesDao
 import com.arzikina.ne.data.local.entity.AccountEntity
 import com.arzikina.ne.data.local.entity.BudgetEntity
 import com.arzikina.ne.data.local.entity.CardSecretEntity
@@ -35,6 +36,7 @@ import com.arzikina.ne.data.local.entity.SavingsGoalEntity
 import com.arzikina.ne.data.local.entity.SyncQueueEntity
 import com.arzikina.ne.data.local.entity.TransactionEntity
 import com.arzikina.ne.data.local.entity.UserEntity
+import com.arzikina.ne.data.local.entity.UserPreferencesEntity
 
 /**
  * Base de données locale unique de l'application (SQLite via Room).
@@ -109,6 +111,11 @@ import com.arzikina.ne.data.local.entity.UserEntity
  * - 24 : Table `sync_queue`, la file d'attente locale des écritures en attente d'envoi au serveur
  *   (voir [MIGRATION_23_24]/[SyncQueueEntity]) — TOUJOURS aucun effet visible : table créée mais
  *   vide, aucun repository n'y écrit encore, aucun Sync Engine ne la lit encore.
+ * - 25 : Table `user_preferences` (`themeMode`/`currencyCode`, voir
+ *   [MIGRATION_24_25]/[UserPreferencesEntity]) — étape 22 du chantier de synchronisation :
+ *   `themeMode`/`currencyCode` migrent depuis DataStore Preferences vers Room (voir
+ *   `UserPreferencesRepositoryImpl`) pour réutiliser telle quelle la mécanique du Sync Engine ;
+ *   `biometricLockEnabled` reste dans DataStore, explicitement PAR APPAREIL.
  */
 @Database(
     entities = [
@@ -127,9 +134,10 @@ import com.arzikina.ne.data.local.entity.UserEntity
         FinancialPlanEntity::class,
         FinancialPlanItemEntity::class,
         ReceiptEntity::class,
-        SyncQueueEntity::class
+        SyncQueueEntity::class,
+        UserPreferencesEntity::class
     ],
-    version = 24,
+    version = 25,
     exportSchema = true
 )
 @TypeConverters(Converters::class)
@@ -150,4 +158,5 @@ abstract class ArzikinaDatabase : RoomDatabase() {
     abstract fun financialPlanItemDao(): FinancialPlanItemDao
     abstract fun receiptDao(): ReceiptDao
     abstract fun syncQueueDao(): SyncQueueDao
+    abstract fun userPreferencesDao(): UserPreferencesDao
 }

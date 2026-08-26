@@ -21,6 +21,7 @@ import com.arzikina.ne.domain.model.RepaymentMode
 import com.arzikina.ne.domain.model.SecurityQuestion
 import com.arzikina.ne.domain.model.SyncOperation
 import com.arzikina.ne.domain.model.SyncStatus
+import com.arzikina.ne.domain.model.ThemeMode
 import com.arzikina.ne.domain.model.TransactionType
 
 /**
@@ -158,4 +159,11 @@ class Converters {
 
     @TypeConverter
     fun toSyncStatus(value: String): SyncStatus = SyncStatus.valueOf(value)
+
+    /** Voir `data/local/entity/UserPreferencesEntity`. */
+    @TypeConverter
+    fun fromThemeMode(mode: ThemeMode): String = mode.name
+
+    @TypeConverter
+    fun toThemeMode(value: String): ThemeMode = ThemeMode.valueOf(value)
 }

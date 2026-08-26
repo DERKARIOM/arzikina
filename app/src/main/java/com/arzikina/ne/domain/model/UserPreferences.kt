@@ -3,10 +3,13 @@ package com.arzikina.ne.domain.model
 import com.arzikina.ne.util.Constants
 
 /**
- * Préférences globales de l'utilisateur, indépendantes de toute donnée
- * métier (comptes, transactions...) — stockées via DataStore Preferences
- * plutôt que Room, car ce sont de simples valeurs scalaires sans relation ni
- * besoin de requêtes (voir [com.arzikina.ne.domain.repository.UserPreferencesRepository]).
+ * Préférences globales de l'utilisateur, indépendantes de toute donnée métier (comptes,
+ * transactions...) — voir [com.arzikina.ne.domain.repository.UserPreferencesRepository].
+ *
+ * Stockage HYBRIDE depuis l'étape 22 (chantier de synchronisation multi-appareils, voir
+ * `com.arzikina.ne.data.repository.UserPreferencesRepositoryImpl` pour le détail complet) :
+ * [themeMode]/[currencyCode] vivent désormais dans Room (synchronisables, une ligne par
+ * utilisateur), [biometricLockEnabled] reste dans DataStore Preferences, PAR APPAREIL.
  *
  * [currencyCode] est la devise "principale" utilisée pour les agrégats qui
  * doivent réduire plusieurs devises à une seule (ex. statistiques) — elle ne

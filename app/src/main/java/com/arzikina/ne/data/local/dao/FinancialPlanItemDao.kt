@@ -10,13 +10,12 @@ import kotlinx.coroutines.flow.Flow
 /**
  * Voir `FinancialPlanDao` pour le raisonnement général.
  *
- * Ces dépenses prévues ne sont PAS synchronisées à cette étape (seule la planification parente
- * l'est, voir `FinancialPlanRepositoryImpl`/`SyncEngineImpl`) — [syncId]/[version] existent déjà en
- * base (colonnes additives, voir `FinancialPlanItemEntity`) mais restent inutilisés ici pour
- * l'instant. [deletedAt] est en revanche déjà exploité : `deleteById` (suppression d'UNE dépense
- * prévue par l'utilisateur) reste un vrai `DELETE`, mais [softDeleteAllForPlan] (cascade explicite
- * depuis `FinancialPlanRepositoryImpl.deletePlan`) doit passer par une suppression douce — d'où le
- * filtre `deletedAt IS NULL` sur toutes les lectures ci-dessous, nécessaire dans les deux cas.
+ * Suppression DOUCE (voir `AccountDao`/`CategoryDao` pour le raisonnement complet, même principe) :
+ * toutes les lectures ci-dessous filtrent `deletedAt IS NULL`, [deleteById] est remplacé par
+ * [softDeleteById] — voir `FinancialPlanRepositoryImpl.deletePlan` pour le rattrapage explicite de
+ * la cascade (`financial_plan_items`, ligne par ligne désormais, voir [getAllForPlan]) que SQLite ne
+ * peut plus fournir sur un simple `UPDATE`. Seul [deleteAllForUser] (restauration d'une sauvegarde)
+ * ignore ce filtre.
  */
 @Dao
 interface FinancialPlanItemDao {
@@ -34,6 +33,30 @@ interface FinancialPlanItemDao {
     @Query("SELECT * FROM financial_plan_items WHERE id = :id AND userId = :userId AND deletedAt IS NULL")
     suspend fun getById(id: Long, userId: Long): FinancialPlanItemEntity?
 
+    /** Lecture ponctuelle (hors `Flow`) : utilisée par `FinancialPlanRepositoryImpl.deletePlan` pour
+     * soft-supprimer et enfiler CHAQUE dépense prévue individuellement (chacune avec son propre
+     * `syncId`) plutôt que via un `UPDATE` bulk — voir [softDeleteById]. */
+    @Query("SELECT * FROM financial_plan_items WHERE planId = :planId AND userId = :userId AND deletedAt IS NULL")
+    suspend fun getAllForPlan(planId: Long, userId: Long): List<FinancialPlanItemEntity>
+
+    /** Réservé à `SyncEngineImpl` — voir la KDoc de `CategoryDao.getBySyncId` (même raisonnement,
+     * volontairement SANS filtre `deletedAt IS NULL` ni `userId`). */
+    @Query("SELECT * FROM financial_plan_items WHERE syncId = :syncId LIMIT 1")
+    suspend fun getBySyncId(syncId: String): FinancialPlanItemEntity?
+
+    /** Réservé aux résolveurs `*SyncEnqueuer`/fonctions de résolution privées — voir la KDoc de
+     * `AccountDao.getByIdIncludingDeleted` (même raisonnement : une dépense prévue peut être enfilée
+     * APRÈS que sa planification parente a déjà été soft-supprimée dans la même cascade, voir
+     * `FinancialPlanRepositoryImpl.deletePlan`). */
+    @Query("SELECT * FROM financial_plan_items WHERE id = :id AND userId = :userId")
+    suspend fun getByIdIncludingDeleted(id: Long, userId: Long): FinancialPlanItemEntity?
+
+    /** Réservé à `SyncEngineImpl.enqueueUnsyncedLocalData` — voir la KDoc de
+     * `CategoryDao.getUnsyncedForUser` (même raisonnement). */
+    @Query("SELECT * FROM financial_plan_items WHERE userId = :userId AND deletedAt IS NULL AND syncId IS NULL")
+    suspend fun getUnsyncedForUser(userId: Long): List<FinancialPlanItemEntity>
+
+    /** Retourne l'id de la ligne insérée, ou -1 en cas de mise à jour (voir `AccountDao.upsert`). */
     @Upsert
     suspend fun upsert(item: FinancialPlanItemEntity): Long
 
@@ -41,15 +64,10 @@ interface FinancialPlanItemDao {
     @Insert
     suspend fun insertAll(items: List<FinancialPlanItemEntity>): List<Long>
 
-    @Query("DELETE FROM financial_plan_items WHERE id = :id AND userId = :userId")
-    suspend fun deleteById(id: Long, userId: Long)
-
-    /** Rattrapage EXPLICITE du cascade SQLite perdu par le passage de `FinancialPlanDao.deleteById`
-     * (vrai `DELETE`) à `softDeleteById` (`UPDATE`, voir sa doc) — un `UPDATE` sur `financial_plans`
-     * ne déclenche jamais la `ForeignKey.CASCADE` de `financial_plan_items.planId`. Appelée UNIQUEMENT
-     * par `FinancialPlanRepositoryImpl.deletePlan`, jamais isolément. */
-    @Query("UPDATE financial_plan_items SET deletedAt = :deletedAt, updatedAt = :deletedAt WHERE planId = :planId AND userId = :userId")
-    suspend fun softDeleteAllForPlan(planId: Long, userId: Long, deletedAt: Long)
+    /** Suppression DOUCE (voir la doc de tête) : `deletedAt`/`updatedAt` seulement, même principe
+     * que `AccountDao.softDeleteById`. */
+    @Query("UPDATE financial_plan_items SET deletedAt = :deletedAt, updatedAt = :deletedAt WHERE id = :id AND userId = :userId")
+    suspend fun softDeleteById(id: Long, userId: Long, deletedAt: Long)
 
     /** Utilisé uniquement par la restauration d'une sauvegarde : ne purge QUE les données de
      * [userId]. */
