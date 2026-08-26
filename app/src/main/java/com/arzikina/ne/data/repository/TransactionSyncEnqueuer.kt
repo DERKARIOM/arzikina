@@ -75,22 +75,31 @@ class TransactionSyncEnqueuer @Inject constructor(
 
     /** La ligne elle-même DOIT exister (contrainte `ForeignKey.CASCADE` réelle sur `accountId` —
      *  voir `TransactionEntity` — une transaction ne peut pas survivre à son compte) : son absence
-     *  serait une corruption de données, pas un cas à absorber silencieusement, d'où `error()`. */
+     *  serait une corruption de données, pas un cas à absorber silencieusement, d'où `error()`.
+     *
+     *  `getByIdIncludingDeleted` (PAS `getById`, bug réel corrigé à l'étape 19.5) : ce compte peut
+     *  avoir déjà été soft-supprimé dans la MÊME cascade que cette transaction (voir
+     *  `AccountRepositoryImpl.deleteAccount`, où l'enfilage a lieu APRÈS le commit de
+     *  `accountDao.softDeleteById`) — son `syncId` reste valide et doit être résolu normalement. */
     private suspend fun resolveAccountSyncId(accountId: Long, userId: Long): String {
-        val account = accountDao.getById(accountId, userId)
+        val account = accountDao.getByIdIncludingDeleted(accountId, userId)
             ?: error("Compte introuvable pour la transaction (accountId=$accountId).")
         return resolveOrAssignSyncId(account.syncId) { newSyncId -> accountDao.upsert(account.copy(syncId = newSyncId)) }
     }
 
+    /** Voir la KDoc de [resolveAccountSyncId] (même raisonnement `getByIdIncludingDeleted`). */
     private suspend fun resolveCategorySyncId(categoryId: Long, userId: Long): String {
-        val category = categoryDao.getById(categoryId, userId)
+        val category = categoryDao.getByIdIncludingDeleted(categoryId, userId)
             ?: error("Catégorie introuvable pour la transaction (categoryId=$categoryId).")
         return resolveOrAssignSyncId(category.syncId) { newSyncId -> categoryDao.upsert(category.copy(syncId = newSyncId)) }
     }
 
-    /** Référence à une AUTRE transaction (la ligne de frais, voir `TransactionEntity.feeTransactionId`). */
+    /** Référence à une AUTRE transaction (la ligne de frais, voir `TransactionEntity.feeTransactionId`).
+     *  Voir la KDoc de [resolveAccountSyncId] (même raisonnement `getByIdIncludingDeleted` : une
+     *  transaction de frais peut être soft-supprimée dans la même cascade que sa transaction
+     *  parente, voir `AccountRepositoryImpl.cleanUpFeeLinksBeforeAccountCascade`). */
     private suspend fun resolveTransactionSyncId(transactionId: Long, userId: Long): String {
-        val transaction = transactionDao.getById(transactionId, userId)
+        val transaction = transactionDao.getByIdIncludingDeleted(transactionId, userId)
             ?: error("Transaction de frais introuvable (id=$transactionId).")
         return resolveOrAssignSyncId(transaction.syncId) { newSyncId ->
             transactionDao.upsert(transaction.copy(syncId = newSyncId))

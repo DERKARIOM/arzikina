@@ -30,6 +30,12 @@ interface PersonDao {
     @Query("SELECT * FROM persons WHERE syncId = :syncId LIMIT 1")
     suspend fun getBySyncId(syncId: String): PersonEntity?
 
+    /** Réservé aux résolveurs `*SyncEnqueuer` — voir la KDoc de `AccountDao.getByIdIncludingDeleted`
+     * (même raisonnement, filet de sécurité pour une personne soft-supprimée dans la même cascade
+     * qu'un prêt/emprunt qui la référence). */
+    @Query("SELECT * FROM persons WHERE id = :id AND userId = :userId")
+    suspend fun getByIdIncludingDeleted(id: Long, userId: Long): PersonEntity?
+
     /** Réservé à `SyncEngineImpl.enqueueUnsyncedLocalData` — voir la KDoc de
      * `CategoryDao.getUnsyncedForUser` (même raisonnement ; `BackupRepositoryImpl` étant ici le
      * seul chemin de contournement connu, aucun seeder par défaut n'existe pour cette entité). */
@@ -47,9 +53,9 @@ interface PersonDao {
 
     /** Suppression DOUCE (voir la doc de tête) : `deletedAt`/`updatedAt` seulement, même principe
      * que `CategoryDao.softDeleteById`. Ne touche PAS `loans` — voir
-     * `PersonRepositoryImpl.deletePerson`, qui supprime explicitement (suppression PHYSIQUE,
-     * inchangée) les prêts/emprunts de cette personne AVANT d'appeler cette méthode : la cascade
-     * SQLite `personId` ne se déclenche que sur un vrai `DELETE`, jamais sur cet `UPDATE`. */
+     * `PersonRepositoryImpl.deletePerson`, qui supprime DOUCEMENT et enfile explicitement (étape 19)
+     * les prêts/emprunts de cette personne AVANT d'appeler cette méthode : la cascade SQLite
+     * `personId` ne se déclenche que sur un vrai `DELETE`, jamais sur cet `UPDATE`. */
     @Query("UPDATE persons SET deletedAt = :deletedAt, updatedAt = :deletedAt WHERE id = :id AND userId = :userId")
     suspend fun softDeleteById(id: Long, userId: Long, deletedAt: Long)
 

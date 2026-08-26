@@ -9,6 +9,8 @@ import com.arzikina.ne.data.local.dao.TransactionDao
 import com.arzikina.ne.data.local.database.ArzikinaDatabase
 import com.arzikina.ne.data.local.entity.AccountEntity
 import com.arzikina.ne.data.local.entity.CardSecretEntity
+import com.arzikina.ne.data.local.entity.LoanEntity
+import com.arzikina.ne.data.local.entity.LoanPaymentEntity
 import com.arzikina.ne.data.local.entity.TransactionEntity
 import com.arzikina.ne.data.mapper.toDomain
 import com.arzikina.ne.data.mapper.toEntity
@@ -54,6 +56,7 @@ class AccountRepositoryImpl @Inject constructor(
     private val sessionManager: SessionManager,
     private val syncQueueEnqueuer: SyncQueueEnqueuer,
     private val transactionSyncEnqueuer: TransactionSyncEnqueuer,
+    private val loanSyncEnqueuer: LoanSyncEnqueuer,
     private val json: Json,
     @IoDispatcher private val ioDispatcher: CoroutineDispatcher
 ) : AccountRepository {
@@ -115,10 +118,13 @@ class AccountRepositoryImpl @Inject constructor(
      *
      * 1. Prêts/emprunts dont CE compte est le compte PRINCIPAL : leurs transactions liées
      *    (décaissement + remboursements, même sur un AUTRE compte encore existant), leurs lignes
-     *    `loan_payments`, puis le prêt lui-même sont supprimés explicitement.
+     *    `loan_payments`, puis le prêt lui-même sont supprimés DOUCEMENT et enfilés (étape 19, voir
+     *    `LoanSyncEnqueuer`) — plus une suppression physique silencieuse, même principe que les
+     *    transactions ci-dessous.
      * 2. Remboursements enregistrés SUR ce compte pour un prêt/emprunt dont le compte principal est
-     *    DIFFÉRENT : le prêt parent est recalculé (montant remboursé/solde restant/statut) AVANT que
-     *    sa transaction et sa ligne `loan_payments` ne soient supprimées.
+     *    DIFFÉRENT : le prêt parent est recalculé (montant remboursé/solde restant/statut, enfilé en
+     *    `UPDATE`) AVANT que sa transaction et sa ligne `loan_payments` ne soient supprimées
+     *    (douceur + enfilage `DELETE`, même principe).
      * 3. Transactions liées à des FRAIS (voir [com.arzikina.ne.domain.model.Transaction.feeTransactionId]),
      *    dans les deux sens, pour toute transaction sur le point de disparaître à cause de ce compte
      *    (`accountId` OU `transferAccountId`, voir [cleanUpFeeLinksBeforeAccountCascade]) :
@@ -155,6 +161,8 @@ class AccountRepositoryImpl @Inject constructor(
         // Enfilée APRÈS le `database.withTransaction`, jamais dedans (même principe que
         // `TransactionRepositoryImpl`/`LoanRepositoryImpl`).
         val pendingSyncOps = mutableListOf<Pair<TransactionEntity, SyncOperation>>()
+        val pendingLoanOps = mutableListOf<Pair<LoanEntity, SyncOperation>>()
+        val pendingLoanPaymentOps = mutableListOf<Pair<LoanPaymentEntity, SyncOperation>>()
 
         database.withTransaction {
             val disappearingTransactions = cleanUpFeeLinksBeforeAccountCascade(id, userId, now, pendingSyncOps)
@@ -162,10 +170,20 @@ class AccountRepositoryImpl @Inject constructor(
             loanDao.getAllForAccount(id, userId).forEach { loan ->
                 loanPaymentDao.getAllForLoan(loan.id, userId).forEach { payment ->
                     softDeleteAndEnqueue(payment.transactionId, userId, now, pendingSyncOps)
-                    loanPaymentDao.deleteById(payment.id, userId)
+                    loanPaymentDao.softDeleteById(payment.id, userId, now)
+                    pendingLoanPaymentOps += payment.copy(
+                        syncId = payment.syncId ?: UUID.randomUUID().toString(),
+                        deletedAt = now,
+                        updatedAt = now
+                    ) to SyncOperation.DELETE
                 }
                 softDeleteAndEnqueue(loan.transactionId, userId, now, pendingSyncOps)
-                loanDao.deleteById(loan.id, userId)
+                loanDao.softDeleteById(loan.id, userId, now)
+                pendingLoanOps += loan.copy(
+                    syncId = loan.syncId ?: UUID.randomUUID().toString(),
+                    deletedAt = now,
+                    updatedAt = now
+                ) to SyncOperation.DELETE
             }
 
             loanPaymentDao.getAllForAccount(id, userId).forEach { payment ->
@@ -178,15 +196,21 @@ class AccountRepositoryImpl @Inject constructor(
                 val recalcNow = System.currentTimeMillis()
                 val newAmountRepaid = (loan.amountRepaid - payment.amount).coerceAtLeast(0L)
                 val newStatus = computeLoanStatus(loan.amount, newAmountRepaid, loan.startDate, loan.dueDate, recalcNow)
-                loanDao.upsert(
-                    loan.copy(
-                        amountRepaid = newAmountRepaid,
-                        remainingAmount = loan.amount - newAmountRepaid,
-                        status = newStatus,
-                        updatedAt = recalcNow
-                    )
+                val updatedLoan = loan.copy(
+                    amountRepaid = newAmountRepaid,
+                    remainingAmount = loan.amount - newAmountRepaid,
+                    status = newStatus,
+                    updatedAt = recalcNow,
+                    syncId = loan.syncId ?: UUID.randomUUID().toString()
                 )
-                loanPaymentDao.deleteById(payment.id, userId)
+                loanDao.upsert(updatedLoan)
+                pendingLoanOps += updatedLoan to SyncOperation.UPDATE
+                loanPaymentDao.softDeleteById(payment.id, userId, now)
+                pendingLoanPaymentOps += payment.copy(
+                    syncId = payment.syncId ?: UUID.randomUUID().toString(),
+                    deletedAt = now,
+                    updatedAt = now
+                ) to SyncOperation.DELETE
             }
 
             // Certaines de ces transactions ont déjà été traitées ci-dessus (même compte, voir la

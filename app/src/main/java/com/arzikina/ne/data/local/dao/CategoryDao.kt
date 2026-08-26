@@ -41,6 +41,12 @@ interface CategoryDao {
     @Query("SELECT * FROM categories WHERE syncId = :syncId LIMIT 1")
     suspend fun getBySyncId(syncId: String): CategoryEntity?
 
+    /** Réservé aux résolveurs `*SyncEnqueuer` — voir la KDoc de `AccountDao.getByIdIncludingDeleted`
+     * (même raisonnement, filet de sécurité pour une catégorie soft-supprimée dans la même cascade
+     * qu'une ligne qui la référence). */
+    @Query("SELECT * FROM categories WHERE id = :id AND userId = :userId")
+    suspend fun getByIdIncludingDeleted(id: Long, userId: Long): CategoryEntity?
+
     /** Réservé à [com.arzikina.ne.data.repository.SyncEngineImpl.enqueueUnsyncedLocalData] :
      * lignes actives (`deletedAt IS NULL`) jamais proposées à la synchronisation — créées par un
      * chemin qui contourne `CategoryRepositoryImpl.saveCategory` (ex. `NewUserDefaultDataSeeder` à

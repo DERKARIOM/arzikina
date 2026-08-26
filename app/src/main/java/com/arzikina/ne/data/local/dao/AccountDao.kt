@@ -38,6 +38,16 @@ interface AccountDao {
     @Query("SELECT * FROM accounts WHERE syncId = :syncId LIMIT 1")
     suspend fun getBySyncId(syncId: String): AccountEntity?
 
+    /** Réservé aux résolveurs `*SyncEnqueuer` (`TransactionSyncEnqueuer`/`LoanSyncEnqueuer`) —
+     * variante de [getById] SANS le filtre `deletedAt IS NULL`. Bug réel corrigé à l'étape 19.5 :
+     * une transaction/un prêt référençant ce compte peut être enfilé APRÈS que le compte lui-même
+     * a déjà été soft-supprimé dans la MÊME cascade (voir `AccountRepositoryImpl.deleteAccount` —
+     * l'enfilage a lieu après `database.withTransaction`, donc après le commit du
+     * `softDeleteById` du compte) : son `syncId` reste valide et doit être résolu normalement, pas
+     * traité comme une corruption de données ([getById] renverrait `null` à tort dans ce cas). */
+    @Query("SELECT * FROM accounts WHERE id = :id AND userId = :userId")
+    suspend fun getByIdIncludingDeleted(id: Long, userId: Long): AccountEntity?
+
     /** Réservé à `SyncEngineImpl.enqueueUnsyncedLocalData` — voir la KDoc de
      * `CategoryDao.getUnsyncedForUser` (même raisonnement ; `BackupRepositoryImpl` étant ici le
      * seul chemin de contournement connu, aucun seeder par défaut n'existe pour cette entité). */

@@ -8,6 +8,8 @@ import com.arzikina.ne.data.local.dao.TransactionDao
 import com.arzikina.ne.data.local.database.ArzikinaDatabase
 import com.arzikina.ne.data.local.database.SystemCategoryResolver
 import com.arzikina.ne.data.local.entity.CategoryEntity
+import com.arzikina.ne.data.local.entity.LoanEntity
+import com.arzikina.ne.data.local.entity.LoanPaymentEntity
 import com.arzikina.ne.data.local.entity.TransactionEntity
 import com.arzikina.ne.data.mapper.toDomain
 import com.arzikina.ne.data.mapper.toEntity
@@ -44,15 +46,17 @@ import javax.inject.Inject
  * Dépend directement de [TransactionDao]/[CategoryDao] (pas de `TransactionRepository`/
  * `CategoryRepository`) : un repository ne doit pas dépendre d'un autre repository pour rester
  * libre de composer plusieurs DAO dans une seule transaction Room — voir `BackupRepositoryImpl`,
- * qui suit le même principe. [TransactionSyncEnqueuer] fait exception (voir sa KDoc de tête) :
- * CE repository est l'un des CINQ qui écrivent des transactions, donc l'un des CINQ à l'injecter,
- * mais reste seul maître de `LoanDao`/`LoanPaymentDao` (jamais de `LoanRepository` externe).
+ * qui suit le même principe. [TransactionSyncEnqueuer]/[LoanSyncEnqueuer] font exception (voir
+ * leur KDoc de tête) : CE repository est l'un des CINQ qui écrivent des transactions ET l'un des
+ * TROIS qui écrivent `Loan`/`LoanPayment`, mais reste seul PROPRIÉTAIRE normal de `LoanDao`/
+ * `LoanPaymentDao` (jamais de `LoanRepository` externe).
  *
- * `Loan`/`LoanPayment` NE SONT PAS des entités synchronisées à cette étape (voir
- * `docs/sync/AUDIT-ET-ARCHITECTURE-SYNC.md`) — seules les transactions Arzikina qu'ils génèrent le
- * sont (étape 17). Les enfilages ci-dessous ne concernent donc QUE `transactionDao`, jamais
- * `loanDao`/`loanPaymentDao`, et ont lieu APRÈS le `database.withTransaction`, jamais dedans (même
- * principe que `TransactionRepositoryImpl`).
+ * `Loan`/`LoanPayment` sont des entités synchronisées depuis l'étape 19 (voir
+ * `docs/sync/AUDIT-ET-ARCHITECTURE-SYNC.md`) — toute mutation de ces tables, y compris le
+ * recalcul de `amountRepaid`/`remainingAmount`/`status` d'un prêt/emprunt suite à un remboursement
+ * (fonction déjà présente AVANT la synchronisation, mais dont l'effet restait purement local), doit
+ * désormais être enfilée via [loanSyncEnqueuer] — sans quoi la progression d'un remboursement
+ * n'apparaîtrait jamais sur un second appareil.
  */
 class LoanRepositoryImpl @Inject constructor(
     private val database: ArzikinaDatabase,
@@ -62,6 +66,7 @@ class LoanRepositoryImpl @Inject constructor(
     private val categoryDao: CategoryDao,
     private val sessionManager: SessionManager,
     private val transactionSyncEnqueuer: TransactionSyncEnqueuer,
+    private val loanSyncEnqueuer: LoanSyncEnqueuer,
     @IoDispatcher private val ioDispatcher: CoroutineDispatcher
 ) : LoanRepository {
 
@@ -88,7 +93,8 @@ class LoanRepositoryImpl @Inject constructor(
 
     override suspend fun saveLoan(loan: Loan): Long = withContext(ioDispatcher) {
         val userId = requireCurrentUserId()
-        val pendingSyncOps = mutableListOf<Pair<TransactionEntity, SyncOperation>>()
+        val pendingTransactionOps = mutableListOf<Pair<TransactionEntity, SyncOperation>>()
+        val pendingLoanOps = mutableListOf<Pair<LoanEntity, SyncOperation>>()
 
         val savedId = database.withTransaction {
             if (loan.id == 0L) {
@@ -104,19 +110,20 @@ class LoanRepositoryImpl @Inject constructor(
                     createdAt = now
                 ).toEntity(userId).copy(syncId = UUID.randomUUID().toString(), updatedAt = now)
                 val transactionId = transactionDao.upsert(transactionEntity)
-                pendingSyncOps += transactionEntity.copy(id = transactionId) to SyncOperation.CREATE
+                pendingTransactionOps += transactionEntity.copy(id = transactionId) to SyncOperation.CREATE
 
                 val status = computeLoanStatus(loan.amount, 0L, loan.startDate, loan.dueDate, now)
-                loanDao.upsert(
-                    loan.copy(
-                        amountRepaid = 0L,
-                        remainingAmount = loan.amount,
-                        status = status,
-                        transactionId = transactionId,
-                        createdAt = now,
-                        updatedAt = now
-                    ).toEntity(userId)
-                )
+                val loanEntity = loan.copy(
+                    amountRepaid = 0L,
+                    remainingAmount = loan.amount,
+                    status = status,
+                    transactionId = transactionId,
+                    createdAt = now,
+                    updatedAt = now
+                ).toEntity(userId).copy(syncId = UUID.randomUUID().toString())
+                val loanId = loanDao.upsert(loanEntity)
+                pendingLoanOps += loanEntity.copy(id = loanId) to SyncOperation.CREATE
+                loanId
             } else {
                 val existing = loanDao.getById(loan.id, userId) ?: error("Prêt/emprunt introuvable.")
                 val now = System.currentTimeMillis()
@@ -144,28 +151,35 @@ class LoanRepositoryImpl @Inject constructor(
                         updatedAt = now
                     )
                     transactionDao.upsert(updatedTransaction)
-                    pendingSyncOps += updatedTransaction to SyncOperation.UPDATE
+                    pendingTransactionOps += updatedTransaction to SyncOperation.UPDATE
                 }
-                loanDao.upsert(
-                    loan.copy(
-                        amountRepaid = existing.amountRepaid,
-                        remainingAmount = loan.amount - existing.amountRepaid,
-                        status = status,
-                        transactionId = existing.transactionId,
-                        updatedAt = now
-                    ).toEntity(userId)
+                val loanEntity = loan.copy(
+                    amountRepaid = existing.amountRepaid,
+                    remainingAmount = loan.amount - existing.amountRepaid,
+                    status = status,
+                    transactionId = existing.transactionId,
+                    updatedAt = now
+                ).toEntity(userId).copy(
+                    syncId = existing.syncId ?: UUID.randomUUID().toString(),
+                    deletedAt = existing.deletedAt,
+                    version = existing.version
                 )
+                loanDao.upsert(loanEntity)
+                pendingLoanOps += loanEntity to SyncOperation.UPDATE
                 loan.id
             }
         }
 
-        pendingSyncOps.forEach { (entity, operation) -> transactionSyncEnqueuer.enqueue(entity, operation) }
+        pendingTransactionOps.forEach { (entity, operation) -> transactionSyncEnqueuer.enqueue(entity, operation) }
+        pendingLoanOps.forEach { (entity, operation) -> loanSyncEnqueuer.enqueueLoan(entity, operation) }
         savedId
     }
 
     override suspend fun deleteLoan(id: Long) = withContext(ioDispatcher) {
         val userId = requireCurrentUserId()
-        val pendingSyncOps = mutableListOf<Pair<TransactionEntity, SyncOperation>>()
+        val pendingTransactionOps = mutableListOf<Pair<TransactionEntity, SyncOperation>>()
+        val pendingLoanPaymentOps = mutableListOf<Pair<LoanPaymentEntity, SyncOperation>>()
+        val pendingLoanOps = mutableListOf<Pair<LoanEntity, SyncOperation>>()
         val now = System.currentTimeMillis()
 
         database.withTransaction {
@@ -174,34 +188,46 @@ class LoanRepositoryImpl @Inject constructor(
                 val paymentTransaction = transactionDao.getById(payment.transactionId, userId)
                 transactionDao.softDeleteById(payment.transactionId, userId, now)
                 if (paymentTransaction != null) {
-                    pendingSyncOps += paymentTransaction.copy(
+                    pendingTransactionOps += paymentTransaction.copy(
                         syncId = paymentTransaction.syncId ?: UUID.randomUUID().toString(),
                         deletedAt = now,
                         updatedAt = now
                     ) to SyncOperation.DELETE
                 }
+                loanPaymentDao.softDeleteById(payment.id, userId, now)
+                pendingLoanPaymentOps += payment.copy(
+                    syncId = payment.syncId ?: UUID.randomUUID().toString(),
+                    deletedAt = now,
+                    updatedAt = now
+                ) to SyncOperation.DELETE
             }
             val loanTransaction = transactionDao.getById(loan.transactionId, userId)
             transactionDao.softDeleteById(loan.transactionId, userId, now)
             if (loanTransaction != null) {
-                pendingSyncOps += loanTransaction.copy(
+                pendingTransactionOps += loanTransaction.copy(
                     syncId = loanTransaction.syncId ?: UUID.randomUUID().toString(),
                     deletedAt = now,
                     updatedAt = now
                 ) to SyncOperation.DELETE
             }
-            // Supprime aussi, en cascade SQLite, toutes les lignes loan_payments de ce prêt/emprunt
-            // (relation `loanId`, non touchée par cette étape — voir la KDoc de tête de cette classe :
-            // `Loan`/`LoanPayment` ne sont pas des entités synchronisées).
-            loanDao.deleteById(id, userId)
+            loanDao.softDeleteById(id, userId, now)
+            pendingLoanOps += loan.copy(
+                syncId = loan.syncId ?: UUID.randomUUID().toString(),
+                deletedAt = now,
+                updatedAt = now
+            ) to SyncOperation.DELETE
         }
 
-        pendingSyncOps.forEach { (entity, operation) -> transactionSyncEnqueuer.enqueue(entity, operation) }
+        pendingTransactionOps.forEach { (entity, operation) -> transactionSyncEnqueuer.enqueue(entity, operation) }
+        pendingLoanPaymentOps.forEach { (entity, operation) -> loanSyncEnqueuer.enqueueLoanPayment(entity, operation) }
+        pendingLoanOps.forEach { (entity, operation) -> loanSyncEnqueuer.enqueueLoan(entity, operation) }
     }
 
     override suspend fun recordPayment(payment: LoanPayment): Long = withContext(ioDispatcher) {
         val userId = requireCurrentUserId()
-        val pendingSyncOps = mutableListOf<Pair<TransactionEntity, SyncOperation>>()
+        val pendingTransactionOps = mutableListOf<Pair<TransactionEntity, SyncOperation>>()
+        val pendingLoanOps = mutableListOf<Pair<LoanEntity, SyncOperation>>()
+        val pendingLoanPaymentOps = mutableListOf<Pair<LoanPaymentEntity, SyncOperation>>()
 
         val result = database.withTransaction {
             val loan = loanDao.getById(payment.loanId, userId) ?: error("Prêt/emprunt introuvable.")
@@ -220,28 +246,38 @@ class LoanRepositoryImpl @Inject constructor(
                 createdAt = now
             ).toEntity(userId).copy(syncId = UUID.randomUUID().toString(), updatedAt = now)
             val transactionId = transactionDao.upsert(transactionEntity)
-            pendingSyncOps += transactionEntity.copy(id = transactionId) to SyncOperation.CREATE
+            pendingTransactionOps += transactionEntity.copy(id = transactionId) to SyncOperation.CREATE
 
             val newAmountRepaid = loan.amountRepaid + payment.amount
             val newStatus = computeLoanStatus(loan.amount, newAmountRepaid, loan.startDate, loan.dueDate, now)
-            loanDao.upsert(
-                loan.copy(
-                    amountRepaid = newAmountRepaid,
-                    remainingAmount = loan.amount - newAmountRepaid,
-                    status = newStatus,
-                    updatedAt = now
-                )
+            val updatedLoan = loan.copy(
+                amountRepaid = newAmountRepaid,
+                remainingAmount = loan.amount - newAmountRepaid,
+                status = newStatus,
+                updatedAt = now,
+                syncId = loan.syncId ?: UUID.randomUUID().toString()
             )
-            loanPaymentDao.upsert(payment.copy(transactionId = transactionId, createdAt = now).toEntity(userId))
+            loanDao.upsert(updatedLoan)
+            pendingLoanOps += updatedLoan to SyncOperation.UPDATE
+
+            val paymentEntity = payment.copy(transactionId = transactionId, createdAt = now)
+                .toEntity(userId).copy(syncId = UUID.randomUUID().toString(), updatedAt = now)
+            val paymentId = loanPaymentDao.upsert(paymentEntity)
+            pendingLoanPaymentOps += paymentEntity.copy(id = paymentId) to SyncOperation.CREATE
+            paymentId
         }
 
-        pendingSyncOps.forEach { (entity, operation) -> transactionSyncEnqueuer.enqueue(entity, operation) }
+        pendingTransactionOps.forEach { (entity, operation) -> transactionSyncEnqueuer.enqueue(entity, operation) }
+        pendingLoanOps.forEach { (entity, operation) -> loanSyncEnqueuer.enqueueLoan(entity, operation) }
+        pendingLoanPaymentOps.forEach { (entity, operation) -> loanSyncEnqueuer.enqueueLoanPayment(entity, operation) }
         result
     }
 
     override suspend fun deletePayment(id: Long) = withContext(ioDispatcher) {
         val userId = requireCurrentUserId()
-        val pendingSyncOps = mutableListOf<Pair<TransactionEntity, SyncOperation>>()
+        val pendingTransactionOps = mutableListOf<Pair<TransactionEntity, SyncOperation>>()
+        val pendingLoanOps = mutableListOf<Pair<LoanEntity, SyncOperation>>()
+        val pendingLoanPaymentOps = mutableListOf<Pair<LoanPaymentEntity, SyncOperation>>()
         val now = System.currentTimeMillis()
 
         database.withTransaction {
@@ -250,26 +286,35 @@ class LoanRepositoryImpl @Inject constructor(
             val paymentTransaction = transactionDao.getById(payment.transactionId, userId)
             transactionDao.softDeleteById(payment.transactionId, userId, now)
             if (paymentTransaction != null) {
-                pendingSyncOps += paymentTransaction.copy(
+                pendingTransactionOps += paymentTransaction.copy(
                     syncId = paymentTransaction.syncId ?: UUID.randomUUID().toString(),
                     deletedAt = now,
                     updatedAt = now
                 ) to SyncOperation.DELETE
             }
-            loanPaymentDao.deleteById(id, userId)
+            loanPaymentDao.softDeleteById(id, userId, now)
+            pendingLoanPaymentOps += payment.copy(
+                syncId = payment.syncId ?: UUID.randomUUID().toString(),
+                deletedAt = now,
+                updatedAt = now
+            ) to SyncOperation.DELETE
+
             val newAmountRepaid = loan.amountRepaid - payment.amount
             val newStatus = computeLoanStatus(loan.amount, newAmountRepaid, loan.startDate, loan.dueDate, now)
-            loanDao.upsert(
-                loan.copy(
-                    amountRepaid = newAmountRepaid,
-                    remainingAmount = loan.amount - newAmountRepaid,
-                    status = newStatus,
-                    updatedAt = now
-                )
+            val updatedLoan = loan.copy(
+                amountRepaid = newAmountRepaid,
+                remainingAmount = loan.amount - newAmountRepaid,
+                status = newStatus,
+                updatedAt = now,
+                syncId = loan.syncId ?: UUID.randomUUID().toString()
             )
+            loanDao.upsert(updatedLoan)
+            pendingLoanOps += updatedLoan to SyncOperation.UPDATE
         }
 
-        pendingSyncOps.forEach { (entity, operation) -> transactionSyncEnqueuer.enqueue(entity, operation) }
+        pendingTransactionOps.forEach { (entity, operation) -> transactionSyncEnqueuer.enqueue(entity, operation) }
+        pendingLoanOps.forEach { (entity, operation) -> loanSyncEnqueuer.enqueueLoan(entity, operation) }
+        pendingLoanPaymentOps.forEach { (entity, operation) -> loanSyncEnqueuer.enqueueLoanPayment(entity, operation) }
     }
 
     override suspend fun findLoanIdForTransaction(transactionId: Long): Long? = withContext(ioDispatcher) {

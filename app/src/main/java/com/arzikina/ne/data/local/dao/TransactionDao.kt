@@ -11,12 +11,9 @@ import kotlinx.coroutines.flow.Flow
  * Voir `data/local/dao/AccountDao` pour le raisonnement sur le filtrage systématique par `userId`.
  *
  * Suppression DOUCE (voir `CategoryDao`/`AccountDao` pour le raisonnement complet, même principe) :
- * toutes les lectures ci-dessous filtrent `deletedAt IS NULL`, [deleteById] reste néanmoins
- * DISPONIBLE (contrairement à `AccountDao`/`PersonDao`, qui l'ont retiré) — voir sa KDoc pour le
- * raisonnement : plusieurs repositories composent encore ce DAO directement pour des suppressions
- * en cascade PUREMENT LOCALES sur des lignes jamais destinées elles-mêmes à porter un `syncId`
- * propre tant que l'étape 17 (câblage complet) n'est pas terminée — voir son suivi dans
- * `docs/sync/AUDIT-ET-ARCHITECTURE-SYNC.md`.
+ * toutes les lectures ci-dessous filtrent `deletedAt IS NULL`, `deleteById` a été retiré (étape
+ * 19.5, dernier appelant migré vers [softDeleteById] depuis la fin de l'étape 17.3) — même principe
+ * que `AccountDao`/`PersonDao`.
  */
 @Dao
 interface TransactionDao {
@@ -31,6 +28,12 @@ interface TransactionDao {
      * volontairement SANS filtre `deletedAt IS NULL` ni `userId`). */
     @Query("SELECT * FROM transactions WHERE syncId = :syncId LIMIT 1")
     suspend fun getBySyncId(syncId: String): TransactionEntity?
+
+    /** Réservé aux résolveurs `*SyncEnqueuer` — voir la KDoc de `AccountDao.getByIdIncludingDeleted`
+     * (même raisonnement ; utilisé ici pour résoudre `feeTransactionSyncId` même quand la
+     * transaction de frais a déjà été soft-supprimée dans la même cascade). */
+    @Query("SELECT * FROM transactions WHERE id = :id AND userId = :userId")
+    suspend fun getByIdIncludingDeleted(id: Long, userId: Long): TransactionEntity?
 
     /** Réservé à `SyncEngineImpl.enqueueUnsyncedLocalData` — voir la KDoc de
      * `CategoryDao.getUnsyncedForUser` (même raisonnement). */
@@ -92,18 +95,6 @@ interface TransactionDao {
      * nouveaux ids connus. */
     @Insert
     suspend fun insertAll(transactions: List<TransactionEntity>): List<Long>
-
-    /** Suppression PHYSIQUE — voir la doc de tête. Reste utilisée par plusieurs repositories
-     * (`LoanRepositoryImpl`, `RecurringTransactionRepositoryImpl`, `AccountRepositoryImpl`,
-     * `PersonRepositoryImpl`) pour des transactions générées automatiquement et supprimées en
-     * cascade applicative, PAS ENCORE toutes basculées vers [softDeleteById] + enfilage sync — voir
-     * le plan de l'étape 17 (`docs/sync/AUDIT-ET-ARCHITECTURE-SYNC.md`). Chaque site d'appel sera
-     * revu individuellement : une transaction déjà envoyée au serveur (donc porteuse d'un `syncId`)
-     * ne doit PLUS jamais être purgée par cette méthode une fois son repository câblé, sous peine de
-     * réapparaître au prochain pull d'un autre appareil (le serveur, lui, ignorerait toujours cette
-     * suppression). */
-    @Query("DELETE FROM transactions WHERE id = :id AND userId = :userId")
-    suspend fun deleteById(id: Long, userId: Long)
 
     /** Suppression DOUCE (voir la doc de tête) : `deletedAt`/`updatedAt` seulement, même principe
      * que `CategoryDao.softDeleteById`/`AccountDao.softDeleteById`. */

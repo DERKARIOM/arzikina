@@ -4,7 +4,11 @@ import com.arzikina.ne.data.local.dao.AccountDao
 import com.arzikina.ne.data.local.dao.BudgetDao
 import com.arzikina.ne.data.local.dao.CategoryDao
 import com.arzikina.ne.data.local.dao.FinancialPlanDao
+import com.arzikina.ne.data.local.dao.LoanDao
+import com.arzikina.ne.data.local.dao.LoanPaymentDao
 import com.arzikina.ne.data.local.dao.PersonDao
+import com.arzikina.ne.data.local.dao.RecurringTransactionDao
+import com.arzikina.ne.data.local.dao.RecurringTransactionOccurrenceDao
 import com.arzikina.ne.data.local.dao.SavingsGoalDao
 import com.arzikina.ne.data.local.dao.SyncQueueDao
 import com.arzikina.ne.data.local.dao.TransactionDao
@@ -12,7 +16,11 @@ import com.arzikina.ne.data.local.entity.AccountEntity
 import com.arzikina.ne.data.local.entity.BudgetEntity
 import com.arzikina.ne.data.local.entity.CategoryEntity
 import com.arzikina.ne.data.local.entity.FinancialPlanEntity
+import com.arzikina.ne.data.local.entity.LoanEntity
+import com.arzikina.ne.data.local.entity.LoanPaymentEntity
 import com.arzikina.ne.data.local.entity.PersonEntity
+import com.arzikina.ne.data.local.entity.RecurringTransactionEntity
+import com.arzikina.ne.data.local.entity.RecurringTransactionOccurrenceEntity
 import com.arzikina.ne.data.local.entity.SavingsGoalEntity
 import com.arzikina.ne.data.local.entity.SyncQueueEntity
 import com.arzikina.ne.data.local.entity.TransactionEntity
@@ -25,8 +33,14 @@ import com.arzikina.ne.data.remote.dto.CategoryServerStateDto
 import com.arzikina.ne.data.remote.dto.CategorySyncPayload
 import com.arzikina.ne.data.remote.dto.FinancialPlanServerStateDto
 import com.arzikina.ne.data.remote.dto.FinancialPlanSyncPayload
+import com.arzikina.ne.data.remote.dto.LoanPaymentServerStateDto
+import com.arzikina.ne.data.remote.dto.LoanServerStateDto
 import com.arzikina.ne.data.remote.dto.PersonServerStateDto
 import com.arzikina.ne.data.remote.dto.PersonSyncPayload
+import com.arzikina.ne.data.remote.dto.RecurringTransactionOccurrenceServerStateDto
+import com.arzikina.ne.data.remote.dto.RecurringTransactionOccurrenceSyncPayload
+import com.arzikina.ne.data.remote.dto.RecurringTransactionServerStateDto
+import com.arzikina.ne.data.remote.dto.RecurringTransactionSyncPayload
 import com.arzikina.ne.data.remote.dto.SavingsGoalServerStateDto
 import com.arzikina.ne.data.remote.dto.SavingsGoalSyncPayload
 import com.arzikina.ne.data.remote.dto.SyncPushOperationDto
@@ -38,9 +52,15 @@ import com.arzikina.ne.domain.model.BudgetPeriod
 import com.arzikina.ne.domain.model.CategoryIcon
 import com.arzikina.ne.domain.model.FeeType
 import com.arzikina.ne.domain.model.FinancialPlanIcon
+import com.arzikina.ne.domain.model.LoanReason
+import com.arzikina.ne.domain.model.LoanStatus
+import com.arzikina.ne.domain.model.LoanType
+import com.arzikina.ne.domain.model.OccurrenceStatus
 import com.arzikina.ne.domain.model.PaymentMethod
 import com.arzikina.ne.domain.model.PlanPeriodType
 import com.arzikina.ne.domain.model.PlanStatus
+import com.arzikina.ne.domain.model.RecurringFrequency
+import com.arzikina.ne.domain.model.RepaymentMode
 import com.arzikina.ne.domain.model.SyncEngineResult
 import com.arzikina.ne.domain.model.SyncOperation
 import com.arzikina.ne.domain.model.SyncPullResult
@@ -91,10 +111,15 @@ class SyncEngineImpl @Inject constructor(
     private val accountDao: AccountDao,
     private val budgetDao: BudgetDao,
     private val transactionDao: TransactionDao,
+    private val loanDao: LoanDao,
+    private val loanPaymentDao: LoanPaymentDao,
+    private val recurringTransactionDao: RecurringTransactionDao,
+    private val occurrenceDao: RecurringTransactionOccurrenceDao,
     private val syncApi: SyncApi,
     private val syncCursorStore: SyncCursorStore,
     private val syncQueueEnqueuer: SyncQueueEnqueuer,
     private val transactionSyncEnqueuer: TransactionSyncEnqueuer,
+    private val loanSyncEnqueuer: LoanSyncEnqueuer,
     private val sessionManager: SessionManager,
     private val json: Json
 ) : SyncEngine {
@@ -289,6 +314,14 @@ class SyncEngineImpl @Inject constructor(
                 applyBudgetServerState(json.decodeFromJsonElement(BudgetServerStateDto.serializer(), element), allowCreate)
             "transactions" ->
                 applyTransactionServerState(json.decodeFromJsonElement(TransactionServerStateDto.serializer(), element), allowCreate)
+            "loans" ->
+                applyLoanServerState(json.decodeFromJsonElement(LoanServerStateDto.serializer(), element), allowCreate)
+            "loan_payments" ->
+                applyLoanPaymentServerState(json.decodeFromJsonElement(LoanPaymentServerStateDto.serializer(), element), allowCreate)
+            "recurring_transactions" ->
+                applyRecurringTransactionServerState(json.decodeFromJsonElement(RecurringTransactionServerStateDto.serializer(), element), allowCreate)
+            "recurring_transaction_occurrences" ->
+                applyRecurringTransactionOccurrenceServerState(json.decodeFromJsonElement(RecurringTransactionOccurrenceServerStateDto.serializer(), element), allowCreate)
         }
     }
 
@@ -380,6 +413,17 @@ class SyncEngineImpl @Inject constructor(
         // [TransactionSyncEnqueuer] devrait recourir à son filet de sécurité (génération d'un
         // `syncId` non lui-même enfilé, voir sa KDoc) au lieu du cas normal ci-dessus.
         enqueueUnsyncedTransactions(userId)
+        // ENCORE APRÈS `transactions` (voir la KDoc de tête de [LoanSyncEnqueuer]) : un prêt/emprunt
+        // référence sa transaction de décaissement, un remboursement référence son prêt parent ET sa
+        // propre transaction — les deux doivent déjà être connus au moment de cet enfilage.
+        enqueueUnsyncedLoans(userId)
+        enqueueUnsyncedLoanPayments(userId)
+        // ENCORE APRÈS `accounts`/`categories` (référencées directement) ET `transactions`
+        // (référencée par les occurrences déjà ACCEPTED/MODIFIED) — voir la KDoc de tête de
+        // `RecurringTransactionSyncPayload.kt`. `recurring_transactions` avant ses propres
+        // occurrences : une occurrence référence toujours sa règle parente.
+        enqueueUnsyncedRecurringTransactions(userId)
+        enqueueUnsyncedRecurringTransactionOccurrences(userId)
     }
 
     /**
@@ -762,6 +806,281 @@ class SyncEngineImpl @Inject constructor(
     }
 
     /**
+     * DIFFÉRENT de toutes les fonctions `applyXServerState` précédentes (sauf
+     * [applyTransactionServerState]) : `Loan` référence TROIS autres entités synchronisées par leur
+     * `syncId` (personne, compte, transaction de décaissement) — voir la KDoc de tête de
+     * `LoanSyncPayload.kt`. Résolution INVERSE ici, via `getBySyncId` de chaque DAO concerné.
+     *
+     * Toutes ces références sont NON NULLABLES (contrairement à `Transaction.categorySyncId`) :
+     * l'une d'elles introuvable localement (pas encore connue sur CET appareil) → ligne ignorée
+     * silencieusement (`?: return`), comme n'importe quelle entrée malformée (voir la KDoc de
+     * [pullEntityType]) — ne devrait quasiment jamais arriver grâce à l'ordre de
+     * [SUPPORTED_ENTITY_TYPES] (`loans` toujours APRÈS `persons`/`accounts`/`transactions`).
+     */
+    private suspend fun applyLoanServerState(state: LoanServerStateDto, allowCreate: Boolean) {
+        val local = loanDao.getBySyncId(state.id)
+        if (local == null && !allowCreate) return
+        val userId = local?.userId ?: sessionManager.getCurrentUserIdOnce() ?: return
+        val personId = personDao.getBySyncId(state.personSyncId)?.id ?: return
+        val accountId = accountDao.getBySyncId(state.accountSyncId)?.id ?: return
+        val transactionId = transactionDao.getBySyncId(state.transactionSyncId)?.id ?: return
+
+        loanDao.upsert(
+            LoanEntity(
+                id = local?.id ?: 0L,
+                userId = userId,
+                personId = personId,
+                accountId = accountId,
+                type = runCatching { LoanType.valueOf(state.type) }.getOrDefault(local?.type ?: LoanType.LENT),
+                amount = state.amount,
+                amountRepaid = state.amountRepaid,
+                remainingAmount = state.remainingAmount,
+                startDate = state.startDate,
+                dueDate = state.dueDate,
+                reason = runCatching { LoanReason.valueOf(state.reason) }.getOrDefault(local?.reason ?: LoanReason.OTHER),
+                reasonCustomText = state.reasonCustomText,
+                repaymentMode = runCatching { RepaymentMode.valueOf(state.repaymentMode) }.getOrDefault(local?.repaymentMode ?: RepaymentMode.CUSTOM),
+                description = state.description,
+                status = runCatching { LoanStatus.valueOf(state.status) }.getOrDefault(local?.status ?: LoanStatus.ONGOING),
+                createdAt = state.createdAt,
+                updatedAt = state.updatedAt,
+                transactionId = transactionId,
+                syncId = state.id,
+                deletedAt = state.deletedAt,
+                version = state.version
+            )
+        )
+    }
+
+    /** Voir [enqueueUnsyncedCategories] pour le principe général — PLUS SIMPLE ici : la construction
+     *  du payload (résolution `id` → `syncId`, filet de sécurité inclus) est déjà entièrement prise
+     *  en charge par [LoanSyncEnqueuer] (voir sa KDoc de tête), jamais dupliquée ici. */
+    private suspend fun enqueueUnsyncedLoans(userId: Long) {
+        loanDao.getUnsyncedForUser(userId).forEach { loan ->
+            val entity = loan.copy(syncId = UUID.randomUUID().toString())
+            loanDao.upsert(entity)
+            loanSyncEnqueuer.enqueueLoan(entity, SyncOperation.CREATE)
+        }
+    }
+
+    /** Voir [applyLoanServerState] — même logique, appliquée à `loan_payments` (référence le prêt
+     *  parent, un compte, et sa propre transaction de remboursement). */
+    private suspend fun applyLoanPaymentServerState(state: LoanPaymentServerStateDto, allowCreate: Boolean) {
+        val local = loanPaymentDao.getBySyncId(state.id)
+        if (local == null && !allowCreate) return
+        val userId = local?.userId ?: sessionManager.getCurrentUserIdOnce() ?: return
+        val loanId = loanDao.getBySyncId(state.loanSyncId)?.id ?: return
+        val accountId = accountDao.getBySyncId(state.accountSyncId)?.id ?: return
+        val transactionId = transactionDao.getBySyncId(state.transactionSyncId)?.id ?: return
+
+        loanPaymentDao.upsert(
+            LoanPaymentEntity(
+                id = local?.id ?: 0L,
+                userId = userId,
+                loanId = loanId,
+                accountId = accountId,
+                amount = state.amount,
+                date = state.date,
+                note = state.note,
+                transactionId = transactionId,
+                createdAt = state.createdAt,
+                syncId = state.id,
+                updatedAt = state.updatedAt,
+                deletedAt = state.deletedAt,
+                version = state.version
+            )
+        )
+    }
+
+    /** Voir [enqueueUnsyncedLoans] — même logique, appliquée à `loan_payments`. */
+    private suspend fun enqueueUnsyncedLoanPayments(userId: Long) {
+        loanPaymentDao.getUnsyncedForUser(userId).forEach { payment ->
+            val entity = payment.copy(syncId = UUID.randomUUID().toString())
+            loanPaymentDao.upsert(entity)
+            loanSyncEnqueuer.enqueueLoanPayment(entity, SyncOperation.CREATE)
+        }
+    }
+
+    /**
+     * DIFFÉRENT de [applyBudgetServerState] : `accountSyncId` n'est JAMAIS nul (comme
+     * `Transaction.accountSyncId`), `categorySyncId` PEUT l'être (comme `Transaction.categorySyncId`,
+     * voir sa KDoc) — même raisonnement double ici, voir la KDoc de tête de
+     * `RecurringTransactionSyncPayload.kt`.
+     *
+     * [state.accountSyncId] introuvable localement : ligne ignorée silencieusement (`?: return`),
+     * comme n'importe quelle entrée malformée (voir la KDoc de [pullEntityType]) — ne devrait
+     * quasiment jamais arriver grâce à l'ordre de [SUPPORTED_ENTITY_TYPES] (`recurring_transactions`
+     * toujours APRÈS `accounts`/`categories`).
+     *
+     * [state.isActive] : `Int` (`0`/`1`), pas `Boolean` — voir la KDoc de tête de
+     * [RecurringTransactionServerStateDto] (même raisonnement que
+     * `AccountServerStateDto.isExcludedFromStatistics`).
+     */
+    private suspend fun applyRecurringTransactionServerState(state: RecurringTransactionServerStateDto, allowCreate: Boolean) {
+        val local = recurringTransactionDao.getBySyncId(state.id)
+        if (local == null && !allowCreate) return
+        val userId = local?.userId ?: sessionManager.getCurrentUserIdOnce() ?: return
+        val accountId = accountDao.getBySyncId(state.accountSyncId)?.id ?: return
+        val categoryId = state.categorySyncId?.let { categoryDao.getBySyncId(it)?.id }
+
+        recurringTransactionDao.upsert(
+            RecurringTransactionEntity(
+                id = local?.id ?: 0L,
+                userId = userId,
+                type = runCatching { TransactionType.valueOf(state.type) }.getOrDefault(local?.type ?: TransactionType.EXPENSE),
+                amount = state.amount,
+                accountId = accountId,
+                categoryId = categoryId,
+                description = state.description,
+                paymentMethod = state.paymentMethod?.let { runCatching { PaymentMethod.valueOf(it) }.getOrNull() },
+                startDate = state.startDate,
+                endDate = state.endDate,
+                frequency = runCatching { RecurringFrequency.valueOf(state.frequency) }.getOrDefault(local?.frequency ?: RecurringFrequency.ONCE),
+                nextExecutionDate = state.nextExecutionDate,
+                isActive = state.isActive != 0,
+                createdAt = state.createdAt,
+                updatedAt = state.updatedAt,
+                triggerHour = state.triggerHour,
+                triggerMinute = state.triggerMinute,
+                syncId = state.id,
+                deletedAt = state.deletedAt,
+                version = state.version
+            )
+        )
+    }
+
+    /**
+     * Voir [enqueueUnsyncedBudgets] pour le principe général — même raisonnement pour la résolution
+     * `accountId`/`categoryId` → `accountSyncId`/`categorySyncId` (filet de sécurité inclus),
+     * DUPLIQUÉE ici plutôt que déléguée à une classe partagée (un seul appelant : voir la KDoc de
+     * tête de `RecurringTransactionSyncPayload.kt`, "pas de classe partagée type LoanSyncEnqueuer").
+     * `categoryId` reste `null` possible (voir [applyRecurringTransactionServerState]) : ligne
+     * ignorée silencieusement (`?: return@forEach`) UNIQUEMENT si le COMPTE (jamais nul) est
+     * introuvable — jamais pour la catégorie, optionnelle.
+     */
+    private suspend fun enqueueUnsyncedRecurringTransactions(userId: Long) {
+        recurringTransactionDao.getUnsyncedForUser(userId).forEach { rule ->
+            val entity = rule.copy(syncId = UUID.randomUUID().toString())
+            recurringTransactionDao.upsert(entity)
+
+            val account = accountDao.getById(entity.accountId, userId) ?: return@forEach
+            val accountSyncId = account.syncId ?: UUID.randomUUID().toString().also { newSyncId ->
+                accountDao.upsert(account.copy(syncId = newSyncId))
+            }
+            val categorySyncId = entity.categoryId?.let { categoryId ->
+                val category = categoryDao.getById(categoryId, userId) ?: return@let null
+                category.syncId ?: UUID.randomUUID().toString().also { newSyncId ->
+                    categoryDao.upsert(category.copy(syncId = newSyncId))
+                }
+            }
+
+            val payload = RecurringTransactionSyncPayload(
+                id = requireNotNull(entity.syncId),
+                baseVersion = null,
+                type = entity.type.name,
+                amount = entity.amount,
+                accountSyncId = accountSyncId,
+                categorySyncId = categorySyncId,
+                description = entity.description,
+                paymentMethod = entity.paymentMethod?.name,
+                startDate = entity.startDate,
+                endDate = entity.endDate,
+                frequency = entity.frequency.name,
+                nextExecutionDate = entity.nextExecutionDate,
+                isActive = entity.isActive,
+                triggerHour = entity.triggerHour,
+                triggerMinute = entity.triggerMinute,
+                createdAt = entity.createdAt,
+                updatedAt = entity.updatedAt
+            )
+            syncQueueEnqueuer.enqueue(
+                entityType = "recurring_transactions",
+                entitySyncId = payload.id,
+                operation = SyncOperation.CREATE,
+                payloadJson = json.encodeToString(RecurringTransactionSyncPayload.serializer(), payload)
+            )
+        }
+    }
+
+    /**
+     * Voir [applyLoanServerState] pour le principe général (référence NON nullable +
+     * référence nullable) — appliqué ici à `recurring_transaction_occurrences` :
+     * [state.recurringTransactionSyncId] (la règle parente) n'est jamais nul,
+     * [state.transactionSyncId] ne l'est que pour une occurrence [OccurrenceStatus.ACCEPTED]/
+     * [OccurrenceStatus.MODIFIED] (voir la KDoc de tête de
+     * `RecurringTransactionOccurrenceEntity`/`RecurringTransactionSyncPayload.kt`).
+     */
+    private suspend fun applyRecurringTransactionOccurrenceServerState(
+        state: RecurringTransactionOccurrenceServerStateDto,
+        allowCreate: Boolean
+    ) {
+        val local = occurrenceDao.getBySyncId(state.id)
+        if (local == null && !allowCreate) return
+        val userId = local?.userId ?: sessionManager.getCurrentUserIdOnce() ?: return
+        val recurringTransactionId = recurringTransactionDao.getBySyncId(state.recurringTransactionSyncId)?.id ?: return
+        val transactionId = state.transactionSyncId?.let { transactionDao.getBySyncId(it)?.id }
+
+        occurrenceDao.upsert(
+            RecurringTransactionOccurrenceEntity(
+                id = local?.id ?: 0L,
+                userId = userId,
+                recurringTransactionId = recurringTransactionId,
+                scheduledDate = state.scheduledDate,
+                status = runCatching { OccurrenceStatus.valueOf(state.status) }.getOrDefault(local?.status ?: OccurrenceStatus.PENDING),
+                transactionId = transactionId,
+                processedAt = state.processedAt,
+                createdAt = state.createdAt,
+                syncId = state.id,
+                updatedAt = state.updatedAt,
+                deletedAt = state.deletedAt,
+                version = state.version
+            )
+        )
+    }
+
+    /**
+     * Voir [enqueueUnsyncedRecurringTransactions] pour le principe général — `recurringTransactionId`
+     * n'est jamais nul (ligne ignorée silencieusement si sa règle parente n'a pas encore de `syncId`
+     * résolvable, `?: return@forEach`), `transactionId` PEUT l'être (voir
+     * [applyRecurringTransactionOccurrenceServerState]).
+     */
+    private suspend fun enqueueUnsyncedRecurringTransactionOccurrences(userId: Long) {
+        occurrenceDao.getUnsyncedForUser(userId).forEach { occurrence ->
+            val entity = occurrence.copy(syncId = UUID.randomUUID().toString())
+            occurrenceDao.upsert(entity)
+
+            val rule = recurringTransactionDao.getById(entity.recurringTransactionId, userId) ?: return@forEach
+            val ruleSyncId = rule.syncId ?: UUID.randomUUID().toString().also { newSyncId ->
+                recurringTransactionDao.upsert(rule.copy(syncId = newSyncId))
+            }
+            val transactionSyncId = entity.transactionId?.let { transactionId ->
+                val transaction = transactionDao.getById(transactionId, userId) ?: return@let null
+                transaction.syncId ?: UUID.randomUUID().toString().also { newSyncId ->
+                    transactionDao.upsert(transaction.copy(syncId = newSyncId))
+                }
+            }
+
+            val payload = RecurringTransactionOccurrenceSyncPayload(
+                id = requireNotNull(entity.syncId),
+                baseVersion = null,
+                recurringTransactionSyncId = ruleSyncId,
+                scheduledDate = entity.scheduledDate,
+                status = entity.status.name,
+                transactionSyncId = transactionSyncId,
+                processedAt = entity.processedAt,
+                createdAt = entity.createdAt,
+                updatedAt = entity.updatedAt
+            )
+            syncQueueEnqueuer.enqueue(
+                entityType = "recurring_transaction_occurrences",
+                entitySyncId = payload.id,
+                operation = SyncOperation.CREATE,
+                payloadJson = json.encodeToString(RecurringTransactionOccurrenceSyncPayload.serializer(), payload)
+            )
+        }
+    }
+
+    /**
      * `true` si [entry] (déjà en `FAILED`) a suffisamment attendu depuis sa dernière tentative pour
      * être retentée maintenant — voir [RETRY_BACKOFF_MILLIS] pour la progression exacte.
      * `lastAttemptAt == null` (ne devrait pas arriver pour une entrée `FAILED`, [markFailed] le
@@ -801,14 +1120,22 @@ class SyncEngineImpl @Inject constructor(
     }
 
     private companion object {
-        /** `transactions` DOIT rester le DERNIER élément, `budgets` DOIT rester APRÈS `categories`
+        /** `recurring_transaction_occurrences` DOIT rester le DERNIER élément (référence sa règle
+         *  parente ET, une fois traitée, sa propre transaction), `recurring_transactions` juste avant
+         *  lui (après `accounts`/`categories`), `loan_payments` juste avant `recurring_transactions`,
+         *  `loans` juste avant lui (après `transactions`), `budgets` DOIT rester APRÈS `categories`
          *  — voir la KDoc de [enqueueUnsyncedLocalData]/[applyTransactionServerState]/
-         *  [applyBudgetServerState] : ces deux entités référencent d'autres entités synchronisées
-         *  par leur `syncId`, qui doivent déjà être connues (pull) ou déjà persistées
-         *  (push/backfill) au moment où elles sont traitées à leur tour. `setOf` (donc
-         *  `LinkedHashSet`) préserve l'ordre d'insertion — [pullRemoteChanges] itère dans CET ordre. */
-        val SUPPORTED_ENTITY_TYPES =
-            setOf("categories", "budgets", "savings_goals", "financial_plans", "persons", "accounts", "transactions")
+         *  [applyBudgetServerState]/[applyLoanServerState]/[applyLoanPaymentServerState]/
+         *  [applyRecurringTransactionServerState]/[applyRecurringTransactionOccurrenceServerState] :
+         *  ces entités référencent d'autres entités synchronisées par leur `syncId`, qui doivent déjà
+         *  être connues (pull) ou déjà persistées (push/backfill) au moment où elles sont traitées à
+         *  leur tour. `setOf` (donc `LinkedHashSet`) préserve l'ordre d'insertion —
+         *  [pullRemoteChanges] itère dans CET ordre. */
+        val SUPPORTED_ENTITY_TYPES = setOf(
+            "categories", "budgets", "savings_goals", "financial_plans", "persons", "accounts",
+            "transactions", "loans", "loan_payments", "recurring_transactions",
+            "recurring_transaction_occurrences"
+        )
         const val MAX_ERROR_MESSAGE_LENGTH = 200
 
         /** Délai minimal (ms) avant de retenter une entrée `FAILED`, indexé sur `retryCount - 1` —

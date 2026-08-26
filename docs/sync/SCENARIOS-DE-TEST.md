@@ -9,7 +9,8 @@ suppression douce, backfill au login, retry des entrées `FAILED`, déclenchemen
 
 Statut de chaque scénario tenu à jour au fil des exécutions (✅ validé / ❌ bug trouvé / ⏳ pas encore
 testé). Entités disponibles pour les tests : `categories`, `savings_goals`, `financial_plans`,
-`persons`, `accounts`, `transactions`, `budgets`.
+`persons`, `accounts`, `transactions`, `budgets`, `loans`, `loan_payments`, `recurring_transactions`,
+`recurring_transaction_occurrences`.
 
 Outils utiles : bouton **Synchroniser maintenant** (Paramètres), indicateur d'état sur `syncRow`,
 Database Inspector d'Android Studio (table `sync_queue`, colonnes `status`/`errorMessage`), la
@@ -42,6 +43,43 @@ synchroniser entre les deux). Après synchronisation, vérifie côté serveur (P
 que `categorySyncId` correspond bien au `syncId` réel de la catégorie — jamais une chaîne vide ni
 l'`id` local.
 
+**Spécifique à `loans`/`loan_payments`** (références croisées multiples, voir `LoanSyncPayload.kt`
+et `SyncEngineImpl.applyLoanServerState`/`applyLoanPaymentServerState`, étape 19) : avant de tester,
+supprime les 4 contraintes réelles côté MySQL (voir `database/migrations/001_initial_schema.sql`) :
+```sql
+ALTER TABLE loans DROP FOREIGN KEY fk_loans_person;
+ALTER TABLE loans DROP FOREIGN KEY fk_loans_account;
+ALTER TABLE loan_payments DROP FOREIGN KEY fk_loan_payments_loan;
+ALTER TABLE loan_payments DROP FOREIGN KEY fk_loan_payments_account;
+```
+Crée un prêt/emprunt (génère atomiquement sa transaction de décaissement), puis un remboursement
+(génère sa propre transaction ET met à jour le prêt parent). Synchronise, puis vérifie côté serveur
+(Postman Pull `loans` et `loan_payments`) que `personSyncId`/`accountSyncId`/`transactionSyncId`
+(sur `loans`) et `loanSyncId`/`accountSyncId`/`transactionSyncId` (sur `loan_payments`) correspondent
+tous aux vrais `syncId` — jamais une chaîne vide. Vérifie aussi que le remboursement a bien fait
+progresser `amountRepaid`/`status` du prêt CÔTÉ SERVEUR (une `UPDATE` distincte de `loans`, `version`
+incrémentée).
+
+**Spécifique à `recurring_transactions`/`recurring_transaction_occurrences`** (références croisées,
+voir `RecurringTransactionSyncPayload.kt` et
+`SyncEngineImpl.applyRecurringTransactionServerState`/`applyRecurringTransactionOccurrenceServerState`,
+étape 20) : avant de tester, supprime les 3 contraintes réelles côté MySQL (voir
+`database/migrations/001_initial_schema.sql`, section 6 "Automatisation") :
+```sql
+ALTER TABLE recurring_transactions DROP FOREIGN KEY fk_recurring_transactions_account;
+ALTER TABLE recurring_transactions DROP FOREIGN KEY fk_recurring_transactions_category;
+ALTER TABLE recurring_transaction_occurrences DROP FOREIGN KEY fk_occurrences_rule;
+```
+Crée une règle récurrente (compte + catégorie encore jamais synchronisés, dans la foulée, sans
+synchroniser entre les deux), attends (ou force) la génération d'au moins une occurrence `PENDING`,
+puis accepte-la (crée sa transaction). Synchronise, puis vérifie côté serveur (Postman Pull
+`recurring_transactions` et `recurring_transaction_occurrences`) que `accountSyncId`/`categorySyncId`
+(sur la règle) et `recurringTransactionSyncId`/`transactionSyncId` (sur l'occurrence acceptée)
+correspondent tous aux vrais `syncId` — jamais une chaîne vide. Vérifie aussi que
+`nextExecutionDate`/`isActive` de la règle apparaissent bien à jour CÔTÉ SERVEUR après la génération
+(une `UPDATE` distincte de `recurring_transactions`, `version` incrémentée) — c'est un effet de bord
+de `generateMissingOccurrences`, pas une action utilisateur directe, facile à oublier de tester.
+
 ---
 
 ## 2. Modification simple + propagation
@@ -67,15 +105,41 @@ l'`id` local.
    explicite, voir `FinancialPlanRepositoryImpl.deletePlan`) — cette table n'est pas synchronisée,
    la vérification se fait uniquement en local.
 6. **Spécifique à `accounts`** (cascade la plus complexe, voir `AccountRepositoryImpl.deleteAccount`,
-   étape 16.1) : avant de supprimer, crée un compte avec au moins une transaction simple, un prêt
-   dont ce compte est le compte principal, ET un remboursement fait DEPUIS ce compte pour un prêt
-   dont le compte principal est différent. Après suppression, vérifie en base (Database Inspector) :
+   étape 16.1, mise à jour étape 19.5) : avant de supprimer, crée un compte avec au moins une
+   transaction simple, un prêt dont ce compte est le compte principal, ET un remboursement fait
+   DEPUIS ce compte pour un prêt dont le compte principal est différent. Après suppression, vérifie
+   en base (Database Inspector) :
    - `accounts` : la ligne existe TOUJOURS, avec `deletedAt` renseigné (jamais un `DELETE`).
-   - `transactions`/`loans`/`loan_payments` liés : supprimés PHYSIQUEMENT (ces tables ne sont pas
-     synchronisées, une vraie suppression reste correcte) — aucune ligne orpheline référençant ce
-     compte.
+   - `transactions`/`loans`/`loan_payments` liés : depuis l'étape 19, tous SOFT-supprimés (`deletedAt`
+     renseigné, ligne toujours présente) — plus une suppression physique, ces trois tables sont
+     désormais synchronisées.
    - le prêt dont le compte principal était DIFFÉRENT : son `amountRepaid`/`remainingAmount`/`status`
-     ont bien été recalculés (le remboursement fait depuis le compte supprimé ne compte plus).
+     ont bien été recalculés (le remboursement fait depuis le compte supprimé ne compte plus), ET
+     cette mise à jour apparaît côté serveur après synchronisation (`version` incrémentée).
+   - **Régression critique à vérifier** (bug réel trouvé et corrigé à l'étape 19.5b, voir
+     `AccountDao.getByIdIncludingDeleted`) : AVANT ce correctif, synchroniser après une suppression
+     de compte avec des transactions plantait l'enfilage (`error("Compte introuvable...")`) — la
+     synchronisation doit maintenant se terminer sur "À jour", sans entrée `FAILED` avec ce message
+     dans `sync_queue`.
+7. **Spécifique à `persons`** (étape 19.5) : avant de supprimer, crée une personne avec un prêt et au
+   moins un remboursement. Après suppression, vérifie que `persons`/`loans`/`loan_payments`/
+   `transactions` liés sont tous SOFT-supprimés et bien enfilés (aucune erreur "Personne
+   introuvable" côté `sync_queue`, même régression que le point 6).
+8. **Spécifique à `recurring_transactions`** (étape 20.4, voir
+   `RecurringTransactionRepositoryImpl.deleteRecurringTransaction`) : avant de supprimer, crée une
+   règle récurrente avec au moins une occurrence déjà acceptée (donc avec sa propre transaction) ET
+   une occurrence encore `PENDING`. Après suppression de la règle, vérifie en base (Database
+   Inspector) :
+   - `recurring_transactions` : la ligne existe TOUJOURS, avec `deletedAt` renseigné.
+   - `recurring_transaction_occurrences` : TOUTES les occurrences (traitées ET `PENDING`) sont
+     SOFT-supprimées — la cascade SQLite `CASCADE` ne se déclenche jamais sur cet `UPDATE`, voir la
+     KDoc de `RecurringTransactionDao.softDeleteById`.
+   - la transaction liée à l'occurrence déjà acceptée : SOFT-supprimée elle aussi (voir
+     `deleteRecurringTransaction`, nettoyage explicite AVANT la règle elle-même).
+   - synchronise : aucune entrée `FAILED` dans `sync_queue` (même régression potentielle que les
+     points 6/7 si un résolveur utilisait `getById` au lieu de `getByIdIncludingDeleted` — ici non
+     applicable, `deleteRecurringTransaction` enfile chaque ligne AVANT que la suivante ne la
+     référence comme déjà supprimée, à revérifier si le code évolue).
 
 ---
 
@@ -168,9 +232,9 @@ synchronisation » à cause du bug 2 avant ce correctif) et confirmer le retour 
 
 | # | Scénario | Statut | Notes |
 |---|----------|--------|-------|
-| 1 | Création + propagation | ✅ (categories/savings_goals/financial_plans/persons/accounts/transactions) — ⏳ `budgets` | Étape 18 : voir l'addendum "Spécifique à `budgets`" — nécessite `ALTER TABLE budgets DROP FOREIGN KEY fk_budgets_category` avant test |
+| 1 | Création + propagation | ✅ (categories/savings_goals/financial_plans/persons/accounts/transactions/budgets/loans/loan_payments) — ⏳ `recurring_transactions`/`recurring_transaction_occurrences` | Étape 20 : voir l'addendum "Spécifique à `recurring_transactions`/`recurring_transaction_occurrences`" — nécessite les 3 `ALTER TABLE ... DROP FOREIGN KEY` avant test |
 | 2 | Modification + propagation | ✅ | |
-| 3 | Suppression douce + propagation | ✅ | |
+| 3 | Suppression douce + propagation | ✅ (categories/.../accounts/persons pré-étape 20) — ⏳ point 8 (recurring_transactions, étape 20.4) | Régression critique déjà revalidée : `getByIdIncludingDeleted` (étape 19.5b) |
 | 4 | Conflit (LWW) | ✅ | |
 | 5 | Mode hors-ligne prolongé | ✅ | |
 | 6 | Déclenchement automatique | ✅ | |

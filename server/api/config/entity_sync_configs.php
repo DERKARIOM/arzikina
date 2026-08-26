@@ -97,6 +97,46 @@ const ENTITY_CONFIGS = [
             ['db' => 'mobile_money_package_name', 'payload' => 'mobileMoneyPackageName', 'type' => 'string', 'nullable' => true],
         ],
     ],
+    // Étape 19 : `Loan` référence trois AUTRES lignes synchronisées (personne, compte, transaction
+    // de décaissement) — même raisonnement que `budgets.category_id`/`transactions.account_id` :
+    // colonnes `person_id`/`account_id`/`transaction_id` stockent le `syncId` de la ligne
+    // référencée, payload `personSyncId`/`accountSyncId`/`transactionSyncId`. PAS de `FOREIGN KEY`
+    // réelle en pratique (celles du schéma initial, `fk_loans_person`/`fk_loans_account`, doivent
+    // être supprimées avant déploiement — voir la doc de l'étape 19) : un prêt/emprunt peut être
+    // créé hors ligne avant que sa personne/son compte n'ait été confirmé par le serveur.
+    'loans' => [
+        'table' => 'loans',
+        'columns' => [
+            ['db' => 'person_id', 'payload' => 'personSyncId', 'type' => 'string', 'nullable' => false],
+            ['db' => 'account_id', 'payload' => 'accountSyncId', 'type' => 'string', 'nullable' => false],
+            ['db' => 'type', 'payload' => 'type', 'type' => 'string', 'nullable' => false],
+            ['db' => 'amount', 'payload' => 'amount', 'type' => 'int', 'nullable' => false],
+            ['db' => 'amount_repaid', 'payload' => 'amountRepaid', 'type' => 'int', 'nullable' => false],
+            ['db' => 'remaining_amount', 'payload' => 'remainingAmount', 'type' => 'int', 'nullable' => false],
+            ['db' => 'start_date', 'payload' => 'startDate', 'type' => 'int', 'nullable' => false],
+            ['db' => 'due_date', 'payload' => 'dueDate', 'type' => 'int', 'nullable' => false],
+            ['db' => 'reason', 'payload' => 'reason', 'type' => 'string', 'nullable' => false],
+            ['db' => 'reason_custom_text', 'payload' => 'reasonCustomText', 'type' => 'string', 'nullable' => true],
+            ['db' => 'repayment_mode', 'payload' => 'repaymentMode', 'type' => 'string', 'nullable' => false],
+            ['db' => 'description', 'payload' => 'description', 'type' => 'string', 'nullable' => false],
+            ['db' => 'status', 'payload' => 'status', 'type' => 'string', 'nullable' => false],
+            ['db' => 'transaction_id', 'payload' => 'transactionSyncId', 'type' => 'string', 'nullable' => false],
+        ],
+    ],
+    // Étape 19 : `LoanPayment` référence trois AUTRES lignes synchronisées (prêt/emprunt parent,
+    // compte, transaction de remboursement) — même raisonnement que `loans` ci-dessus. Contraintes
+    // `fk_loan_payments_loan`/`fk_loan_payments_account` du schéma initial à supprimer également.
+    'loan_payments' => [
+        'table' => 'loan_payments',
+        'columns' => [
+            ['db' => 'loan_id', 'payload' => 'loanSyncId', 'type' => 'string', 'nullable' => false],
+            ['db' => 'account_id', 'payload' => 'accountSyncId', 'type' => 'string', 'nullable' => false],
+            ['db' => 'amount', 'payload' => 'amount', 'type' => 'int', 'nullable' => false],
+            ['db' => 'date', 'payload' => 'date', 'type' => 'int', 'nullable' => false],
+            ['db' => 'note', 'payload' => 'note', 'type' => 'string', 'nullable' => false],
+            ['db' => 'transaction_id', 'payload' => 'transactionSyncId', 'type' => 'string', 'nullable' => false],
+        ],
+    ],
     // Étape 17 : `Transaction` référence d'AUTRES lignes synchronisées (compte, catégorie,
     // transfert, transaction de frais) — voir `data/remote/dto/TransactionSyncPayload.kt` pour le
     // raisonnement complet. Ces colonnes stockent le `syncId` (UUID) de la ligne référencée, PAS
@@ -122,6 +162,44 @@ const ENTITY_CONFIGS = [
             ['db' => 'currency_code', 'payload' => 'currencyCode', 'type' => 'string', 'nullable' => false],
             ['db' => 'start_date', 'payload' => 'startDate', 'type' => 'int', 'nullable' => true],
             ['db' => 'end_date', 'payload' => 'endDate', 'type' => 'int', 'nullable' => true],
+        ],
+    ],
+    // Étape 20 : `RecurringTransaction` référence DEUX autres entités synchronisées (compte,
+    // catégorie — cette dernière nullable, voir `RecurringTransactionEntity.categoryId`) — même
+    // raisonnement que `budgets`/`loans` ci-dessus. Contraintes `fk_recurring_transactions_account`/
+    // `fk_recurring_transactions_category` du schéma initial à supprimer avant déploiement.
+    'recurring_transactions' => [
+        'table' => 'recurring_transactions',
+        'columns' => [
+            ['db' => 'type', 'payload' => 'type', 'type' => 'string', 'nullable' => false],
+            ['db' => 'amount', 'payload' => 'amount', 'type' => 'int', 'nullable' => false],
+            ['db' => 'account_id', 'payload' => 'accountSyncId', 'type' => 'string', 'nullable' => false],
+            ['db' => 'category_id', 'payload' => 'categorySyncId', 'type' => 'string', 'nullable' => true],
+            ['db' => 'description', 'payload' => 'description', 'type' => 'string', 'nullable' => false],
+            ['db' => 'payment_method', 'payload' => 'paymentMethod', 'type' => 'string', 'nullable' => true],
+            ['db' => 'start_date', 'payload' => 'startDate', 'type' => 'int', 'nullable' => false],
+            ['db' => 'end_date', 'payload' => 'endDate', 'type' => 'int', 'nullable' => true],
+            ['db' => 'frequency', 'payload' => 'frequency', 'type' => 'string', 'nullable' => false],
+            ['db' => 'next_execution_date', 'payload' => 'nextExecutionDate', 'type' => 'int', 'nullable' => false],
+            // Booléen Kotlin → JSON `true`/`false` → `(int) true|false` = `1`/`0` côté PHP, même
+            // raisonnement que `accounts.is_excluded_from_statistics`.
+            ['db' => 'is_active', 'payload' => 'isActive', 'type' => 'int', 'nullable' => false],
+            ['db' => 'trigger_hour', 'payload' => 'triggerHour', 'type' => 'int', 'nullable' => false],
+            ['db' => 'trigger_minute', 'payload' => 'triggerMinute', 'type' => 'int', 'nullable' => false],
+        ],
+    ],
+    // Étape 20 : `RecurringTransactionOccurrence` référence sa règle parente (`recurring_transaction_id`)
+    // ET, une fois traitée (ACCEPTED/MODIFIED), sa transaction générée (`transaction_id`, nullable
+    // — `NULL` tant que le statut reste PENDING/REJECTED). Contrainte `fk_occurrences_rule` du
+    // schéma initial à supprimer avant déploiement.
+    'recurring_transaction_occurrences' => [
+        'table' => 'recurring_transaction_occurrences',
+        'columns' => [
+            ['db' => 'recurring_transaction_id', 'payload' => 'recurringTransactionSyncId', 'type' => 'string', 'nullable' => false],
+            ['db' => 'scheduled_date', 'payload' => 'scheduledDate', 'type' => 'int', 'nullable' => false],
+            ['db' => 'status', 'payload' => 'status', 'type' => 'string', 'nullable' => false],
+            ['db' => 'transaction_id', 'payload' => 'transactionSyncId', 'type' => 'string', 'nullable' => true],
+            ['db' => 'processed_at', 'payload' => 'processedAt', 'type' => 'int', 'nullable' => true],
         ],
     ],
     'transactions' => [
