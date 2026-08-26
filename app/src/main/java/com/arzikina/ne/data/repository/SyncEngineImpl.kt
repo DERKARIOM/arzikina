@@ -1,6 +1,7 @@
 package com.arzikina.ne.data.repository
 
 import com.arzikina.ne.data.local.dao.AccountDao
+import com.arzikina.ne.data.local.dao.BudgetDao
 import com.arzikina.ne.data.local.dao.CategoryDao
 import com.arzikina.ne.data.local.dao.FinancialPlanDao
 import com.arzikina.ne.data.local.dao.PersonDao
@@ -8,6 +9,7 @@ import com.arzikina.ne.data.local.dao.SavingsGoalDao
 import com.arzikina.ne.data.local.dao.SyncQueueDao
 import com.arzikina.ne.data.local.dao.TransactionDao
 import com.arzikina.ne.data.local.entity.AccountEntity
+import com.arzikina.ne.data.local.entity.BudgetEntity
 import com.arzikina.ne.data.local.entity.CategoryEntity
 import com.arzikina.ne.data.local.entity.FinancialPlanEntity
 import com.arzikina.ne.data.local.entity.PersonEntity
@@ -17,6 +19,8 @@ import com.arzikina.ne.data.local.entity.TransactionEntity
 import com.arzikina.ne.data.remote.api.SyncApi
 import com.arzikina.ne.data.remote.dto.AccountServerStateDto
 import com.arzikina.ne.data.remote.dto.AccountSyncPayload
+import com.arzikina.ne.data.remote.dto.BudgetServerStateDto
+import com.arzikina.ne.data.remote.dto.BudgetSyncPayload
 import com.arzikina.ne.data.remote.dto.CategoryServerStateDto
 import com.arzikina.ne.data.remote.dto.CategorySyncPayload
 import com.arzikina.ne.data.remote.dto.FinancialPlanServerStateDto
@@ -30,6 +34,7 @@ import com.arzikina.ne.data.remote.dto.SyncPushRequestDto
 import com.arzikina.ne.data.remote.dto.TransactionServerStateDto
 import com.arzikina.ne.domain.model.AccountIcon
 import com.arzikina.ne.domain.model.AccountType
+import com.arzikina.ne.domain.model.BudgetPeriod
 import com.arzikina.ne.domain.model.CategoryIcon
 import com.arzikina.ne.domain.model.FeeType
 import com.arzikina.ne.domain.model.FinancialPlanIcon
@@ -84,6 +89,7 @@ class SyncEngineImpl @Inject constructor(
     private val financialPlanDao: FinancialPlanDao,
     private val personDao: PersonDao,
     private val accountDao: AccountDao,
+    private val budgetDao: BudgetDao,
     private val transactionDao: TransactionDao,
     private val syncApi: SyncApi,
     private val syncCursorStore: SyncCursorStore,
@@ -279,6 +285,8 @@ class SyncEngineImpl @Inject constructor(
                 applyPersonServerState(json.decodeFromJsonElement(PersonServerStateDto.serializer(), element), allowCreate)
             "accounts" ->
                 applyAccountServerState(json.decodeFromJsonElement(AccountServerStateDto.serializer(), element), allowCreate)
+            "budgets" ->
+                applyBudgetServerState(json.decodeFromJsonElement(BudgetServerStateDto.serializer(), element), allowCreate)
             "transactions" ->
                 applyTransactionServerState(json.decodeFromJsonElement(TransactionServerStateDto.serializer(), element), allowCreate)
         }
@@ -359,6 +367,9 @@ class SyncEngineImpl @Inject constructor(
     override suspend fun enqueueUnsyncedLocalData() {
         val userId = sessionManager.getCurrentUserIdOnce() ?: return
         enqueueUnsyncedCategories(userId)
+        // Après `categories` (dont [enqueueUnsyncedBudgets] dépend, voir sa KDoc) — même
+        // raisonnement d'ordre que `transactions` en toute fin de cette liste, en plus local.
+        enqueueUnsyncedBudgets(userId)
         enqueueUnsyncedSavingsGoals(userId)
         enqueueUnsyncedFinancialPlans(userId)
         enqueueUnsyncedPersons(userId)
@@ -610,6 +621,81 @@ class SyncEngineImpl @Inject constructor(
     }
 
     /**
+     * DIFFÉRENT de [applyCategoryServerState] et consorts : `Budget` référence une catégorie par son
+     * `syncId`, jamais par un `id` Room local (voir la KDoc de tête de `BudgetSyncPayload.kt`).
+     * Résolution INVERSE ici — `categorySyncId` → `categoryId` local, via `categoryDao.getBySyncId`
+     * — même principe que [applyTransactionServerState] ci-dessous, en plus simple (une seule
+     * référence, jamais nulle).
+     *
+     * [state.categorySyncId] introuvable localement (catégorie pas encore connue sur CET appareil) :
+     * ligne ignorée silencieusement (`?: return`), comme n'importe quelle entrée malformée (voir la
+     * KDoc de [pullEntityType]) — ne devrait quasiment jamais arriver grâce à l'ordre de
+     * [SUPPORTED_ENTITY_TYPES] (`budgets` toujours APRÈS `categories`).
+     */
+    private suspend fun applyBudgetServerState(state: BudgetServerStateDto, allowCreate: Boolean) {
+        val local = budgetDao.getBySyncId(state.id)
+        if (local == null && !allowCreate) return
+        val userId = local?.userId ?: sessionManager.getCurrentUserIdOnce() ?: return
+        val categoryId = categoryDao.getBySyncId(state.categorySyncId)?.id ?: return
+
+        budgetDao.upsert(
+            BudgetEntity(
+                id = local?.id ?: 0L,
+                userId = userId,
+                categoryId = categoryId,
+                period = runCatching { BudgetPeriod.valueOf(state.period) }.getOrDefault(local?.period ?: BudgetPeriod.MONTHLY),
+                limitAmount = state.limitAmount,
+                currencyCode = state.currencyCode,
+                createdAt = state.createdAt,
+                startDate = state.startDate,
+                endDate = state.endDate,
+                syncId = state.id,
+                updatedAt = state.updatedAt,
+                deletedAt = state.deletedAt,
+                version = state.version
+            )
+        )
+    }
+
+    /**
+     * Voir [enqueueUnsyncedCategories] pour le principe général. La résolution `categoryId` →
+     * `categorySyncId` (filet de sécurité inclus) est DUPLIQUÉE ici plutôt que déléguée à une classe
+     * partagée type `TransactionSyncEnqueuer` — même raisonnement que
+     * `BudgetRepositoryImpl.resolveCategorySyncId` (un seul appelant de chaque côté : ici pour le
+     * backfill, là-bas pour l'écriture courante ; une abstraction commune n'apporterait rien).
+     */
+    private suspend fun enqueueUnsyncedBudgets(userId: Long) {
+        budgetDao.getUnsyncedForUser(userId).forEach { budget ->
+            val entity = budget.copy(syncId = UUID.randomUUID().toString())
+            budgetDao.upsert(entity)
+
+            val category = categoryDao.getById(entity.categoryId, userId) ?: return@forEach
+            val categorySyncId = category.syncId ?: UUID.randomUUID().toString().also { newSyncId ->
+                categoryDao.upsert(category.copy(syncId = newSyncId))
+            }
+
+            val payload = BudgetSyncPayload(
+                id = requireNotNull(entity.syncId),
+                baseVersion = null,
+                categorySyncId = categorySyncId,
+                period = entity.period.name,
+                limitAmount = entity.limitAmount,
+                currencyCode = entity.currencyCode,
+                startDate = entity.startDate,
+                endDate = entity.endDate,
+                createdAt = entity.createdAt,
+                updatedAt = entity.updatedAt
+            )
+            syncQueueEnqueuer.enqueue(
+                entityType = "budgets",
+                entitySyncId = payload.id,
+                operation = SyncOperation.CREATE,
+                payloadJson = json.encodeToString(BudgetSyncPayload.serializer(), payload)
+            )
+        }
+    }
+
+    /**
      * DIFFÉRENT de toutes les fonctions `applyXServerState` précédentes : `Transaction` référence
      * d'autres entités synchronisées par leur `syncId`, jamais par un `id` Room local (voir la KDoc
      * de tête de `TransactionSyncPayload.kt`). Résolution INVERSE ici — `accountSyncId` →
@@ -715,13 +801,14 @@ class SyncEngineImpl @Inject constructor(
     }
 
     private companion object {
-        /** `transactions` DOIT rester le DERNIER élément — voir la KDoc de
-         *  [enqueueUnsyncedLocalData]/[applyTransactionServerState] : `Transaction` référence
-         *  d'autres entités synchronisées par leur `syncId`, qui doivent déjà être connues (pull) ou
-         *  déjà persistées (push/backfill) au moment où elle est traitée à son tour. `setOf` (donc
+        /** `transactions` DOIT rester le DERNIER élément, `budgets` DOIT rester APRÈS `categories`
+         *  — voir la KDoc de [enqueueUnsyncedLocalData]/[applyTransactionServerState]/
+         *  [applyBudgetServerState] : ces deux entités référencent d'autres entités synchronisées
+         *  par leur `syncId`, qui doivent déjà être connues (pull) ou déjà persistées
+         *  (push/backfill) au moment où elles sont traitées à leur tour. `setOf` (donc
          *  `LinkedHashSet`) préserve l'ordre d'insertion — [pullRemoteChanges] itère dans CET ordre. */
         val SUPPORTED_ENTITY_TYPES =
-            setOf("categories", "savings_goals", "financial_plans", "persons", "accounts", "transactions")
+            setOf("categories", "budgets", "savings_goals", "financial_plans", "persons", "accounts", "transactions")
         const val MAX_ERROR_MESSAGE_LENGTH = 200
 
         /** Délai minimal (ms) avant de retenter une entrée `FAILED`, indexé sur `retryCount - 1` —

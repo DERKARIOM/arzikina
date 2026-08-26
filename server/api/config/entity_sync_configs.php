@@ -106,6 +106,24 @@ const ENTITY_CONFIGS = [
     // `loan_payments.transaction_id`, voir docs/sync/AUDIT-ET-ARCHITECTURE-SYNC.md, 10bis) : la
     // ligne référencée peut arriver dans un push ULTÉRIEUR (ex. compte tout juste créé hors ligne),
     // une contrainte stricte ferait échouer cette transaction au lieu de la laisser attendre.
+    // Étape 18 : `Budget` référence une catégorie via `categoryId` — même raisonnement que
+    // `transactions.account_id` ci-dessous (colonne `category_id`, payload `categorySyncId`, PAS de
+    // `FOREIGN KEY` réelle : voir la remarque de suppression de contrainte dans la doc de
+    // déploiement de cette étape, `fk_budgets_category` existe dans le schéma initial et doit être
+    // supprimée pour la même raison que `fk_transactions_account`/`fk_transactions_category`
+    // — un budget peut être créé hors ligne avant que sa catégorie n'ait été confirmée par le
+    // serveur).
+    'budgets' => [
+        'table' => 'budgets',
+        'columns' => [
+            ['db' => 'category_id', 'payload' => 'categorySyncId', 'type' => 'string', 'nullable' => false],
+            ['db' => 'period', 'payload' => 'period', 'type' => 'string', 'nullable' => false],
+            ['db' => 'limit_amount', 'payload' => 'limitAmount', 'type' => 'int', 'nullable' => false],
+            ['db' => 'currency_code', 'payload' => 'currencyCode', 'type' => 'string', 'nullable' => false],
+            ['db' => 'start_date', 'payload' => 'startDate', 'type' => 'int', 'nullable' => true],
+            ['db' => 'end_date', 'payload' => 'endDate', 'type' => 'int', 'nullable' => true],
+        ],
+    ],
     'transactions' => [
         'table' => 'transactions',
         'columns' => [

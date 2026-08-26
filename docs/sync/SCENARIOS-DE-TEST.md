@@ -9,7 +9,7 @@ suppression douce, backfill au login, retry des entrées `FAILED`, déclenchemen
 
 Statut de chaque scénario tenu à jour au fil des exécutions (✅ validé / ❌ bug trouvé / ⏳ pas encore
 testé). Entités disponibles pour les tests : `categories`, `savings_goals`, `financial_plans`,
-`persons`, `accounts`.
+`persons`, `accounts`, `transactions`, `budgets`.
 
 Outils utiles : bouton **Synchroniser maintenant** (Paramètres), indicateur d'état sur `syncRow`,
 Database Inspector d'Android Studio (table `sync_queue`, colonnes `status`/`errorMessage`), la
@@ -30,6 +30,17 @@ collection Postman `Arzikina-Sync-API` (Push/Pull manuels), et l'accès direct �
    vérifie que la donnée apparaît.
 
 **Couvre aussi implicitement** : le rattrapage (backfill) déjà validé sur les catégories par défaut.
+
+**Spécifique à `budgets`** (référence croisée vers `categories`, voir `BudgetSyncPayload.kt` et
+`SyncEngineImpl.applyBudgetServerState`, étape 18) : avant de tester, supprime la contrainte réelle
+`fk_budgets_category` côté MySQL (voir `database/migrations/001_initial_schema.sql`) :
+```sql
+ALTER TABLE budgets DROP FOREIGN KEY fk_budgets_category;
+```
+Crée ensuite un budget sur une catégorie encore jamais synchronisée (les deux dans la foulée, sans
+synchroniser entre les deux). Après synchronisation, vérifie côté serveur (Postman Pull `budgets`)
+que `categorySyncId` correspond bien au `syncId` réel de la catégorie — jamais une chaîne vide ni
+l'`id` local.
 
 ---
 
@@ -157,7 +168,7 @@ synchronisation » à cause du bug 2 avant ce correctif) et confirmer le retour 
 
 | # | Scénario | Statut | Notes |
 |---|----------|--------|-------|
-| 1 | Création + propagation | ✅ | |
+| 1 | Création + propagation | ✅ (categories/savings_goals/financial_plans/persons/accounts/transactions) — ⏳ `budgets` | Étape 18 : voir l'addendum "Spécifique à `budgets`" — nécessite `ALTER TABLE budgets DROP FOREIGN KEY fk_budgets_category` avant test |
 | 2 | Modification + propagation | ✅ | |
 | 3 | Suppression douce + propagation | ✅ | |
 | 4 | Conflit (LWW) | ✅ | |
