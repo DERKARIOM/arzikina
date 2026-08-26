@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "Arzikina API",
-    "description": "Collection de test pour l'API de synchronisation Arzikina (server/api). Couvre les endpoints câblés à ce stade : authentification par token, pull/push incrémental sur `categories` (seule entité branchée pour l'instant — voir docs/sync/AUDIT-ET-ARCHITECTURE-SYNC.md, section 10).\n\nUtilisation :\n1. Ajuster la variable de collection `baseUrl` si besoin (par défaut : le serveur local du réseau LAN, port 2222).\n2. Lancer d'abord \"Auth > Login\" — le token reçu est automatiquement enregistré dans la variable de collection `token` (script de test), les requêtes suivantes l'utilisent sans copier-coller manuel.\n3. Un utilisateur de test doit déjà exister en base (voir le commentaire en tête de `api/auth/login.php` — pas d'endpoint d'inscription pour l'instant).",
+    "description": "Collection de test pour l'API de synchronisation Arzikina (server/api). Requêtes de base : authentification par token, pull/push sur `categories`/`accounts`/`transactions` (voir docs/sync/AUDIT-ET-ARCHITECTURE-SYNC.md, section 10), complétées par `user_preferences` (étape 22 — la seule entité sans référence croisée, la plus simple à diagnostiquer isolément). Les autres entités câblées depuis (budgets, loans, loan_payments, recurring_transactions, recurring_transaction_occurrences, financial_plan_items) ne sont pas encore couvertes ici — ce fichier n'a jamais été tenu à jour à chaque étape, les tests intermédiaires se sont faits directement dans Postman sans être resauvegardés dans la collection.\n\nUtilisation :\n1. Ajuster la variable de collection `baseUrl` si besoin (par défaut : le serveur local du réseau LAN, port 2222).\n2. Lancer d'abord \"Auth > Login\" — le token reçu est automatiquement enregistré dans la variable de collection `token` (script de test), les requêtes suivantes l'utilisent sans copier-coller manuel.\n3. Un utilisateur de test doit déjà exister en base (voir le commentaire en tête de `api/auth/login.php` — pas d'endpoint d'inscription pour l'instant).",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -229,6 +229,61 @@
               ]
             },
             "description": "Pull complet (updated_after=0) de toutes les transactions de l'utilisateur authentifie — verifie que la transaction creee par 'Push - transactions (CREATE)' apparait bien, avec ses accountSyncId/categorySyncId."
+          }
+        },
+        {
+          "name": "Push - user_preferences (CREATE)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"entityType\": \"user_preferences\",\n  \"operations\": [\n    {\n      \"operation\": \"CREATE\",\n      \"entity\": {\n        \"id\": \"{{$guid}}\",\n        \"themeMode\": \"DARK\",\n        \"currencyCode\": \"XOF\",\n        \"createdAt\": {{$timestamp}}000,\n        \"updatedAt\": {{$timestamp}}000\n      }\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/sync/push.php",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "sync", "push.php"]
+            },
+            "description": "Etape 22 — entite la plus simple du registre (aucune reference croisee, voir entity_sync_configs.php). Utile pour isoler un probleme de deploiement serveur (entree entity_sync_configs.php manquante, table user_preferences absente) : si cette requete echoue avec du JSON invalide en reponse (voir l'onglet Body brut, pas seulement le code HTTP), le probleme est cote deploiement serveur, pas cote app Android."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const body = pm.response.json();",
+                  "    pm.test('Push user_preferences OK', () => pm.expect(body.results[0].status).to.be.oneOf(['accepted', 'conflict_resolved']));",
+                  "} else {",
+                  "    pm.test('Push user_preferences a echoue', () => pm.expect.fail(pm.response.text()));",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Pull - user_preferences",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/sync/pull.php?entity_type=user_preferences&updated_after=0",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "sync", "pull.php"],
+              "query": [
+                { "key": "entity_type", "value": "user_preferences" },
+                { "key": "updated_after", "value": "0" }
+              ]
+            },
+            "description": "Pull complet (updated_after=0) — verifie que la ligne creee par 'Push - user_preferences (CREATE)' apparait bien, avec themeMode='DARK'/currencyCode='XOF'."
           }
         }
       ]
