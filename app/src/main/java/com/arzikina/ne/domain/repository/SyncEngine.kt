@@ -13,16 +13,16 @@ import kotlinx.coroutines.flow.Flow
  * ÉTAPE ACTUELLE — voir `SyncEngineImpl` : déclenché manuellement (bouton "Synchroniser
  * maintenant", voir `SettingsViewModel.syncNow`) ET automatiquement (périodique + retour de
  * connectivité, voir `work/SyncWorkScheduler.kt`/`work/SyncConnectivityObserver.kt`). Traite
- * `categories`, `savings_goals`, `financial_plans` et `persons` des deux côtés — voir
+ * `categories`, `savings_goals`, `financial_plans`, `persons` et `accounts` des deux côtés — voir
  * `SUPPORTED_ENTITY_TYPES` dans `SyncEngineImpl` pour la liste à jour, étendue au fil des étapes
  * dédiées.
  */
 interface SyncEngine {
 
     /**
-     * Envoie TOUTES les entrées `PENDING` **et `FAILED`** de la file (une entrée en échec est
-     * TOUJOURS retentée au push suivant — voir la KDoc de `SyncEngineImpl.pushPendingChanges` pour
-     * le raisonnement et le risque assumé d'une entrée en échec permanent), groupées par type
+     * Envoie TOUTES les entrées `PENDING` de la file, plus les entrées `FAILED` déjà éligibles à
+     * une nouvelle tentative (délai croissant avec `retryCount`, jamais un abandon définitif — voir
+     * la KDoc de `SyncEngineImpl.pushPendingChanges`/`isEligibleForRetry`), groupées par type
      * d'entité (le serveur n'accepte qu'un seul `entityType` par appel HTTP — voir `SyncApi.push`),
      * applique l'état confirmé par le serveur sur les lignes locales correspondantes, puis marque
      * chaque entrée `SYNCED` ou `FAILED`. N'échoue jamais bruyamment : une erreur réseau ou serveur

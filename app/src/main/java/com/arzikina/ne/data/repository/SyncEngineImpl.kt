@@ -1,16 +1,20 @@
 package com.arzikina.ne.data.repository
 
+import com.arzikina.ne.data.local.dao.AccountDao
 import com.arzikina.ne.data.local.dao.CategoryDao
 import com.arzikina.ne.data.local.dao.FinancialPlanDao
 import com.arzikina.ne.data.local.dao.PersonDao
 import com.arzikina.ne.data.local.dao.SavingsGoalDao
 import com.arzikina.ne.data.local.dao.SyncQueueDao
+import com.arzikina.ne.data.local.entity.AccountEntity
 import com.arzikina.ne.data.local.entity.CategoryEntity
 import com.arzikina.ne.data.local.entity.FinancialPlanEntity
 import com.arzikina.ne.data.local.entity.PersonEntity
 import com.arzikina.ne.data.local.entity.SavingsGoalEntity
 import com.arzikina.ne.data.local.entity.SyncQueueEntity
 import com.arzikina.ne.data.remote.api.SyncApi
+import com.arzikina.ne.data.remote.dto.AccountServerStateDto
+import com.arzikina.ne.data.remote.dto.AccountSyncPayload
 import com.arzikina.ne.data.remote.dto.CategoryServerStateDto
 import com.arzikina.ne.data.remote.dto.CategorySyncPayload
 import com.arzikina.ne.data.remote.dto.FinancialPlanServerStateDto
@@ -21,6 +25,8 @@ import com.arzikina.ne.data.remote.dto.SavingsGoalServerStateDto
 import com.arzikina.ne.data.remote.dto.SavingsGoalSyncPayload
 import com.arzikina.ne.data.remote.dto.SyncPushOperationDto
 import com.arzikina.ne.data.remote.dto.SyncPushRequestDto
+import com.arzikina.ne.domain.model.AccountIcon
+import com.arzikina.ne.domain.model.AccountType
 import com.arzikina.ne.domain.model.CategoryIcon
 import com.arzikina.ne.domain.model.FinancialPlanIcon
 import com.arzikina.ne.domain.model.PlanPeriodType
@@ -45,21 +51,22 @@ import javax.inject.Singleton
 
 /**
  * Voir [SyncEngine] pour le contrat et l'étape actuelle. [SUPPORTED_ENTITY_TYPES] (`categories`,
- * `savings_goals`, `financial_plans`, `persons`) sont traitées en DUR ici — même choix que
- * `server/api/sync/push.php` côté serveur (voir sa doc de tête) : la généralisation reste
- * volontairement une étape SÉPARÉE et différée (voir le plan validé), pour ne jamais mélanger une
- * nouvelle entité et un refactor comportemental dans le même changement à vérifier. Seule la
- * boucle EXTERNE (drainage de la file, pagination, curseur, transitions de statut) est déjà
- * partagée entre les quatre — voir [pushBatch]/[pullEntityType] — seules
- * [applyCategoryServerState]/[applySavingsGoalServerState]/[applyFinancialPlanServerState]/
- * [applyPersonServerState] (et la construction du payload, faite en amont par chaque repository)
- * diffèrent réellement par entité.
+ * `savings_goals`, `financial_plans`, `persons`, `accounts`) sont traitées en DUR ici — même choix
+ * que côté serveur AVANT sa généralisation (étape 14, voir `entity_sync_configs.php`) : côté
+ * Android, cette duplication reste volontairement ASSUMÉE (voir le plan validé de l'étape 14,
+ * "Android reste dupliqué") — Room exige des `@Entity` concrets sans supertype commun sans
+ * introduire une nouvelle couche d'abstraction, et la vérification à la compilation de Kotlin rend
+ * cette duplication plus sûre ici qu'en PHP dynamique. Seule la boucle EXTERNE (drainage de la
+ * file, pagination, curseur, transitions de statut) est déjà partagée entre les cinq — voir
+ * [pushBatch]/[pullEntityType] — seules [applyCategoryServerState]/[applySavingsGoalServerState]/
+ * [applyFinancialPlanServerState]/[applyPersonServerState]/[applyAccountServerState] (et la
+ * construction du payload, faite en amont par chaque repository) diffèrent réellement par entité.
  *
- * Dépend directement de [CategoryDao]/[SavingsGoalDao]/[FinancialPlanDao]/[PersonDao] (couche DATA
- * vers couche DATA, jamais via leurs repositories respectifs, qui filtrent par utilisateur COURANT
- * et masquent volontairement `syncId`/`version` au domaine — voir leur KDoc) : ce moteur doit
- * pouvoir relire/écrire ces champs bruts, y compris sur des lignes déjà supprimées (voir
- * `getBySyncId` de chaque DAO).
+ * Dépend directement de [CategoryDao]/[SavingsGoalDao]/[FinancialPlanDao]/[PersonDao]/[AccountDao]
+ * (couche DATA vers couche DATA, jamais via leurs repositories respectifs, qui filtrent par
+ * utilisateur COURANT et masquent volontairement `syncId`/`version` au domaine — voir leur KDoc) :
+ * ce moteur doit pouvoir relire/écrire ces champs bruts, y compris sur des lignes déjà supprimées
+ * (voir `getBySyncId` de chaque DAO).
  */
 @Singleton
 class SyncEngineImpl @Inject constructor(
@@ -68,6 +75,7 @@ class SyncEngineImpl @Inject constructor(
     private val savingsGoalDao: SavingsGoalDao,
     private val financialPlanDao: FinancialPlanDao,
     private val personDao: PersonDao,
+    private val accountDao: AccountDao,
     private val syncApi: SyncApi,
     private val syncCursorStore: SyncCursorStore,
     private val syncQueueEnqueuer: SyncQueueEnqueuer,
@@ -82,17 +90,18 @@ class SyncEngineImpl @Inject constructor(
      * `financial_plans` (déploiement serveur momentanément désynchronisé de l'app). `SYNCING`/
      * `SYNCED` restent exclus (déjà en cours ou déjà confirmées).
      *
-     * RISQUE ASSUMÉ ET SIGNALÉ : une entrée en échec pour une raison PERMANENTE (donnée invalide
-     * qui ne passera jamais côté serveur, pas un simple souci réseau/déploiement transitoire) sera
-     * retentée INDÉFINIMENT à chaque appel — manuel (`SettingsViewModel.syncNow`) ou automatique
-     * (toutes les [com.arzikina.ne.work.SyncWorkScheduler.INTERVAL_HOURS] heures). `retryCount`
-     * (voir `SyncQueueEntity`) est déjà suivi mais volontairement PAS encore utilisé pour plafonner
-     * ces tentatives — à revisiter dans une étape dédiée si ce cas se présente réellement en
-     * pratique (voir `retryCount` incrémenté à chaque échec par [markFailed], prêt à servir de base
-     * à une limite future).
+     * Les entrées `FAILED` sont en plus filtrées par [isEligibleForRetry] : jamais un abandon
+     * silencieux (voir docs/sync/AUDIT-ET-ARCHITECTURE-SYNC.md, section 8, "backoff exponentiel...
+     * jamais abandonné silencieusement, juste espacé"), mais un délai croissant avec `retryCount`
+     * avant chaque nouvelle tentative — protège une entrée en échec PERMANENT (donnée invalide qui
+     * ne passera jamais côté serveur) de retenter à CHAQUE appel (manuel ou reconnexion réseau, qui
+     * peut se déclencher plusieurs fois par minute sur une connexion instable, voir
+     * `SyncConnectivityObserver`), sans jamais cesser complètement de réessayer.
      */
     override suspend fun pushPendingChanges(): SyncEngineResult {
-        val pendingEntries = syncQueueDao.getByStatus(SyncStatus.PENDING) + syncQueueDao.getByStatus(SyncStatus.FAILED)
+        val now = System.currentTimeMillis()
+        val eligibleFailedEntries = syncQueueDao.getByStatus(SyncStatus.FAILED).filter { isEligibleForRetry(it, now) }
+        val pendingEntries = syncQueueDao.getByStatus(SyncStatus.PENDING) + eligibleFailedEntries
         if (pendingEntries.isEmpty()) return SyncEngineResult(pushed = 0, succeeded = 0, failed = 0)
 
         var succeeded = 0
@@ -239,6 +248,8 @@ class SyncEngineImpl @Inject constructor(
                 applyFinancialPlanServerState(json.decodeFromJsonElement(FinancialPlanServerStateDto.serializer(), element), allowCreate)
             "persons" ->
                 applyPersonServerState(json.decodeFromJsonElement(PersonServerStateDto.serializer(), element), allowCreate)
+            "accounts" ->
+                applyAccountServerState(json.decodeFromJsonElement(AccountServerStateDto.serializer(), element), allowCreate)
         }
     }
 
@@ -320,6 +331,7 @@ class SyncEngineImpl @Inject constructor(
         enqueueUnsyncedSavingsGoals(userId)
         enqueueUnsyncedFinancialPlans(userId)
         enqueueUnsyncedPersons(userId)
+        enqueueUnsyncedAccounts(userId)
     }
 
     /**
@@ -487,6 +499,92 @@ class SyncEngineImpl @Inject constructor(
         }
     }
 
+    /**
+     * Voir [applyCategoryServerState] — même logique, appliquée à `accounts`.
+     *
+     * [AccountServerStateDto.isExcludedFromStatistics] : `Int` (`0`/`1`, PAS `Boolean` — voir la
+     * KDoc de tête de `AccountSyncPayload.kt`) explicitement converti ici avec `!= 0`, seul endroit
+     * où cette conversion a besoin d'exister.
+     *
+     * `CardSecretEntity` (numéro complet + CVV) n'est PAS touché ici : hors du champ de la
+     * synchronisation (voir la KDoc de tête de `AccountSyncPayload.kt`) — un compte reçu par pull
+     * sur un nouvel appareil n'a donc PAS de numéro/CVV enregistrés localement tant que l'utilisateur
+     * ne les ressaisit pas sur CET appareil (`AccountRepository.saveCardSecrets`).
+     */
+    private suspend fun applyAccountServerState(state: AccountServerStateDto, allowCreate: Boolean) {
+        val local = accountDao.getBySyncId(state.id)
+        if (local == null && !allowCreate) return
+        val userId = local?.userId ?: sessionManager.getCurrentUserIdOnce() ?: return
+
+        accountDao.upsert(
+            AccountEntity(
+                id = local?.id ?: 0L,
+                userId = userId,
+                name = state.name,
+                icon = runCatching { AccountIcon.valueOf(state.icon) }.getOrDefault(local?.icon ?: AccountIcon.CASH),
+                colorArgb = state.colorArgb,
+                currencyCode = state.currencyCode,
+                initialBalanceMinor = state.initialBalanceMinor,
+                createdAt = state.createdAt,
+                type = runCatching { AccountType.valueOf(state.type) }.getOrDefault(local?.type ?: AccountType.CASH),
+                cardLastFourDigits = state.cardLastFourDigits,
+                cardExpiryMonth = state.cardExpiryMonth,
+                cardExpiryYear = state.cardExpiryYear,
+                isExcludedFromStatistics = state.isExcludedFromStatistics != 0,
+                mobileMoneyPackageName = state.mobileMoneyPackageName,
+                syncId = state.id,
+                updatedAt = state.updatedAt,
+                deletedAt = state.deletedAt,
+                version = state.version
+            )
+        )
+    }
+
+    /** Voir [enqueueUnsyncedCategories] — même logique, appliquée à `accounts`. */
+    private suspend fun enqueueUnsyncedAccounts(userId: Long) {
+        accountDao.getUnsyncedForUser(userId).forEach { account ->
+            val entity = account.copy(syncId = UUID.randomUUID().toString())
+            accountDao.upsert(entity)
+
+            val payload = AccountSyncPayload(
+                id = requireNotNull(entity.syncId),
+                baseVersion = null,
+                name = entity.name,
+                icon = entity.icon.name,
+                colorArgb = entity.colorArgb,
+                currencyCode = entity.currencyCode,
+                initialBalanceMinor = entity.initialBalanceMinor,
+                type = entity.type.name,
+                cardLastFourDigits = entity.cardLastFourDigits,
+                cardExpiryMonth = entity.cardExpiryMonth,
+                cardExpiryYear = entity.cardExpiryYear,
+                isExcludedFromStatistics = entity.isExcludedFromStatistics,
+                mobileMoneyPackageName = entity.mobileMoneyPackageName,
+                createdAt = entity.createdAt,
+                updatedAt = entity.updatedAt
+            )
+            syncQueueEnqueuer.enqueue(
+                entityType = "accounts",
+                entitySyncId = payload.id,
+                operation = SyncOperation.CREATE,
+                payloadJson = json.encodeToString(AccountSyncPayload.serializer(), payload)
+            )
+        }
+    }
+
+    /**
+     * `true` si [entry] (déjà en `FAILED`) a suffisamment attendu depuis sa dernière tentative pour
+     * être retentée maintenant — voir [RETRY_BACKOFF_MILLIS] pour la progression exacte.
+     * `lastAttemptAt == null` (ne devrait pas arriver pour une entrée `FAILED`, [markFailed] le
+     * renseigne systématiquement) : filet de sécurité, on retente plutôt que de bloquer
+     * indéfiniment une entrée dans un état incohérent.
+     */
+    private fun isEligibleForRetry(entry: SyncQueueEntity, now: Long): Boolean {
+        val lastAttempt = entry.lastAttemptAt ?: return true
+        val backoffIndex = (entry.retryCount - 1).coerceIn(0, RETRY_BACKOFF_MILLIS.lastIndex)
+        return now - lastAttempt >= RETRY_BACKOFF_MILLIS[backoffIndex]
+    }
+
     private suspend fun markSyncing(entries: List<SyncQueueEntity>) {
         entries.forEach { syncQueueDao.update(it.copy(status = SyncStatus.SYNCING)) }
     }
@@ -514,7 +612,19 @@ class SyncEngineImpl @Inject constructor(
     }
 
     private companion object {
-        val SUPPORTED_ENTITY_TYPES = setOf("categories", "savings_goals", "financial_plans", "persons")
+        val SUPPORTED_ENTITY_TYPES = setOf("categories", "savings_goals", "financial_plans", "persons", "accounts")
         const val MAX_ERROR_MESSAGE_LENGTH = 200
+
+        /** Délai minimal (ms) avant de retenter une entrée `FAILED`, indexé sur `retryCount - 1` —
+         *  voir [isEligibleForRetry]. Progression reprise telle quelle de
+         *  docs/sync/AUDIT-ET-ARCHITECTURE-SYNC.md (section 8) : 30s, 1min, 5min, 30min, puis 1h en
+         *  continu (dernier élément réutilisé indéfiniment, jamais de coupure définitive). */
+        val RETRY_BACKOFF_MILLIS = listOf(
+            30_000L,
+            60_000L,
+            5 * 60_000L,
+            30 * 60_000L,
+            60 * 60_000L
+        )
     }
 }

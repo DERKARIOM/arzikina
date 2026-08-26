@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../config/entity_sync_configs.php';
 require_once __DIR__ . '/../utils/json_response.php';
 require_once __DIR__ . '/../utils/case_convert.php';
 require_once __DIR__ . '/../middleware/auth_middleware.php';
@@ -16,11 +17,11 @@ require_once __DIR__ . '/../middleware/auth_middleware.php';
  * complet de la table (docs/sync/AUDIT-ET-ARCHITECTURE-SYNC.md, section 10 : "pull incrémental via
  * updated_after").
  *
- * `categories`, `savings_goals`, `financial_plans` et `persons` sont câblées pour l'instant (voir
- * la doc de tête de `push.php` pour la même décision et sa justification). `entity_type` est déjà
- * un paramètre — pas juste "pull categories" en dur — pour que l'extension future n'ait pas besoin
- * de changer la FORME de cette route, seulement d'ajouter un `case` dans le switch ci-dessous
- * (confirmé par ce quatrième ajout).
+ * GÉNÉRALISÉ (voir la doc de tête de `push.php`) : les colonnes à lire pour chaque `entity_type`
+ * viennent de `config/entity_sync_configs.php`, même registre que `push.php` — plus de `switch`
+ * dupliquant une requête par entité. `entity_type` reste un paramètre (pas juste "pull categories"
+ * en dur) : ajouter une future entité ne change toujours pas la FORME de cette route, seulement le
+ * registre partagé.
  *
  * Réponse : { "entities": [...], "serverTime": <millis> }. `serverTime` (horloge du SERVEUR, pas
  * de l'appareil) est la valeur que l'appareil doit conserver comme `updated_after` pour son
@@ -44,59 +45,29 @@ $entityType = (string) ($_GET['entity_type'] ?? '');
 $updatedAfter = isset($_GET['updated_after']) ? (int) $_GET['updated_after'] : 0;
 $batchLimit = 500;
 
-switch ($entityType) {
-    case 'categories':
-        $stmt = $pdo->prepare(
-            "SELECT id, user_id, name, icon, color_argb, type, created_at, updated_at, deleted_at, version
-             FROM categories
-             WHERE user_id = :user_id AND updated_at > :updated_after
-             ORDER BY updated_at ASC
-             LIMIT $batchLimit"
-        );
-        $stmt->execute(['user_id' => $userId, 'updated_after' => $updatedAfter]);
-        $rows = $stmt->fetchAll();
-        break;
-
-    case 'savings_goals':
-        $stmt = $pdo->prepare(
-            "SELECT id, user_id, name, target_amount, current_amount, currency_code, deadline, created_at, updated_at, deleted_at, version
-             FROM savings_goals
-             WHERE user_id = :user_id AND updated_at > :updated_after
-             ORDER BY updated_at ASC
-             LIMIT $batchLimit"
-        );
-        $stmt->execute(['user_id' => $userId, 'updated_after' => $updatedAfter]);
-        $rows = $stmt->fetchAll();
-        break;
-
-    case 'financial_plans':
-        $stmt = $pdo->prepare(
-            "SELECT id, user_id, name, description, available_amount, target_amount, period_type,
-                 start_date, end_date, icon, color_argb, status, created_at, updated_at, deleted_at, version
-             FROM financial_plans
-             WHERE user_id = :user_id AND updated_at > :updated_after
-             ORDER BY updated_at ASC
-             LIMIT $batchLimit"
-        );
-        $stmt->execute(['user_id' => $userId, 'updated_after' => $updatedAfter]);
-        $rows = $stmt->fetchAll();
-        break;
-
-    case 'persons':
-        $stmt = $pdo->prepare(
-            "SELECT id, user_id, name, phone, created_at, updated_at, deleted_at, version
-             FROM persons
-             WHERE user_id = :user_id AND updated_at > :updated_after
-             ORDER BY updated_at ASC
-             LIMIT $batchLimit"
-        );
-        $stmt->execute(['user_id' => $userId, 'updated_after' => $updatedAfter]);
-        $rows = $stmt->fetchAll();
-        break;
-
-    default:
-        sendError('unsupported_entity_type', "Type d'entité non pris en charge pour l'instant : $entityType", 400);
+$entityConfig = ENTITY_CONFIGS[$entityType] ?? null;
+if ($entityConfig === null) {
+    sendError('unsupported_entity_type', "Type d'entité non pris en charge pour l'instant : $entityType", 400);
 }
+
+// Mêmes colonnes IMPLICITES + spécifiques que `push.php` (voir `fetchEntityRow` de ce fichier et
+// la doc de tête de `ENTITY_CONFIGS`) — un seul autre endroit à faire évoluer si cet ensemble
+// changeait un jour.
+$columnNames = array_merge(
+    ['id', 'user_id'],
+    array_map(static fn (array $c): string => $c['db'], $entityConfig['columns']),
+    ['created_at', 'updated_at', 'deleted_at', 'version']
+);
+
+$stmt = $pdo->prepare(
+    'SELECT ' . implode(', ', $columnNames) . '
+     FROM ' . $entityConfig['table'] . "
+     WHERE user_id = :user_id AND updated_at > :updated_after
+     ORDER BY updated_at ASC
+     LIMIT $batchLimit"
+);
+$stmt->execute(['user_id' => $userId, 'updated_after' => $updatedAfter]);
+$rows = $stmt->fetchAll();
 
 sendJson([
     'entities' => array_map('toCamelCaseRow', $rows),
