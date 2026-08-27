@@ -242,6 +242,11 @@
 
     <!-- Comptes -->
     <string name="dashboard_greeting">Salut !</string>
+    <!-- Bouton de synchronisation de l'en-tête (voir syncButton, fragment_dashboard.xml) : action
+         ("lancer la synchronisation"), pas un état — voir settings_sync_now_* pour les messages de
+         résultat, réutilisés tels quels par DashboardFragment.handleSyncEvent pour ne pas dupliquer
+         ce texte. -->
+    <string name="dashboard_sync_content_description">Synchroniser les données</string>
     <string name="dashboard_accounts_action">Gérer mes comptes</string>
     <string name="accounts_title">Mes comptes</string>
     <string name="accounts_add">Ajouter</string>

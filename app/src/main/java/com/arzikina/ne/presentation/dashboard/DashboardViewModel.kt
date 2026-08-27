@@ -18,12 +18,17 @@ import com.arzikina.ne.domain.repository.SessionManager
 import com.arzikina.ne.domain.repository.TransactionRepository
 import com.arzikina.ne.presentation.accounts.computeCurrentBalances
 import com.arzikina.ne.presentation.budget.BudgetUiItem
+import com.arzikina.ne.presentation.components.SyncButtonController
+import com.arzikina.ne.presentation.components.SyncButtonEvent
+import com.arzikina.ne.presentation.components.SyncIndicatorUiState
+import com.arzikina.ne.presentation.components.SyncNowUiState
 import com.arzikina.ne.presentation.transactions.TransactionUiItem
 import com.arzikina.ne.presentation.transactions.feeTransactionIds
 import com.arzikina.ne.util.AppResult
 import com.arzikina.ne.util.BudgetProgress
 import com.arzikina.ne.util.PersonalStatistics
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
@@ -105,8 +110,24 @@ class DashboardViewModel @Inject constructor(
     budgetRepository: BudgetRepository,
     authRepository: AuthRepository,
     sessionManager: SessionManager,
-    recurringTransactionRepository: RecurringTransactionRepository
+    recurringTransactionRepository: RecurringTransactionRepository,
+    private val syncButtonController: SyncButtonController
 ) : ViewModel() {
+
+    /** Voir [SyncButtonController] : même logique que le bouton "Synchroniser maintenant" de
+     *  l'écran Paramètres (voir `SettingsViewModel`), réutilisée telle quelle pour le bouton de
+     *  synchronisation du Dashboard (voir `fragment_dashboard.xml`, `syncButton`). */
+    val syncNowState: StateFlow<SyncNowUiState> = syncButtonController.syncNowState
+
+    /** Voir [SyncButtonController.indicatorState] : [SyncIndicatorUiState.pendingCount] alimente
+     *  le badge de `syncButton` (voir `DashboardFragment.renderSyncButton`) — masqué quand `0` ou
+     *  quand aucune session serveur n'est active ([com.arzikina.ne.presentation.components.SyncIndicatorLevel.HIDDEN]). */
+    val syncIndicatorState: StateFlow<SyncIndicatorUiState> = syncButtonController.indicatorState(viewModelScope)
+
+    val syncEvents: SharedFlow<SyncButtonEvent> = syncButtonController.events
+
+    /** Voir [SyncButtonController.syncNow] pour le détail (ordre push/pull, garde de ré-entrance). */
+    fun syncNow() = syncButtonController.syncNow(viewModelScope)
 
     val uiState: StateFlow<AppResult<DashboardUiState>> = combine(
         combine(

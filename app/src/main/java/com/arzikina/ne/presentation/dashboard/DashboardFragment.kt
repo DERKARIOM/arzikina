@@ -1,7 +1,10 @@
 package com.arzikina.ne.presentation.dashboard
 
+import android.animation.ObjectAnimator
+import android.animation.ValueAnimator
 import android.os.Bundle
 import android.view.View
+import android.view.animation.LinearInterpolator
 import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
@@ -20,12 +23,17 @@ import com.arzikina.ne.presentation.accounts.AccountCardGradient
 import com.arzikina.ne.presentation.budget.BudgetAdapter
 import com.arzikina.ne.presentation.budget.BudgetUiItem
 import com.arzikina.ne.presentation.components.NavAnimations
+import com.arzikina.ne.presentation.components.SyncButtonEvent
+import com.arzikina.ne.presentation.components.SyncIndicatorLevel
+import com.arzikina.ne.presentation.components.SyncIndicatorUiState
+import com.arzikina.ne.presentation.components.SyncNowUiState
 import com.arzikina.ne.presentation.utilities.UtilityCatalog
 import com.arzikina.ne.presentation.utilities.UtilityTileAdapter
 import com.arzikina.ne.util.AppResult
 import com.arzikina.ne.util.Constants
 import com.arzikina.ne.util.Money
 import coil3.load
+import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import java.util.Locale
@@ -50,6 +58,11 @@ class DashboardFragment : Fragment(R.layout.fragment_dashboard) {
      */
     private var isBalanceHidden = false
     private var latestBalances: List<CurrencyAmount> = emptyList()
+
+    /** Anime `syncButton` (voir [renderSyncButton]) pendant l'envoi — référence gardée pour pouvoir
+     *  l'arrêter ([stopSyncRotation]) aussi bien en fin de synchronisation qu'à [onDestroyView]
+     *  (fuite sinon : un `ObjectAnimator` infini garderait une référence à la vue). */
+    private var syncRotationAnimator: ObjectAnimator? = null
 
     /** [UtilityCatalog.all] en intégralité pour l'instant (voir sa doc : le Dashboard affichera
      * une sélection restreinte plutôt que la totalité une fois le catalogue plus grand). Même
@@ -104,6 +117,10 @@ class DashboardFragment : Fragment(R.layout.fragment_dashboard) {
         viewBinding.settingsShortcut.setOnClickListener {
             findNavController().navigate(R.id.settingsFragment, null, NavAnimations.push)
         }
+        // Voir DashboardViewModel.syncNow / SyncButtonController : même comportement que
+        // syncNowRow sur l'écran Paramètres (bouton désactivé par ce même StateFlow pendant
+        // l'envoi, voir renderSyncButton), réutilisé tel quel ici.
+        viewBinding.syncButton.setOnClickListener { viewModel.syncNow() }
         viewBinding.utilitiesList.layoutManager =
             LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
         viewBinding.utilitiesList.adapter = utilitiesAdapter
@@ -149,14 +166,74 @@ class DashboardFragment : Fragment(R.layout.fragment_dashboard) {
 
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.uiState.collect { state -> render(state) }
+                launch { viewModel.uiState.collect { state -> render(state) } }
+                launch { viewModel.syncNowState.collect { state -> renderSyncButton(viewBinding, state) } }
+                launch { viewModel.syncIndicatorState.collect { state -> renderSyncBadge(viewBinding, state) } }
+                launch { viewModel.syncEvents.collect { event -> handleSyncEvent(viewBinding, event) } }
             }
         }
     }
 
     override fun onDestroyView() {
         super.onDestroyView()
+        stopSyncRotation()
         binding = null
+    }
+
+    /** Désactive `syncButton` pendant l'envoi (voir [DashboardViewModel.syncNow], garde de
+     *  ré-entrance côté [com.arzikina.ne.presentation.components.SyncButtonController]) et anime sa
+     *  rotation — voir le cahier des charges "États du bouton" (C. Synchronisation en cours). */
+    private fun renderSyncButton(binding: FragmentDashboardBinding, state: SyncNowUiState) {
+        binding.syncButton.isEnabled = !state.isSyncing
+        if (state.isSyncing) startSyncRotation(binding) else stopSyncRotation()
+    }
+
+    private fun startSyncRotation(binding: FragmentDashboardBinding) {
+        if (syncRotationAnimator?.isRunning == true) return
+        syncRotationAnimator = ObjectAnimator.ofFloat(binding.syncButton, View.ROTATION, 0f, 360f).apply {
+            duration = 1_000L
+            repeatCount = ValueAnimator.INFINITE
+            interpolator = LinearInterpolator()
+            start()
+        }
+    }
+
+    private fun stopSyncRotation() {
+        syncRotationAnimator?.cancel()
+        syncRotationAnimator = null
+        binding?.syncButton?.rotation = 0f
+    }
+
+    /** Pastille rouge de comptage (voir le cahier des charges "Badge") : masquée si aucune session
+     *  serveur n'est active ([SyncIndicatorLevel.HIDDEN]) ou si rien n'est en attente — jamais
+     *  affichée à `0`. */
+    private fun renderSyncBadge(binding: FragmentDashboardBinding, state: SyncIndicatorUiState) {
+        val pendingCount = if (state.level == SyncIndicatorLevel.HIDDEN) 0 else state.pendingCount
+        if (pendingCount > 0) {
+            binding.syncBadge.text = pendingCount.toString()
+            binding.syncBadge.visibility = View.VISIBLE
+        } else {
+            binding.syncBadge.visibility = View.GONE
+        }
+    }
+
+    /** Même message que `SettingsFragment.handleEvent` (voir `settings_sync_now_*`) : réutilisés
+     *  tels quels plutôt que dupliqués pour ce second bouton "Synchroniser maintenant". */
+    private fun handleSyncEvent(binding: FragmentDashboardBinding, event: SyncButtonEvent) {
+        val message = when (event) {
+            is SyncButtonEvent.SyncFinished -> when {
+                event.pushResult.pushed == 0 && event.pullResult.received == 0 ->
+                    getString(R.string.settings_sync_now_nothing_pending)
+                else -> getString(
+                    R.string.settings_sync_now_result,
+                    event.pushResult.succeeded,
+                    event.pushResult.failed,
+                    event.pullResult.applied
+                )
+            }
+            is SyncButtonEvent.SyncError -> getString(R.string.settings_sync_now_error)
+        }
+        Snackbar.make(binding.root, message, Snackbar.LENGTH_LONG).show()
     }
 
     private fun render(state: AppResult<DashboardUiState>) {

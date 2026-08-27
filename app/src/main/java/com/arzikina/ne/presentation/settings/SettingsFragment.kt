@@ -21,6 +21,10 @@ import com.arzikina.ne.databinding.ItemSettingsRowBinding
 import com.arzikina.ne.domain.model.ThemeMode
 import com.arzikina.ne.domain.model.SupportedCurrency
 import com.arzikina.ne.presentation.components.NavAnimations
+import com.arzikina.ne.presentation.components.SyncButtonEvent
+import com.arzikina.ne.presentation.components.SyncIndicatorLevel
+import com.arzikina.ne.presentation.components.SyncIndicatorUiState
+import com.arzikina.ne.presentation.components.SyncNowUiState
 import com.arzikina.ne.presentation.profile.BiometricLockUiState
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
@@ -357,9 +361,9 @@ class SettingsFragment : Fragment(R.layout.fragment_settings) {
         row.setTextColor(ContextCompat.getColor(requireContext(), colorRes))
     }
 
-    private fun handleEvent(binding: FragmentSettingsBinding, event: SettingsEvent) {
+    private fun handleEvent(binding: FragmentSettingsBinding, event: SyncButtonEvent) {
         val message = when (event) {
-            is SettingsEvent.SyncFinished -> when {
+            is SyncButtonEvent.SyncFinished -> when {
                 event.pushResult.pushed == 0 && event.pullResult.received == 0 ->
                     getString(R.string.settings_sync_now_nothing_pending)
                 else -> getString(
@@ -369,7 +373,7 @@ class SettingsFragment : Fragment(R.layout.fragment_settings) {
                     event.pullResult.applied
                 )
             }
-            is SettingsEvent.SyncError -> getString(R.string.settings_sync_now_error)
+            is SyncButtonEvent.SyncError -> getString(R.string.settings_sync_now_error)
         }
         Snackbar.make(binding.root, message, Snackbar.LENGTH_LONG).show()
     }

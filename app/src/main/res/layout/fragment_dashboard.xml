@@ -112,6 +112,57 @@
                 </LinearLayout>
 
                 <!--
+                    Bouton de synchronisation (voir cahier des charges "Ajouter le bouton de
+                    synchronisation sur le Dashboard") : aligné à droite de la photo de profil, sur
+                    la même ligne (voir headerRow), placé AVANT le raccourci Paramètres (demande
+                    explicite). FrameLayout + pastille superposée, MÊME structure que
+                    utilityIcon/utilityBadge (item_utility_tile.xml) — réutilise bg_badge_circle tel
+                    quel plutôt que de créer un second drawable de badge. Teinte FIXE
+                    arzikina_on_dashboard_header (blanche) : ce bouton vit sur le fond brun/ambré
+                    fixe de l'en-tête, jamais sur ?attr/colorOnSurface (voir
+                    SystemBars.updateStatusBarIconAppearance, icônes toujours claires ici quel que
+                    soit le thème) — contrairement à settingsShortcut ci-dessous, qui utilise
+                    ?attr/colorOnSurface (incohérence préexistante, hors périmètre de cette étape).
+                    Rotation pendant la synchronisation : voir DashboardFragment.renderSyncButton.
+                -->
+                <FrameLayout
+                    android:layout_width="@dimen/icon_size_large"
+                    android:layout_height="@dimen/icon_size_large"
+                    android:layout_marginStart="@dimen/spacing_s">
+
+                    <ImageButton
+                        android:id="@+id/syncButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:contentDescription="@string/dashboard_sync_content_description"
+                        android:padding="@dimen/spacing_s"
+                        android:src="@drawable/ic_sync_24"
+                        app:tint="@color/arzikina_on_dashboard_header" />
+
+                    <TextView
+                        android:id="@+id/syncBadge"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="top|end"
+                        android:layout_marginTop="-2dp"
+                        android:layout_marginEnd="-2dp"
+                        android:background="@drawable/bg_badge_circle"
+                        android:gravity="center"
+                        android:includeFontPadding="false"
+                        android:minWidth="18dp"
+                        android:minHeight="18dp"
+                        android:paddingHorizontal="4dp"
+                        android:textColor="@android:color/white"
+                        android:textSize="10sp"
+                        android:textStyle="bold"
+                        android:visibility="gone"
+                        tools:text="5"
+                        tools:visibility="visible" />
+
+                </FrameLayout>
+
+                <!--
                     Raccourci vers Paramètres (écran secondaire, atteint aussi
                     depuis l'onglet Autre) — remplace l'ancien raccourci
                     Catégories. Comptes n'a plus de raccourci ici : c'est
@@ -123,7 +174,6 @@
                     android:id="@+id/settingsShortcut"
                     android:layout_width="@dimen/icon_size_large"
                     android:layout_height="@dimen/icon_size_large"
-                    android:layout_marginStart="@dimen/spacing_s"
                     android:layout_marginEnd="@dimen/spacing_s"
                     android:background="?attr/selectableItemBackgroundBorderless"
                     android:contentDescription="@string/nav_settings"
