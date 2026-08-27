@@ -88,15 +88,18 @@ CREATE TABLE IF NOT EXISTS auth_tokens (
 -- entité Room — nouvelle table ici, sans équivalent Room direct). `biometricLockEnabled` reste
 -- volontairement ABSENT : verrouillage biométrique explicitement PAR APPAREIL, jamais synchronisé
 -- (même raisonnement que pour le système de sauvegarde fichier existant).
-CREATE TABLE IF NOT EXISTS user_preferences (
-    user_id CHAR(36) NOT NULL,
-    theme_mode VARCHAR(32) NOT NULL DEFAULT 'SYSTEM',
-    currency_code CHAR(3) NOT NULL DEFAULT 'XOF',
-    updated_at BIGINT NOT NULL,
-    version INT NOT NULL DEFAULT 1,
-    PRIMARY KEY (user_id),
-    CONSTRAINT fk_user_preferences_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
-) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
+--
+-- DÉFINITION RÉELLE EN SECTION 10 ci-dessous (étape 22 du chantier de synchronisation) : une
+-- première version de cette table, SANS colonne `id` (clé primaire = `user_id` directement), a été
+-- écrite ici puis abandonnée en cours de chantier (voir `ENTITY_CONFIGS['user_preferences']`, qui
+-- exige un `id` CHAR(36) comme toutes les autres entités du registre). Les deux `CREATE TABLE IF
+-- NOT EXISTS user_preferences` ayant longtemps coexisté dans ce fichier, la bonne définition
+-- n'était en pratique appliquée QUE sur une base vide où ce bloc-ci s'exécutait en premier — sur le
+-- serveur réel, ce bloc obsolète a créé la table AVANT la section 10, qui n'a alors plus rien fait
+-- (`IF NOT EXISTS`), laissant une table `id`-less en production jusqu'à un correctif manuel
+-- (`DROP TABLE` + réexécution de la section 10). Bloc supprimé ici pour que ce fichier redevienne
+-- rejouable tel quel sur une base vide, sans dépendre de l'ordre — voir section 10 pour la seule
+-- définition qui doit désormais exister.
 
 -- =============================================================================================
 -- 2. DONNÉES FINANCIÈRES DE BASE (comptes, catégories)
