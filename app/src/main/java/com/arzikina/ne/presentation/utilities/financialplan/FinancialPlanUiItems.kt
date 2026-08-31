@@ -2,6 +2,7 @@ package com.arzikina.ne.presentation.utilities.financialplan
 
 import com.arzikina.ne.domain.model.FinancialPlan
 import com.arzikina.ne.domain.model.FinancialPlanItem
+import com.arzikina.ne.domain.model.PlanStatus
 import com.arzikina.ne.util.FinancialPlanProgress
 
 /**
@@ -23,17 +24,23 @@ data class FinancialPlanUiItem(
  * comptes") : même calcul affiché aux deux endroits, une seule fois écrit (voir instructions
  * projet : "évite absolument le code dupliqué").
  *
- * Aucun filtre ni tri ici (ex. [com.arzikina.ne.domain.model.PlanStatus], limite d'affichage) :
- * ces préoccupations restent propres à chaque appelant, comme c'était déjà le cas quand ce calcul
- * vivait séparément dans `DashboardViewModel.featuredFinancialPlans` (retiré depuis) et
- * [FinancialPlansViewModel.uiState].
+ * Exclut les planifications [PlanStatus.ARCHIVED] : les DEUX appelants ci-dessus affichent une
+ * LISTE de planifications, où une planification archivée (statut saisi par l'utilisateur, pas
+ * encore d'UI d'archivage côté Android — seulement depuis Arsikina Web pour l'instant, voir
+ * `arzikina-web-sync/src/routes/planifications.tsx`) ne doit jamais apparaître ni compter comme
+ * active, même règle que côté Web (voir `services/finance.ts` côté web, section PlanningService).
+ * Placé ici plutôt que dans chacun des deux appelants pour ne pas le dupliquer, puisqu'il est
+ * strictement identique aux deux endroits. Ne PAS l'ajouter à
+ * [FinancialPlanDetailViewModel.uiState] : cet écran résout une planification par id directement
+ * sur `observePlans()` (sans passer par cette fonction) précisément pour rester accessible même
+ * archivée.
  */
 fun buildFinancialPlanUiItems(
     plans: List<FinancialPlan>,
     allItems: List<FinancialPlanItem>
 ): List<FinancialPlanUiItem> {
     val itemsByPlanId = allItems.groupBy { it.planId }
-    return plans.map { plan ->
+    return plans.filter { it.status != PlanStatus.ARCHIVED }.map { plan ->
         val items = itemsByPlanId[plan.id].orEmpty()
         val totalPlanned = FinancialPlanProgress.calculateTotalPlanned(items)
         FinancialPlanUiItem(

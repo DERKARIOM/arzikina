@@ -59,7 +59,7 @@ if ($identifier === '' || $password === '') {
 $pdo = getDatabaseConnection();
 
 $stmt = $pdo->prepare(
-    'SELECT id, password_hash FROM users
+    'SELECT id, password_hash, full_name FROM users
      WHERE (username = :identifier_username OR email = :identifier_email) AND deleted_at IS NULL
      LIMIT 1'
 );
@@ -98,4 +98,8 @@ sendJson([
     'token' => $rawToken,
     'userId' => $user['id'],
     'expiresAt' => $expiresAtMillis,
+    // Nom complet réel (colonne users.full_name) — même source que authRepository.observeUser()
+    // côté Android, exposée ici plutôt que dupliquée dans une autre table (voir user_preferences,
+    // qui reste volontairement limité aux préférences d'affichage : thème/devise/verrou).
+    'fullName' => $user['full_name'],
 ]);
