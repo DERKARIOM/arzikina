@@ -588,6 +588,17 @@
     <string name="budget_item_menu_edit">Modifier</string>
     <string name="budget_item_menu_content_description">Actions du budget</string>
 
+    <!-- Curseur "Aujourd'hui" (voir util/BudgetPace.kt, même logique que budgetPaceStatus() côté
+         Web) : compare le rythme RÉEL de dépense au rythme THÉORIQUE attendu à ce stade de la
+         période. Distinct du badge de statut ci-dessus (À venir/En cours/Terminé, qui ne dit rien
+         du RYTHME de dépense, seulement de la période elle-même). -->
+    <string name="budget_pace_on_track">Équilibre</string>
+    <string name="budget_pace_ahead">Avance</string>
+    <string name="budget_pace_over">Dépassement</string>
+    <string name="budget_pace_today_cursor_label">Aujourd\'hui</string>
+    <!-- %1$s = texte déjà formaté (ex. "12 jours restants"), %2$s = un des 3 libellés ci-dessus. -->
+    <string name="budget_modern_days_remaining_with_pace">%1$s · %2$s</string>
+
     <!--
         Planification financière par projet (voir cahier des charges "Nouvelle fonctionnalité :
         Planification financière") — INDÉPENDANTE de "Automatisation" (ex-"Planification",

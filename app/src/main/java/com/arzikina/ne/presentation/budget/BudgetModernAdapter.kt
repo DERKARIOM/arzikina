@@ -6,6 +6,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.appcompat.widget.PopupMenu
+import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
@@ -15,6 +16,8 @@ import com.arzikina.ne.databinding.ItemBudgetModernBinding
 import com.arzikina.ne.domain.model.BudgetPeriod
 import com.arzikina.ne.domain.model.CurrencyAmount
 import com.arzikina.ne.presentation.categories.CategoryIconMapper
+import com.arzikina.ne.util.BudgetPace
+import com.arzikina.ne.util.BudgetPaceState
 import com.arzikina.ne.util.BudgetPeriodStatus
 import com.arzikina.ne.util.DatePeriods
 import com.arzikina.ne.util.Money
@@ -29,7 +32,10 @@ import kotlin.math.roundToInt
  * Liste des budgets avec leur progression sur la période en cours — PostCard "moderne" (voir
  * item_budget_modern.xml, cahier des charges "Personnalisation des PostCards — Fragment Budget
  * uniquement"). Utilisé UNIQUEMENT par [BudgetFragment] : [com.arzikina.ne.presentation.dashboard.DashboardFragment]
- * continue de réutiliser [BudgetAdapter]/`item_budget.xml` tels quels, sans aucun changement.
+ * continue de réutiliser [BudgetAdapter]/`item_budget.xml`, une présentation INDÉPENDANTE (voir la
+ * doc de tête de [BudgetAdapter]) — le curseur "Aujourd'hui" (voir [bindTodayCursor]) y est
+ * implémenté séparément, avec la même logique [BudgetPace] mais un habillage visuel propre à
+ * chaque carte.
  *
  * Même signature de constructeur que [BudgetAdapter] (`onClick`/`onDeleteClick`) : [BudgetFragment]
  * n'a donc qu'à changer la CLASSE d'adapter instanciée, ses callbacks restent identiques
@@ -83,12 +89,17 @@ class BudgetModernAdapter(
 
         fun bind(item: BudgetUiItem, onClick: (BudgetUiItem) -> Unit, onDeleteClick: (BudgetUiItem) -> Unit) {
             val context = binding.root.context
+            // Calculé UNE SEULE fois par bind, réutilisé par bindTodayCursor ET
+            // bindPeriodAndDaysRemaining — voir util/BudgetPace.kt (même logique que
+            // budgetPaceStatus() côté Web).
+            val pace = BudgetPace.of(item.budget, item.spentMinor)
 
             bindHeader(context, item)
             bindStatusBadge(context, item)
             bindFinancialColumns(context, item)
             bindProgress(context, item)
-            bindPeriodAndDaysRemaining(context, item)
+            bindTodayCursor(pace)
+            bindPeriodAndDaysRemaining(context, item, pace)
 
             binding.root.setOnClickListener { onClick(item) }
             binding.menuButton.setOnClickListener { anchor -> showActionsMenu(anchor, item, onClick, onDeleteClick) }
@@ -160,14 +171,28 @@ class BudgetModernAdapter(
             binding.percentOfBudgetLabel.text = context.getString(R.string.budget_modern_percent_of_budget, percent)
         }
 
+        /** Repositionne le repère "Aujourd'hui" via `horizontalBias` (voir item_budget_modern.xml) —
+         * `requestLayout()` explicite car changer `horizontalBias` par code, contrairement à
+         * `progress`, ne redéclenche pas automatiquement une passe de layout sur un ViewHolder
+         * recyclé. */
+        private fun bindTodayCursor(pace: BudgetPace) {
+            val bias = pace.elapsedRatio.coerceIn(0f, 1f)
+            (binding.todayCursorLine.layoutParams as ConstraintLayout.LayoutParams).horizontalBias = bias
+            (binding.todayCursorLabel.layoutParams as ConstraintLayout.LayoutParams).horizontalBias = bias
+            binding.todayCursorLine.requestLayout()
+            binding.todayCursorLabel.requestLayout()
+        }
+
         /** Même logique que `BudgetAdapter` (période fixe vs récurrent legacy, voir sa doc) —
          * seule la présentation change (deux éléments séparés : `periodValue` + `daysChip`, au lieu
-         * d'une seule ligne "Expire le ..."). */
-        private fun bindPeriodAndDaysRemaining(context: Context, item: BudgetUiItem) {
+         * d'une seule ligne "Expire le ..."). Le chip "jours restants" porte AUSSI le rythme
+         * pédagogique (voir [pace]) : libellé suffixé + icône teintée, sauf période pas encore
+         * commencée (rythme non pertinent avant le premier jour). */
+        private fun bindPeriodAndDaysRemaining(context: Context, item: BudgetUiItem, pace: BudgetPace) {
             val today = LocalDate.now()
             val status = BudgetPeriodStatus.of(item.budget.startDate, item.budget.endDate, today)
 
-            if (status != null) {
+            val baseDaysText = if (status != null) {
                 val start = DatePeriods.toLocalDate(item.budget.startDate!!)
                 val end = DatePeriods.toLocalDate(item.budget.endDate!!)
                 binding.periodValue.text = context.getString(
@@ -175,7 +200,7 @@ class BudgetModernAdapter(
                     start.format(DATE_FORMATTER),
                     end.format(DATE_FORMATTER)
                 )
-                binding.daysValue.text = when (status) {
+                when (status) {
                     BudgetPeriodStatus.COMPLETED -> context.getString(R.string.budget_modern_completed_chip)
                     BudgetPeriodStatus.UPCOMING -> {
                         val daysUntilStart = ChronoUnit.DAYS.between(today, DatePeriods.toLocalDate(item.budget.startDate!!))
@@ -195,7 +220,29 @@ class BudgetModernAdapter(
                 )
                 val periodEnd = DatePeriods.currentPeriodEnd(item.budget.period, today)
                 val daysUntilExpiration = ChronoUnit.DAYS.between(today, periodEnd)
-                binding.daysValue.text = context.getString(R.string.budget_modern_days_remaining, daysUntilExpiration)
+                context.getString(R.string.budget_modern_days_remaining, daysUntilExpiration)
+            }
+
+            if (pace.periodStatus == BudgetPeriodStatus.UPCOMING) {
+                binding.daysValue.text = baseDaysText
+                binding.daysIcon.imageTintList = ColorStateList.valueOf(ContextCompat.getColor(context, R.color.white))
+            } else {
+                val paceLabelRes = when (pace.paceState) {
+                    BudgetPaceState.ON_TRACK -> R.string.budget_pace_on_track
+                    BudgetPaceState.AHEAD -> R.string.budget_pace_ahead
+                    BudgetPaceState.OVER -> R.string.budget_pace_over
+                }
+                val paceColorRes = when (pace.paceState) {
+                    BudgetPaceState.ON_TRACK -> R.color.income_green
+                    BudgetPaceState.AHEAD -> R.color.pace_ahead_blue
+                    BudgetPaceState.OVER -> R.color.expense_red
+                }
+                binding.daysValue.text = context.getString(
+                    R.string.budget_modern_days_remaining_with_pace,
+                    baseDaysText,
+                    context.getString(paceLabelRes)
+                )
+                binding.daysIcon.imageTintList = ColorStateList.valueOf(ContextCompat.getColor(context, paceColorRes))
             }
         }
 

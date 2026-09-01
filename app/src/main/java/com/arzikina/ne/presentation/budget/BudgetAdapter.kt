@@ -3,6 +3,7 @@ package com.arzikina.ne.presentation.budget
 import android.content.res.ColorStateList
 import android.view.LayoutInflater
 import android.view.ViewGroup
+import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
@@ -12,6 +13,8 @@ import com.arzikina.ne.databinding.ItemBudgetBinding
 import com.arzikina.ne.domain.model.BudgetPeriod
 import com.arzikina.ne.domain.model.CurrencyAmount
 import com.arzikina.ne.presentation.categories.CategoryIconMapper
+import com.arzikina.ne.util.BudgetPace
+import com.arzikina.ne.util.BudgetPaceState
 import com.arzikina.ne.util.BudgetPeriodStatus
 import com.arzikina.ne.util.DatePeriods
 import com.arzikina.ne.util.Money
@@ -75,9 +78,20 @@ class BudgetAdapter(
 
             val isOverspent = item.progress > 1f
             binding.progressBar.progress = (item.progress.coerceIn(0f, 1f) * 100).roundToInt()
-            binding.progressBar.setIndicatorColor(
-                ContextCompat.getColor(context, if (isOverspent) R.color.expense_red else R.color.arzikina_primary)
-            )
+
+            // Curseur "Aujourd'hui" (voir util/BudgetPace.kt, même logique que budgetPaceStatus()
+            // côté Web) : la couleur de la barre elle-même porte le rythme (vert à jour/bleu en
+            // avance/rouge dépassement), un dépassement RÉEL du plafond (isOverspent) reste
+            // toujours prioritaire sur le simple rythme théorique.
+            val pace = BudgetPace.of(item.budget, item.spentMinor)
+            val progressColorRes = when {
+                isOverspent -> R.color.expense_red
+                pace.paceState == BudgetPaceState.OVER -> R.color.expense_red
+                pace.paceState == BudgetPaceState.AHEAD -> R.color.pace_ahead_blue
+                else -> R.color.arzikina_primary
+            }
+            binding.progressBar.setIndicatorColor(ContextCompat.getColor(context, progressColorRes))
+            bindTodayCursor(pace)
 
             binding.remainingLabel.text = if (isOverspent) {
                 val overspentAmount = Money.format(CurrencyAmount(item.budget.currencyCode, item.spentMinor - item.budget.limitAmount))
@@ -122,6 +136,17 @@ class BudgetAdapter(
 
             binding.root.setOnClickListener { onClick(item) }
             binding.deleteButton.setOnClickListener { onDeleteClick(item) }
+        }
+
+        /** Repositionne le repère "Aujourd'hui" via `horizontalBias` — voir item_budget.xml et
+         *  BudgetModernAdapter.bindTodayCursor (même technique, dupliquée ici car ce sont deux
+         *  layouts/ViewHolders indépendants, voir la doc de tête de BudgetModernAdapter.kt). */
+        private fun bindTodayCursor(pace: BudgetPace) {
+            val bias = pace.elapsedRatio.coerceIn(0f, 1f)
+            (binding.todayCursorLine.layoutParams as ConstraintLayout.LayoutParams).horizontalBias = bias
+            (binding.todayCursorLabel.layoutParams as ConstraintLayout.LayoutParams).horizontalBias = bias
+            binding.todayCursorLine.requestLayout()
+            binding.todayCursorLabel.requestLayout()
         }
     }
 

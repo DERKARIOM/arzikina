@@ -256,6 +256,42 @@
             app:trackThickness="10dp"
             tools:progress="65" />
 
+        <!-- Curseur "Aujourd'hui" (voir util/BudgetPace.kt + BudgetModernAdapter.bindTodayCursor) :
+             une simple ligne + un label, repositionnés via `horizontalBias` au binding — pas de vue
+             personnalisée, cohérent avec le reste de cette carte (uniquement des Views/TextViews
+             ordinaires). Couleur BLANCHE fixe (comme le reste de cette carte à fond dégradé vert,
+             voir la doc de tête) : le rythme lui-même (à jour/avance/dépassement) est indiqué par la
+             couleur de @id/daysIcon juste en dessous, jamais par ce repère. -->
+        <TextView
+            android:id="@+id/todayCursorLabel"
+            style="@style/TextAppearance.Material3.LabelSmall"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="2dp"
+            android:background="@drawable/bg_budget_card_chip"
+            android:paddingHorizontal="6dp"
+            android:paddingVertical="1dp"
+            android:text="@string/budget_pace_today_cursor_label"
+            android:textColor="@color/white"
+            android:textSize="9dp"
+            android:textStyle="bold"
+            app:layout_constraintBottom_toTopOf="@id/progressBar"
+            app:layout_constraintEnd_toEndOf="@id/progressBar"
+            app:layout_constraintHorizontal_bias="0.5"
+            app:layout_constraintStart_toStartOf="@id/progressBar" />
+
+        <View
+            android:id="@+id/todayCursorLine"
+            android:layout_width="2dp"
+            android:layout_height="0dp"
+            android:alpha="0.9"
+            android:background="@color/white"
+            app:layout_constraintBottom_toBottomOf="@id/progressBar"
+            app:layout_constraintEnd_toEndOf="@id/progressBar"
+            app:layout_constraintHorizontal_bias="0.5"
+            app:layout_constraintStart_toStartOf="@id/progressBar"
+            app:layout_constraintTop_toTopOf="@id/progressBar" />
+
         <TextView
             android:id="@+id/percentUsedLabel"
             style="@style/TextAppearance.Material3.LabelMedium"

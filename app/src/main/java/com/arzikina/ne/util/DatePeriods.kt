@@ -59,4 +59,17 @@ object DatePeriods {
             BudgetPeriod.MONTHLY -> YearMonth.from(today).atEndOfMonth()
             BudgetPeriod.WEEKLY -> today.with(TemporalAdjusters.nextOrSame(DayOfWeek.SUNDAY))
         }
+
+    /**
+     * Premier jour de la période en cours pour [period] — symétrique de [currentPeriodEnd], ajouté
+     * pour le curseur "Aujourd'hui" ([com.arzikina.ne.util.BudgetPace]) qui a besoin des DEUX
+     * bornes d'un budget récurrent (contrairement à [currentPeriodEnd], jusqu'ici seul utilisé pour
+     * un simple affichage "Expire le ..."). Lundi de la semaine ISO en cours pour
+     * [BudgetPeriod.WEEKLY] — cohérent avec [isInCurrentWeek] (WeekFields.ISO).
+     */
+    fun currentPeriodStart(period: BudgetPeriod, today: LocalDate = LocalDate.now()): LocalDate =
+        when (period) {
+            BudgetPeriod.MONTHLY -> YearMonth.from(today).atDay(1)
+            BudgetPeriod.WEEKLY -> today.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
+        }
 }

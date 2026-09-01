@@ -43,6 +43,11 @@
     <color name="income_green">#42B998</color>
     <color name="expense_red">#FFDC2626</color>
     <color name="warning_amber">#FFF59E0B</color>
+    <!-- Curseur "Aujourd'hui" d'un budget, état "En avance" (voir util/BudgetPace.kt) — même bleu
+         EXACT que la version Web (variable CSS "info" dans styles.css), aucune autre couleur
+         sémantique de l'app ne convient (income_green/expense_red/warning_amber sont déjà pris
+         par À jour/Dépassement/Bientôt dépassé). -->
+    <color name="pace_ahead_blue">#FF3498DB</color>
 
     <!--
         Carte Solde du Dashboard (fragment_dashboard.xml) : couleur fixe,

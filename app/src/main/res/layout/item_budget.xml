@@ -65,7 +65,7 @@
         android:id="@+id/progressBar"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="@dimen/spacing_s"
+        android:layout_marginTop="@dimen/spacing_l"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/categoryIcon"
@@ -74,6 +74,40 @@
         app:indicatorColor="@color/arzikina_primary"
         app:trackColor="?attr/colorSurfaceVariant"
         tools:progress="60" />
+
+    <!-- Curseur "Aujourd'hui" (voir util/BudgetPace.kt + BudgetAdapter.bindTodayCursor) — même
+         technique que item_budget_modern.xml (ligne + label repositionnés par `horizontalBias`),
+         mais en couleur NEUTRE (colorOnSurface, ce card n'a pas de fond dégradé fixe) : c'est la
+         couleur de la barre elle-même (voir indicatorColor défini par code) qui porte le rythme
+         à jour/avance/dépassement, ce repère ne fait qu'indiquer LA POSITION du jour courant. -->
+    <TextView
+        android:id="@+id/todayCursorLabel"
+        style="@style/TextAppearance.Material3.LabelSmall"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="2dp"
+        android:background="@drawable/bg_budget_card_chip"
+        android:paddingHorizontal="6dp"
+        android:paddingVertical="1dp"
+        android:text="@string/budget_pace_today_cursor_label"
+        android:textColor="?attr/colorOnSurface"
+        android:textSize="9dp"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toTopOf="@id/progressBar"
+        app:layout_constraintEnd_toEndOf="@id/progressBar"
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintStart_toStartOf="@id/progressBar" />
+
+    <View
+        android:id="@+id/todayCursorLine"
+        android:layout_width="2dp"
+        android:layout_height="0dp"
+        android:background="?attr/colorOnSurface"
+        app:layout_constraintBottom_toBottomOf="@id/progressBar"
+        app:layout_constraintEnd_toEndOf="@id/progressBar"
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintStart_toStartOf="@id/progressBar"
+        app:layout_constraintTop_toTopOf="@id/progressBar" />
 
     <!--
         Ligne "Expiration" : icône horloge + date de fin de la période en
