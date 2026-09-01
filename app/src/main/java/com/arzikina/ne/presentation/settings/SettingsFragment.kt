@@ -70,6 +70,7 @@ class SettingsFragment : Fragment(R.layout.fragment_settings) {
                 launch { viewModel.biometricLockState.collect { state -> renderBiometricLock(viewBinding, state) } }
                 launch { viewModel.syncNowState.collect { state -> renderSyncNow(viewBinding, state) } }
                 launch { viewModel.syncIndicatorState.collect { state -> renderSyncIndicator(viewBinding, state) } }
+                launch { viewModel.syncAccountState.collect { state -> renderSyncAccount(viewBinding, state) } }
                 launch { viewModel.events.collect { event -> handleEvent(viewBinding, event) } }
             }
         }
@@ -230,28 +231,45 @@ class SettingsFragment : Fragment(R.layout.fragment_settings) {
         )
     }
 
-    /** `syncRow` : simple raccourci vers [SyncLoginFragment] (voir
-     *  `domain/repository/SyncAuthRepository.kt`) — icône dédiée `ic_sync_24` (distincte de
-     *  `ic_cloud_backup_24` utilisée par [setUpBackupSection] juste au-dessus, pour ne pas laisser
-     *  croire qu'il s'agit de la même fonctionnalité). Portée volontairement limitée à la
-     *  connexion pour cette étape : pas encore d'affichage d'un état "déjà connecté" ici (voir la
-     *  doc de classe de [SyncLoginFragment]).
+    /**
+     * `syncRow` : PLUS un raccourci de navigation depuis l'étape D4 (voir [SyncAccountUiState]) —
+     * la connexion au serveur se fait désormais UNIQUEMENT via l'écran de connexion unique de
+     * l'app ([com.arzikina.ne.presentation.auth.LoginFragment]), jamais depuis Paramètres. Cette
+     * ligne se contente d'AFFICHER l'état courant ([renderSyncAccount]) ; un tap dessus ne propose
+     * qu'une déconnexion, et seulement si un compte est effectivement connecté (voir
+     * [confirmDisconnectSyncAccount]) — icône dédiée `ic_sync_24` (distincte de
+     * `ic_cloud_backup_24` utilisée par [setUpBackupSection] juste au-dessus, pour ne pas laisser
+     * croire qu'il s'agit de la même fonctionnalité).
      *
-     *  `syncNowRow` : PAS [bindNavigationRow] (pas de destination, action ponctuelle qui reste sur
-     *  cet écran) — voir [SettingsViewModel.syncNow]/[renderSyncNow]. */
+     * `syncNowRow` : PAS [bindNavigationRow] (pas de destination, action ponctuelle qui reste sur
+     * cet écran) — voir [SettingsViewModel.syncNow]/[renderSyncNow].
+     */
     private fun setUpSyncSection(binding: FragmentSettingsBinding) {
-        bindNavigationRow(
-            row = binding.syncRow,
-            iconRes = R.drawable.ic_sync_24,
-            titleRes = R.string.settings_sync_row_title,
-            subtitleRes = R.string.settings_sync_row_subtitle,
-            destinationId = R.id.syncLoginFragment
-        )
+        binding.syncRow.rowIcon.setImageResource(R.drawable.ic_sync_24)
+        binding.syncRow.rowTitle.setText(R.string.settings_sync_row_title)
+        binding.syncRow.rowChevron.visibility = View.GONE
+        binding.syncRow.root.setOnClickListener {
+            if (viewModel.syncAccountState.value.isConnected) confirmDisconnectSyncAccount()
+        }
 
         binding.syncNowRow.rowIcon.setImageResource(R.drawable.ic_sync_24)
         binding.syncNowRow.rowTitle.setText(R.string.settings_sync_now_title)
         binding.syncNowRow.rowSubtitle.setText(R.string.settings_sync_now_subtitle)
         binding.syncNowRow.root.setOnClickListener { viewModel.syncNow() }
+    }
+
+    /** Confirmation avant déconnexion (voir [SettingsViewModel.disconnectSyncAccount]) — action
+     *  peu fréquente aux conséquences visibles (arrêt de la synchronisation multi-appareils), même
+     *  précaution que les autres actions destructives/sensibles de l'app (ex. suppression). */
+    private fun confirmDisconnectSyncAccount() {
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle(R.string.settings_sync_disconnect_confirm_title)
+            .setMessage(R.string.settings_sync_disconnect_confirm_message)
+            .setPositiveButton(R.string.settings_sync_disconnect_confirm_action) { _, _ ->
+                viewModel.disconnectSyncAccount()
+            }
+            .setNegativeButton(R.string.action_cancel, null)
+            .show()
     }
 
     /**
@@ -338,11 +356,10 @@ class SettingsFragment : Fragment(R.layout.fragment_settings) {
         }
     }
 
-    /** Peuple `rowValue` de `syncRow` (voir `item_settings_row.xml`, motif "valeur actuelle +
-     *  chevron" déjà utilisé par `currencyRow`/`themeRow`) — le chevron reste toujours visible,
-     *  cette ligne continue de naviguer vers [SyncLoginFragment] quel que soit l'état affiché ici.
-     *  [SyncIndicatorLevel.HIDDEN] (pas de session active) : `rowValue` masqué, aucun changement
-     *  visuel par rapport à avant cette étape. */
+    /** Peuple `rowValue` de `syncRow` (voir `item_settings_row.xml`, motif "valeur actuelle" déjà
+     *  utilisé par `currencyRow`/`themeRow`, SANS chevron ici — voir [setUpSyncSection]) : bilan de
+     *  la file d'attente ([SyncQueueStatus]), distinct de [renderSyncAccount] ci-dessous qui affiche
+     *  QUI est connecté. [SyncIndicatorLevel.HIDDEN] (pas de session active) : `rowValue` masqué. */
     private fun renderSyncIndicator(binding: FragmentSettingsBinding, state: SyncIndicatorUiState) {
         val row = binding.syncRow.rowValue
         if (state.level == SyncIndicatorLevel.HIDDEN) {
@@ -359,6 +376,22 @@ class SettingsFragment : Fragment(R.layout.fragment_settings) {
         }
         val colorRes = if (state.level == SyncIndicatorLevel.ERROR) R.color.arzikina_error else R.color.arzikina_on_surface_variant
         row.setTextColor(ContextCompat.getColor(requireContext(), colorRes))
+    }
+
+    /** Sous-titre de `syncRow` (voir [SyncAccountUiState]) : "Connecté en tant que X" ou un rappel
+     *  que la connexion se fait désormais depuis l'écran de connexion de l'app — jamais un état
+     *  vide, contrairement à avant D4 où cette ligne se contentait de naviguer sans rien afficher.
+     *  Clic désactivé quand non connecté (voir [setUpSyncSection] : aucune action possible dans ce
+     *  cas) — même principe que `languageRow`, seule différence : dynamique ici plutôt que figé,
+     *  l'état pouvant changer en cours d'écran (connexion/déconnexion sur un autre écran). */
+    private fun renderSyncAccount(binding: FragmentSettingsBinding, state: SyncAccountUiState) {
+        binding.syncRow.rowSubtitle.text = if (state.isConnected) {
+            getString(R.string.settings_sync_connected_as, state.fullName)
+        } else {
+            getString(R.string.settings_sync_not_connected)
+        }
+        binding.syncRow.root.isClickable = state.isConnected
+        binding.syncRow.root.isFocusable = state.isConnected
     }
 
     private fun handleEvent(binding: FragmentSettingsBinding, event: SyncButtonEvent) {

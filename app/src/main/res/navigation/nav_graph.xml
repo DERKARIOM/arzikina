@@ -495,16 +495,12 @@
         tools:layout="@layout/fragment_backup" />
 
     <!--
-        Connexion au serveur de synchronisation (voir presentation/settings/SyncLoginFragment,
-        atteint depuis Paramètres > Synchronisation) — même famille que backupFragment ci-dessus
-        (sous-écran de Paramètres avec flèche retour), DISTINCT de loginFragment tout en haut de ce
-        fichier (authentification LOCALE, point d'entrée de l'app).
+        SyncLoginFragment a existé ici (connexion au serveur de synchronisation depuis
+        Paramètres) jusqu'à l'étape D4 du chantier "audit auth + sync + doublons" : retiré, la
+        connexion au serveur se fait désormais UNIQUEMENT via loginFragment (écran de connexion
+        unique de l'app, tout en haut de ce fichier) — voir SettingsFragment.setUpSyncSection pour
+        le statut/déconnexion qui le remplace dans Paramètres.
     -->
-    <fragment
-        android:id="@+id/syncLoginFragment"
-        android:name="com.arzikina.ne.presentation.settings.SyncLoginFragment"
-        android:label="@string/sync_login_title"
-        tools:layout="@layout/fragment_sync_login" />
 
     <!--
         "Gestion des reçus" (voir presentation/utilities/receipts/ReceiptsFragment), atteint depuis

@@ -3,6 +3,7 @@ package com.arzikina.ne.data.remote.api
 import com.arzikina.ne.data.remote.RemoteConfig
 import com.arzikina.ne.data.remote.dto.LoginRequestDto
 import com.arzikina.ne.data.remote.dto.LoginResponseDto
+import com.arzikina.ne.data.remote.dto.RegisterRequestDto
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.serialization.json.Json
 import okhttp3.Call
@@ -28,7 +29,7 @@ import kotlin.coroutines.resumeWithException
  * que [com.arzikina.ne.data.repository.SyncAuthStore], déjà éprouvé sans problème dans ce même
  * diagnostic), contourne entièrement le mécanisme `retrofit.create()` mis en cause.
  *
- * Seul `login.php` est câblé à cette étape (fondation réseau) — `api/sync/pull.php`/`push.php`
+ * `login.php`/`register.php` sont câblés ici (fondation réseau) — `api/sync/pull.php`/`push.php`
  * suivront le même schéma (une méthode suspend de plus ici, ou une classe dédiée si le nombre
  * d'endpoints grossit).
  */
@@ -50,6 +51,19 @@ class SyncAuthApi @Inject constructor(
         return json.decodeFromString(LoginResponseDto.serializer(), responseBody)
     }
 
+    /** Voir `server/api/auth/register.php` — réponse de MÊME FORME que [login] (voir la KDoc de
+     *  [LoginResponseDto]), réutilisée telle quelle plutôt qu'un DTO dupliqué. */
+    suspend fun register(request: RegisterRequestDto): LoginResponseDto {
+        val body = json.encodeToString(RegisterRequestDto.serializer(), request).toRequestBody(jsonMediaType)
+        val httpRequest = Request.Builder()
+            .url(RemoteConfig.BASE_URL + "api/auth/register.php")
+            .post(body)
+            .build()
+
+        val responseBody = execute(httpRequest)
+        return json.decodeFromString(LoginResponseDto.serializer(), responseBody)
+    }
+
     /** Pont callback OkHttp -> coroutine ; annule l'appel HTTP si la coroutine est annulée. */
     private suspend fun execute(request: Request): String = suspendCancellableCoroutine { continuation ->
         val call = okHttpClient.newCall(request)
@@ -62,7 +76,11 @@ class SyncAuthApi @Inject constructor(
             override fun onResponse(call: Call, response: Response) {
                 response.use {
                     if (!it.isSuccessful) {
-                        continuation.resumeWithException(HttpFailureException(it.code, it.message))
+                        // Corps JSON de la réponse (ex. {"error":"username_taken",...}, voir
+                        // utils/json_response.php), PAS `it.message` (simple libellé HTTP générique
+                        // du type "Conflict") — SyncAuthRepositoryImpl.mapConflictError() a besoin du
+                        // code d'erreur métier réel pour distinguer username_taken/email_taken.
+                        continuation.resumeWithException(HttpFailureException(it.code, it.body?.string()))
                         return
                     }
                     continuation.resume(it.body?.string().orEmpty())

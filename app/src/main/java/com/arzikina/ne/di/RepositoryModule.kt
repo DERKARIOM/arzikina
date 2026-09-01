@@ -18,6 +18,7 @@ import com.arzikina.ne.data.repository.SyncEngineImpl
 import com.arzikina.ne.data.repository.TokenProvider
 import com.arzikina.ne.data.repository.TokenProviderImpl
 import com.arzikina.ne.data.repository.TransactionRepositoryImpl
+import com.arzikina.ne.data.repository.UnifiedAuthRepositoryImpl
 import com.arzikina.ne.data.repository.UserPreferencesRepositoryImpl
 import com.arzikina.ne.work.AutomationSchedulerImpl
 import com.arzikina.ne.domain.repository.AccountRepository
@@ -37,6 +38,7 @@ import com.arzikina.ne.domain.repository.SessionManager
 import com.arzikina.ne.domain.repository.SyncAuthRepository
 import com.arzikina.ne.domain.repository.SyncEngine
 import com.arzikina.ne.domain.repository.TransactionRepository
+import com.arzikina.ne.domain.repository.UnifiedAuthRepository
 import com.arzikina.ne.domain.repository.UserPreferencesRepository
 import dagger.Binds
 import dagger.Module
@@ -136,4 +138,11 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindSyncEngine(impl: SyncEngineImpl): SyncEngine
+
+    /** Login unifié (étape D du chantier "audit auth + sync + doublons") — voir la KDoc de
+     *  [UnifiedAuthRepository], point d'entrée désormais unique pour la présentation
+     *  (`presentation/auth`), au-dessus de [bindAuthRepository]/[bindSyncAuthRepository]. */
+    @Binds
+    @Singleton
+    abstract fun bindUnifiedAuthRepository(impl: UnifiedAuthRepositoryImpl): UnifiedAuthRepository
 }

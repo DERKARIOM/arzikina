@@ -13,5 +13,9 @@ package com.arzikina.ne.domain.model
  */
 data class SyncSession(
     val serverUserId: String,
-    val expiresAt: Long
+    val expiresAt: Long,
+    /** Nom complet réel (`users.full_name` côté serveur) — utile à
+     *  [com.arzikina.ne.data.repository.UnifiedAuthRepositoryImpl] pour créer/afficher le profil
+     *  LOCAL correspondant, sans avoir à rappeler le serveur une seconde fois pour l'obtenir. */
+    val fullName: String
 )

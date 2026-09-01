@@ -6,6 +6,7 @@ import com.arzikina.ne.domain.model.ThemeMode
 import com.arzikina.ne.domain.repository.AuthRepository
 import com.arzikina.ne.domain.repository.BiometricAuthenticator
 import com.arzikina.ne.domain.repository.SessionManager
+import com.arzikina.ne.domain.repository.SyncAuthRepository
 import com.arzikina.ne.domain.repository.UserPreferencesRepository
 import com.arzikina.ne.presentation.components.SyncButtonController
 import com.arzikina.ne.presentation.components.SyncButtonEvent
@@ -22,6 +23,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -43,6 +45,21 @@ data class SettingsUiState(
 )
 
 /**
+ * État de la carte "Serveur de synchronisation" (voir `SettingsFragment.setUpSyncSection`) —
+ * remplace l'ancien raccourci vers `SyncLoginFragment` (étape D4 du chantier "audit auth + sync +
+ * doublons") : la connexion au serveur se fait désormais UNIQUEMENT via l'écran de connexion
+ * unique de l'app (`presentation/auth/LoginFragment`, voir `UnifiedAuthRepository`), jamais depuis
+ * Paramètres — cette carte ne fait plus qu'AFFICHER l'état courant et permettre la déconnexion.
+ * [isConnected] `false` : aucune session serveur active, ex. utilisateur connecté en mode
+ * hors-ligne (voir `UnifiedAuthResult.Success.usedLocalFallback`) — rien à faire ici tant qu'une
+ * connexion en ligne n'a pas eu lieu au moins une fois.
+ */
+data class SyncAccountUiState(
+    val isConnected: Boolean = false,
+    val fullName: String = ""
+)
+
+/**
  * ViewModel de l'écran Paramètres. Volontairement séparé de [BackupViewModel] (préférences vs
  * sauvegarde/restauration, deux responsabilités indépendantes qui ne partagent que le même écran
  * — voir la doc de tête de [BackupViewModel]).
@@ -58,7 +75,8 @@ class SettingsViewModel @Inject constructor(
     authRepository: AuthRepository,
     sessionManager: SessionManager,
     private val biometricAuthenticator: BiometricAuthenticator,
-    private val syncButtonController: SyncButtonController
+    private val syncButtonController: SyncButtonController,
+    private val syncAuthRepository: SyncAuthRepository
 ) : ViewModel() {
 
     /** Voir [SyncButtonController] : logique partagée avec `DashboardViewModel`, extraite de cet
@@ -93,6 +111,16 @@ class SettingsViewModel @Inject constructor(
      */
     private val _biometricLockState = MutableStateFlow(BiometricLockUiState())
     val biometricLockState: StateFlow<BiometricLockUiState> = _biometricLockState.asStateFlow()
+
+    /** Voir [SyncAccountUiState] — dérivé EN CONTINU de [SyncAuthRepository.observeActiveSession],
+     *  même source que [SyncButtonController.indicatorState] (aucune donnée dupliquée). */
+    val syncAccountState: StateFlow<SyncAccountUiState> = syncAuthRepository.observeActiveSession()
+        .map { session -> SyncAccountUiState(isConnected = session != null, fullName = session?.fullName.orEmpty()) }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(stopTimeoutMillis = 5_000),
+            initialValue = SyncAccountUiState()
+        )
 
     val uiState: StateFlow<SettingsUiState> = combine(
         userPreferencesRepository.observePreferences(),
@@ -141,4 +169,14 @@ class SettingsViewModel @Inject constructor(
 
     /** Voir [SyncButtonController.syncNow] pour le détail (ordre push/pull, garde de ré-entrance). */
     fun syncNow() = syncButtonController.syncNow(viewModelScope)
+
+    /**
+     * Supprime UNIQUEMENT la session serveur (voir [SyncAuthRepository.logout]) — ni la session
+     * locale ([SessionManager], inchangée : l'utilisateur reste connecté à l'app), ni les données
+     * déjà synchronisées. [syncAccountState] repasse à `isConnected = false` dès la confirmation
+     * (voir [SettingsFragment], dialogue de confirmation avant l'appel).
+     */
+    fun disconnectSyncAccount() {
+        viewModelScope.launch { syncAuthRepository.logout() }
+    }
 }

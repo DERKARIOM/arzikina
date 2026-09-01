@@ -423,9 +423,10 @@
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- Section Synchronisation : voir SettingsFragment.setUpSyncSection. Simple raccourci
-                 vers SyncLoginFragment (voir domain/repository/SyncAuthRepository.kt) — DISTINCT
-                 de la section Sauvegarde ci-dessus (export/import LOCAL de fichier). -->
+            <!-- Section Synchronisation : voir SettingsFragment.setUpSyncSection. Depuis l'étape D4,
+                 syncRow n'est plus qu'un affichage de statut + déconnexion (la connexion se fait
+                 depuis l'écran de connexion unique de l'app, voir presentation/auth/LoginFragment)
+                 — DISTINCT de la section Sauvegarde ci-dessus (export/import LOCAL de fichier). -->
             <TextView
                 style="@style/TextAppearance.Material3.LabelMedium"
                 android:layout_width="match_parent"

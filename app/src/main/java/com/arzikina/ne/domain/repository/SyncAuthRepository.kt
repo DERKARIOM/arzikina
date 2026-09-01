@@ -23,6 +23,24 @@ interface SyncAuthRepository {
 
     suspend fun login(identifier: String, rawPassword: String, deviceLabel: String? = null): SyncAuthResult<SyncSession>
 
+    /**
+     * Crée un compte sur le serveur de synchronisation puis ouvre directement une session (voir
+     * `server/api/auth/register.php`, qui émet un token immédiatement) — utilisé par
+     * [com.arzikina.ne.data.repository.UnifiedAuthRepositoryImpl], jamais appelé isolément par la
+     * présentation (voir sa KDoc pour l'orchestration complète : compte serveur + compte local +
+     * rattachement).
+     */
+    suspend fun register(
+        fullName: String,
+        username: String,
+        email: String,
+        rawPassword: String,
+        phoneNumber: String? = null,
+        securityQuestion: String? = null,
+        securityAnswer: String? = null,
+        deviceLabel: String? = null
+    ): SyncAuthResult<SyncSession>
+
     /** Supprime la session serveur stockée sur cet appareil. N'affecte ni le compte local
      *  ([AuthRepository]) ni les données déjà synchronisées côté serveur. */
     suspend fun logout()

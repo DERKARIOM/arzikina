@@ -71,7 +71,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:imeOptions="actionNext"
-                        android:inputType="text"
+                        android:inputType="textEmailAddress"
                         android:maxLines="1" />
 
                 </com.google.android.material.textfield.TextInputLayout>
@@ -160,6 +160,23 @@
                     app:trackColor="@android:color/transparent" />
 
             </FrameLayout>
+
+            <!--
+                Message d'étape (LoginViewModel.LoginStage) pendant/après la connexion —
+                "Connexion…", "Synchronisation de vos données…", "✓ Synchronisation terminée"...
+                Couleur neutre (contrairement à formErrorText, réservé aux erreurs).
+            -->
+            <TextView
+                android:id="@+id/stageMessageText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_s"
+                android:gravity="center_horizontal"
+                android:textColor="?attr/colorOnSurfaceVariant"
+                android:visibility="gone"
+                style="@style/TextAppearance.Material3.BodySmall"
+                tools:ignore="SelectableText"
+                tools:text="Synchronisation de vos données…" />
 
             <LinearLayout
                 android:layout_width="wrap_content"

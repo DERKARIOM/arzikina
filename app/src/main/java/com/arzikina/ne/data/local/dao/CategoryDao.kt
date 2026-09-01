@@ -61,6 +61,22 @@ interface CategoryDao {
     @Query("SELECT * FROM categories WHERE name = :name AND userId = :userId AND deletedAt IS NULL LIMIT 1")
     suspend fun getFirstByNameForUser(name: String, userId: Long): CategoryEntity?
 
+    /**
+     * Réservé à [com.arzikina.ne.data.repository.SyncEngineImpl.applyCategoryServerState] :
+     * rattachement anti-doublon d'une catégorie reçue du serveur dont le `syncId` est INCONNU
+     * localement (voir [getBySyncId]) à une catégorie locale PAS ENCORE synchronisée
+     * (`syncId IS NULL`, ex. catégorie système semée par `NewUserDefaultDataSeeder` à
+     * l'inscription, ou par `BackupRepositoryImpl` lors d'une restauration) qui représente très
+     * probablement la MÊME catégorie logique, créée indépendamment sur un autre appareil. Filtre
+     * par [type] EN PLUS de [name] : `DefaultCategories` sème deux catégories nommées "Divers"
+     * (une revenu, une dépense) — [name] seul les confondrait.
+     */
+    @Query(
+        "SELECT * FROM categories WHERE userId = :userId AND name = :name AND type = :type " +
+            "AND deletedAt IS NULL AND syncId IS NULL LIMIT 1"
+    )
+    suspend fun getUnsyncedByNameAndType(userId: Long, name: String, type: TransactionType): CategoryEntity?
+
     @Upsert
     suspend fun upsert(category: CategoryEntity)
 

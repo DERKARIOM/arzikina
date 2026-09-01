@@ -127,10 +127,16 @@
     <string name="security_question_favorite_teacher">Quel est le nom de votre professeur préféré ?</string>
     <string name="security_question_childhood_best_friend">Quel est le prénom de votre meilleur ami d\'enfance ?</string>
 
-    <!-- Authentification — Connexion -->
+    <!--
+        Authentification — Connexion. Libellé "E-mail" volontairement SEUL depuis le login unifié
+        (voir LoginViewModel, UnifiedAuthRepositoryImpl.validateFormat qui exige un format e-mail) :
+        le nom d'utilisateur choisi à l'inscription locale reste utilisable côté serveur en interne
+        (voir deriveLocalUsernameCandidate) mais n'est plus un identifiant de connexion pour
+        l'utilisateur — conforme au cahier des charges ("Gmail/e-mail + mot de passe" uniquement).
+    -->
     <string name="login_title">Arzikina</string>
     <string name="login_subtitle">Connecte-toi pour continuer</string>
-    <string name="login_identifier_label">E-mail ou nom d\'utilisateur</string>
+    <string name="login_identifier_label">E-mail</string>
     <string name="login_password_label">Mot de passe</string>
     <string name="login_submit_action">Se connecter</string>
     <string name="login_register_prompt">Pas encore de compte ?</string>
@@ -143,24 +149,33 @@
     -->
     <string name="login_error_invalid_credentials">Identifiant ou mot de passe incorrect</string>
     <string name="login_forgot_password_action">Mot de passe oublié ?</string>
+    <!--
+        Messages d'étape affichés pendant LoginViewModel.submit (voir sa KDoc et celle de
+        LoginStage) — connexion désormais unifiée (UnifiedAuthRepository) : ces trois premiers
+        libellés suivent le texte du cahier des charges "audit auth + sync + doublons" (étape D).
+    -->
+    <string name="login_stage_authenticating">Connexion…</string>
+    <string name="login_stage_syncing">Synchronisation de vos données…</string>
+    <string name="login_stage_sync_done">✓ Synchronisation terminée</string>
+    <!-- Échec de synchronisation APRÈS une authentification déjà réussie : n'empêche jamais
+         l'entrée dans l'app (voir LoginViewModel.runPostLoginSync), simple information. -->
+    <string name="login_stage_sync_failed">Impossible de synchroniser vos données</string>
+    <string name="login_stage_offline">Connecté hors-ligne</string>
 
     <!--
-        Connexion au serveur de synchronisation (voir presentation/settings/SyncLoginFragment,
-        domain/repository/SyncAuthRepository.kt) — DISTINCTE de l'authentification locale
-        ci-dessus (login_*) : comptes provisionnés côté serveur, pas depuis l'app.
+        Serveur de synchronisation (voir domain/repository/SyncAuthRepository.kt) — DISTINCT de
+        l'authentification locale ci-dessus (login_*). Depuis l'étape D4, plus d'écran de connexion
+        séparé ici (voir SettingsFragment.setUpSyncSection) : ces chaînes ne couvrent plus qu'un
+        affichage de statut + déconnexion ; sync_login_error_network/server restent utilisées par
+        LoginViewModel.handleFailure (mêmes erreurs serveur, quel que soit l'écran d'origine).
     -->
     <string name="settings_section_sync">Synchronisation</string>
     <string name="settings_sync_row_title">Serveur de synchronisation</string>
-    <string name="settings_sync_row_subtitle">Se connecter pour synchroniser tes données</string>
-    <string name="sync_login_title">Connexion au serveur</string>
-    <string name="sync_login_subtitle">Connecte-toi à ton compte de synchronisation Arzikina</string>
-    <string name="sync_login_identifier_label">E-mail ou nom d\'utilisateur</string>
-    <string name="sync_login_password_label">Mot de passe</string>
-    <string name="sync_login_submit_action">Se connecter</string>
-    <string name="sync_login_success_message">Connecté au serveur de synchronisation</string>
-    <!-- Générique (identifiant OU mot de passe incorrect), même raisonnement que
-         login_error_invalid_credentials ci-dessus. -->
-    <string name="sync_login_error_invalid_credentials">Identifiant ou mot de passe incorrect</string>
+    <string name="settings_sync_connected_as">Connecté en tant que %1$s</string>
+    <string name="settings_sync_not_connected">Connecte-toi depuis l\'écran de connexion pour synchroniser tes données</string>
+    <string name="settings_sync_disconnect_confirm_title">Se déconnecter du serveur ?</string>
+    <string name="settings_sync_disconnect_confirm_message">Tes données restent sur cet appareil, mais la synchronisation avec tes autres appareils s\'arrête jusqu\'à ta prochaine connexion.</string>
+    <string name="settings_sync_disconnect_confirm_action">Se déconnecter</string>
     <string name="sync_login_error_network">Impossible de joindre le serveur, vérifie ta connexion</string>
     <string name="sync_login_error_server">Le serveur a rencontré une erreur, réessaie plus tard</string>
 

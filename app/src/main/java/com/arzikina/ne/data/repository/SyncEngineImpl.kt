@@ -363,11 +363,27 @@ class SyncEngineImpl @Inject constructor(
      * existante avant l'installation courante) — dans ce cas
      * [SessionManager.getCurrentUserIdOnce] fournit le `userId` LOCAL (jamais celui du serveur,
      * voir la KDoc de [CategoryServerStateDto]) de la nouvelle ligne Room.
+     *
+     * RATTACHEMENT ANTI-DOUBLON (voir [CategoryDao.getUnsyncedByNameAndType]) : quand `syncId` est
+     * inconnu localement ET qu'un pull est en cours, on cherche d'abord une catégorie locale PAS
+     * ENCORE synchronisée (`syncId IS NULL`) de même nom/type avant d'en créer une nouvelle — cause
+     * racine des catégories système en double (Alimentation, Transport...) semées indépendamment
+     * par [com.arzikina.ne.data.local.database.NewUserDefaultDataSeeder] sur chaque appareil/
+     * réinstallation : sans ce rattachement, chacune recevait un `syncId` distinct et restait à
+     * jamais une ligne séparée aux yeux de ce moteur. Portée volontairement étroite
+     * (`syncId IS NULL` uniquement) : une catégorie déjà synchronisée, quel que soit son nom, n'est
+     * JAMAIS fusionnée avec une autre — seul un doublon encore "orphelin" peut être rattaché.
      */
     private suspend fun applyCategoryServerState(state: CategoryServerStateDto, allowCreate: Boolean) {
-        val local = categoryDao.getBySyncId(state.id)
-        if (local == null && !allowCreate) return
+        var local = categoryDao.getBySyncId(state.id)
         val userId = local?.userId ?: sessionManager.getCurrentUserIdOnce() ?: return
+        if (local == null) {
+            if (!allowCreate) return
+            val type = runCatching { TransactionType.valueOf(state.type) }.getOrNull()
+            if (type != null) {
+                local = categoryDao.getUnsyncedByNameAndType(userId, state.name, type)
+            }
+        }
 
         categoryDao.upsert(
             CategoryEntity(
@@ -641,9 +657,18 @@ class SyncEngineImpl @Inject constructor(
      * ne les ressaisit pas sur CET appareil (`AccountRepository.saveCardSecrets`).
      */
     private suspend fun applyAccountServerState(state: AccountServerStateDto, allowCreate: Boolean) {
-        val local = accountDao.getBySyncId(state.id)
-        if (local == null && !allowCreate) return
+        var local = accountDao.getBySyncId(state.id)
         val userId = local?.userId ?: sessionManager.getCurrentUserIdOnce() ?: return
+        if (local == null) {
+            if (!allowCreate) return
+            // Rattachement anti-doublon — voir la KDoc de [applyCategoryServerState] (même
+            // raisonnement, appliqué ici à `DefaultAccounts` : "Espèces"/"Banque"/... semés à
+            // l'inscription sur chaque appareil).
+            val type = runCatching { AccountType.valueOf(state.type) }.getOrNull()
+            if (type != null) {
+                local = accountDao.getUnsyncedByNameAndType(userId, state.name, type)
+            }
+        }
 
         accountDao.upsert(
             AccountEntity(

@@ -36,9 +36,12 @@ class SyncAuthStore @Inject constructor(
         val TOKEN_CIPHERTEXT = stringPreferencesKey("token_ciphertext")
         val TOKEN_IV = stringPreferencesKey("token_iv")
         val EXPIRES_AT = longPreferencesKey("expires_at")
+        /** Ajoutée pour le login unifié (voir `SyncSession.fullName`) — absente d'une session
+         *  sauvegardée par une version antérieure de l'app, voir le repli dans [toSessionOrNull]. */
+        val FULL_NAME = stringPreferencesKey("full_name")
     }
 
-    suspend fun saveSession(userId: String, rawToken: String, expiresAt: Long) =
+    suspend fun saveSession(userId: String, rawToken: String, expiresAt: Long, fullName: String) =
         withContext(ioDispatcher) {
             val encrypted = TokenCipher.encrypt(rawToken)
             dataStore.edit { prefs ->
@@ -46,6 +49,7 @@ class SyncAuthStore @Inject constructor(
                 prefs[Keys.TOKEN_CIPHERTEXT] = encrypted.ciphertextBase64
                 prefs[Keys.TOKEN_IV] = encrypted.ivBase64
                 prefs[Keys.EXPIRES_AT] = expiresAt
+                prefs[Keys.FULL_NAME] = fullName
             }
         }
 
@@ -68,6 +72,10 @@ class SyncAuthStore @Inject constructor(
         val userId = prefs[Keys.SERVER_USER_ID] ?: return null
         val expiresAt = prefs[Keys.EXPIRES_AT] ?: return null
         if (expiresAt < System.currentTimeMillis()) return null
-        return SyncSession(serverUserId = userId, expiresAt = expiresAt)
+        // Repli "" : une session sauvegardée par une version de l'app antérieure au login unifié
+        // n'a jamais eu de fullName persisté — ne doit jamais faire échouer la lecture de la
+        // session existante pour autant (voir Keys.FULL_NAME).
+        val fullName = prefs[Keys.FULL_NAME] ?: ""
+        return SyncSession(serverUserId = userId, expiresAt = expiresAt, fullName = fullName)
     }
 }

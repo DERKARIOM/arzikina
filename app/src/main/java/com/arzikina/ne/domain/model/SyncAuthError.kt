@@ -16,6 +16,17 @@ sealed class SyncAuthError {
     /** Identifiant ou mot de passe incorrect (HTTP 401, voir `login.php`). */
     data object InvalidCredentials : SyncAuthError()
 
+    /** Nom d'utilisateur déjà pris côté serveur (HTTP 409 `username_taken`, voir `register.php`) —
+     *  ne devrait normalement pas atteindre l'utilisateur final : voir
+     *  [com.arzikina.ne.data.repository.UnifiedAuthRepositoryImpl], qui dérive le nom d'utilisateur
+     *  automatiquement et retente en cas de collision plutôt que d'exposer cette erreur. */
+    data object UsernameTaken : SyncAuthError()
+
+    /** Adresse e-mail déjà associée à un compte serveur (HTTP 409 `email_taken`, voir
+     *  `register.php`) — celle-ci, contrairement à [UsernameTaken], EST attendue à l'écran
+     *  d'inscription (l'utilisateur doit alors se connecter plutôt que créer un second compte). */
+    data object EmailTaken : SyncAuthError()
+
     /** Aucune connexion réseau, timeout, serveur injoignable (DNS, LAN hors de portée...). */
     data object NetworkUnavailable : SyncAuthError()
 

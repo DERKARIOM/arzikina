@@ -20,6 +20,7 @@ import com.arzikina.ne.data.local.dao.SyncQueueDao
 import com.arzikina.ne.data.local.dao.TransactionDao
 import com.arzikina.ne.data.local.dao.UserDao
 import com.arzikina.ne.data.local.dao.UserPreferencesDao
+import com.arzikina.ne.data.local.dao.UserServerLinkDao
 import com.arzikina.ne.data.local.entity.AccountEntity
 import com.arzikina.ne.data.local.entity.BudgetEntity
 import com.arzikina.ne.data.local.entity.CardSecretEntity
@@ -37,6 +38,7 @@ import com.arzikina.ne.data.local.entity.SyncQueueEntity
 import com.arzikina.ne.data.local.entity.TransactionEntity
 import com.arzikina.ne.data.local.entity.UserEntity
 import com.arzikina.ne.data.local.entity.UserPreferencesEntity
+import com.arzikina.ne.data.local.entity.UserServerLinkEntity
 
 /**
  * Base de données locale unique de l'application (SQLite via Room).
@@ -116,6 +118,10 @@ import com.arzikina.ne.data.local.entity.UserPreferencesEntity
  *   `themeMode`/`currencyCode` migrent depuis DataStore Preferences vers Room (voir
  *   `UserPreferencesRepositoryImpl`) pour réutiliser telle quelle la mécanique du Sync Engine ;
  *   `biometricLockEnabled` reste dans DataStore, explicitement PAR APPAREIL.
+ * - 26 : Table `user_server_links` (`localUserId` ↔ `serverUserId`, voir
+ *   [MIGRATION_25_26]/[UserServerLinkEntity]) — étape D du chantier "audit auth + sync + doublons"
+ *   (login unifié) : table séparée plutôt qu'une colonne sur `UserEntity`, qui ne peut pas être
+ *   modifiée dans ce projet sans casser la compilation (voir la doc de tête de [MIGRATION_22_23]).
  */
 @Database(
     entities = [
@@ -135,9 +141,10 @@ import com.arzikina.ne.data.local.entity.UserPreferencesEntity
         FinancialPlanItemEntity::class,
         ReceiptEntity::class,
         SyncQueueEntity::class,
-        UserPreferencesEntity::class
+        UserPreferencesEntity::class,
+        UserServerLinkEntity::class
     ],
-    version = 25,
+    version = 26,
     exportSchema = true
 )
 @TypeConverters(Converters::class)
@@ -159,4 +166,5 @@ abstract class ArzikinaDatabase : RoomDatabase() {
     abstract fun receiptDao(): ReceiptDao
     abstract fun syncQueueDao(): SyncQueueDao
     abstract fun userPreferencesDao(): UserPreferencesDao
+    abstract fun userServerLinkDao(): UserServerLinkDao
 }

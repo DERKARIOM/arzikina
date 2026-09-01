@@ -5,6 +5,7 @@ import androidx.room.Insert
 import androidx.room.Query
 import androidx.room.Upsert
 import com.arzikina.ne.data.local.entity.AccountEntity
+import com.arzikina.ne.domain.model.AccountType
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -53,6 +54,20 @@ interface AccountDao {
      * seul chemin de contournement connu, aucun seeder par défaut n'existe pour cette entité). */
     @Query("SELECT * FROM accounts WHERE userId = :userId AND deletedAt IS NULL AND syncId IS NULL")
     suspend fun getUnsyncedForUser(userId: Long): List<AccountEntity>
+
+    /**
+     * Réservé à `SyncEngineImpl.applyAccountServerState` — voir la KDoc de
+     * `CategoryDao.getUnsyncedByNameAndType` (même raisonnement de rattachement anti-doublon,
+     * appliqué ici à `DefaultAccounts` : "Espèces"/"Banque"/"Mobile Money"/"Épargne"/"Wallet" semés
+     * à l'inscription sur chaque appareil). Filtre par [type] en plus de [name] par cohérence avec
+     * `CategoryDao` (les noms de `DefaultAccounts` sont en pratique tous uniques, mais rien ne
+     * garantit qu'un compte renommé par l'utilisateur ne collisionne pas un jour).
+     */
+    @Query(
+        "SELECT * FROM accounts WHERE userId = :userId AND name = :name AND type = :type " +
+            "AND deletedAt IS NULL AND syncId IS NULL LIMIT 1"
+    )
+    suspend fun getUnsyncedByNameAndType(userId: Long, name: String, type: AccountType): AccountEntity?
 
     /** Retourne l'id de la ligne insérée, ou -1 en cas de mise à jour (comportement standard
      * de Room @Upsert) — voir `AccountRepositoryImpl.saveAccount` pour la logique qui en dépend. */

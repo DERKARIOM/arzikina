@@ -96,6 +96,14 @@ class LoginFragment : Fragment(R.layout.fragment_login) {
         binding.loginButton.text = if (state.isSubmitting) "" else getString(R.string.login_submit_action)
         binding.progressIndicator.visibility = if (state.isSubmitting) View.VISIBLE else View.GONE
 
+        val stageMessageRes = state.stage.messageRes()
+        if (stageMessageRes != null) {
+            binding.stageMessageText.visibility = View.VISIBLE
+            binding.stageMessageText.text = getString(stageMessageRes)
+        } else {
+            binding.stageMessageText.visibility = View.GONE
+        }
+
         // Empêche de quitter l'écran (donc d'abandonner silencieusement une
         // connexion en cours) : un tap accidentel sur ces liens pendant la
         // vérification du mot de passe (voir PasswordHasher) ne doit pas

@@ -15,13 +15,8 @@ require_once __DIR__ . '/../utils/json_response.php';
  * mot de passe RÉEL n'est envoyé qu'ICI, une seule fois par connexion — toute synchronisation
  * suivante utilise le token retourné, jamais le mot de passe à nouveau (voir `middleware/auth_middleware.php`).
  *
- * PAS d'endpoint d'inscription dans cette étape (volontairement — voir le document, section 10,
- * "une entité simple d'abord") : pour tester ce fichier, créer un utilisateur directement en SQL,
- * par exemple :
- *   INSERT INTO users (id, full_name, username, email, password_hash, security_question,
- *     security_answer_hash, created_at, updated_at, version)
- *   VALUES (UUID(), 'Test', 'test', 'test@arzikina.local', <sortie de password_hash('...', PASSWORD_DEFAULT) en PHP>,
- *     'MOTHER_MAIDEN_NAME', <sortie de password_hash('...', PASSWORD_DEFAULT)>, <millis>, <millis>, 1);
+ * Voir `api/auth/register.php` (étape D du chantier "audit auth + sync + doublons") pour la
+ * création de compte — ce fichier-ci ne fait plus que l'authentification d'un compte déjà existant.
  *
  * Sécurité :
  * - Requête préparée (protection injection SQL) avec DEUX espaces réservés distincts pour le même
@@ -101,5 +96,10 @@ sendJson([
     // Nom complet réel (colonne users.full_name) — même source que authRepository.observeUser()
     // côté Android, exposée ici plutôt que dupliquée dans une autre table (voir user_preferences,
     // qui reste volontairement limité aux préférences d'affichage : thème/devise/verrou).
-    'fullName' => $user['full_name'],
+    // `?? ''` : garantit le contrat d'API (LoginResponseDto.fullName est non-nullable côté Android,
+    // register.php le garantit toujours non vide à l'inscription — mais un compte plus ancien,
+    // créé avant l'existence de cette colonne ou directement en SQL, peut avoir NULL en base ; sans
+    // ce repli, kotlinx.serialization plante au décodage et la connexion échoue avec une erreur
+    // générique trompeuse côté mobile).
+    'fullName' => $user['full_name'] ?? '',
 ]);
