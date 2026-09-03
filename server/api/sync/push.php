@@ -43,6 +43,13 @@ require_once __DIR__ . '/../middleware/auth_middleware.php';
  * cas, `serverEntity` contient l'état FINAL côté serveur, que l'appareil doit appliquer localement
  * pour rester cohérent (écrase sa propre version locale, même en cas de simple "accepted" — c'est
  * la même donnée, juste avec `version`/`updatedAt` désormais confirmés par le serveur).
+ *
+ * `updatedAt` STOCKÉ EN BASE EST TOUJOURS CELUI DU SERVEUR (`$nowMillis`), jamais celui envoyé par
+ * l'appareil (voir `createEntityRow()`/`upsertExistingEntityRow()` pour le détail) — `pull.php`
+ * s'appuie sur cette même colonne pour son curseur incrémental (`updated_after`), lui-même toujours
+ * exprimé en horloge serveur ; y stocker une horloge d'appareil casserait cette cohérence au moindre
+ * décalage (bug réel corrigé après ce constat : une transaction restait invisible du pull tant que
+ * l'horloge du téléphone traînait derrière celle déjà atteinte par le curseur).
  */
 
 if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
@@ -153,8 +160,19 @@ function createEntityRow(PDO $pdo, array $config, string $userId, string $id, ar
             $params[$col['db']] = castConfiguredValue($entity[$col['payload']] ?? defaultForConfiguredType($col['type']), $col['type']);
         }
     }
+    // `created_at` : valeur de l'appareil conservée telle quelle (champ d'affichage/historique,
+    // sans impact sur le curseur de pull, voir la doc de tête). `updated_at` : TOUJOURS l'horloge
+    // du SERVEUR (`$nowMillis`), jamais celle de l'appareil (`$entity['updatedAt']` ignoré ici à
+    // dessein) — `pull.php` compare `updated_at > :updated_after` avec un curseur lui-même basé sur
+    // l'horloge serveur (voir sa doc) ; si cette colonne restait basée sur l'horloge de l'appareil,
+    // un simple décalage (montre en retard) suffirait à rendre une ligne pourtant valide invisible
+    // pour toujours des pulls suivants, le curseur ayant déjà dépassé son `updated_at`. Bug réel
+    // rencontré en pratique (transaction "Remboursement de prêt reçu" jamais reçue par le web
+    // malgré une ligne intacte côté serveur) — voir aussi upsertExistingEntityRow() ci-dessous, même
+    // raisonnement pour UPDATE/DELETE, avec l'avantage additionnel de sécuriser la résolution de
+    // conflit (Last-Write-Wins) contre une horloge d'appareil manipulée ou dérivée.
     $params['created_at'] = (int) ($entity['createdAt'] ?? $nowMillis);
-    $params['updated_at'] = (int) ($entity['updatedAt'] ?? $nowMillis);
+    $params['updated_at'] = $nowMillis;
 
     $stmt->execute($params);
 
@@ -175,7 +193,11 @@ function upsertExistingEntityRow(PDO $pdo, array $config, string $entityType, st
     }
 
     $baseVersion = isset($entity['baseVersion']) ? (int) $entity['baseVersion'] : null;
-    $incomingUpdatedAt = (int) ($entity['updatedAt'] ?? $nowMillis);
+    // TOUJOURS l'horloge du SERVEUR, jamais `$entity['updatedAt']` (voir createEntityRow() pour le
+    // raisonnement complet et le bug réel qu'il corrige) — cette valeur devient à la fois la colonne
+    // stockée ET le comparant de résolution de conflit ci-dessous : Last-Write-Wins par "dernière
+    // écriture ARRIVÉE au serveur", jamais par horloge d'appareil (non fiable/manipulable).
+    $incomingUpdatedAt = $nowMillis;
     $currentVersion = (int) $current['version'];
     $currentUpdatedAt = (int) $current['updated_at'];
 
@@ -190,8 +212,12 @@ function upsertExistingEntityRow(PDO $pdo, array $config, string $entityType, st
     }
 
     if ($hasConflict) {
-        // L'appareil GAGNE (son `updatedAt` est strictement plus récent) : la version serveur
-        // actuelle est journalisée comme perdante AVANT d'être remplacée ci-dessous.
+        // L'écriture ENTRANTE gagne : depuis que `$incomingUpdatedAt` est l'horloge du serveur (pas
+        // celle de l'appareil, voir sa doc ci-dessus), la branche "le serveur gagne" au-dessus ne se
+        // déclenche plus qu'à égalité stricte de milliseconde — en pratique, la DERNIÈRE écriture à
+        // ATTEINDRE le serveur gagne toujours un conflit de version, jamais celle dont l'horloge
+        // locale prétend être "la plus récente". La version serveur actuelle est journalisée comme
+        // perdante AVANT d'être remplacée ci-dessous.
         logConflict($pdo, $userId, $entityType, $id, $current, $entity, $nowMillis);
     }
 

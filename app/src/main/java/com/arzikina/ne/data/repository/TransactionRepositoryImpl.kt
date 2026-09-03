@@ -48,6 +48,7 @@ class TransactionRepositoryImpl @Inject constructor(
     private val categoryDao: CategoryDao,
     private val sessionManager: SessionManager,
     private val transactionSyncEnqueuer: TransactionSyncEnqueuer,
+    private val categorySyncEnqueuer: CategorySyncEnqueuer,
     @IoDispatcher private val ioDispatcher: CoroutineDispatcher
 ) : TransactionRepository {
 
@@ -159,7 +160,7 @@ class TransactionRepositoryImpl @Inject constructor(
         existingFeeTransactionId: Long?,
         userId: Long
     ): Pair<TransactionEntity, SyncOperation> {
-        val feesCategory = SystemCategoryResolver.resolve(categoryDao, FeeCategoryNames.FEES, userId)
+        val feesCategory = SystemCategoryResolver.resolve(categoryDao, categorySyncEnqueuer, FeeCategoryNames.FEES, userId)
         // Préserve la date de création d'origine ET l'état de synchronisation en cas de mise à jour
         // (comportement standard d'une édition, voir TransactionFormViewModel.init pour la même
         // logique côté transaction principale) plutôt que de les réinitialiser à chaque modification

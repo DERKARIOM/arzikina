@@ -4,7 +4,6 @@ import com.arzikina.ne.data.local.dao.CategoryDao
 import com.arzikina.ne.data.local.entity.CategoryEntity
 import com.arzikina.ne.data.mapper.toDomain
 import com.arzikina.ne.data.mapper.toEntity
-import com.arzikina.ne.data.remote.dto.CategorySyncPayload
 import com.arzikina.ne.di.IoDispatcher
 import com.arzikina.ne.domain.model.Category
 import com.arzikina.ne.domain.model.SyncOperation
@@ -17,7 +16,6 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
-import kotlinx.serialization.json.Json
 import java.util.UUID
 import javax.inject.Inject
 
@@ -25,8 +23,7 @@ import javax.inject.Inject
 class CategoryRepositoryImpl @Inject constructor(
     private val categoryDao: CategoryDao,
     private val sessionManager: SessionManager,
-    private val syncQueueEnqueuer: SyncQueueEnqueuer,
-    private val json: Json,
+    private val categorySyncEnqueuer: CategorySyncEnqueuer,
     @IoDispatcher private val ioDispatcher: CoroutineDispatcher
 ) : CategoryRepository {
 
@@ -61,7 +58,7 @@ class CategoryRepositoryImpl @Inject constructor(
      * [CategorySyncPayload.baseVersion]).
      *
      * `deleteCategory` ci-dessous est désormais câblé sur la même file (suppression douce, voir sa
-     * propre KDoc) — les deux méthodes de cette classe partagent [enqueueCategorySync].
+     * propre KDoc) — les deux méthodes de cette classe partagent [categorySyncEnqueuer].
      */
     override suspend fun saveCategory(category: Category) = withContext(ioDispatcher) {
         val userId = requireCurrentUserId()
@@ -76,7 +73,7 @@ class CategoryRepositoryImpl @Inject constructor(
             version = existing?.version ?: 1
         )
         categoryDao.upsert(entity)
-        enqueueCategorySync(entity, operation = if (existing == null) SyncOperation.CREATE else SyncOperation.UPDATE)
+        categorySyncEnqueuer.enqueue(entity, operation = if (existing == null) SyncOperation.CREATE else SyncOperation.UPDATE)
     }
 
     /**
@@ -99,28 +96,9 @@ class CategoryRepositoryImpl @Inject constructor(
         val now = System.currentTimeMillis()
 
         categoryDao.softDeleteById(id, userId, now)
-        enqueueCategorySync(
+        categorySyncEnqueuer.enqueue(
             existing.copy(syncId = existing.syncId ?: UUID.randomUUID().toString(), deletedAt = now, updatedAt = now),
             operation = SyncOperation.DELETE
-        )
-    }
-
-    private suspend fun enqueueCategorySync(entity: CategoryEntity, operation: SyncOperation) {
-        val payload = CategorySyncPayload(
-            id = requireNotNull(entity.syncId) { "syncId doit être généré avant l'enfilage." },
-            baseVersion = if (operation == SyncOperation.CREATE) null else entity.version,
-            name = entity.name,
-            icon = entity.icon.name,
-            colorArgb = entity.colorArgb,
-            type = entity.type.name,
-            createdAt = entity.createdAt,
-            updatedAt = entity.updatedAt
-        )
-        syncQueueEnqueuer.enqueue(
-            entityType = "categories",
-            entitySyncId = payload.id,
-            operation = operation,
-            payloadJson = json.encodeToString(CategorySyncPayload.serializer(), payload)
         )
     }
 

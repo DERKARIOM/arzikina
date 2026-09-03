@@ -67,6 +67,7 @@ class LoanRepositoryImpl @Inject constructor(
     private val sessionManager: SessionManager,
     private val transactionSyncEnqueuer: TransactionSyncEnqueuer,
     private val loanSyncEnqueuer: LoanSyncEnqueuer,
+    private val categorySyncEnqueuer: CategorySyncEnqueuer,
     @IoDispatcher private val ioDispatcher: CoroutineDispatcher
 ) : LoanRepository {
 
@@ -332,7 +333,7 @@ class LoanRepositoryImpl @Inject constructor(
      * seule la logique commune a été extraite pour ne pas la dupliquer.
      */
     private suspend fun resolveLoanCategory(name: String, userId: Long): CategoryEntity =
-        SystemCategoryResolver.resolve(categoryDao, name, userId)
+        SystemCategoryResolver.resolve(categoryDao, categorySyncEnqueuer, name, userId)
 
     private fun disbursementTransactionType(loanType: LoanType): TransactionType =
         if (loanType == LoanType.LENT) TransactionType.EXPENSE else TransactionType.INCOME
