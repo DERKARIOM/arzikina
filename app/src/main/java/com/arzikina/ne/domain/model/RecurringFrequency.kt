@@ -52,14 +52,26 @@ fun computeNextExecutionDate(currentDate: Long, frequency: RecurringFrequency): 
 
 /**
  * Génère, sans jamais toucher Room, la liste des dates d'échéance à transformer en occurrences
- * `PENDING` : toutes celles comprises entre [nextExecutionDate] (inclus) et [nowEpochMillis] (jour
- * calendaire inclus, mêmes règles de comparaison que `isPastDueDay` dans `LoanStatus.kt`) — couvre à la fois l'échéance
- * du jour ET toute échéance manquée si l'utilisateur n'a pas ouvert l'app depuis plusieurs cycles
- * (cahier des charges, section "Gestion des dates manquées"). `RecurringTransactionRepository`
- * persiste ensuite chaque date retournée en `RecurringTransactionOccurrenceEntity` et avance
- * [RecurringTransaction.nextExecutionDate] d'autant.
+ * `PENDING` : toutes celles dont l'INSTANT exact de déclenchement ([triggerHour]/[triggerMinute]
+ * combinées au jour via [combineDayAndTime]) est déjà passé par rapport à [nowEpochMillis] — couvre
+ * à la fois l'échéance du jour, une fois son heure atteinte, ET toute échéance manquée si
+ * l'utilisateur n'a pas ouvert l'app depuis plusieurs cycles (cahier des charges, section "Gestion
+ * des dates manquées"). `RecurringTransactionRepository` persiste ensuite chaque date retournée en
+ * `RecurringTransactionOccurrenceEntity` et avance [RecurringTransaction.nextExecutionDate] d'autant.
  *
- * S'arrête à [endDate] si renseignée (dernière date générée <= [endDate]), et après une seule date
+ * [triggerHour]/[triggerMinute] par défaut à `0`/`0` (minuit) : préserve EXACTEMENT le comportement
+ * historique (comparaison par simple JOUR calendaire, `isAfterDay`) pour les DEUX appels internes de
+ * `RecurringTransactionRepositoryImpl` qui se testent contre EUX-MÊMES (`hasMoreOccurrences`,
+ * `deactivateIfPastEndDate`) — ces deux-là ne veulent tester QUE la borne [endDate], jamais l'heure
+ * de déclenchement ; leur passer l'heure réelle de la règle ferait échouer ce test pour absolument
+ * toute règle dont l'heure n'est pas 00:00 (l'instant combiné serait alors TOUJOURS postérieur à la
+ * référence auto-comparée). Seul `RecurringTransactionRepositoryImpl.generateMissingOccurrences`
+ * (l'appel qui détermine "qu'est-ce qui est dû MAINTENANT") doit passer `rule.triggerHour`/
+ * `rule.triggerMinute` explicitement — voir sa doc pour le bug corrigé ("le dialogue de validation
+ * s'affichait dès l'ouverture de l'app le jour même, avant l'heure configurée").
+ *
+ * S'arrête à [endDate] si renseignée (dernière date générée <= [endDate], comparaison de JOUR pure,
+ * volontairement indépendante de l'heure de déclenchement — voir ci-dessus), et après une seule date
  * pour [RecurringFrequency.ONCE] (voir [computeNextExecutionDate], qui retourne alors `null`).
  *
  * [MAX_GENERATED_OCCURRENCES_PER_CALL] protège contre une règle restée inactive très longtemps
@@ -71,13 +83,15 @@ fun generateMissingScheduledDates(
     nextExecutionDate: Long,
     frequency: RecurringFrequency,
     endDate: Long?,
-    nowEpochMillis: Long
+    nowEpochMillis: Long,
+    triggerHour: Int = 0,
+    triggerMinute: Int = 0
 ): List<Long> {
     val dates = mutableListOf<Long>()
     var candidate: Long? = nextExecutionDate
     while (dates.size < MAX_GENERATED_OCCURRENCES_PER_CALL) {
         val date = candidate ?: break
-        if (isAfterDay(date, nowEpochMillis)) break
+        if (combineDayAndTime(date, triggerHour, triggerMinute) > nowEpochMillis) break
         if (endDate != null && isAfterDay(date, endDate)) break
         dates.add(date)
         candidate = if (frequency == RecurringFrequency.ONCE) null else computeNextExecutionDate(date, frequency)

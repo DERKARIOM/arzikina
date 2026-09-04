@@ -351,7 +351,18 @@ class RecurringTransactionRepositoryImpl @Inject constructor(
 
         database.withTransaction {
             recurringTransactionDao.getAllActiveForUser(userId).forEach { rule ->
-                val dates = generateMissingScheduledDates(rule.nextExecutionDate, rule.frequency, rule.endDate, now)
+                // `rule.triggerHour`/`rule.triggerMinute` passés EXPLICITEMENT ici (voir la doc de
+                // `generateMissingScheduledDates`) : c'est le SEUL appel qui détermine "qu'est-ce qui
+                // est dû MAINTENANT" — corrige le bug où le dialogue de validation s'affichait dès
+                // l'ouverture de l'app le jour même, avant l'heure configurée par l'utilisateur.
+                val dates = generateMissingScheduledDates(
+                    rule.nextExecutionDate,
+                    rule.frequency,
+                    rule.endDate,
+                    now,
+                    rule.triggerHour,
+                    rule.triggerMinute
+                )
                 if (dates.isEmpty()) {
                     deactivateIfPastEndDate(rule, now, pendingRuleOps)
                     return@forEach
