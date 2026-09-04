@@ -6,6 +6,7 @@ import com.arzikina.ne.domain.model.Account
 import com.arzikina.ne.domain.model.Category
 import com.arzikina.ne.domain.model.PaymentMethod
 import com.arzikina.ne.domain.model.TransactionType
+import com.arzikina.ne.domain.model.combineDayAndTime
 import com.arzikina.ne.domain.repository.AccountRepository
 import com.arzikina.ne.domain.repository.CategoryRepository
 import com.arzikina.ne.domain.repository.RecurringTransactionRepository
@@ -180,7 +181,11 @@ class RecurringOccurrenceQueueViewModel @Inject constructor(
                     categoryId = rule.categoryId ?: 0L,
                     description = rule.description,
                     paymentMethod = rule.paymentMethod,
-                    date = item.scheduledDate
+                    // Même correctif que `RecurringTransactionRepositoryImpl.acceptOccurrence` (voir
+                    // sa doc) : `item.scheduledDate` est un jour calendaire à minuit local, à
+                    // recombiner avec l'heure configurée sur la règle pour que le formulaire
+                    // "Modifier" propose déjà la bonne heure par défaut, pas 00:00.
+                    date = combineDayAndTime(item.scheduledDate, rule.triggerHour, rule.triggerMinute)
                 )
             )
         }

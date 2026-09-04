@@ -22,6 +22,7 @@ import com.arzikina.ne.domain.model.RecurringTransactionOccurrence
 import com.arzikina.ne.domain.model.SyncOperation
 import com.arzikina.ne.domain.model.Transaction
 import com.arzikina.ne.domain.model.TransactionType
+import com.arzikina.ne.domain.model.combineDayAndTime
 import com.arzikina.ne.domain.model.computeNextExecutionDate
 import com.arzikina.ne.domain.model.generateMissingScheduledDates
 import com.arzikina.ne.domain.repository.AutomationScheduler
@@ -241,7 +242,13 @@ class RecurringTransactionRepositoryImpl @Inject constructor(
                 type = rule.type,
                 accountId = rule.accountId,
                 categoryId = rule.categoryId,
-                date = occurrence.scheduledDate,
+                // Corrige le bug "toutes les automatisations s'exécutent à 00:00" : `scheduledDate`
+                // est un jour calendaire normalisé à minuit local (voir sa doc), jamais l'heure
+                // configurée par l'utilisateur — celle-ci vit sur la RÈGLE (`triggerHour`/
+                // `triggerMinute`), à recombiner ici explicitement. Même fonction que
+                // `AutomationSchedulerImpl`/l'affichage "Prochaine exécution" (voir
+                // `RecurringTransactionTriggerTime.kt`), jamais dupliquée.
+                date = combineDayAndTime(occurrence.scheduledDate, rule.triggerHour, rule.triggerMinute),
                 description = rule.description,
                 paymentMethod = rule.paymentMethod,
                 createdAt = now

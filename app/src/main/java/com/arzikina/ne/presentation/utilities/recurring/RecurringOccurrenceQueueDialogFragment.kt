@@ -23,6 +23,7 @@ import com.arzikina.ne.domain.model.Category
 import com.arzikina.ne.domain.model.CurrencyAmount
 import com.arzikina.ne.domain.model.PaymentMethod
 import com.arzikina.ne.domain.model.TransactionType
+import com.arzikina.ne.domain.model.combineDayAndTime
 import com.arzikina.ne.presentation.accounts.AccountIconMapper
 import com.arzikina.ne.presentation.components.AccountPickerDialog
 import com.arzikina.ne.presentation.components.ConfirmDialogs
@@ -174,7 +175,15 @@ class RecurringOccurrenceQueueDialogFragment : DialogFragment() {
 
         binding.editDateField.dateFieldLabel.text = getString(R.string.recurring_queue_edit_date_label)
         binding.editDateRow.setOnClickListener {
-            showDatePicker(R.string.recurring_queue_edit_date_label) { viewModel.onEditDateChange(it) }
+            showDatePicker(R.string.recurring_queue_edit_date_label) { newDayMillis ->
+                // Ne change QUE le jour : réutilise l'heure déjà affichée (celle de la règle par
+                // défaut, voir `RecurringOccurrenceQueueViewModel.startEdit`, ou un choix précédent
+                // dans ce même formulaire) plutôt que de la réinitialiser à minuit — même bug/même
+                // correctif que `RecurringTransactionRepositoryImpl.acceptOccurrence`.
+                val currentDate = viewModel.uiState.value.editState?.date ?: newDayMillis
+                val currentTime = Instant.ofEpochMilli(currentDate).atZone(ZoneId.systemDefault()).toLocalTime()
+                viewModel.onEditDateChange(combineDayAndTime(newDayMillis, currentTime.hour, currentTime.minute))
+            }
         }
 
         binding.cancelEditButton.setOnClickListener { viewModel.cancelEdit() }
