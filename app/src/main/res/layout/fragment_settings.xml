@@ -81,7 +81,10 @@
                     android:layout_height="wrap_content"
                     android:padding="@dimen/spacing_m">
 
-                    <ImageView
+                    <!-- ShapeableImageView : même raisonnement/correctif que avatarImage dans
+                         fragment_profile.xml (recadrage circulaire du contenu, pas seulement du
+                         fond ; voir SettingsFragment.renderProfileHeader). -->
+                    <com.google.android.material.imageview.ShapeableImageView
                         android:id="@+id/profileAvatar"
                         android:layout_width="48dp"
                         android:layout_height="48dp"
@@ -93,6 +96,7 @@
                         app:layout_constraintBottom_toBottomOf="parent"
                         app:layout_constraintStart_toStartOf="parent"
                         app:layout_constraintTop_toTopOf="parent"
+                        app:shapeAppearanceOverlay="@style/ShapeAppearanceOverlay.Arzikina.Circle"
                         app:tint="?attr/colorOnSurfaceVariant" />
 
                     <TextView

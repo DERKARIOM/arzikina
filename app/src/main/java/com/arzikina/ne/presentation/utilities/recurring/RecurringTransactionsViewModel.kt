@@ -7,12 +7,16 @@ import com.arzikina.ne.domain.repository.CategoryRepository
 import com.arzikina.ne.domain.repository.RecurringTransactionRepository
 import com.arzikina.ne.util.AppResult
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 /**
@@ -29,10 +33,16 @@ data class RecurringTransactionsUiState(
 
 @HiltViewModel
 class RecurringTransactionsViewModel @Inject constructor(
-    recurringTransactionRepository: RecurringTransactionRepository,
+    private val recurringTransactionRepository: RecurringTransactionRepository,
     accountRepository: AccountRepository,
     categoryRepository: CategoryRepository
 ) : ViewModel() {
+
+    /** Occurrences dont Valider/Rejeter est en cours (voir [accept]/[reject]) — garde-fou anti
+     *  double-tap, purement en mémoire (jamais persisté) : un id qui y reste bloqué après un crash
+     *  de processus redevient simplement cliquable au redémarrage, aucun état à nettoyer. */
+    private val _pendingActionIds = MutableStateFlow<Set<Long>>(emptySet())
+    val pendingActionIds: StateFlow<Set<Long>> = _pendingActionIds.asStateFlow()
 
     val uiState: StateFlow<AppResult<RecurringTransactionsUiState>> = combine(
         recurringTransactionRepository.observeRecurringTransactions(),
@@ -92,4 +102,32 @@ class RecurringTransactionsViewModel @Inject constructor(
             initialValue = AppResult.Loading
         )
 
+    /**
+     * "Valider" directement depuis la ligne "À traiter" (voir cahier des charges "Supprimer le
+     * dialogue au lancement") : crée la transaction à partir des valeurs ACTUELLES de la règle, sans
+     * modification ponctuelle — même appel que l'ancien bouton "Enregistrer" de la file d'attente
+     * supprimée (voir `RecurringTransactionRepository.acceptOccurrence`). "Modifier" avant validation
+     * reste possible via [RecurringOccurrenceEditDialogFragment], ouvert par un tap sur la ligne
+     * elle-même plutôt que ce bouton.
+     */
+    fun accept(occurrenceId: Long) = performAction(occurrenceId) {
+        recurringTransactionRepository.acceptOccurrence(occurrenceId)
+    }
+
+    /** "Rejeter" — confirmation déjà obtenue côté Fragment avant cet appel (voir `ConfirmDialogs`,
+     *  action définitive, même principe que l'ancienne file d'attente supprimée). */
+    fun reject(occurrenceId: Long) = performAction(occurrenceId) {
+        recurringTransactionRepository.rejectOccurrence(occurrenceId)
+    }
+
+    /** Garde-fou anti double-tap (voir [_pendingActionIds]) : ignore un second appel pour le même
+     *  [occurrenceId] tant que le premier n'est pas terminé, échec compris. */
+    private fun performAction(occurrenceId: Long, action: suspend () -> Unit) {
+        if (occurrenceId in _pendingActionIds.value) return
+        _pendingActionIds.update { it + occurrenceId }
+        viewModelScope.launch {
+            runCatching { action() }
+            _pendingActionIds.update { it - occurrenceId }
+        }
+    }
 }

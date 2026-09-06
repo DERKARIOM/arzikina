@@ -41,6 +41,14 @@ SET FOREIGN_KEY_CHECKS = 1;
 -- moment du login — voir section 6.1 du document. AUCUN rapport avec le hachage PBKDF2 calculé
 -- localement par l'app Android (`util/PasswordHasher`), qui reste un mécanisme séparé pour la
 -- connexion hors-ligne entre profils sur un même appareil.
+-- `photo_path` (ajoutée par database/migrations/002_add_profile_photo_to_users.sql sur une base
+-- déjà déployée — cette définition CREATE TABLE ne sert qu'aux installations NEUVES, voir sa doc de
+-- tête) : chemin SERVEUR relatif (`avatars/{user_id}/{version}.jpg`), même convention que
+-- `receipts.file_path` — jamais les octets de l'image en base, jamais un chemin absolu, jamais une
+-- URI locale à un appareil (voir `profile_photo_uri`, exclu plus haut, section 6.5 du document de
+-- sync). Réutilise `version`/`updated_at` DÉJÀ présents sur cette table (ci-dessous) comme
+-- mécanisme de versionnement de la photo — pas de colonne dédiée `photo_version` : cette ligne n'a
+-- encore aucun autre champ synchronisé, un compteur séparé serait une duplication inutile.
 CREATE TABLE IF NOT EXISTS users (
     id CHAR(36) NOT NULL,
     full_name VARCHAR(191) NOT NULL,
@@ -50,6 +58,7 @@ CREATE TABLE IF NOT EXISTS users (
     password_hash VARCHAR(255) NOT NULL,
     security_question VARCHAR(64) NOT NULL,
     security_answer_hash VARCHAR(255) NOT NULL,
+    photo_path VARCHAR(255) NULL,
     created_at BIGINT NOT NULL,
     updated_at BIGINT NOT NULL,
     deleted_at BIGINT NULL,

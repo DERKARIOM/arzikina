@@ -1,0 +1,12 @@
+# Dossier de stockage des photos de profil (voir server/api/profile/upload_photo.php) — durcissement
+# standard d'un dossier d'upload : jamais de script exécuté ici, même si un fichier malveillant y
+# était un jour déposé sous une extension trompeuse. N'a d'effet que sur un serveur Apache (le
+# déploiement cible de ce projet, voir server/api/config/database.php) — sans effet, donc sans
+# risque, sur un autre serveur HTTP.
+
+<FilesMatch "\.(php|php\d|phtml|pht)$">
+    Require all denied
+</FilesMatch>
+
+# Les sous-dossiers créés dynamiquement par userId (voir upload_photo.php, mkdir) héritent de cette
+# règle : Apache l'applique récursivement à tout le contenu de ce dossier.

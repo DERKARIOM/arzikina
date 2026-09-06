@@ -7,6 +7,7 @@ import com.arzikina.ne.R
 import com.arzikina.ne.domain.model.AuthResult
 import com.arzikina.ne.domain.repository.AuthRepository
 import com.arzikina.ne.domain.repository.BiometricAuthenticator
+import com.arzikina.ne.domain.repository.ProfilePhotoRepository
 import com.arzikina.ne.domain.repository.SessionManager
 import com.arzikina.ne.domain.repository.UserPreferencesRepository
 import com.arzikina.ne.util.AuthValidator
@@ -14,9 +15,12 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -32,13 +36,18 @@ import javax.inject.Inject
  * [username] est affiché mais jamais éditable ici (voir [AuthRepository.updateProfile],
  * qui ne l'accepte pas en paramètre) — changer d'identifiant n'est pas dans
  * le périmètre de cette étape.
+ *
+ * PAS de `profilePhotoUri` ici (contrairement à avant le cahier des charges "Gestion de la photo
+ * de profil") : la photo est désormais enregistrée IMMÉDIATEMENT via [ProfilePhotoRepository]
+ * (voir [photoUiState]/[confirmNewPhoto]), jamais en attente du bouton "Enregistrer" de ce
+ * formulaire (nom/e-mail/téléphone) — comportements volontairement découplés, voir la KDoc de
+ * tête de [ProfilePhotoRepository].
  */
 data class ProfileFormState(
     val username: String = "",
     val fullName: String = "",
     val email: String = "",
     val phoneNumber: String = "",
-    val profilePhotoUri: String? = null,
     @StringRes val fullNameError: Int? = null,
     @StringRes val emailError: Int? = null,
     val isSaving: Boolean = false
@@ -48,6 +57,22 @@ sealed interface ProfileEvent {
     data object Saved : ProfileEvent
     data object LoggedOut : ProfileEvent
     data class ShowError(@StringRes val messageRes: Int) : ProfileEvent
+}
+
+/** [photoUri] : URI `content://` prête pour Coil, ou `null` (avatar par défaut) — voir
+ *  [ProfilePhotoRepository.observeCurrentUserPhotoUri]. [isProcessing] couvre À LA FOIS
+ *  l'enregistrement d'une nouvelle photo et sa suppression (jamais simultanés, voir
+ *  [ProfileViewModel.performPhotoAction]) : l'UI se contente d'afficher un indicateur, peu importe
+ *  laquelle des deux actions est en cours. */
+data class ProfilePhotoUiState(
+    val photoUri: String? = null,
+    val isProcessing: Boolean = false
+)
+
+sealed interface ProfilePhotoEvent {
+    /** Émis une fois [ProfileViewModel.confirmNewPhoto] terminé — voir
+     *  [ProfilePhotoPreviewDialogFragment], seul collecteur prévu. */
+    data object PhotoSaved : ProfilePhotoEvent
 }
 
 /**
@@ -67,7 +92,8 @@ class ProfileViewModel @Inject constructor(
     private val authRepository: AuthRepository,
     private val sessionManager: SessionManager,
     private val userPreferencesRepository: UserPreferencesRepository,
-    private val biometricAuthenticator: BiometricAuthenticator
+    private val biometricAuthenticator: BiometricAuthenticator,
+    private val profilePhotoRepository: ProfilePhotoRepository
 ) : ViewModel() {
 
     private val _formState = MutableStateFlow(ProfileFormState())
@@ -78,6 +104,24 @@ class ProfileViewModel @Inject constructor(
 
     private val _events = MutableSharedFlow<ProfileEvent>()
     val events: SharedFlow<ProfileEvent> = _events.asSharedFlow()
+
+    /** `true` pendant [confirmNewPhoto] OU [deletePhoto] (jamais les deux à la fois, voir
+     *  [performPhotoAction]) — jamais lié à [ProfileFormState.isSaving], qui ne couvre que
+     *  nom/e-mail/téléphone (voir la KDoc de tête de [ProfileFormState]). */
+    private val _isProcessingPhoto = MutableStateFlow(false)
+
+    /** Combine la photo courante (peut changer depuis n'importe où : cette action elle-même, ou une
+     *  synchronisation reçue d'un autre appareil) et l'état de traitement local — voir
+     *  [ProfilePhotoUiState]. `WhileSubscribed` (même principe que le reste du projet) : reste actif
+     *  tant que [ProfileFragment] ou [ProfilePhotoPreviewDialogFragment] l'observe. */
+    val photoUiState: StateFlow<ProfilePhotoUiState> = combine(
+        profilePhotoRepository.observeCurrentUserPhotoUri(),
+        _isProcessingPhoto
+    ) { photoUri, isProcessing -> ProfilePhotoUiState(photoUri = photoUri, isProcessing = isProcessing) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(stopTimeoutMillis = 5_000), ProfilePhotoUiState())
+
+    private val _photoEvents = MutableSharedFlow<ProfilePhotoEvent>()
+    val photoEvents: SharedFlow<ProfilePhotoEvent> = _photoEvents.asSharedFlow()
 
     /** Résolu une fois au chargement (voir [init]) — Profil n'édite jamais qu'"soi-même". */
     private var userId: Long = 0L
@@ -92,8 +136,7 @@ class ProfileViewModel @Inject constructor(
                         username = user.username,
                         fullName = user.fullName,
                         email = user.email,
-                        phoneNumber = user.phoneNumber.orEmpty(),
-                        profilePhotoUri = user.profilePhotoUri
+                        phoneNumber = user.phoneNumber.orEmpty()
                     )
                 }
             }
@@ -133,8 +176,31 @@ class ProfileViewModel @Inject constructor(
         _formState.update { it.copy(phoneNumber = value) }
     }
 
-    fun onProfilePhotoPicked(uri: String?) {
-        _formState.update { it.copy(profilePhotoUri = uri) }
+    /**
+     * Enregistre une nouvelle photo (déjà recadrée/optimisée, voir [ProfilePhotoPreviewDialogFragment])
+     * — IMMÉDIATEMENT, sans passer par [save] : voir la KDoc de tête de [ProfileFormState].
+     * [performPhotoAction] protège contre un double-tap sur "Utiliser cette photo".
+     */
+    fun confirmNewPhoto(optimizedJpegBytes: ByteArray) = performPhotoAction {
+        profilePhotoRepository.saveNewPhoto(optimizedJpegBytes)
+        _photoEvents.emit(ProfilePhotoEvent.PhotoSaved)
+    }
+
+    /** Retour à l'avatar par défaut — confirmation déjà obtenue côté [ProfileFragment] avant cet
+     *  appel (action irréversible pour l'utilisateur, même principe que [logout]). */
+    fun deletePhoto() = performPhotoAction {
+        profilePhotoRepository.deletePhoto()
+    }
+
+    /** Garde-fou anti double-tap partagé par [confirmNewPhoto]/[deletePhoto] — même principe que
+     *  `RecurringTransactionsViewModel.performAction`. */
+    private fun performPhotoAction(action: suspend () -> Unit) {
+        if (_isProcessingPhoto.value) return
+        _isProcessingPhoto.value = true
+        viewModelScope.launch {
+            runCatching { action() }
+            _isProcessingPhoto.value = false
+        }
     }
 
     fun save() {
@@ -149,7 +215,10 @@ class ProfileViewModel @Inject constructor(
                 fullName = state.fullName.trim(),
                 email = state.email.trim(),
                 phoneNumber = state.phoneNumber.trim().ifBlank { null },
-                profilePhotoUri = state.profilePhotoUri
+                // Ce formulaire n'édite jamais la photo (voir la KDoc de tête de [ProfileFormState])
+                // — on renvoie sa valeur ACTUELLE (déjà tenue à jour par ProfilePhotoRepositoryImpl,
+                // voir sa doc) pour ne jamais l'écraser silencieusement avec une valeur périmée.
+                profilePhotoUri = photoUiState.value.photoUri
             )
             when (result) {
                 is AuthResult.Success -> {

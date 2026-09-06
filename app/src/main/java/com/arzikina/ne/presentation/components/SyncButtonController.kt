@@ -2,6 +2,7 @@ package com.arzikina.ne.presentation.components
 
 import com.arzikina.ne.domain.model.SyncEngineResult
 import com.arzikina.ne.domain.model.SyncPullResult
+import com.arzikina.ne.domain.repository.ProfilePhotoRepository
 import com.arzikina.ne.domain.repository.SyncAuthRepository
 import com.arzikina.ne.domain.repository.SyncEngine
 import kotlinx.coroutines.CoroutineScope
@@ -68,7 +69,8 @@ sealed interface SyncButtonEvent {
  */
 class SyncButtonController @Inject constructor(
     private val syncEngine: SyncEngine,
-    private val syncAuthRepository: SyncAuthRepository
+    private val syncAuthRepository: SyncAuthRepository,
+    private val profilePhotoRepository: ProfilePhotoRepository
 ) {
     private val _syncNowState = MutableStateFlow(SyncNowUiState())
     val syncNowState: StateFlow<SyncNowUiState> = _syncNowState.asStateFlow()
@@ -104,8 +106,15 @@ class SyncButtonController @Inject constructor(
 
     /**
      * Enchaîne TOUJOURS push PUIS pull (voir la KDoc de [SyncEngine.pullRemoteChanges] sur cet
-     * ordre). Ignore un appel pendant qu'une synchronisation est déjà en cours DEPUIS CE CONTRÔLEUR
-     * — même garde que `BackupViewModel` sur export/import.
+     * ordre), PUIS la photo de profil ([ProfilePhotoRepository.syncWithServer]) — même ordre et
+     * même raisonnement que [com.arzikina.ne.work.SyncWorker.doWork] : la photo doit suivre
+     * EXACTEMENT le même chemin que le déclenchement automatique, sinon ce bouton "Synchroniser
+     * maintenant" redevient un moyen de forcer la synchronisation des autres données SANS jamais
+     * pouvoir forcer celle de la photo (bug corrigé ici — la photo restait bloquée en attente
+     * jusqu'au prochain cycle automatique, sans que l'utilisateur ait de recours manuel).
+     *
+     * Ignore un appel pendant qu'une synchronisation est déjà en cours DEPUIS CE CONTRÔLEUR — même
+     * garde que `BackupViewModel` sur export/import.
      */
     fun syncNow(scope: CoroutineScope) {
         if (_syncNowState.value.isSyncing) return
@@ -114,6 +123,7 @@ class SyncButtonController @Inject constructor(
             runCatching {
                 val pushResult = syncEngine.pushPendingChanges()
                 val pullResult = syncEngine.pullRemoteChanges()
+                profilePhotoRepository.syncWithServer()
                 pushResult to pullResult
             }
                 .onSuccess { (pushResult, pullResult) -> _events.emit(SyncButtonEvent.SyncFinished(pushResult, pullResult)) }

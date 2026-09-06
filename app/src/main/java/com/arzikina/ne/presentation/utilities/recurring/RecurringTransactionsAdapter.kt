@@ -6,6 +6,7 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.arzikina.ne.R
+import com.arzikina.ne.databinding.ItemRecurringPendingOccurrenceBinding
 import com.arzikina.ne.databinding.ItemRecurringSectionTitleBinding
 import com.arzikina.ne.databinding.ItemRecurringSummaryHeaderBinding
 import com.arzikina.ne.databinding.ItemTransactionCompactBinding
@@ -15,18 +16,25 @@ import com.arzikina.ne.databinding.ItemTransactionCompactBinding
  * (cartes de résumé) suivie des sections "À traiter"/"À venir"/"Historique" — voir la doc de
  * [RecurringTransactionsListRow]. Même raisonnement `ListAdapter`/`DiffUtil` que
  * `com.arzikina.ne.presentation.utilities.loans.LoansAdapter`.
+ *
+ * "À traiter" a désormais son PROPRE type de vue ([VIEW_TYPE_PENDING_OCCURRENCE],
+ * `item_recurring_pending_occurrence.xml`) avec Valider/Rejeter directement sur la ligne (voir
+ * cahier des charges "Supprimer le dialogue au lancement") — "À venir"/"Historique" continuent de
+ * partager [VIEW_TYPE_OCCURRENCE] (`item_transaction_compact.xml` seul, sans bouton).
  */
 class RecurringTransactionsAdapter(
-    // La section est transmise en plus de l'item : seule "À venir" doit réagir au tap pour l'instant
-    // (voir RecurringTransactionsFragment.onOccurrenceRowClick), "À traiter" restant réservée à un
-    // futur dialogue de validation distinct de l'édition de la règle.
-    private val onOccurrenceClick: (RecurringOccurrenceUiItem, RecurringSection) -> Unit
+    // "À traiter" (tap sur le résumé) ET "À venir" ouvrent chacun un écran différent au tap (voir
+    // RecurringTransactionsFragment.onOccurrenceRowClick) ; "Historique" reste inerte.
+    private val onOccurrenceClick: (RecurringOccurrenceUiItem, RecurringSection) -> Unit,
+    private val onAccept: (Long) -> Unit,
+    private val onReject: (Long) -> Unit
 ) : ListAdapter<RecurringTransactionsListRow, RecyclerView.ViewHolder>(DIFF_CALLBACK) {
 
-    override fun getItemViewType(position: Int): Int = when (getItem(position)) {
+    override fun getItemViewType(position: Int): Int = when (val row = getItem(position)) {
         is RecurringTransactionsListRow.Header -> VIEW_TYPE_HEADER
         is RecurringTransactionsListRow.SectionTitle -> VIEW_TYPE_SECTION_TITLE
-        is RecurringTransactionsListRow.OccurrenceRow -> VIEW_TYPE_OCCURRENCE
+        is RecurringTransactionsListRow.OccurrenceRow ->
+            if (row.section == RecurringSection.PENDING) VIEW_TYPE_PENDING_OCCURRENCE else VIEW_TYPE_OCCURRENCE
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
@@ -34,6 +42,8 @@ class RecurringTransactionsAdapter(
         return when (viewType) {
             VIEW_TYPE_HEADER -> HeaderViewHolder(ItemRecurringSummaryHeaderBinding.inflate(inflater, parent, false))
             VIEW_TYPE_SECTION_TITLE -> SectionTitleViewHolder(ItemRecurringSectionTitleBinding.inflate(inflater, parent, false))
+            VIEW_TYPE_PENDING_OCCURRENCE ->
+                PendingOccurrenceViewHolder(ItemRecurringPendingOccurrenceBinding.inflate(inflater, parent, false))
             else -> OccurrenceViewHolder(ItemTransactionCompactBinding.inflate(inflater, parent, false))
         }
     }
@@ -42,7 +52,11 @@ class RecurringTransactionsAdapter(
         when (val row = getItem(position)) {
             is RecurringTransactionsListRow.Header -> (holder as HeaderViewHolder).bind(row.summary)
             is RecurringTransactionsListRow.SectionTitle -> (holder as SectionTitleViewHolder).bind(row)
-            is RecurringTransactionsListRow.OccurrenceRow -> (holder as OccurrenceViewHolder).bind(row, onOccurrenceClick)
+            is RecurringTransactionsListRow.OccurrenceRow -> when (holder) {
+                is PendingOccurrenceViewHolder -> holder.bind(row, onOccurrenceClick, onAccept, onReject)
+                is OccurrenceViewHolder -> holder.bind(row, onOccurrenceClick)
+                else -> Unit
+            }
         }
     }
 
@@ -69,10 +83,32 @@ class RecurringTransactionsAdapter(
         }
     }
 
+    /** "À traiter" — voir la doc de tête de cette classe. [onAccept]/[onReject] ignorés (pas
+     *  d'exception levée) si [RecurringOccurrenceUiItem.occurrenceId] est `null` : ne devrait jamais
+     *  arriver pour cette section (voir sa doc, toujours une VRAIE occurrence en base), simple garde-
+     *  fou défensif plutôt qu'une supposition non vérifiée. */
+    class PendingOccurrenceViewHolder(
+        private val binding: ItemRecurringPendingOccurrenceBinding
+    ) : RecyclerView.ViewHolder(binding.root) {
+        fun bind(
+            row: RecurringTransactionsListRow.OccurrenceRow,
+            onClick: (RecurringOccurrenceUiItem, RecurringSection) -> Unit,
+            onAccept: (Long) -> Unit,
+            onReject: (Long) -> Unit
+        ) {
+            RecurringOccurrenceItemBinder.bind(binding.occurrenceSummary, row.item, row.section)
+            binding.occurrenceSummary.root.setOnClickListener { onClick(row.item, row.section) }
+            val occurrenceId = row.item.occurrenceId
+            binding.acceptButton.setOnClickListener { occurrenceId?.let(onAccept) }
+            binding.rejectButton.setOnClickListener { occurrenceId?.let(onReject) }
+        }
+    }
+
     private companion object {
         const val VIEW_TYPE_HEADER = 0
         const val VIEW_TYPE_SECTION_TITLE = 1
         const val VIEW_TYPE_OCCURRENCE = 2
+        const val VIEW_TYPE_PENDING_OCCURRENCE = 3
 
         val DIFF_CALLBACK = object : DiffUtil.ItemCallback<RecurringTransactionsListRow>() {
             override fun areItemsTheSame(oldItem: RecurringTransactionsListRow, newItem: RecurringTransactionsListRow): Boolean = when {

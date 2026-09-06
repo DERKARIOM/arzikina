@@ -70,7 +70,9 @@
                     android:layout_height="48dp"
                     android:layout_marginStart="@dimen/spacing_m">
 
-                    <ImageView
+                    <!-- ShapeableImageView : voir le commentaire équivalent sur avatarImage dans
+                         fragment_profile.xml (même raisonnement, même correctif). -->
+                    <com.google.android.material.imageview.ShapeableImageView
                         android:id="@+id/userAvatarImage"
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
@@ -79,6 +81,7 @@
                         android:padding="@dimen/spacing_xs"
                         android:scaleType="centerCrop"
                         android:src="@drawable/ic_person_24"
+                        app:shapeAppearanceOverlay="@style/ShapeAppearanceOverlay.Arzikina.Circle"
                         app:tint="@color/arzikina_on_dashboard_header_variant" />
 
                 </FrameLayout>

@@ -60,6 +60,17 @@ interface UserDao {
     @Query("UPDATE users SET passwordHash = :passwordHash WHERE id = :userId")
     suspend fun updatePasswordHash(userId: Long, passwordHash: String)
 
+    /**
+     * Mirroir de la photo de profil courante vers ce champ historique (voir
+     * `data/repository/ProfilePhotoRepositoryImpl`, seul appelant prévu) — jamais [updateProfile],
+     * qui réécrirait aussi fullName/email/phoneNumber avec des valeurs potentiellement périmées :
+     * `presentation/settings/SettingsFragment` et `presentation/dashboard/DashboardViewModel`
+     * lisent déjà `User.profilePhotoUri` pour leur propre avatar et n'ont pas besoin d'être modifiés
+     * tant que ce champ reste à jour par cette voie.
+     */
+    @Query("UPDATE users SET profilePhotoUri = :profilePhotoUri WHERE id = :userId")
+    suspend fun updateProfilePhotoUri(userId: Long, profilePhotoUri: String?)
+
     @Query("UPDATE users SET securityQuestion = :securityQuestion, securityAnswerHash = :securityAnswerHash WHERE id = :userId")
     suspend fun updateSecurityQuestion(userId: Long, securityQuestion: SecurityQuestion, securityAnswerHash: String)
 

@@ -63,6 +63,14 @@ okhttp = "4.12.0"
 # Images (photo de reçu)
 coil = "3.5.0"
 
+# Recadrage de la photo de profil (cahier des charges "Gestion de la photo de profil") — CanHub
+# Android-Image-Cropper, fork maintenu de l'ancien uCrop d'ArthurHub (voir readme du projet).
+# Coordonnées Maven Central `com.vanniktech:android-image-cropper` depuis la reprise de
+# maintenance par Vanniktech (l'ancien groupe `com.github.CanHub` via JitPack n'est plus publié) —
+# le PACKAGE Kotlin reste `com.canhub.cropper`, inchangé. 4.7.0 est la dernière version stable
+# publiée à ce jour.
+imageCropper = "4.7.0"
+
 # Graphiques (statistiques)
 vico = "3.2.2"
 
@@ -131,6 +139,9 @@ okhttp = { group = "com.squareup.okhttp3", name = "okhttp", version.ref = "okhtt
 # Coil (chargement d'images - photo de reçu), variante Views (ImageView.load).
 # Pas de module réseau : seules des URI locales (photos de reçu) sont chargées.
 coil = { group = "io.coil-kt.coil3", name = "coil", version.ref = "coil" }
+
+# Recadrage de la photo de profil — voir la note de version ci-dessus.
+image-cropper = { group = "com.vanniktech", name = "android-image-cropper", version.ref = "imageCropper" }
 
 # Vico (graphiques statistiques), variante Views (pas de Compose)
 vico-views = { group = "com.patrykandpatrick.vico", name = "views", version.ref = "vico" }

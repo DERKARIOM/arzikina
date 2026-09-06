@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Ligne "À traiter" (voir RecurringTransactionsAdapter.PendingOccurrenceViewHolder) — remplace
+    l'ancien comportement inerte au tap (voir cahier des charges "Supprimer le dialogue au
+    lancement") : Valider/Rejeter sont désormais DIRECTEMENT sur la ligne, un tap sur la partie
+    résumé (occurrenceSummary) ouvre RecurringOccurrenceEditDialogFragment pour "Modifier" avant
+    validation.
+
+    Réutilise item_transaction_compact.xml pour le résumé (icône/catégorie/sous-titre/montant, voir
+    RecurringOccurrenceItemBinder) — même contenu que "À venir"/"Historique", seule cette ligne
+    ajoute la rangée de boutons ci-dessous.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+
+    <include
+        android:id="@+id/occurrenceSummary"
+        layout="@layout/item_transaction_compact"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="?attr/selectableItemBackground"
+        android:clickable="true"
+        android:focusable="true" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:paddingHorizontal="@dimen/spacing_m"
+        android:paddingBottom="@dimen/spacing_s">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/rejectButton"
+            style="?attr/materialButtonOutlinedStyle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginEnd="@dimen/spacing_s"
+            app:cornerRadius="10dp"
+            app:strokeColor="@color/expense_red"
+            android:textColor="@color/expense_red"
+            android:text="@string/recurring_pending_reject_action" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/acceptButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            app:cornerRadius="10dp"
+            android:textColor="@color/white"
+            android:text="@string/recurring_pending_accept_action" />
+
+    </LinearLayout>
+
+</LinearLayout>

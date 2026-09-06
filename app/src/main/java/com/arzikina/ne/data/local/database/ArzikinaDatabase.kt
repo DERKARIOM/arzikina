@@ -20,6 +20,7 @@ import com.arzikina.ne.data.local.dao.SyncQueueDao
 import com.arzikina.ne.data.local.dao.TransactionDao
 import com.arzikina.ne.data.local.dao.UserDao
 import com.arzikina.ne.data.local.dao.UserPreferencesDao
+import com.arzikina.ne.data.local.dao.UserProfilePhotoDao
 import com.arzikina.ne.data.local.dao.UserServerLinkDao
 import com.arzikina.ne.data.local.entity.AccountEntity
 import com.arzikina.ne.data.local.entity.BudgetEntity
@@ -38,6 +39,7 @@ import com.arzikina.ne.data.local.entity.SyncQueueEntity
 import com.arzikina.ne.data.local.entity.TransactionEntity
 import com.arzikina.ne.data.local.entity.UserEntity
 import com.arzikina.ne.data.local.entity.UserPreferencesEntity
+import com.arzikina.ne.data.local.entity.UserProfilePhotoEntity
 import com.arzikina.ne.data.local.entity.UserServerLinkEntity
 
 /**
@@ -122,6 +124,10 @@ import com.arzikina.ne.data.local.entity.UserServerLinkEntity
  *   [MIGRATION_25_26]/[UserServerLinkEntity]) — étape D du chantier "audit auth + sync + doublons"
  *   (login unifié) : table séparée plutôt qu'une colonne sur `UserEntity`, qui ne peut pas être
  *   modifiée dans ce projet sans casser la compilation (voir la doc de tête de [MIGRATION_22_23]).
+ * - 27 : Table `user_profile_photos` (`localPath`/`serverUrl`/`version`/`pendingUpload`, voir
+ *   [MIGRATION_26_27]/[UserProfilePhotoEntity]) — cahier des charges "Gestion de la photo de
+ *   profil" : même contournement que la version 26, table séparée plutôt qu'une colonne sur
+ *   `UserEntity` (limitation Room/KSP2 toujours en vigueur, voir [MIGRATION_22_23]).
  */
 @Database(
     entities = [
@@ -142,9 +148,10 @@ import com.arzikina.ne.data.local.entity.UserServerLinkEntity
         ReceiptEntity::class,
         SyncQueueEntity::class,
         UserPreferencesEntity::class,
-        UserServerLinkEntity::class
+        UserServerLinkEntity::class,
+        UserProfilePhotoEntity::class
     ],
-    version = 26,
+    version = 27,
     exportSchema = true
 )
 @TypeConverters(Converters::class)
@@ -167,4 +174,5 @@ abstract class ArzikinaDatabase : RoomDatabase() {
     abstract fun syncQueueDao(): SyncQueueDao
     abstract fun userPreferencesDao(): UserPreferencesDao
     abstract fun userServerLinkDao(): UserServerLinkDao
+    abstract fun userProfilePhotoDao(): UserProfilePhotoDao
 }

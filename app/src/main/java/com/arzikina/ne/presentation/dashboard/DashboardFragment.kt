@@ -2,6 +2,7 @@ package com.arzikina.ne.presentation.dashboard
 
 import android.animation.ObjectAnimator
 import android.animation.ValueAnimator
+import android.content.res.ColorStateList
 import android.os.Bundle
 import android.view.View
 import android.view.animation.LinearInterpolator
@@ -291,15 +292,37 @@ class DashboardFragment : Fragment(R.layout.fragment_dashboard) {
     }
 
     /**
-     * En-tête (avatar + "Salut !" + nom) : [photoUri] `null` conserve le
+     * En-tête (avatar + "Salut !" + nom) : [photoUri] `null` applique le
      * placeholder [R.drawable.ic_person_24] déjà posé dans le layout (même
      * pattern que RegisterFragment/ProfileFragment, voir bg_avatar_circle).
+     *
+     * `imageTintList` retiré/réappliqué explicitement ici : `app:tint` dans fragment_dashboard.xml
+     * est prévu UNIQUEMENT pour la silhouette [R.drawable.ic_person_24] (icône monochrome), mais un
+     * tint posé en XML sur une ImageView s'applique à N'IMPORTE QUEL drawable qu'elle affiche
+     * ensuite — y compris une vraie photo chargée par Coil. Sans ce retrait, Android applique le
+     * tint comme un filtre de couleur (mode SRC_IN) sur toute la photo (opaque), l'écrasant en un
+     * simple carré de couleur unie — c'est le bug "photo affichée en carré blanc" remonté par
+     * l'utilisateur.
+     *
+     * `padding` retiré/réappliqué de la même façon : `android:padding="@dimen/spacing_xs"` (XML)
+     * donne un espacement pour la petite icône silhouette, mais une vraie photo doit remplir tout
+     * le cercle jusqu'au bord (voir aussi `app:shapeAppearanceOverlay` sur userAvatarImage, qui
+     * découpe désormais le contenu en cercle — cahier des charges "avatar circulaire").
      */
     private fun renderUserHeader(fullName: String, photoUri: String?) {
         val binding = binding ?: return
         binding.userFullNameText.text = fullName
         if (photoUri != null) {
+            binding.userAvatarImage.imageTintList = null
+            binding.userAvatarImage.setPadding(0, 0, 0, 0)
             binding.userAvatarImage.load(photoUri)
+        } else {
+            binding.userAvatarImage.imageTintList = ColorStateList.valueOf(
+                ContextCompat.getColor(requireContext(), R.color.arzikina_on_dashboard_header_variant)
+            )
+            val iconPadding = resources.getDimensionPixelSize(R.dimen.spacing_xs)
+            binding.userAvatarImage.setPadding(iconPadding, iconPadding, iconPadding, iconPadding)
+            binding.userAvatarImage.setImageResource(R.drawable.ic_person_24)
         }
     }
 

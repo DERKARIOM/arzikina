@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    "Modifier la photo" (cahier des charges "Gestion de la photo de profil", section "Expérience
+    utilisateur") — ouvert depuis ProfileFragment.avatarContainer. Le résultat du choix de
+    l'utilisateur est transmis via Fragment Result API (voir ChangeProfilePhotoBottomSheet), jamais
+    un callback direct (survit à une recréation du Fragment, ex. rotation).
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingBottom="@dimen/spacing_m">
+
+    <com.google.android.material.bottomsheet.BottomSheetDragHandleView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="@dimen/spacing_m"
+        android:layout_marginBottom="@dimen/spacing_s"
+        android:text="@string/profile_photo_bottom_sheet_title"
+        android:textColor="?attr/colorOnSurface"
+        style="@style/TextAppearance.Material3.TitleMedium" />
+
+    <LinearLayout
+        android:id="@+id/takePhotoRow"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="?attr/selectableItemBackground"
+        android:clickable="true"
+        android:focusable="true"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingHorizontal="@dimen/spacing_m"
+        android:paddingVertical="@dimen/spacing_s">
+
+        <ImageView
+            android:layout_width="@dimen/icon_size_default"
+            android:layout_height="@dimen/icon_size_default"
+            android:contentDescription="@null"
+            android:src="@drawable/ic_camera_24"
+            app:tint="?attr/colorOnSurface" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/spacing_m"
+            android:text="@string/profile_photo_take_photo_action"
+            android:textColor="?attr/colorOnSurface"
+            style="@style/TextAppearance.Material3.TitleSmall" />
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/chooseFromGalleryRow"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="?attr/selectableItemBackground"
+        android:clickable="true"
+        android:focusable="true"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingHorizontal="@dimen/spacing_m"
+        android:paddingVertical="@dimen/spacing_s">
+
+        <ImageView
+            android:layout_width="@dimen/icon_size_default"
+            android:layout_height="@dimen/icon_size_default"
+            android:contentDescription="@null"
+            android:src="@drawable/ic_photo_library_24"
+            app:tint="?attr/colorOnSurface" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/spacing_m"
+            android:text="@string/profile_photo_choose_gallery_action"
+            android:textColor="?attr/colorOnSurface"
+            style="@style/TextAppearance.Material3.TitleSmall" />
+
+    </LinearLayout>
+
+    <!-- Masquée par ChangeProfilePhotoBottomSheet.show() quand l'utilisateur n'a pas encore de
+         photo (rien à supprimer) — voir sa doc. -->
+    <LinearLayout
+        android:id="@+id/deletePhotoRow"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="?attr/selectableItemBackground"
+        android:clickable="true"
+        android:focusable="true"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingHorizontal="@dimen/spacing_m"
+        android:paddingVertical="@dimen/spacing_s">
+
+        <ImageView
+            android:layout_width="@dimen/icon_size_default"
+            android:layout_height="@dimen/icon_size_default"
+            android:contentDescription="@null"
+            android:src="@drawable/ic_delete_24"
+            app:tint="?attr/colorError" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/spacing_m"
+            android:text="@string/profile_photo_delete_action"
+            android:textColor="?attr/colorError"
+            style="@style/TextAppearance.Material3.TitleSmall" />
+
+    </LinearLayout>
+
+</LinearLayout>

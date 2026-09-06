@@ -17,6 +17,7 @@ import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.arzikina.ne.R
 import com.arzikina.ne.databinding.FragmentRecurringTransactionsBinding
+import com.arzikina.ne.presentation.components.ConfirmDialogs
 import com.arzikina.ne.presentation.components.NavAnimations
 import com.arzikina.ne.util.AppResult
 import dagger.hilt.android.AndroidEntryPoint
@@ -33,20 +34,27 @@ import kotlinx.coroutines.launch
  * [com.arzikina.ne.presentation.utilities.loans.LoansFragment] pour ce que ça impliquerait
  * d'ajouter plus tard, sur le même modèle).
  *
- * Un tap sur une ligne "À venir" ouvre le formulaire en mode édition pour la règle correspondante
+ * "À traiter" (voir cahier des charges "Supprimer le dialogue au lancement") : Valider/Rejeter sont
+ * directement sur chaque ligne (voir [RecurringTransactionsAdapter.PendingOccurrenceViewHolder],
+ * [RecurringTransactionsViewModel.accept]/[RecurringTransactionsViewModel.reject]) — Rejeter demande
+ * confirmation (voir [confirmReject], action définitive). Un tap sur le RÉSUMÉ de la ligne (pas les
+ * boutons) ouvre [RecurringOccurrenceEditDialogFragment] pour "Modifier" avant validation.
+ *
+ * Un tap sur une ligne "À venir" ouvre le formulaire en mode édition pour la RÈGLE correspondante
  * (voir [onOccurrenceRowClick]) — modifier ou supprimer (bouton dédié du formulaire, déjà géré par
  * [RecurringTransactionFormFragment]) passent tous les deux par cet unique écran, même principe que
- * [com.arzikina.ne.presentation.budget.BudgetFragment]. "À traiter" reste volontairement inerte au
- * tap : réservée à un futur dialogue de validation Enregistrer/Modifier/Rejeter (voir cahier des
- * charges, section "Dialog"), une interaction distincte de l'édition de la règle elle-même, pas
- * encore construite. "Historique" reste inerte aussi pour cette version.
+ * [com.arzikina.ne.presentation.budget.BudgetFragment]. "Historique" reste inerte au tap.
  */
 @AndroidEntryPoint
 class RecurringTransactionsFragment : Fragment(R.layout.fragment_recurring_transactions) {
 
     private val viewModel: RecurringTransactionsViewModel by viewModels()
     private var binding: FragmentRecurringTransactionsBinding? = null
-    private val adapter = RecurringTransactionsAdapter(onOccurrenceClick = ::onOccurrenceRowClick)
+    private val adapter = RecurringTransactionsAdapter(
+        onOccurrenceClick = ::onOccurrenceRowClick,
+        onAccept = { occurrenceId -> viewModel.accept(occurrenceId) },
+        onReject = ::confirmReject
+    )
 
     /**
      * Demande la permission `POST_NOTIFICATIONS` (Android 13+) au premier passage sur CET écran
@@ -140,18 +148,40 @@ class RecurringTransactionsFragment : Fragment(R.layout.fragment_recurring_trans
     }
 
     /**
-     * Seule la section "À venir" ouvre le formulaire en mode édition (voir la doc de classe) : la
-     * règle y est TOUJOURS représentée par exactement une ligne tant qu'elle reste active (voir
+     * "À venir" ouvre le formulaire en mode édition de la RÈGLE (voir la doc de classe) : elle y est
+     * TOUJOURS représentée par exactement une ligne tant qu'elle reste active (voir
      * `RecurringTransactionsViewModel.upcomingItems`, basé sur `nextExecutionDate`), donc toute
-     * automatisation active reste modifiable/supprimable par ce biais, sans exception. "À traiter"
-     * et "Historique" ne font rien au tap pour l'instant.
+     * automatisation active reste modifiable/supprimable par ce biais, sans exception.
+     *
+     * "À traiter" ouvre [RecurringOccurrenceEditDialogFragment] pour CETTE occurrence précise
+     * (`item.occurrenceId` jamais `null` pour cette section, voir sa doc) — Valider/Rejeter SANS
+     * modification passent par les boutons de la ligne (voir [RecurringTransactionsAdapter]), pas
+     * par ce tap. "Historique" ne fait rien au tap.
      */
     private fun onOccurrenceRowClick(item: RecurringOccurrenceUiItem, section: RecurringSection) {
-        if (section != RecurringSection.UPCOMING) return
-        findNavController().navigate(
-            R.id.recurringTransactionFormFragment,
-            bundleOf("recurringTransactionId" to item.recurringTransaction.id),
-            NavAnimations.push
+        when (section) {
+            RecurringSection.PENDING -> item.occurrenceId?.let { occurrenceId ->
+                RecurringOccurrenceEditDialogFragment.show(childFragmentManager, occurrenceId)
+            }
+            RecurringSection.UPCOMING -> findNavController().navigate(
+                R.id.recurringTransactionFormFragment,
+                bundleOf("recurringTransactionId" to item.recurringTransaction.id),
+                NavAnimations.push
+            )
+            RecurringSection.HISTORY -> Unit
+        }
+    }
+
+    /** Confirmation avant rejet (action définitive, voir cahier des charges "Rejeter... prévoir
+     *  éventuellement une confirmation") — même dialogue/mêmes libellés que l'ancienne file
+     *  d'attente supprimée. */
+    private fun confirmReject(occurrenceId: Long) {
+        ConfirmDialogs.confirm(
+            context = requireContext(),
+            title = getString(R.string.recurring_queue_reject_confirm_title),
+            message = getString(R.string.recurring_queue_reject_confirm_message),
+            confirmLabel = getString(R.string.recurring_pending_reject_action),
+            onConfirm = { viewModel.reject(occurrenceId) }
         )
     }
 }

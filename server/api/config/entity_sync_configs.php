@@ -32,6 +32,13 @@ declare(strict_types=1);
  * Les colonnes NE SONT JAMAIS des valeurs utilisateur — construites en dur ici, interpolées
  * directement dans le SQL généré (les noms de colonnes ne peuvent pas être des paramètres liés
  * PDO) : aucun risque d'injection, ce registre n'est jamais alimenté depuis une requête HTTP.
+ *
+ * `users` (photo de profil, cahier des charges "Gestion de la photo de profil") N'Y FIGURE PAS,
+ * volontairement : ce registre transporte exclusivement du JSON via `push.php`/`pull.php`, jamais
+ * un fichier binaire. La photo passe par des endpoints DÉDIÉS —
+ * `api/profile/upload_photo.php`/`delete_photo.php`/`get.php` — qui gèrent eux-mêmes le stockage
+ * disque et réutilisent directement `users.version`/`users.updated_at` (aucune colonne
+ * `photo_version` séparée). Voir la KDoc de tête de `upload_photo.php` pour le raisonnement complet.
  */
 const ENTITY_CONFIGS = [
     'categories' => [

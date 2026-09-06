@@ -111,6 +111,10 @@ dependencies {
     // Chargement d'images (photo de reçu)
     implementation(libs.coil)
 
+    // Recadrage de la photo de profil (voir gradle/libs.versions.toml pour le détail des
+    // coordonnées Maven Central)
+    implementation(libs.image.cropper)
+
     // Graphiques (statistiques : camembert, barres, évolution)
     implementation(libs.vico.views)
 

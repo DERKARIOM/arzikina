@@ -27,7 +27,6 @@ import com.arzikina.ne.domain.repository.SessionManager
 import com.arzikina.ne.domain.repository.UserPreferencesRepository
 import com.arzikina.ne.presentation.components.NavAnimations
 import com.arzikina.ne.presentation.security.BiometricLockFragment
-import com.arzikina.ne.presentation.utilities.recurring.RecurringOccurrenceQueueDialogFragment
 import com.arzikina.ne.util.Constants
 import com.arzikina.ne.util.SystemBars
 import com.arzikina.ne.util.external.ExternalAppLauncher
@@ -172,14 +171,18 @@ class MainActivity : AppCompatActivity() {
             }
             // Déclenché depuis CE listener (jamais inconditionnellement en fin de onCreate) :
             // `addOnDestinationChangedListener` est rappelé immédiatement pour la destination
-            // courante dès son enregistrement, PUIS à chaque changement — c'est ce qui
-            // permet de générer les occurrences (et d'afficher leur dialogue de validation)
-            // seulement une fois le Dashboard réellement atteint, jamais par-dessus
-            // `biometricLockFragment`. Sans ce garde-fou, le dialogue s'affichait par-dessus
-            // l'écran de verrouillage AVANT toute vérification biométrique (montants/catégories
-            // visibles et transactions validables sans authentification) — un contournement total
-            // du verrou. `hasGeneratedMissingRecurringOccurrences` évite de relancer la génération
-            // à chaque retour sur l'onglet Accueil (voir [navigateToTab]).
+            // courante dès son enregistrement, PUIS à chaque changement — c'est ce qui permet de
+            // générer les occurrences seulement une fois le Dashboard réellement atteint, jamais
+            // par-dessus `biometricLockFragment` (une génération plus tôt exposerait indirectement
+            // le compteur d'automatisations en attente avant toute vérification biométrique).
+            // `hasGeneratedMissingRecurringOccurrences` évite de relancer la génération à chaque
+            // retour sur l'onglet Accueil (voir [navigateToTab]).
+            //
+            // AUCUN dialogue affiché ici (retiré — voir cahier des charges "Supprimer le dialogue
+            // au lancement") : la validation/le rejet des occurrences `PENDING` se fait désormais
+            // exclusivement depuis l'écran "Transactions planifiées" (voir
+            // `RecurringTransactionsFragment`, section "À traiter"), jamais automatiquement au
+            // démarrage — seule la GÉNÉRATION des occurrences reste déclenchée ici.
             if (destination.id == R.id.dashboardFragment && !hasGeneratedMissingRecurringOccurrences) {
                 hasGeneratedMissingRecurringOccurrences = true
                 generateMissingRecurringOccurrences()
@@ -290,37 +293,21 @@ class MainActivity : AppCompatActivity() {
     /**
      * Transactions récurrentes/planifiées (voir cahier des charges, section "Détection
      * automatique") : génère les occurrences `PENDING` des règles actives arrivées à échéance
-     * (échéance du jour ET échéances manquées, voir `RecurringTransactionRepository.generateMissingOccurrences`),
-     * puis affiche le dialogue de validation ([RecurringOccurrenceQueueDialogFragment]) s'il en
-     * résulte au moins une occurrence à traiter.
+     * (échéance du jour, une fois son heure atteinte, ET échéances manquées — voir
+     * `RecurringTransactionRepository.generateMissingOccurrences`).
+     *
+     * AUCUN dialogue affiché ici (voir cahier des charges "Supprimer le dialogue au lancement") :
+     * la génération alimente uniquement le badge du Dashboard (voir `DashboardViewModel.pendingRecurringCount`)
+     * et la section "À traiter" de `RecurringTransactionsFragment`, où la validation/le rejet ont
+     * désormais lieu — jamais automatiquement au démarrage.
      *
      * Appelée UNE SEULE FOIS par lancement, au premier accès réel au Dashboard (voir le listener
      * dans [onCreate], `hasGeneratedMissingRecurringOccurrences`) — jamais avant, en particulier
-     * jamais par-dessus [R.id.biometricLockFragment] : le dialogue affiche des montants/catégories
-     * et permet de valider des transactions, ce qui contournerait totalement le verrou biométrique
-     * s'il apparaissait avant que l'utilisateur l'ait franchi.
+     * jamais par-dessus [R.id.biometricLockFragment].
      */
     private fun generateMissingRecurringOccurrences() {
         lifecycleScope.launch {
             recurringTransactionRepository.generateMissingOccurrences()
-            val hasPendingOccurrences = recurringTransactionRepository.observePendingOccurrences().first().isNotEmpty()
-            if (hasPendingOccurrences) {
-                showRecurringOccurrenceQueueIfNeeded()
-            }
-        }
-    }
-
-    /**
-     * Garde-fou anti-doublon : n'affiche le dialogue que s'il n'est pas déjà présent dans
-     * [supportFragmentManager]. Une simple rotation d'écran ne repasse jamais ici (cette fonction
-     * n'est appelée qu'une fois par [onCreate], voir [generateMissingRecurringOccurrences]) — ce
-     * garde-fou couvre uniquement le cas où [onCreate] serait relancé (ex. l'Activity a été détruite
-     * puis recréée par le système en arrière-plan) alors qu'un dialogue montré avant cette
-     * destruction a déjà été restauré automatiquement par [supportFragmentManager].
-     */
-    private fun showRecurringOccurrenceQueueIfNeeded() {
-        if (supportFragmentManager.findFragmentByTag(RECURRING_QUEUE_DIALOG_TAG) == null) {
-            RecurringOccurrenceQueueDialogFragment().show(supportFragmentManager, RECURRING_QUEUE_DIALOG_TAG)
         }
     }
 
@@ -577,9 +564,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     private companion object {
-        /** Tag `FragmentManager` du dialogue de validation (voir [showRecurringOccurrenceQueueIfNeeded]). */
-        const val RECURRING_QUEUE_DIALOG_TAG = "recurring_occurrence_queue"
-
         /** Voir [checkBiometricReentryLock] : délai de grâce sous lequel un aller-retour hors de
          * l'app (sélecteur de photo/fichier système, etc.) ne redemande PAS d'empreinte. */
         const val BIOMETRIC_REENTRY_GRACE_PERIOD_MILLIS = 30_000L

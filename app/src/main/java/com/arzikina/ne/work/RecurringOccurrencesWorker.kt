@@ -15,9 +15,9 @@ import kotlinx.coroutines.CancellationException
  * `MainActivity.generateMissingRecurringOccurrences`, qui ne s'exécute que lorsque l'app est
  * ouverte.
  *
- * Aucune UI ici, JAMAIS : ni notification, ni dialogue de validation — le dialogue
- * (`RecurringOccurrenceQueueDialogFragment`) reste réservé à l'app ouverte et interactive, voir la
- * doc de `MainActivity`. Ce Worker se limite à tenir les occurrences à jour en tâche de fond, pour
+ * Aucune UI ici, JAMAIS : ni notification, ni popup de validation — Valider/Rejeter/Modifier
+ * (voir `RecurringTransactionsFragment`, `RecurringOccurrenceEditDialogFragment`) restent réservés
+ * à l'app ouverte et interactive. Ce Worker se limite à tenir les occurrences à jour en tâche de fond, pour
  * que la pastille du Dashboard et l'historique restent exacts même si l'utilisateur n'ouvre pas
  * l'app pendant plusieurs cycles — et pour préparer une future notification/widget (voir
  * instructions projet, "évolutivité"), qui pourront lire cette même donnée sans dépendre de

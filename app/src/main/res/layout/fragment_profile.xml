@@ -40,7 +40,16 @@
                 android:clickable="true"
                 android:focusable="true">
 
-                <ImageView
+                <!--
+                    ShapeableImageView (pas un simple ImageView) : cahier des charges "Gestion de la
+                    photo de profil" — l'avatar doit être circulaire. bg_avatar_circle (déjà rond)
+                    ne suffisait pas seul : c'est un simple android:background dessiné DERRIÈRE
+                    l'image, il ne découpe pas le contenu (icône ou photo) qui, lui, restait carré.
+                    app:shapeAppearanceOverlay applique un vrai clip circulaire au contenu affiché,
+                    icône ET photo (voir ProfileFragment.renderPhoto, padding retiré/restauré selon
+                    le cas).
+                -->
+                <com.google.android.material.imageview.ShapeableImageView
                     android:id="@+id/avatarImage"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
@@ -49,6 +58,7 @@
                     android:padding="@dimen/spacing_m"
                     android:scaleType="centerCrop"
                     android:src="@drawable/ic_person_24"
+                    app:shapeAppearanceOverlay="@style/ShapeAppearanceOverlay.Arzikina.Circle"
                     app:tint="?attr/colorOnSurfaceVariant" />
 
                 <ImageView
@@ -61,6 +71,18 @@
                     android:padding="6dp"
                     android:src="@drawable/ic_camera_24"
                     app:tint="?attr/colorOnPrimary" />
+
+                <!-- Cahier des charges "Gestion de la photo de profil", section "Expérience
+                     utilisateur" : état de chargement pendant le traitement/l'enregistrement d'une
+                     nouvelle photo (voir ProfileFragment.renderPhoto) — masque légèrement l'avatar
+                     plutôt que de le remplacer, l'utilisateur voit déjà l'ancienne/nouvelle photo. -->
+                <com.google.android.material.progressindicator.CircularProgressIndicator
+                    android:id="@+id/avatarProgress"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:layout_gravity="center"
+                    android:indeterminate="true"
+                    android:visibility="gone" />
 
             </FrameLayout>
 

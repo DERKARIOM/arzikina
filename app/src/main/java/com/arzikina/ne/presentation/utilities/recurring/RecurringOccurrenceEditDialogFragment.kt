@@ -10,14 +10,16 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.annotation.StringRes
 import androidx.core.content.ContextCompat
+import androidx.core.os.bundleOf
 import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.DialogFragment
+import androidx.fragment.app.FragmentManager
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.arzikina.ne.R
-import com.arzikina.ne.databinding.DialogRecurringOccurrenceQueueBinding
+import com.arzikina.ne.databinding.DialogRecurringOccurrenceEditBinding
 import com.arzikina.ne.domain.model.Account
 import com.arzikina.ne.domain.model.Category
 import com.arzikina.ne.domain.model.CurrencyAmount
@@ -26,7 +28,6 @@ import com.arzikina.ne.domain.model.TransactionType
 import com.arzikina.ne.domain.model.combineDayAndTime
 import com.arzikina.ne.presentation.accounts.AccountIconMapper
 import com.arzikina.ne.presentation.components.AccountPickerDialog
-import com.arzikina.ne.presentation.components.ConfirmDialogs
 import com.arzikina.ne.presentation.transactions.displayTextRes
 import com.arzikina.ne.util.Money
 import com.arzikina.ne.util.MoneyInputFormatter
@@ -40,44 +41,34 @@ import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 
 /**
- * Dialogue de validation en file d'attente des occurrences `PENDING` (voir cahier des charges,
- * section "Dialog") — affiché une fois par ouverture d'app (voir `MainActivity`), traite les
- * occurrences UNE PAR UNE :
- * - "Enregistrer" ([RecurringOccurrenceQueueViewModel.accept]) crée la transaction à partir des
- *   valeurs actuelles de la règle et passe à l'occurrence suivante ;
- * - "Rejeter" ([RecurringOccurrenceQueueViewModel.reject]), avec confirmation (voir
- *   [confirmReject] — action définitive, voir [ConfirmDialogs]) marque l'occurrence `REJECTED`
- *   sans créer de transaction et passe à la suivante ;
- * - "Modifier" ([RecurringOccurrenceQueueViewModel.startEdit]) bascule vers un formulaire d'édition
- *   compact (montant/compte/catégorie/description/moyen de paiement/date/type, voir
- *   [OccurrenceEditState]) ; "Confirmer" ([RecurringOccurrenceQueueViewModel.confirmEdit]) crée la
- *   transaction à partir des valeurs modifiées SANS jamais toucher à la règle d'origine (voir
- *   `RecurringTransactionRepository.acceptOccurrenceWithChanges`) et passe à l'occurrence suivante ;
- *   "Annuler" ([RecurringOccurrenceQueueViewModel.cancelEdit]) revient au résumé en lecture sans
- *   rien enregistrer.
+ * Formulaire d'édition d'UNE occurrence `PENDING` avant validation (voir cahier des charges
+ * "Garder Modifier en action secondaire") — remplace l'ancienne `RecurringOccurrenceQueueDialogFragment`
+ * (file d'attente ouverte automatiquement au lancement, supprimée). Ouvert UNIQUEMENT sur tap d'une
+ * ligne "À traiter" (voir `RecurringTransactionsFragment.onOccurrenceRowClick`) — toujours en mode
+ * édition dès l'ouverture, pas de résumé en lecture intermédiaire : Valider/Rejeter SANS
+ * modification sont déjà accessibles directement sur la ligne, ce dialogue n'a donc plus qu'un seul
+ * mode.
  *
- * Le dialogue se ferme automatiquement une fois la file vide ([RecurringOccurrenceQueueEvent.Dismiss]).
- * Fermable par ailleurs à tout moment (bouton retour/tap extérieur, comportement par défaut d'un
- * [DialogFragment], non modifié ici) : une occurrence non traitée reste simplement `PENDING` et sera
- * re-proposée à la prochaine ouverture — seule une action EXPLICITE (Enregistrer/Rejeter/Confirmer)
- * change son état, jamais une fermeture du dialogue (voir la doc de `RecurringTransactionRepository`,
- * "jamais silencieusement rejetée").
+ * "Confirmer" ([RecurringOccurrenceEditViewModel.confirm]) crée la transaction à partir des valeurs
+ * modifiées SANS jamais toucher à la règle d'origine (voir
+ * `RecurringTransactionRepository.acceptOccurrenceWithChanges`) puis ferme le dialogue. "Annuler"
+ * ferme sans rien enregistrer — l'occurrence reste `PENDING`, toujours visible dans "À traiter".
  */
 @AndroidEntryPoint
-class RecurringOccurrenceQueueDialogFragment : DialogFragment() {
+class RecurringOccurrenceEditDialogFragment : DialogFragment() {
 
-    private val viewModel: RecurringOccurrenceQueueViewModel by viewModels()
-    private var binding: DialogRecurringOccurrenceQueueBinding? = null
+    private val viewModel: RecurringOccurrenceEditViewModel by viewModels()
+    private var binding: DialogRecurringOccurrenceEditBinding? = null
 
-    /** Dernières valeurs reçues de [RecurringOccurrenceQueueViewModel.accounts]/
-     * [RecurringOccurrenceQueueViewModel.categories] (voir [render]) — même principe que
+    /** Dernières valeurs reçues de [RecurringOccurrenceEditViewModel.accounts]/
+     * [RecurringOccurrenceEditViewModel.categories] (voir [render]) — même principe que
      * `RecurringTransactionFormFragment.latestAccounts`/`latestCategories`. */
     private var latestAccounts: List<Account> = emptyList()
     private var latestCategories: List<Category> = emptyList()
     private var latestAccountBalances: Map<Long, Long> = emptyMap()
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
-        val viewBinding = DialogRecurringOccurrenceQueueBinding.inflate(inflater, container, false)
+        val viewBinding = DialogRecurringOccurrenceEditBinding.inflate(inflater, container, false)
         binding = viewBinding
         return viewBinding.root
     }
@@ -94,8 +85,9 @@ class RecurringOccurrenceQueueDialogFragment : DialogFragment() {
         super.onViewCreated(view, savedInstanceState)
         val viewBinding = binding ?: return
 
-        setUpReadActions(viewBinding)
-        setUpEditForm(viewBinding)
+        setUpForm(viewBinding)
+        viewBinding.cancelButton.setOnClickListener { dismissAllowingStateLoss() }
+        viewBinding.confirmButton.setOnClickListener { viewModel.confirm() }
 
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -111,7 +103,7 @@ class RecurringOccurrenceQueueDialogFragment : DialogFragment() {
                 launch {
                     viewModel.events.collect { event ->
                         when (event) {
-                            RecurringOccurrenceQueueEvent.Dismiss -> dismissAllowingStateLoss()
+                            RecurringOccurrenceEditEvent.Dismiss -> dismissAllowingStateLoss()
                         }
                     }
                 }
@@ -124,70 +116,51 @@ class RecurringOccurrenceQueueDialogFragment : DialogFragment() {
         binding = null
     }
 
-    private fun setUpReadActions(binding: DialogRecurringOccurrenceQueueBinding) {
-        binding.saveButton.setOnClickListener { viewModel.accept() }
-        binding.editButton.setOnClickListener { viewModel.startEdit() }
-        binding.rejectButton.setOnClickListener { confirmReject() }
-    }
-
-    private fun confirmReject() {
-        ConfirmDialogs.confirm(
-            context = requireContext(),
-            title = getString(R.string.recurring_queue_reject_confirm_title),
-            message = getString(R.string.recurring_queue_reject_confirm_message),
-            confirmLabel = getString(R.string.recurring_queue_reject_action),
-            onConfirm = { viewModel.reject() }
-        )
-    }
-
-    private fun setUpEditForm(binding: DialogRecurringOccurrenceQueueBinding) {
+    private fun setUpForm(binding: DialogRecurringOccurrenceEditBinding) {
         binding.editTypeGroup.addOnButtonCheckedListener { _, checkedId, isChecked ->
             if (!isChecked) return@addOnButtonCheckedListener
             val type = if (checkedId == R.id.editTypeIncomeButton) TransactionType.INCOME else TransactionType.EXPENSE
-            viewModel.onEditTypeChange(type)
+            viewModel.onTypeChange(type)
         }
 
         binding.editCategoryField.dropdownLayout.hint = getString(R.string.recurring_transaction_form_category_label)
         binding.editCategoryField.dropdownInput.setOnItemClickListener { _, _, position, _ ->
-            latestCategories.getOrNull(position)?.let { viewModel.onEditCategoryChange(it.id) }
+            latestCategories.getOrNull(position)?.let { viewModel.onCategoryChange(it.id) }
         }
 
-        MoneyInputFormatter.attach(binding.editAmountInput) { formatted -> viewModel.onEditAmountChange(formatted) }
+        MoneyInputFormatter.attach(binding.editAmountInput) { formatted -> viewModel.onAmountChange(formatted) }
 
         binding.editAccountRow.setOnClickListener {
             AccountPickerDialog.show(
                 context = requireContext(),
                 accounts = latestAccounts,
                 balanceFor = { account -> latestAccountBalances[account.id] ?: account.initialBalance },
-                onSelect = { account -> viewModel.onEditAccountChange(account.id) }
+                onSelect = { account -> viewModel.onAccountChange(account.id) }
             )
         }
 
-        binding.editDescriptionInput.doAfterTextChanged { text -> viewModel.onEditDescriptionChange(text?.toString().orEmpty()) }
+        binding.editDescriptionInput.doAfterTextChanged { text -> viewModel.onDescriptionChange(text?.toString().orEmpty()) }
 
         binding.editPaymentMethodField.dropdownLayout.hint = getString(R.string.transaction_form_payment_method_label)
         val paymentMethodLabels = listOf(getString(R.string.transaction_form_payment_method_none)) +
             PaymentMethod.entries.map { getString(it.displayTextRes()) }
         binding.editPaymentMethodField.dropdownInput.setSimpleItems(paymentMethodLabels.toTypedArray())
         binding.editPaymentMethodField.dropdownInput.setOnItemClickListener { _, _, position, _ ->
-            viewModel.onEditPaymentMethodChange(PaymentMethod.entries.getOrNull(position - 1))
+            viewModel.onPaymentMethodChange(PaymentMethod.entries.getOrNull(position - 1))
         }
 
         binding.editDateField.dateFieldLabel.text = getString(R.string.recurring_queue_edit_date_label)
         binding.editDateRow.setOnClickListener {
             showDatePicker(R.string.recurring_queue_edit_date_label) { newDayMillis ->
                 // Ne change QUE le jour : réutilise l'heure déjà affichée (celle de la règle par
-                // défaut, voir `RecurringOccurrenceQueueViewModel.startEdit`, ou un choix précédent
-                // dans ce même formulaire) plutôt que de la réinitialiser à minuit — même bug/même
+                // défaut, voir `RecurringOccurrenceEditViewModel.init`, ou un choix précédent dans
+                // ce même formulaire) plutôt que de la réinitialiser à minuit — même bug/même
                 // correctif que `RecurringTransactionRepositoryImpl.acceptOccurrence`.
-                val currentDate = viewModel.uiState.value.editState?.date ?: newDayMillis
+                val currentDate = viewModel.uiState.value.edit?.date ?: newDayMillis
                 val currentTime = Instant.ofEpochMilli(currentDate).atZone(ZoneId.systemDefault()).toLocalTime()
-                viewModel.onEditDateChange(combineDayAndTime(newDayMillis, currentTime.hour, currentTime.minute))
+                viewModel.onDateChange(combineDayAndTime(newDayMillis, currentTime.hour, currentTime.minute))
             }
         }
-
-        binding.cancelEditButton.setOnClickListener { viewModel.cancelEdit() }
-        binding.confirmEditButton.setOnClickListener { viewModel.confirmEdit() }
     }
 
     private fun showDatePicker(@StringRes titleRes: Int, onSelected: (Long) -> Unit) {
@@ -201,45 +174,16 @@ class RecurringOccurrenceQueueDialogFragment : DialogFragment() {
             val localMillis = localDate.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
             onSelected(localMillis)
         }
-        picker.show(parentFragmentManager, "recurring_queue_edit_date_picker")
+        picker.show(parentFragmentManager, "recurring_occurrence_edit_date_picker")
     }
 
     private fun render(data: RenderState) {
         val binding = binding ?: return
-        val state = data.uiState
-        val item = state.currentItem ?: return
+        val edit = data.uiState.edit ?: return
         latestAccounts = data.accounts
         latestCategories = data.categories
         latestAccountBalances = data.accountBalances
 
-        binding.queueProgress.text = getString(R.string.recurring_queue_progress, state.currentPosition, state.totalCount)
-
-        val isEditing = state.editState != null
-        binding.readSection.visibility = if (isEditing) View.GONE else View.VISIBLE
-        binding.readActions.visibility = if (isEditing) View.GONE else View.VISIBLE
-        binding.editSection.visibility = if (isEditing) View.VISIBLE else View.GONE
-        binding.editActions.visibility = if (isEditing) View.VISIBLE else View.GONE
-
-        if (isEditing) {
-            renderEditForm(binding, state.editState!!)
-        } else {
-            RecurringOccurrenceItemBinder.bind(binding.occurrenceSummary, item, RecurringSection.PENDING)
-            binding.accountLine.text = getString(
-                R.string.recurring_queue_account_line,
-                item.account?.name ?: getString(R.string.transaction_form_account_placeholder)
-            )
-        }
-
-        val busy = state.isProcessing
-        binding.loadingIndicator.visibility = if (busy) View.VISIBLE else View.GONE
-        binding.saveButton.isEnabled = !busy
-        binding.editButton.isEnabled = !busy
-        binding.rejectButton.isEnabled = !busy
-        binding.cancelEditButton.isEnabled = !busy
-        binding.confirmEditButton.isEnabled = !busy
-    }
-
-    private fun renderEditForm(binding: DialogRecurringOccurrenceQueueBinding, edit: OccurrenceEditState) {
         val expectedTypeButtonId = if (edit.type == TransactionType.INCOME) R.id.editTypeIncomeButton else R.id.editTypeExpenseButton
         if (binding.editTypeGroup.checkedButtonId != expectedTypeButtonId) {
             binding.editTypeGroup.check(expectedTypeButtonId)
@@ -273,12 +217,17 @@ class RecurringOccurrenceQueueDialogFragment : DialogFragment() {
         }
 
         binding.editDateField.dateFieldValue.text = formatDate(edit.date)
+
+        val busy = data.uiState.isProcessing
+        binding.loadingIndicator.visibility = if (busy) View.VISIBLE else View.GONE
+        binding.cancelButton.isEnabled = !busy
+        binding.confirmButton.isEnabled = !busy
     }
 
     /** Même logique que `RecurringTransactionFormFragment.bindAccountField` (voir sa doc) : petite
      * duplication assumée, chaque formulaire garde son propre binder. Solde COURANT (voir
-     * [RecurringOccurrenceQueueViewModel.accountBalances]), jamais [Account.initialBalance] seul. */
-    private fun bindAccountField(binding: DialogRecurringOccurrenceQueueBinding, account: Account?) {
+     * [RecurringOccurrenceEditViewModel.accountBalances]), jamais [Account.initialBalance] seul. */
+    private fun bindAccountField(binding: DialogRecurringOccurrenceEditBinding, account: Account?) {
         val fieldBinding = binding.editAccountField
         if (account != null) {
             fieldBinding.accountFieldIcon.setImageResource(AccountIconMapper.iconFor(account.icon))
@@ -306,13 +255,26 @@ class RecurringOccurrenceQueueDialogFragment : DialogFragment() {
     /** Regroupe les 4 flux observés pour éviter un `combine` imbriqué illisible (voir
      * [onViewCreated]) — même principe que `LoanFormFragment.LoanFormRenderState`. */
     private data class RenderState(
-        val uiState: RecurringOccurrenceQueueUiState,
+        val uiState: RecurringOccurrenceEditUiState,
         val accounts: List<Account>,
         val categories: List<Category>,
         val accountBalances: Map<Long, Long>
     )
 
-    private companion object {
-        val DATE_FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
+    companion object {
+        private val DATE_FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
+        private const val TAG = "recurring_occurrence_edit"
+
+        /** Point d'entrée UNIQUE pour ouvrir ce dialogue (voir
+         * `RecurringTransactionsFragment.onOccurrenceRowClick`) — construit l'instance avec son
+         * argument [RecurringOccurrenceEditViewModel.ARG_OCCURRENCE_ID] déjà posé, jamais de
+         * `RecurringOccurrenceEditDialogFragment()` nu ailleurs dans l'app. */
+        fun show(fragmentManager: FragmentManager, occurrenceId: Long) {
+            if (fragmentManager.findFragmentByTag(TAG) != null) return
+            val fragment = RecurringOccurrenceEditDialogFragment().apply {
+                arguments = bundleOf(RecurringOccurrenceEditViewModel.ARG_OCCURRENCE_ID to occurrenceId)
+            }
+            fragment.show(fragmentManager, TAG)
+        }
     }
 }

@@ -1,6 +1,7 @@
 package com.arzikina.ne.presentation.settings
 
 import android.content.pm.PackageManager
+import android.content.res.ColorStateList
 import android.os.Build
 import android.os.Bundle
 import android.view.View
@@ -26,6 +27,7 @@ import com.arzikina.ne.presentation.components.SyncIndicatorLevel
 import com.arzikina.ne.presentation.components.SyncIndicatorUiState
 import com.arzikina.ne.presentation.components.SyncNowUiState
 import com.arzikina.ne.presentation.profile.BiometricLockUiState
+import com.google.android.material.color.MaterialColors
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
@@ -411,10 +413,29 @@ class SettingsFragment : Fragment(R.layout.fragment_settings) {
         Snackbar.make(binding.root, message, Snackbar.LENGTH_LONG).show()
     }
 
+    /**
+     * `imageTintList`/`padding` retirés puis réappliqués explicitement pour une vraie photo, même
+     * correctif et même raisonnement que [com.arzikina.ne.presentation.profile.ProfileFragment.renderPhoto]
+     * (bug "photo affichée en carré blanc" : `app:tint` en XML s'applique aussi à une photo Coil et
+     * l'écrase en un carré de couleur unie ; le padding pensé pour l'icône silhouette empêchait la
+     * photo de remplir le cercle jusqu'au bord).
+     */
     private fun render(binding: FragmentSettingsBinding, state: SettingsUiState) {
         binding.profileName.text = state.fullName
         if (state.profilePhotoUri != null) {
+            binding.profileAvatar.imageTintList = null
+            binding.profileAvatar.setPadding(0, 0, 0, 0)
             binding.profileAvatar.load(state.profilePhotoUri)
+        } else {
+            binding.profileAvatar.imageTintList = ColorStateList.valueOf(
+                MaterialColors.getColor(binding.profileAvatar, com.google.android.material.R.attr.colorOnSurfaceVariant)
+            )
+            // 10dp : reprend exactement android:padding="10dp" de fragment_settings.xml
+            // (profileAvatar, plus petit que l'avatar 96dp de l'écran Profil — spacing_s, pas
+            // spacing_m).
+            val iconPadding = resources.getDimensionPixelSize(R.dimen.spacing_s)
+            binding.profileAvatar.setPadding(iconPadding, iconPadding, iconPadding, iconPadding)
+            binding.profileAvatar.setImageResource(R.drawable.ic_person_24)
         }
 
         binding.currencyRow.rowValue.text = state.currencyCode

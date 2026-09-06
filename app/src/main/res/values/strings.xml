@@ -225,6 +225,21 @@
     <string name="profile_logout_confirm_title">Se déconnecter ?</string>
     <string name="profile_logout_confirm_message">Tu devras te reconnecter avec ton mot de passe pour accéder à nouveau à tes données. Aucune donnée n\'est supprimée.</string>
 
+    <!-- Cahier des charges "Gestion de la photo de profil" — voir ChangeProfilePhotoBottomSheet,
+         ProfileFragment, ProfilePhotoPreviewDialogFragment. -->
+    <string name="profile_photo_bottom_sheet_title">Modifier la photo</string>
+    <string name="profile_photo_take_photo_action">Prendre une photo</string>
+    <string name="profile_photo_choose_gallery_action">Choisir dans la galerie</string>
+    <string name="profile_photo_delete_action">Supprimer la photo</string>
+    <string name="profile_photo_delete_confirm_title">Supprimer la photo de profil ?</string>
+    <string name="profile_photo_delete_confirm_message">Tu reviendras à l\'avatar par défaut. Tu pourras ajouter une nouvelle photo à tout moment.</string>
+    <string name="profile_photo_crop_title">Recadrer la photo</string>
+    <string name="profile_photo_crop_confirm_action">Valider</string>
+    <string name="profile_photo_preview_title">Aperçu de votre photo de profil</string>
+    <string name="profile_photo_use_this_photo_action">Utiliser cette photo</string>
+    <string name="profile_photo_error_message">Impossible de traiter cette photo. Réessaie.</string>
+    <string name="profile_photo_camera_permission_denied">Autorise l\'accès à la caméra pour prendre une photo.</string>
+
     <!-- Textes du système d'exploitation (BiometricPrompt) — voir data/security/BiometricAuthenticatorImpl.kt.
          Un seul jeu de textes générique réutilisé pour les 3 déclenchements (ouverture de l'app,
          révélation carte/CVV, export/import de sauvegarde) : le sous-titre reste volontairement
@@ -935,24 +950,24 @@
     <string name="automation_notification_channel_description">Rappels à l\'heure de déclenchement d\'une transaction automatique.</string>
 
     <!--
-        Dialogue de validation en file d'attente (voir RecurringOccurrenceQueueDialogFragment) —
-        "action_save"/"action_cancel" (existantes) sont réutilisées telles quelles pour "Enregistrer"/
-        "Annuler", pas dupliquées ici.
+        Validation "À traiter" désormais intégrée à l'écran "Transactions planifiées" (voir
+        cahier des charges "Supprimer le dialogue au lancement") — plus de popup automatique au
+        démarrage. Valider/Rejeter directement sur la ligne (voir
+        RecurringTransactionsAdapter.PendingOccurrenceViewHolder), "Modifier" ouvre
+        RecurringOccurrenceEditDialogFragment pour CETTE occurrence.
     -->
-    <string name="recurring_queue_title">Transaction automatique à valider</string>
-    <string name="recurring_queue_progress">%1$d sur %2$d</string>
-    <string name="recurring_queue_account_line">Compte : %1$s</string>
-    <string name="recurring_queue_edit_action">Modifier</string>
-    <string name="recurring_queue_reject_action">Rejeter</string>
+    <string name="recurring_pending_accept_action">Valider</string>
+    <string name="recurring_pending_reject_action">Rejeter</string>
     <string name="recurring_queue_reject_confirm_title">Rejeter cette transaction automatique ?</string>
     <string name="recurring_queue_reject_confirm_message">Elle ne sera plus jamais proposée et aucune transaction ne sera créée pour cette échéance.</string>
     <!--
-        Formulaire d'édition ponctuelle ("Modifier", voir RecurringOccurrenceQueueViewModel) —
+        Dialogue d'édition d'une occurrence PENDING (voir RecurringOccurrenceEditDialogFragment) —
         "recurring_transaction_form_type_label"/"_category_label"/"_amount_label"/"_description_label"/
         "_description_placeholder" et "transaction_form_payment_method_label"/"_none" (existants)
-        sont réutilisés tels quels, pas dupliqués ici : seuls le libellé du champ date et les 2
-        actions propres à ce formulaire sont nouveaux.
+        sont réutilisés tels quels, pas dupliqués ici : seuls le titre, le libellé du champ date et
+        les 2 actions propres à ce formulaire sont nouveaux.
     -->
+    <string name="recurring_occurrence_edit_title">Modifier avant validation</string>
     <string name="recurring_queue_edit_date_label">Date</string>
     <string name="recurring_queue_confirm_edit_action">Confirmer</string>
     <string name="recurring_queue_cancel_edit_action">Annuler</string>
