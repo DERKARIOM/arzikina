@@ -5,6 +5,7 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.graphics.BitmapFactory
 import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
@@ -33,6 +34,16 @@ import com.arzikina.ne.domain.model.RecurringTransaction
  * Permission `POST_NOTIFICATIONS` (Android 13+, voir `AndroidManifest.xml`) : sans elle déclarée ET
  * accordée, [NotificationManagerCompat.notify] ne montre simplement rien, sans lever d'exception
  * (comportement documenté par Android) — aucune vérification supplémentaire nécessaire ici.
+ *
+ * DEUX icônes distinctes du logo Arzikina, pas une seule (voir [notifyTrigger]) : depuis l'API 21,
+ * Android ignore systématiquement la couleur du `smallIcon` de la barre de statut et le redessine
+ * en silhouette blanche pleine — y utiliser directement le logo en couleur produirait une forme
+ * dégradée, peu reconnaissable. `ic_stat_arzikina` (drawable-mdpi/hdpi/xhdpi/xxhdpi/xxxhdpi) EST
+ * déjà cette silhouette (canal alpha du logo, RGB forcé au blanc), pré-générée une fois pour ne
+ * jamais dépendre du rendu à la volée par le système. `ic_notification_arzikina_large` (drawable-
+ * nodpi, asset unique non redimensionné par densité) reste en pleine couleur : posé en
+ * [NotificationCompat.Builder.setLargeIcon], c'est LUI qui affiche réellement le logo tel quel,
+ * dans le cercle à droite du texte de la notification.
  */
 object AutomationNotifier {
 
@@ -50,7 +61,8 @@ object AutomationNotifier {
         )
 
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_time_24)
+            .setSmallIcon(R.drawable.ic_stat_arzikina)
+            .setLargeIcon(BitmapFactory.decodeResource(context.resources, R.drawable.ic_notification_arzikina_large))
             .setContentTitle(label)
             .setContentText(context.getString(R.string.automation_notification_text))
             .setContentIntent(contentIntent)

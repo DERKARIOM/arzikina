@@ -1,5 +1,8 @@
 <resources>
     <string name="app_name">Arzikina</string>
+    <!-- Accroche courte sous le logo (voir item_auth_header.xml, écrans Connexion/Inscription) —
+         purement cosmétique, aucune logique associée. -->
+    <string name="auth_header_tagline">Gérez aujourd\'hui un meilleur demain</string>
 
     <!-- Bottom Navigation -->
     <string name="nav_dashboard">Accueil</string>
@@ -88,14 +91,28 @@
     <string name="action_add">Ajouter</string>
 
     <!-- Authentification — Inscription -->
+    <!-- Toujours utilisé comme android:label de la destination dans nav_graph.xml (titre
+         d'accessibilité/pile de retour) — n'apparaît plus dans le Toolbar depuis la refonte (voir
+         register_welcome_title ci-dessous, affiché dans le contenu défilant à la place). -->
     <string name="register_title">Créer un compte</string>
+    <!-- Grand titre d'accueil de l'écran Inscription (voir cahier des charges "Refonte
+         Login/Register", maquette). -->
+    <string name="register_welcome_title">Créez votre compte</string>
+    <string name="register_subtitle">Rejoignez Arzikina et commencez à gérer vos finances dès maintenant.</string>
     <string name="register_photo_action">Ajouter une photo</string>
     <string name="register_full_name_label">Nom complet</string>
+    <string name="register_full_name_placeholder">Votre nom et prénom</string>
     <string name="register_username_label">Nom d\'utilisateur</string>
+    <string name="register_username_placeholder">Choisissez un identifiant</string>
     <string name="register_email_label">Adresse e-mail</string>
+    <string name="register_email_placeholder">votre@email.com</string>
     <string name="register_phone_label">Numéro de téléphone (optionnel)</string>
+    <string name="register_phone_placeholder">96 12 34 56</string>
     <string name="register_password_label">Mot de passe</string>
+    <string name="register_password_placeholder">Créez un mot de passe</string>
     <string name="register_confirm_password_label">Confirmer le mot de passe</string>
+    <string name="register_confirm_password_placeholder">Confirmez votre mot de passe</string>
+    <string name="register_security_answer_placeholder">Votre réponse</string>
     <string name="register_submit_action">Créer mon compte</string>
     <!-- Erreurs de validation, affichées directement sous le champ concerné. -->
     <string name="register_error_required_field">Ce champ est obligatoire</string>
@@ -132,13 +149,22 @@
         (voir deriveLocalUsernameCandidate) mais n'est plus un identifiant de connexion pour
         l'utilisateur — conforme au cahier des charges ("Gmail/e-mail + mot de passe" uniquement).
     -->
+    <!-- Toujours utilisé comme android:label de la destination dans nav_graph.xml (titre
+         d'accessibilité/pile de retour) — n'apparaît plus comme gros titre visuel dans
+         fragment_login.xml depuis la refonte (voir login_welcome_title ci-dessous), qui reprend
+         ce rôle. -->
     <string name="login_title">Arzikina</string>
-    <string name="login_subtitle">Connecte-toi pour continuer</string>
-    <string name="login_identifier_label">E-mail</string>
+    <!-- Grand titre d'accueil de l'écran Connexion (voir cahier des charges "Refonte
+         Login/Register", maquette). -->
+    <string name="login_welcome_title">Bon retour !</string>
+    <string name="login_subtitle">Connectez-vous à votre compte Arzikina pour retrouver vos finances.</string>
+    <string name="login_identifier_label">Adresse e-mail</string>
+    <string name="login_identifier_placeholder">votre@email.com</string>
     <string name="login_password_label">Mot de passe</string>
+    <string name="login_password_placeholder">Votre mot de passe</string>
     <string name="login_submit_action">Se connecter</string>
-    <string name="login_register_prompt">Pas encore de compte ?</string>
-    <string name="login_register_action">S\'inscrire</string>
+    <string name="login_register_prompt">Vous n\'avez pas encore de compte ?</string>
+    <string name="login_register_action">Créer un compte</string>
     <!--
         Volontairement générique et identique quel que soit le champ fautif
         (identifiant ou mot de passe) : ne jamais indiquer lequel des deux est

@@ -35,6 +35,11 @@
     <!-- Élévation -->
     <dimen name="elevation_card">1dp</dimen>
     <dimen name="elevation_raised">3dp</dimen>
+    <!-- Élévation "surélevée" temporaire d'un champ postcard qui a le focus clavier (voir
+         AuthAnimations.kt, animation des champs au focus — refonte Login/Register, cahier des
+         charges section 11). Au-dessus de elevation_raised (état de repos de la Card), jamais
+         utilisée comme élévation statique dans un layout. -->
+    <dimen name="elevation_raised_focused">6dp</dimen>
 
     <!-- Taille du libellé de la Bottom Navigation (voir TextAppearance.Arzikina.BottomNavigation.*,
          themes.xml) : légèrement réduite par rapport à la taille par défaut de Material3, pour

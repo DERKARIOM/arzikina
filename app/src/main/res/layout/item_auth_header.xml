@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    En-tête réutilisable des écrans Connexion/Inscription (voir cahier des charges "Refonte
+    Login/Register", section "Identité Arsikina") : logo Arzikina existant + nom de l'app + accroche
+    courte. Un seul point de vérité pour ce bloc, posé via `<include>` sur les deux écrans plutôt
+    que dupliqué (même principe que item_postcard_text_input.xml).
+
+    `ic_notification_arzikina_large` (drawable-nodpi, asset unique 256x256, voir
+    work/AutomationNotifier.kt) réutilisé tel quel ici à 40dp : suffisamment de résolution source
+    pour rester net à cette taille d'affichage, conformément à "Utiliser le logo/symbole Arsikina
+    existant plutôt que de créer un nouveau logo" (cahier des charges, section 9) — pas de nouvel
+    asset créé pour ce bloc.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:gravity="center_vertical"
+    android:orientation="horizontal">
+
+    <ImageView
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:contentDescription="@null"
+        android:src="@drawable/ic_notification_arzikina_large" />
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/spacing_s"
+        android:orientation="vertical">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/app_name"
+            android:textColor="?attr/colorOnSurface"
+            style="@style/TextAppearance.Material3.TitleLarge" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/auth_header_tagline"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            style="@style/TextAppearance.Material3.BodySmall" />
+
+    </LinearLayout>
+
+</LinearLayout>

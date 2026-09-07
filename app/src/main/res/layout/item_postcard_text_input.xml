@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Champ de saisie postcard réutilisable (voir "harmonisation des champs de saisie",
+    instructions projet) : factorise le bloc MaterialCardView + TextInputLayout +
+    TextInputEditText jusqu'ici dupliqué à chaque champ des écrans Connexion/Inscription (7
+    répétitions dans l'ancien fragment_register.xml, 2 dans l'ancien fragment_login.xml).
+
+    Posé via `<include android:id="@+id/xxxField" layout="@layout/item_postcard_text_input" />`,
+    chaque écran personnalise ensuite en code (hint, inputType, imeOptions, icône de tête,
+    bascule mot de passe) via `binding.xxxField.postcardInputLayout` /
+    `binding.xxxField.postcardInput` — même pattern déjà utilisé par item_dropdown_field.xml (voir
+    RegisterFragment.setUpInputs, appel déjà existant à `.dropdownLayout.hint = ...`).
+
+    `app:startIconTint`/`app:endIconTint` en colorOnSurfaceVariant (gris neutre, comme la
+    maquette) plutôt que colorPrimary : le cahier des charges réserve explicitement la couleur
+    principale aux "boutons principaux, liens importants, états actifs, focus, éléments de
+    validation" (section "Identité Arsikina") — une icône de tête STATIQUE (mail, cadenas...)
+    n'est aucun de ces cas, et la colorer marquerait inutilement chacun des 7+ champs des deux
+    écrans, à l'inverse de "éviter les couleurs trop nombreuses" (section "Direction artistique").
+    Le focus reste bien marqué en colorPrimary, mais via le comportement PAR DÉFAUT de
+    TextInputLayout (contour et libellé flottant, déjà colorPrimary au focus sans configuration
+    supplémentaire) — pas via l'icône.
+
+    Style `...PostCard.Auth` (pas `...PostCard` de base) : ce champ combine un hint de
+    TextInputLayout (libellé) ET un hint de TextInputEditText (placeholder) — sans
+    `expandedHintEnabled=false`, le libellé s'affiche en grand exactement à l'emplacement du
+    placeholder tant que le champ est vide et sans focus, les deux textes se chevauchent
+    visuellement. Voir la doc du style dans themes.xml pour le détail complet.
+-->
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:theme="@style/ThemeOverlay.Arzikina.OnBalanceCard"
+    app:cardBackgroundColor="@color/arzikina_postcart_background"
+    app:cardCornerRadius="@dimen/corner_radius_medium"
+    app:cardElevation="@dimen/elevation_raised">
+
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/postcardInputLayout"
+        style="@style/Widget.Arzikina.TextInputLayout.OutlinedBox.PostCard.Auth"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="@dimen/spacing_xs"
+        app:startIconTint="?attr/colorOnSurfaceVariant"
+        app:endIconTint="?attr/colorOnSurfaceVariant">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/postcardInput"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:maxLines="1" />
+
+    </com.google.android.material.textfield.TextInputLayout>
+
+</com.google.android.material.card.MaterialCardView>

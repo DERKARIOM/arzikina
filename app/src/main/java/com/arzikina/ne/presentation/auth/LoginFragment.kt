@@ -1,6 +1,7 @@
 package com.arzikina.ne.presentation.auth
 
 import android.os.Bundle
+import android.text.InputType
 import android.view.View
 import android.view.inputmethod.EditorInfo
 import androidx.core.widget.doAfterTextChanged
@@ -14,6 +15,11 @@ import androidx.navigation.fragment.findNavController
 import com.arzikina.ne.R
 import com.arzikina.ne.databinding.FragmentLoginBinding
 import com.arzikina.ne.presentation.components.NavAnimations
+import com.arzikina.ne.presentation.components.animateElevationOnFocus
+import com.arzikina.ne.presentation.components.playEntranceAnimation
+import com.arzikina.ne.presentation.components.playPressScaleFeedback
+import com.arzikina.ne.presentation.components.setVisibleAnimated
+import com.google.android.material.textfield.TextInputLayout
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 
@@ -23,6 +29,14 @@ import kotlinx.coroutines.launch
  * startDestination dans ce cas, il n'a pas de flèche retour ni de pile à
  * dépiler ; à l'inverse, Inscription est ouverte DEPUIS cet écran et y
  * revient via `navigateUp()`.
+ *
+ * Champs "identifiant"/"mot de passe" posés via `<include layout="@layout/item_postcard_text_input">`
+ * (voir fragment_login.xml et sa doc, refonte "Login/Register") : `binding.identifierField` /
+ * `binding.passwordField` exposent chacun `.postcardInputLayout` (le `TextInputLayout`, pour hint/
+ * icône/erreur) et `.postcardInput` (le `TextInputEditText` lui-même) — même pattern déjà utilisé
+ * pour `securityQuestionField` côté [RegisterFragment]. [setUpInputs] centralise le paramétrage
+ * (hint, placeholder, icône, type de clavier) propre à CET écran, puisque le layout inclus reste
+ * générique.
  */
 @AndroidEntryPoint
 class LoginFragment : Fragment(R.layout.fragment_login) {
@@ -35,15 +49,19 @@ class LoginFragment : Fragment(R.layout.fragment_login) {
         val viewBinding = FragmentLoginBinding.bind(view)
         binding = viewBinding
 
-        viewBinding.identifierInput.doAfterTextChanged {
+        setUpInputs(viewBinding)
+        viewBinding.contentContainer.playEntranceAnimation()
+        viewBinding.loginButton.playPressScaleFeedback()
+
+        viewBinding.identifierField.postcardInput.doAfterTextChanged {
             viewModel.onIdentifierChange(it?.toString().orEmpty())
         }
-        viewBinding.passwordInput.doAfterTextChanged {
+        viewBinding.passwordField.postcardInput.doAfterTextChanged {
             viewModel.onPasswordChange(it?.toString().orEmpty())
         }
         // "Terminé" du clavier sur le dernier champ = même action que le
-        // bouton (voir android:imeOptions="actionDone" dans le layout).
-        viewBinding.passwordInput.setOnEditorActionListener { _, actionId, _ ->
+        // bouton (voir android:imeOptions="actionDone" posé par setUpInputs).
+        viewBinding.passwordField.postcardInput.setOnEditorActionListener { _, actionId, _ ->
             if (actionId == EditorInfo.IME_ACTION_DONE) {
                 viewModel.submit()
                 true
@@ -67,6 +85,36 @@ class LoginFragment : Fragment(R.layout.fragment_login) {
         }
     }
 
+    /**
+     * Paramétrage propre à cet écran des deux champs génériques `item_postcard_text_input.xml`
+     * (hint, placeholder, icône de tête, type de clavier, bascule mot de passe) — le layout inclus
+     * lui-même ne connaît rien de "identifiant" ou "mot de passe", voir sa doc.
+     */
+    private fun setUpInputs(binding: FragmentLoginBinding) {
+        binding.identifierField.postcardInputLayout.apply {
+            hint = getString(R.string.login_identifier_label)
+            setStartIconDrawable(R.drawable.ic_mail_24)
+        }
+        binding.identifierField.postcardInput.apply {
+            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS
+            imeOptions = EditorInfo.IME_ACTION_NEXT
+            hint = getString(R.string.login_identifier_placeholder)
+        }
+        binding.identifierField.animateElevationOnFocus()
+
+        binding.passwordField.postcardInputLayout.apply {
+            hint = getString(R.string.login_password_label)
+            setStartIconDrawable(R.drawable.ic_lock_24)
+            endIconMode = TextInputLayout.END_ICON_PASSWORD_TOGGLE
+        }
+        binding.passwordField.postcardInput.apply {
+            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
+            imeOptions = EditorInfo.IME_ACTION_DONE
+            hint = getString(R.string.login_password_placeholder)
+        }
+        binding.passwordField.animateElevationOnFocus()
+    }
+
     override fun onDestroyView() {
         super.onDestroyView()
         binding = null
@@ -75,21 +123,21 @@ class LoginFragment : Fragment(R.layout.fragment_login) {
     private fun render(state: LoginFormState) {
         val binding = binding ?: return
 
-        if (binding.identifierInput.text?.toString() != state.identifier) {
-            binding.identifierInput.setText(state.identifier)
+        if (binding.identifierField.postcardInput.text?.toString() != state.identifier) {
+            binding.identifierField.postcardInput.setText(state.identifier)
         }
-        binding.identifierLayout.error = state.identifierError?.let { getString(it) }
+        binding.identifierField.postcardInputLayout.error = state.identifierError?.let { getString(it) }
 
-        if (binding.passwordInput.text?.toString() != state.password) {
-            binding.passwordInput.setText(state.password)
+        if (binding.passwordField.postcardInput.text?.toString() != state.password) {
+            binding.passwordField.postcardInput.setText(state.password)
         }
-        binding.passwordLayout.error = state.passwordError?.let { getString(it) }
+        binding.passwordField.postcardInputLayout.error = state.passwordError?.let { getString(it) }
 
         if (state.formError != null) {
-            binding.formErrorText.visibility = View.VISIBLE
             binding.formErrorText.text = getString(state.formError)
+            binding.formErrorText.setVisibleAnimated(true)
         } else {
-            binding.formErrorText.visibility = View.GONE
+            binding.formErrorText.setVisibleAnimated(false)
         }
 
         binding.loginButton.isEnabled = !state.isSubmitting
@@ -98,10 +146,10 @@ class LoginFragment : Fragment(R.layout.fragment_login) {
 
         val stageMessageRes = state.stage.messageRes()
         if (stageMessageRes != null) {
-            binding.stageMessageText.visibility = View.VISIBLE
             binding.stageMessageText.text = getString(stageMessageRes)
+            binding.stageMessageText.setVisibleAnimated(true)
         } else {
-            binding.stageMessageText.visibility = View.GONE
+            binding.stageMessageText.setVisibleAnimated(false)
         }
 
         // Empêche de quitter l'écran (donc d'abandonner silencieusement une

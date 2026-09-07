@@ -4,8 +4,19 @@
     locale n'existe (voir MainActivity.resolveStartDestination). Pas de
     MaterialToolbar ni de flèche retour ici — il n'y a nulle part où
     revenir, contrairement à Inscription qui, elle, est ouverte DEPUIS cet
-    écran. Titre centré (nom de l'app) en guise d'en-tête, en attendant un
-    éventuel écran de Bienvenue dédié (étape ultérieure, optionnelle).
+    écran.
+
+    Refonte visuelle (cahier des charges "Refonte Login/Register", inspirée de la maquette
+    fournie) : en-tête réutilisable (item_auth_header.xml), champs postcard réutilisables
+    (item_postcard_text_input.xml, personnalisés en code par LoginFragment.setUpInputs — hint,
+    icône, type de clavier), bouton plein-arrondi (Widget.Arzikina.Button.Pill). LoginViewModel
+    et sa logique (validation, LoginStage, gestion des erreurs) restent INCHANGÉS — seuls les ids
+    exposés à LoginFragment.kt changent (passage par les `<include>` ci-dessous), voir sa KDoc.
+
+    Alignement à GAUCHE (pas centré) pour le bloc en-tête/titre/champs, comme la maquette — seule
+    la ligne "Créer un compte" tout en bas reste centrée (voir son layout_gravity dédié) :
+    contrairement à l'ancienne version, ce conteneur n'a plus de `android:gravity="center_horizontal"`
+    global.
 -->
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -24,88 +35,50 @@
         app:layout_constraintTop_toTopOf="parent">
 
         <LinearLayout
+            android:id="@+id/contentContainer"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:gravity="center_horizontal"
             android:orientation="vertical"
-            android:padding="@dimen/spacing_l">
+            android:padding="@dimen/spacing_l"
+            android:paddingBottom="@dimen/spacing_xl">
+
+            <include
+                android:id="@+id/authHeader"
+                layout="@layout/item_auth_header"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
 
             <TextView
-                android:layout_width="wrap_content"
+                android:id="@+id/welcomeTitle"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/spacing_xl"
-                android:text="@string/login_title"
-                android:textColor="?attr/colorPrimary"
+                android:text="@string/login_welcome_title"
+                android:textColor="?attr/colorOnSurface"
+                android:textStyle="bold"
                 style="@style/TextAppearance.Material3.HeadlineMedium" />
 
             <TextView
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/spacing_xs"
                 android:text="@string/login_subtitle"
                 android:textColor="?attr/colorOnSurfaceVariant"
                 style="@style/TextAppearance.Material3.BodyMedium" />
 
-            <!-- Postcard sur tous les champs de saisie de cet écran — voir descriptionLayout de
-                 fragment_transaction_form.xml ("harmonisation des champs de saisie"). -->
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/identifierCard"
+            <include
+                android:id="@+id/identifierField"
+                layout="@layout/item_postcard_text_input"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/spacing_xl"
-                android:theme="@style/ThemeOverlay.Arzikina.OnBalanceCard"
-                app:cardBackgroundColor="@color/arzikina_postcart_background"
-                app:cardCornerRadius="@dimen/corner_radius_medium"
-                app:cardElevation="@dimen/elevation_raised">
+                android:layout_marginTop="@dimen/spacing_xl" />
 
-                <com.google.android.material.textfield.TextInputLayout
-                    android:id="@+id/identifierLayout"
-                    style="@style/Widget.Arzikina.TextInputLayout.OutlinedBox.PostCard"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_margin="@dimen/spacing_xs"
-                    android:hint="@string/login_identifier_label">
-
-                    <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/identifierInput"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:imeOptions="actionNext"
-                        android:inputType="textEmailAddress"
-                        android:maxLines="1" />
-
-                </com.google.android.material.textfield.TextInputLayout>
-            </com.google.android.material.card.MaterialCardView>
-
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/passwordCard"
+            <include
+                android:id="@+id/passwordField"
+                layout="@layout/item_postcard_text_input"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/spacing_m"
-                android:theme="@style/ThemeOverlay.Arzikina.OnBalanceCard"
-                app:cardBackgroundColor="@color/arzikina_postcart_background"
-                app:cardCornerRadius="@dimen/corner_radius_medium"
-                app:cardElevation="@dimen/elevation_raised">
-
-                <com.google.android.material.textfield.TextInputLayout
-                    android:id="@+id/passwordLayout"
-                    style="@style/Widget.Arzikina.TextInputLayout.OutlinedBox.PostCard"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_margin="@dimen/spacing_xs"
-                    app:endIconMode="password_toggle"
-                    android:hint="@string/login_password_label">
-
-                    <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/passwordInput"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:imeOptions="actionDone"
-                        android:inputType="textPassword"
-                        android:maxLines="1" />
-
-                </com.google.android.material.textfield.TextInputLayout>
-            </com.google.android.material.card.MaterialCardView>
+                android:layout_marginTop="@dimen/spacing_m" />
 
             <TextView
                 android:id="@+id/forgotPasswordActionText"
@@ -118,7 +91,8 @@
                 android:focusable="true"
                 android:padding="@dimen/spacing_xs"
                 android:text="@string/login_forgot_password_action"
-                android:textColor="?attr/colorOnSurfaceVariant"
+                android:textColor="?attr/colorPrimary"
+                android:textStyle="bold"
                 style="@style/TextAppearance.Material3.BodySmall" />
 
             <!--
@@ -145,6 +119,10 @@
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/loginButton"
+                    style="@style/Widget.Arzikina.Button.Pill"
+                    android:textColor="@color/white"
+                    app:iconTint="@color/white"
+                    android:background="@drawable/forme_radius_10dp"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="@string/login_submit_action" />
@@ -178,12 +156,18 @@
                 tools:ignore="SelectableText"
                 tools:text="Synchronisation de vos données…" />
 
+            <!--
+                Vertical + gravity="center_horizontal" (pas horizontal côte à côte) : "Créer un
+                compte" sur sa propre ligne, sous la question — les deux textes centrés
+                indépendamment plutôt qu'une seule ligne qui forçait un retour à la ligne peu
+                lisible une fois traduite ("Vous n'avez pas encore de compte ? Créer un compte").
+            -->
             <LinearLayout
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/spacing_l"
-                android:gravity="center_vertical"
-                android:orientation="horizontal">
+                android:gravity="center_horizontal"
+                android:orientation="vertical">
 
                 <TextView
                     android:layout_width="wrap_content"
@@ -196,13 +180,13 @@
                     android:id="@+id/registerActionText"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="@dimen/spacing_xs"
                     android:background="?attr/selectableItemBackground"
                     android:clickable="true"
                     android:focusable="true"
                     android:padding="@dimen/spacing_xs"
                     android:text="@string/login_register_action"
                     android:textColor="?attr/colorPrimary"
+                    android:textStyle="bold"
                     style="@style/TextAppearance.Material3.BodyMedium" />
 
             </LinearLayout>

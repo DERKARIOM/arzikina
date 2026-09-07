@@ -149,6 +149,33 @@
     </style>
 
     <!--
+        Variante réservée à item_postcard_text_input.xml (refonte Login/Register) : ce template
+        combine DEUX niveaux de texte de repli sur le même champ — le hint du TextInputLayout
+        (libellé, ex. "Adresse e-mail") ET le hint du TextInputEditText interne (placeholder, ex.
+        "votre@email.com"), pour satisfaire "icône + label + placeholder" par champ (cahier des
+        charges). Par défaut, TextInputLayout affiche son hint en GRAND (position "expanded") tant
+        que le champ est vide et sans focus — exactement à l'emplacement du placeholder de
+        l'EditText interne, d'où un chevauchement visuel des deux textes tant qu'aucune saisie/focus
+        n'a eu lieu (repéré visuellement après l'étape 4).
+
+        `expandedHintEnabled=false` : le hint du TextInputLayout reste TOUJOURS dans sa position
+        réduite (petit libellé en haut du champ), jamais agrandi — reproduit le pattern de la
+        maquette (libellé toujours visible au-dessus, placeholder en dessous) et supprime le
+        chevauchement. La couleur du libellé continue de passer à colorPrimary au focus (comportement
+        par défaut de TextInputLayout, inchangé par cet attribut).
+
+        Style SÉPARÉ plutôt que modification de Widget.Arzikina.TextInputLayout.OutlinedBox.PostCard
+        ci-dessus : ce dernier est aussi utilisé par des champs préexistants sans second niveau de
+        placeholder (nameLayout/balanceLayout de fragment_account_form.xml,
+        descriptionLayout de fragment_transaction_form.xml...) — leur comportement de hint flottant
+        standard ne doit pas changer, seuls les nouveaux champs postcard de Connexion/Inscription
+        sont concernés par ce chevauchement.
+    -->
+    <style name="Widget.Arzikina.TextInputLayout.OutlinedBox.PostCard.Auth" parent="Widget.Arzikina.TextInputLayout.OutlinedBox.PostCard">
+        <item name="expandedHintEnabled">false</item>
+    </style>
+
+    <!--
         Taille du libellé de la Bottom Navigation (voir activity_main.xml,
         app:itemTextAppearanceActive/Inactive) : plus petite que la taille
         Material3 par défaut, pour rester discrète sous l'icône avec 5 onglets
@@ -181,5 +208,39 @@
 
     <style name="ShapeAppearance.Arzikina.ExtraLarge" parent="ShapeAppearance.Material3.Corner.ExtraLarge">
         <item name="cornerSize">@dimen/corner_radius_extra_large</item>
+    </style>
+
+    <!-- Forme pleinement arrondie ("pill") des boutons principaux Connexion/Inscription (voir
+         Widget.Arzikina.Button.Pill juste en dessous) — cornerSize en pourcentage (50%) plutôt
+         qu'un rayon fixe en dp : s'adapte automatiquement à la hauteur réelle du bouton, contrairement
+         à l'échelle ExtraSmall/.../ExtraLarge ci-dessus, pensée pour des rayons fixes. -->
+    <style name="ShapeAppearance.Arzikina.Pill" parent="ShapeAppearance.Material3.Corner.Full">
+        <item name="cornerSize">50%</item>
+    </style>
+
+    <!--
+        Bouton principal des écrans Connexion/Inscription (voir cahier des charges "Refonte
+        Login/Register") : forme pleinement arrondie (ShapeAppearance.Arzikina.Pill) et flèche de
+        fin systématique (ic_arrow_forward_24), pour un seul style visuel partagé entre
+        "Se connecter →" (LoginFragment) et "Créer mon compte →" (RegisterFragment) — plus besoin
+        de dupliquer un `android:background` par écran (remplace l'ancien `forme_radius_10dp` posé
+        directement sur `registerButton` dans fragment_register.xml, retiré à l'étape suivante de
+        cette refonte au profit de ce style commun).
+
+        État désactivé (formulaire invalide, voir `loginButton.isEnabled`/`registerButton.isEnabled`
+        dans les deux Fragments) : comportement PAR DÉFAUT de Widget.Material3.Button (désaturation
+        automatique), volontairement non recustomisé ici — aucun autre bouton du projet ne redéfinit
+        cet état, pas de raison de commencer sur ces deux écrans seulement.
+    -->
+    <style name="Widget.Arzikina.Button.Pill" parent="Widget.Material3.Button">
+        <item name="shapeAppearance">@style/ShapeAppearance.Arzikina.Pill</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="android:textSize">16sp</item>
+        <item name="android:paddingTop">@dimen/spacing_m</item>
+        <item name="android:paddingBottom">@dimen/spacing_m</item>
+        <item name="icon">@drawable/ic_arrow_forward_24</item>
+        <item name="iconGravity">end</item>
+        <item name="iconPadding">@dimen/spacing_s</item>
+        <item name="iconTint">?attr/colorOnPrimary</item>
     </style>
 </resources>
