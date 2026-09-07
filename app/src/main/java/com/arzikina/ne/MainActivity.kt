@@ -161,7 +161,7 @@ class MainActivity : AppCompatActivity() {
             )
             // Ne surligne un item de la Bottom Navigation QUE si la destination courante EST
             // littéralement l'un des 4 onglets (voir TAB_DESTINATION_IDS) : un écran secondaire
-            // (formulaire, détail, Budget/Catégories/Paramètres/Transactions depuis "Autre"/le
+            // (formulaire, détail, Budget/Catégories/Profil/Transactions depuis Paramètres/le
             // Dashboard...) laisse volontairement l'onglet déjà sélectionné en surbrillance, sans
             // qu'aucun ne corresponde à sa propre destination (voir aussi
             // accountsFromDashboardFragment dans nav_graph.xml, qui exploite déjà ce principe
@@ -482,7 +482,7 @@ class MainActivity : AppCompatActivity() {
      * Pour chaque Fragment dont la vue vient d'être créée, recherche son [NestedScrollView] (voir
      * [findNestedScrollView]) et lui applique [SystemBars.applyImeAwarePadding] — voir sa doc pour
      * le raisonnement complet. Les écrans sans [NestedScrollView] (listes/`RecyclerView` sans champ
-     * de saisie, voir `fragment_accounts.xml`, `fragment_more.xml`...) ne sont pas concernés : la
+     * de saisie, voir `fragment_accounts.xml`, `fragment_statistics.xml`...) ne sont pas concernés : la
      * recherche n'y trouve simplement rien, sans effet de bord.
      */
     private fun setUpKeyboardAwareScrolling() {
@@ -589,7 +589,7 @@ class MainActivity : AppCompatActivity() {
             R.id.dashboardFragment,
             R.id.accountsFragment,
             R.id.statisticsFragment,
-            R.id.moreFragment
+            R.id.settingsFragment
         )
     }
 }

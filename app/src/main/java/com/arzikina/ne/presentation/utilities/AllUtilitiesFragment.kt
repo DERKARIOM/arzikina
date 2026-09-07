@@ -13,10 +13,10 @@ import com.arzikina.ne.presentation.components.NavAnimations
  *
  * Affiche [UtilityCatalog.all] en intégralité (contrairement au Dashboard, qui n'en montrera
  * qu'une sélection une fois le catalogue plus grand — voir la doc de [UtilityCatalog]), en
- * grille via `allUtilitiesList` (voir fragment_all_utilities.xml). Pas de ViewModel : même
- * raisonnement que [com.arzikina.ne.presentation.more.MoreFragment], une liste fixe ne
- * bénéficie d'aucune testabilité/survie de configuration supplémentaire apportée par un
- * ViewModel.
+ * grille via `allUtilitiesList` (voir fragment_all_utilities.xml). Pas de ViewModel : cet écran
+ * n'affiche aucune donnée métier ni état asynchrone, uniquement une liste fixe de raccourcis de
+ * navigation — un ViewModel n'apporterait ici aucun bénéfice de testabilité ou de survie aux
+ * changements de configuration, seulement du code mort.
  */
 class AllUtilitiesFragment : Fragment(R.layout.fragment_all_utilities) {
 

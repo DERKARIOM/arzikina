@@ -219,9 +219,9 @@
                 style="@style/TextAppearance.Material3.LabelLarge" />
 
             <!--
-                Réutilise item_more_menu.xml (même style de ligne que l'onglet
-                "Autre") plutôt que de dupliquer une ligne icône+texte+chevron :
-                voir MoreFragment/MoreMenuAdapter pour l'original.
+                Réutilise item_more_menu.xml (même style de ligne icône+texte+chevron
+                que l'écran Paramètres, voir SettingsFragment.bindNavigationRow) plutôt
+                que de dupliquer cette ligne ici.
             -->
             <include
                 android:id="@+id/changePasswordRow"

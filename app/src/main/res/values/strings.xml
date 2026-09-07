@@ -9,9 +9,7 @@
     <!-- Libellé de l'onglet ET titre d'écran de StatisticsFragment (voir fragment_statistics.xml, app:title). -->
     <string name="nav_statistics">Rapports</string>
     <string name="nav_settings">Paramètres</string>
-    <!-- Libellé de l'onglet "Autre" (voir MoreFragment), qui regroupe Budget, Catégories et Paramètres. -->
-    <string name="nav_more">Autre</string>
-    <!-- Libellé court de la ligne "Catégories" dans l'écran "Autre" (distinct de categories_title = "Mes catégories", utilisé comme titre de l'écran Catégories lui-même). -->
+    <!-- Libellé court de la ligne "Catégories" dans l'écran Paramètres (voir SettingsFragment.setUpTransactionsSection) et dans UtilityCatalog — distinct de categories_title = "Mes catégories", utilisé comme titre de l'écran Catégories lui-même. -->
     <string name="more_menu_categories">Catégories</string>
 
     <!-- Paramètres -->
@@ -210,7 +208,6 @@
     <string name="forgot_password_success_message">Mot de passe réinitialisé. Connecte-toi avec ton nouveau mot de passe.</string>
 
     <!-- Authentification — Profil -->
-    <string name="more_menu_profile">Profil</string>
     <string name="profile_title">Profil</string>
     <string name="profile_username_format">@%1$s</string>
     <string name="profile_section_security_title">Sécurité</string>

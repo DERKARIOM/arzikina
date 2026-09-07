@@ -37,8 +37,8 @@ import kotlinx.coroutines.launch
  * téléphone, photo), accès aux écrans "Changer le mot de passe" et
  * "Modifier la question de sécurité", et déconnexion.
  *
- * Reçoit un clic depuis l'onglet "Autre" (voir MoreFragment) — un Toolbar
- * avec flèche retour classique, contrairement aux écrans d'authentification
+ * Reçoit un clic depuis l'onglet "Paramètres" (voir SettingsFragment.setUpProfileRow) — un
+ * Toolbar avec flèche retour classique, contrairement aux écrans d'authentification
  * (Connexion/Inscription/Mot de passe oublié) qui, eux, gèrent leur propre
  * navigation de façon spécifique.
  */

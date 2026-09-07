@@ -10,10 +10,10 @@ import androidx.annotation.StringRes
  * en grille sur l'écran "Tous les utilitaires" — même donnée, deux présentations selon le
  * contexte (voir [UtilityTileAdapter], réutilisé par les deux écrans).
  *
- * Même principe que [com.arzikina.ne.presentation.more.MoreMenuItem] (icône + titre +
- * destination), volontairement DUPLIQUÉ plutôt que partagé entre les deux packages : "Autre" et
- * "Utilitaires" sont deux fonctionnalités indépendantes qui n'ont pas vocation à évoluer
- * ensemble, malgré cette forme actuellement identique.
+ * Simple triplet icône + titre + destination, volontairement propre à ce package plutôt que
+ * partagé avec d'autres raccourcis de navigation similaires ailleurs dans l'app (ex.
+ * `SettingsFragment.bindNavigationRow`) : "Utilitaires" est une fonctionnalité indépendante qui
+ * n'a pas vocation à évoluer en même temps que ces autres écrans, malgré une forme identique.
  *
  * Ajouter un futur utilitaire (calculateur d'intérêts, convertisseur de devises, rappels...) se
  * fait en ajoutant une entrée dans la liste de [com.arzikina.ne.presentation.dashboard.DashboardFragment]

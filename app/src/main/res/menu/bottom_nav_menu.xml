@@ -1,12 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    4 onglets : Accueil, Compte, Rapports, Autre. Budget, Catégories,
-    Paramètres et désormais Transactions restent des destinations du graphe
+    4 onglets : Accueil, Compte, Rapports, Paramètres. Budget, Catégories,
+    Profil et désormais Transactions restent des destinations du graphe
     de navigation (voir navigation/nav_graph.xml) mais ne sont plus des
-    onglets directs. Transactions est atteint depuis le Dashboard (section
-    "Dernières transactions" → "Voir tout", voir DashboardFragment.kt) — voir
-    aussi MainActivity.TAB_DESTINATION_IDS, qui ne coche plus aucun onglet
-    pour cette destination (l'onglet Accueil reste sélectionné).
+    onglets directs — tous atteignables depuis l'onglet Paramètres
+    (voir SettingsFragment.kt, qui regroupe désormais ces raccourcis, ancien
+    rôle de MoreFragment, supprimé). Transactions est atteint depuis le
+    Dashboard (section "Dernières transactions" → "Voir tout", voir
+    DashboardFragment.kt) — voir aussi MainActivity.TAB_DESTINATION_IDS, qui
+    ne coche plus aucun onglet pour cette destination (l'onglet Accueil reste
+    sélectionné).
 -->
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
     <item
@@ -22,7 +25,7 @@
         android:icon="@drawable/rapport"
         android:title="@string/nav_statistics" />
     <item
-        android:id="@+id/moreFragment"
+        android:id="@+id/settingsFragment"
         android:icon="@drawable/parametres"
-        android:title="@string/nav_more" />
+        android:title="@string/nav_settings" />
 </menu>

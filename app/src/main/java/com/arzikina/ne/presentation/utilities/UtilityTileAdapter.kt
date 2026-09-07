@@ -12,9 +12,8 @@ import com.arzikina.ne.databinding.ItemUtilityTileBinding
  * grille) — seul le `LayoutManager` posé par chaque écran change, cet adapter et
  * `item_utility_tile.xml` restent identiques dans les deux cas.
  *
- * Volontairement simple (pas de `ListAdapter`/`DiffUtil`, même raisonnement que
- * [com.arzikina.ne.presentation.more.MoreMenuAdapter]) : l'ENSEMBLE des utilitaires reste statique
- * (4 entrées fixes, voir [UtilityCatalog]) — seul [UtilityItem.badgeCount] change dans le temps
+ * Volontairement simple (pas de `ListAdapter`/`DiffUtil`) : l'ENSEMBLE des utilitaires reste
+ * statique (4 entrées fixes, voir [UtilityCatalog]) — seul [UtilityItem.badgeCount] change dans le temps
  * (voir [submitItems]), jamais la liste elle-même ni son ordre. `notifyDataSetChanged()` sur une
  * liste de 4 éléments reste largement suffisant, pas besoin de `DiffUtil` pour un si petit gain.
  */

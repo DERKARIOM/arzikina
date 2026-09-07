@@ -7,16 +7,16 @@
 
     <!--
         Les 4 onglets de la Bottom Navigation (Accueil, Compte, Rapports,
-        Autre). Les identifiants (@+id/...) correspondent exactement à ceux
-        de menu/bottom_nav_menu.xml : MainActivity.setUpBottomNavigation s'en
-        sert pour le câblage manuel (voir MainActivity.TAB_DESTINATION_IDS).
+        Paramètres). Les identifiants (@+id/...) correspondent exactement à
+        ceux de menu/bottom_nav_menu.xml : MainActivity.setUpBottomNavigation
+        s'en sert pour le câblage manuel (voir MainActivity.TAB_DESTINATION_IDS).
 
-        Budget, Catégories, Paramètres et Transactions restent des
-        destinations du graphe (donc atteignables par navigate()) mais ne
-        sont plus des onglets directs : Budget/Catégories/Paramètres depuis
-        l'onglet "Autre" (voir presentation/more/MoreFragment.kt), Transactions
-        depuis le Dashboard ("Dernières transactions" → "Voir tout", voir
-        DashboardFragment.kt) — pour ne garder que 4 onglets.
+        Budget, Catégories, Profil et Transactions restent des destinations
+        du graphe (donc atteignables par navigate()) mais ne sont plus des
+        onglets directs : Budget/Catégories/Profil depuis l'onglet
+        "Paramètres" (voir presentation/settings/SettingsFragment.kt),
+        Transactions depuis le Dashboard ("Dernières transactions" → "Voir
+        tout", voir DashboardFragment.kt) — pour ne garder que 4 onglets.
     -->
 
     <!--
@@ -176,19 +176,14 @@
         android:label="@string/nav_settings"
         tools:layout="@layout/fragment_settings" />
 
-    <fragment
-        android:id="@+id/moreFragment"
-        android:name="com.arzikina.ne.presentation.more.MoreFragment"
-        android:label="@string/nav_more"
-        tools:layout="@layout/fragment_more" />
-
     <!--
         accountsFragment est l'onglet "Compte" (déclaré ici avec son propre
         écran de formulaire, pas dans le bloc des 5 onglets ci-dessus pour ne
         pas casser l'ordre historique du fichier, mais son id correspond bien
         à l'item "Compte" de bottom_nav_menu.xml). categoriesFragment reste,
-        lui, un écran secondaire : atteint depuis l'onglet Autre (voir
-        MoreFragment) ou depuis le raccourci du Dashboard, jamais un onglet.
+        lui, un écran secondaire : atteint depuis l'onglet Paramètres (voir
+        SettingsFragment) ou depuis le raccourci du Dashboard, jamais un
+        onglet.
     -->
 
     <fragment
@@ -274,10 +269,11 @@
     </fragment>
 
     <!--
-        profileFragment : atteint depuis l'onglet "Autre" (voir MoreFragment),
-        comme budgetFragment/categoriesFragment/settingsFragment. Pas dans
-        AUTH_DESTINATION_IDS (MainActivity.kt) : la Bottom Navigation reste
-        visible ici, contrairement à Connexion/Inscription/Mot de passe oublié.
+        profileFragment : atteint depuis l'onglet "Paramètres" (voir
+        SettingsFragment.setUpProfileRow), comme budgetFragment/
+        categoriesFragment. Pas dans AUTH_DESTINATION_IDS (MainActivity.kt) :
+        la Bottom Navigation reste visible ici, contrairement à
+        Connexion/Inscription/Mot de passe oublié.
     -->
     <fragment
         android:id="@+id/profileFragment"

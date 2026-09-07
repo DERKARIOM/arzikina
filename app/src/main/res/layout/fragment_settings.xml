@@ -5,12 +5,10 @@
     @color/arzikina_postcart_background déjà utilisées partout ailleurs plutôt que les cartes
     blanches/vert foncé de la maquette d'origine).
 
-    Toolbar avec flèche retour CONSERVÉE (contrairement au grand en-tête sans navigation de la
-    maquette) : cet écran est atteint par un push depuis l'onglet "Autre" (voir MoreFragment), pas
-    un onglet racine de la Bottom Navigation — toute la navigation de l'app utilise cette même
-    convention pour un écran poussé (voir fragment_account_detail.xml, fragment_profile.xml...).
-    Le sous-titre de la maquette est conservé sous forme de TextView sous la Toolbar plutôt que
-    fusionné dans son titre, pour ne pas casser ce pattern de navigation commun à tout le projet.
+    Pas de app:navigationIcon (flèche retour) : Paramètres est désormais l'onglet "Paramètres"
+    de la Bottom Navigation, un écran de premier niveau, pas un écran secondaire atteint par
+    navigation empilée (même convention que fragment_accounts.xml). Le sous-titre de la maquette
+    est conservé sous forme de TextView sous la Toolbar plutôt que fusionné dans son titre.
 
     Construit SECTION PAR SECTION sur plusieurs étapes (voir le plan) : cette version ne contient
     que l'en-tête profil et la section "Général" (devise, thème — les seuls réglages avec une
@@ -30,7 +28,6 @@
         android:layout_height="?attr/actionBarSize"
         android:background="?attr/colorSurface"
         app:layout_constraintTop_toTopOf="parent"
-        app:navigationIcon="@drawable/ic_arrow_back_24"
         app:title="@string/nav_settings"
         app:titleTextColor="?attr/colorOnSurface" />
 

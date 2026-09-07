@@ -53,7 +53,6 @@ class SettingsFragment : Fragment(R.layout.fragment_settings) {
         val viewBinding = FragmentSettingsBinding.bind(view)
         binding = viewBinding
 
-        viewBinding.toolbar.setNavigationOnClickListener { findNavController().navigateUp() }
         viewBinding.subtitleText.text = getString(R.string.settings_screen_subtitle, getString(R.string.app_name))
 
         setUpProfileRow(viewBinding)
@@ -194,7 +193,7 @@ class SettingsFragment : Fragment(R.layout.fragment_settings) {
         )
     }
 
-    /** Icônes réutilisées depuis `MoreFragment`/`UtilityCatalog`/`bottom_nav_menu.xml`
+    /** Icônes réutilisées depuis `UtilityCatalog`/`bottom_nav_menu.xml`
      * (`ic_wallet_24`, `investissement_24`, `rapport`). */
     private fun setUpBudgetFinanceSection(binding: FragmentSettingsBinding) {
         bindNavigationRow(
