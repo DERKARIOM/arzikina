@@ -78,23 +78,48 @@
                     android:layout_height="wrap_content"
                     android:padding="@dimen/spacing_m">
 
-                    <!-- ShapeableImageView : même raisonnement/correctif que avatarImage dans
-                         fragment_profile.xml (recadrage circulaire du contenu, pas seulement du
-                         fond ; voir SettingsFragment.renderProfileHeader). -->
-                    <com.google.android.material.imageview.ShapeableImageView
-                        android:id="@+id/profileAvatar"
+                    <!--
+                        Deux calques plutôt qu'un padding dynamique (voir bug corrigé, "photo
+                        affichée trop petite au premier rendu puis correcte après une
+                        interaction") : l'ancienne version réutilisait la MÊME ShapeableImageView
+                        pour la photo ET le placeholder, en gonflant/réduisant son padding par code
+                        (SettingsFragment.render) selon l'état — les dimensions effectives du calque
+                        photo dépendaient donc du moment où ce code s'exécutait par rapport au
+                        rendu, d'où un flash "petite puis grande" tant que l'état réel (photo ou
+                        non) n'avait pas encore été appliqué. Ici, `profileAvatar` (la photo) garde
+                        des dimensions et un padding FIXES dans ce XML, jamais modifiés en Kotlin :
+                        sa taille ne peut plus varier d'un rendu à l'autre. Seule la VISIBILITÉ
+                        bascule entre les deux calques (voir SettingsFragment.render).
+                    -->
+                    <FrameLayout
+                        android:id="@+id/profileAvatarContainer"
                         android:layout_width="48dp"
                         android:layout_height="48dp"
-                        android:background="@drawable/bg_avatar_circle"
-                        android:contentDescription="@null"
-                        android:padding="10dp"
-                        android:scaleType="centerCrop"
-                        android:src="@drawable/ic_person_24"
                         app:layout_constraintBottom_toBottomOf="parent"
                         app:layout_constraintStart_toStartOf="parent"
-                        app:layout_constraintTop_toTopOf="parent"
-                        app:shapeAppearanceOverlay="@style/ShapeAppearanceOverlay.Arzikina.Circle"
-                        app:tint="?attr/colorOnSurfaceVariant" />
+                        app:layout_constraintTop_toTopOf="parent">
+
+                        <com.google.android.material.imageview.ShapeableImageView
+                            android:id="@+id/profileAvatar"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:background="@drawable/bg_avatar_circle"
+                            android:contentDescription="@null"
+                            android:scaleType="centerCrop"
+                            app:shapeAppearanceOverlay="@style/ShapeAppearanceOverlay.Arzikina.Circle" />
+
+                        <!-- Icône de repli (aucune photo) : vue séparée de taille fixe, jamais la
+                             même ShapeableImageView agrandie/réduite — voir doc ci-dessus. -->
+                        <ImageView
+                            android:id="@+id/profileAvatarPlaceholder"
+                            android:layout_width="@dimen/icon_size_default"
+                            android:layout_height="@dimen/icon_size_default"
+                            android:layout_gravity="center"
+                            android:contentDescription="@null"
+                            android:src="@drawable/ic_person_24"
+                            app:tint="?attr/colorOnSurfaceVariant" />
+
+                    </FrameLayout>
 
                     <TextView
                         android:id="@+id/profileName"
@@ -106,8 +131,8 @@
                         android:maxLines="1"
                         android:textColor="?attr/colorOnSurface"
                         app:layout_constraintEnd_toStartOf="@id/profileChevron"
-                        app:layout_constraintStart_toEndOf="@id/profileAvatar"
-                        app:layout_constraintTop_toTopOf="@id/profileAvatar"
+                        app:layout_constraintStart_toEndOf="@id/profileAvatarContainer"
+                        app:layout_constraintTop_toTopOf="@id/profileAvatarContainer"
                         tools:text="Abdoul Kader" />
 
                     <TextView

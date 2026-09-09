@@ -78,7 +78,32 @@ foreach ($body['operations'] as $operation) {
         continue;
     }
 
-    $results[] = applyEntityOperation($pdo, $entityConfig, $entityType, $userId, (string) $operation['operation'], $operation['entity']);
+    // `try/catch` AUTOUR DE CHAQUE OPÉRATION (pas juste autour du batch entier) : une exception PHP
+    // non attrapée (ex. PDOException si la table/colonne visée n'existe pas encore, ou toute autre
+    // erreur inattendue) interrompt sinon TOUT le script avant `sendJson()` — PHP affiche alors sa
+    // page d'erreur HTML par défaut à la place du JSON attendu, que le Sync Engine Android ne sait
+    // pas parser ("Unexpected JSON token... Expected '{', but had '<'"). Cette opération précise
+    // échoue proprement (statut "error", jamais le détail interne de l'exception — voir la doc de
+    // `sendError()`), le reste du lot continue normalement, et l'app peut réessayer plus tard cette
+    // seule entrée (voir `sync_queue.retryCount` côté Android) sans jamais se retrouver bloquée sur
+    // une réponse illisible. Le détail réel de l'exception part dans le journal serveur (`error_log`),
+    // jamais dans la réponse au client.
+    try {
+        $results[] = applyEntityOperation($pdo, $entityConfig, $entityType, $userId, (string) $operation['operation'], $operation['entity']);
+    } catch (Throwable $e) {
+        error_log(sprintf(
+            '[sync/push] %s %s (id=%s) a échoué : %s',
+            $entityType,
+            (string) $operation['operation'],
+            (string) ($operation['entity']['id'] ?? '?'),
+            $e->getMessage()
+        ));
+        $results[] = [
+            'status' => 'error',
+            'errorCode' => 'server_error',
+            'entityId' => (string) ($operation['entity']['id'] ?? ''),
+        ];
+    }
 }
 
 sendJson(['results' => $results, 'serverTime' => (int) round(microtime(true) * 1000)]);

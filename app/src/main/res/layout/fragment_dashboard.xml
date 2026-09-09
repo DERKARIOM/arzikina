@@ -71,17 +71,27 @@
                     android:layout_marginStart="@dimen/spacing_m">
 
                     <!-- ShapeableImageView : voir le commentaire équivalent sur avatarImage dans
-                         fragment_profile.xml (même raisonnement, même correctif). -->
+                         fragment_profile.xml (même raisonnement, même correctif — dimensions/padding
+                         FIXES, jamais modifiés en Kotlin ; l'icône de repli est une vue séparée
+                         ci-dessous, pas cette même vue avec un padding gonflé/réduit par code). -->
                     <com.google.android.material.imageview.ShapeableImageView
                         android:id="@+id/userAvatarImage"
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
                         android:background="@drawable/bg_avatar_circle"
                         android:contentDescription="@null"
-                        android:padding="@dimen/spacing_xs"
                         android:scaleType="centerCrop"
+                        app:shapeAppearanceOverlay="@style/ShapeAppearanceOverlay.Arzikina.Circle" />
+
+                    <!-- Icône de repli (aucune photo) : vue séparée de taille fixe — voir doc
+                         ci-dessus. 40dp = taille effective de l'ancienne icône (48dp - 2×spacing_xs). -->
+                    <ImageView
+                        android:id="@+id/userAvatarPlaceholder"
+                        android:layout_width="@dimen/icon_size_large"
+                        android:layout_height="@dimen/icon_size_large"
+                        android:layout_gravity="center"
+                        android:contentDescription="@null"
                         android:src="@drawable/ic_person_24"
-                        app:shapeAppearanceOverlay="@style/ShapeAppearanceOverlay.Arzikina.Circle"
                         app:tint="@color/arzikina_on_dashboard_header_variant" />
 
                 </FrameLayout>

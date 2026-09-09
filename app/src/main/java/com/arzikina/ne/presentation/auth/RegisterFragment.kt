@@ -58,9 +58,16 @@ class RegisterFragment : Fragment(R.layout.fragment_register) {
      * suffisant pour l'aperçu immédiat ci-dessous, mais à revisiter (copie
      * du fichier dans le stockage interne de l'app) si la photo doit
      * survivre à un redémarrage de l'appareil.
+     *
+     * `avatarPlaceholder` masqué dès qu'une photo est choisie : `avatarImage`/`avatarPlaceholder`
+     * sont deux vues séparées de taille fixe (voir fragment_register.xml, `avatarContainer`) — même
+     * correctif "photo trop petite" que ProfileFragment/DashboardFragment/SettingsFragment,
+     * appliqué ici même si le symptôme d'origine (padding dynamique) ne s'était pas encore
+     * manifesté sur cet écran.
      */
     private val pickImage = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         if (uri != null) {
+            binding?.avatarPlaceholder?.visibility = View.GONE
             binding?.avatarImage?.load(uri)
             viewModel.onProfilePhotoPicked(uri.toString())
         }

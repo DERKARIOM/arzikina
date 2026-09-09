@@ -1,7 +1,6 @@
 package com.arzikina.ne.presentation.settings
 
 import android.content.pm.PackageManager
-import android.content.res.ColorStateList
 import android.os.Build
 import android.os.Bundle
 import android.view.View
@@ -27,7 +26,6 @@ import com.arzikina.ne.presentation.components.SyncIndicatorLevel
 import com.arzikina.ne.presentation.components.SyncIndicatorUiState
 import com.arzikina.ne.presentation.components.SyncNowUiState
 import com.arzikina.ne.presentation.profile.BiometricLockUiState
-import com.google.android.material.color.MaterialColors
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
@@ -413,28 +411,24 @@ class SettingsFragment : Fragment(R.layout.fragment_settings) {
     }
 
     /**
-     * `imageTintList`/`padding` retirés puis réappliqués explicitement pour une vraie photo, même
-     * correctif et même raisonnement que [com.arzikina.ne.presentation.profile.ProfileFragment.renderPhoto]
-     * (bug "photo affichée en carré blanc" : `app:tint` en XML s'applique aussi à une photo Coil et
-     * l'écrase en un carré de couleur unie ; le padding pensé pour l'icône silhouette empêchait la
-     * photo de remplir le cercle jusqu'au bord).
+     * `profileAvatar` (la photo) et `profileAvatarPlaceholder` (l'icône de repli) sont deux vues
+     * séparées de taille FIXE (voir fragment_settings.xml, `profileAvatarContainer`) — seule leur
+     * visibilité bascule ici, jamais leurs dimensions/padding. Corrige un bug où la photo
+     * s'affichait trop petite au premier rendu puis correctement après une interaction : l'ancienne
+     * version réutilisait la même ShapeableImageView pour la photo ET le placeholder en modifiant
+     * son padding par code selon l'état, rendant sa taille effective dépendante du moment où ce
+     * code s'exécutait par rapport au rendu (voir aussi
+     * [com.arzikina.ne.presentation.profile.ProfileFragment.renderPhoto], qui utilise encore
+     * l'ancien padding dynamique et pourrait présenter le même symptôme).
      */
     private fun render(binding: FragmentSettingsBinding, state: SettingsUiState) {
         binding.profileName.text = state.fullName
         if (state.profilePhotoUri != null) {
-            binding.profileAvatar.imageTintList = null
-            binding.profileAvatar.setPadding(0, 0, 0, 0)
+            binding.profileAvatarPlaceholder.visibility = View.GONE
             binding.profileAvatar.load(state.profilePhotoUri)
         } else {
-            binding.profileAvatar.imageTintList = ColorStateList.valueOf(
-                MaterialColors.getColor(binding.profileAvatar, com.google.android.material.R.attr.colorOnSurfaceVariant)
-            )
-            // 10dp : reprend exactement android:padding="10dp" de fragment_settings.xml
-            // (profileAvatar, plus petit que l'avatar 96dp de l'écran Profil — spacing_s, pas
-            // spacing_m).
-            val iconPadding = resources.getDimensionPixelSize(R.dimen.spacing_s)
-            binding.profileAvatar.setPadding(iconPadding, iconPadding, iconPadding, iconPadding)
-            binding.profileAvatar.setImageResource(R.drawable.ic_person_24)
+            binding.profileAvatarPlaceholder.visibility = View.VISIBLE
+            binding.profileAvatar.setImageDrawable(null)
         }
 
         binding.currencyRow.rowValue.text = state.currencyCode

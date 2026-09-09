@@ -2,7 +2,6 @@ package com.arzikina.ne.presentation.profile
 
 import android.Manifest
 import android.content.pm.PackageManager
-import android.content.res.ColorStateList
 import android.graphics.Bitmap
 import android.os.Bundle
 import android.view.View
@@ -26,7 +25,6 @@ import com.canhub.cropper.CropImageContract
 import com.canhub.cropper.CropImageContractOptions
 import com.canhub.cropper.CropImageOptions
 import com.canhub.cropper.CropImageView
-import com.google.android.material.color.MaterialColors
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
@@ -277,32 +275,25 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
      * Avatar par défaut (`ic_person_24`) dès que [ProfilePhotoUiState.photoUri] est `null` — jamais
      * laissé tel quel avec une ancienne image chargée (ex. juste après une suppression).
      *
-     * `imageTintList` retiré/réappliqué explicitement ici : `app:tint="?attr/colorOnSurfaceVariant"`
-     * dans fragment_profile.xml est prévu UNIQUEMENT pour la silhouette [R.drawable.ic_person_24]
-     * (icône monochrome) — laissé tel quel, Android l'applique aussi à une vraie photo chargée par
-     * Coil (filtre de couleur SRC_IN sur toute l'image, opaque), l'écrasant en un simple carré de
-     * couleur unie (bug "photo affichée en carré blanc"). Même correctif que
-     * [com.arzikina.ne.presentation.dashboard.DashboardFragment.renderUserHeader].
-     *
-     * `padding` retiré/réappliqué de la même façon : `android:padding="@dimen/spacing_m"` (XML)
-     * donne un joli espacement pour la petite icône silhouette au centre du cercle, mais appliqué à
-     * une vraie photo il la fait apparaître inscrite dans le cercle plutôt que de remplir tout le
-     * cercle jusqu'au bord (voir aussi `app:shapeAppearanceOverlay`, qui découpe désormais le
-     * contenu en cercle — cahier des charges "avatar circulaire").
+     * `avatarImage` (la photo) et `avatarPlaceholder` (l'icône de repli) sont deux vues séparées de
+     * taille FIXE (voir fragment_profile.xml, `avatarContainer`) — seule leur visibilité bascule
+     * ici, jamais leurs dimensions/padding. Corrige un bug où la photo s'affichait trop petite au
+     * premier rendu puis correctement après une interaction : l'ancienne version réutilisait la
+     * même ShapeableImageView pour la photo ET le placeholder en modifiant son padding/tint par
+     * code selon l'état, rendant sa taille effective dépendante du moment où ce code s'exécutait
+     * par rapport au rendu (même correctif que
+     * [com.arzikina.ne.presentation.settings.SettingsFragment.render] pour `profileAvatar`, et
+     * appliqué en parallèle à
+     * [com.arzikina.ne.presentation.dashboard.DashboardFragment.renderUserHeader]).
      */
     private fun renderPhoto(state: ProfilePhotoUiState) {
         val binding = binding ?: return
         if (state.photoUri != null) {
-            binding.avatarImage.imageTintList = null
-            binding.avatarImage.setPadding(0, 0, 0, 0)
+            binding.avatarPlaceholder.visibility = View.GONE
             binding.avatarImage.load(state.photoUri) { crossfade(true) }
         } else {
-            binding.avatarImage.imageTintList = ColorStateList.valueOf(
-                MaterialColors.getColor(binding.avatarImage, com.google.android.material.R.attr.colorOnSurfaceVariant)
-            )
-            val iconPadding = resources.getDimensionPixelSize(R.dimen.spacing_m)
-            binding.avatarImage.setPadding(iconPadding, iconPadding, iconPadding, iconPadding)
-            binding.avatarImage.setImageResource(R.drawable.ic_person_24)
+            binding.avatarPlaceholder.visibility = View.VISIBLE
+            binding.avatarImage.setImageDrawable(null)
         }
         binding.avatarProgress.visibility = if (state.isProcessing) View.VISIBLE else View.GONE
     }

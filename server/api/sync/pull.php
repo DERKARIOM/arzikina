@@ -72,15 +72,24 @@ $columnNames = array_merge(
     ['created_at', 'updated_at', 'deleted_at', 'version']
 );
 
-$stmt = $pdo->prepare(
-    'SELECT ' . implode(', ', $columnNames) . '
-     FROM ' . $entityConfig['table'] . "
-     WHERE user_id = :user_id AND updated_at > :updated_after
-     ORDER BY updated_at ASC
-     LIMIT $batchLimit"
-);
-$stmt->execute(['user_id' => $userId, 'updated_after' => $updatedAfter]);
-$rows = $stmt->fetchAll();
+// try/catch : même raisonnement que `push.php` (voir sa doc) — une exception PDO non attrapée ici
+// (ex. table/colonne pas encore déployée) laisserait échapper la page d'erreur HTML par défaut de
+// PHP à la place du JSON attendu, que le Sync Engine Android ne sait pas parser. Détail réel dans
+// le journal serveur, jamais dans la réponse au client (voir `sendError()`).
+try {
+    $stmt = $pdo->prepare(
+        'SELECT ' . implode(', ', $columnNames) . '
+         FROM ' . $entityConfig['table'] . "
+         WHERE user_id = :user_id AND updated_at > :updated_after
+         ORDER BY updated_at ASC
+         LIMIT $batchLimit"
+    );
+    $stmt->execute(['user_id' => $userId, 'updated_after' => $updatedAfter]);
+    $rows = $stmt->fetchAll();
+} catch (Throwable $e) {
+    error_log(sprintf('[sync/pull] %s a échoué : %s', $entityType, $e->getMessage()));
+    sendError('server_error', 'Erreur serveur lors de la lecture des données.', 500);
+}
 
 sendJson([
     'entities' => array_map(static fn (array $row): array => toCamelCaseRow($row, $entityConfig), $rows),

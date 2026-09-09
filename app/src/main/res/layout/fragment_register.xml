@@ -85,14 +85,26 @@
                 android:clickable="true"
                 android:focusable="true">
 
+                <!-- Dimensions/padding FIXES, jamais modifiés en Kotlin (voir le même correctif
+                     appliqué à ProfileFragment/DashboardFragment/SettingsFragment pour la photo de
+                     profil) : l'icône de repli est une vue séparée ci-dessous (avatarPlaceholder),
+                     pas cette même vue avec un padding/tint gonflé/réduit par code. -->
                 <ImageView
                     android:id="@+id/avatarImage"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:background="@drawable/bg_avatar_circle"
                     android:contentDescription="@string/register_photo_action"
-                    android:padding="@dimen/spacing_m"
-                    android:scaleType="centerCrop"
+                    android:scaleType="centerCrop" />
+
+                <!-- Icône de repli (aucune photo choisie) : vue séparée de taille fixe — voir doc
+                     ci-dessus. 56dp = taille effective de l'ancienne icône (88dp - 2×spacing_m). -->
+                <ImageView
+                    android:id="@+id/avatarPlaceholder"
+                    android:layout_width="56dp"
+                    android:layout_height="56dp"
+                    android:layout_gravity="center"
+                    android:contentDescription="@null"
                     android:src="@drawable/ic_person_24"
                     app:tint="?attr/colorOnSurfaceVariant" />
 

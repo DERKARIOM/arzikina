@@ -45,9 +45,13 @@
                     photo de profil" — l'avatar doit être circulaire. bg_avatar_circle (déjà rond)
                     ne suffisait pas seul : c'est un simple android:background dessiné DERRIÈRE
                     l'image, il ne découpe pas le contenu (icône ou photo) qui, lui, restait carré.
-                    app:shapeAppearanceOverlay applique un vrai clip circulaire au contenu affiché,
-                    icône ET photo (voir ProfileFragment.renderPhoto, padding retiré/restauré selon
-                    le cas).
+                    app:shapeAppearanceOverlay applique un vrai clip circulaire au contenu affiché.
+
+                    Dimensions/padding FIXES, jamais modifiés en Kotlin (voir ProfileFragment.renderPhoto
+                    et le correctif appliqué côté Paramètres, fragment_settings.xml/profileAvatar,
+                    pour le même bug) : l'icône de repli est une vue séparée ci-dessous
+                    (avatarPlaceholder), pas cette même vue avec un padding gonflé/réduit par code —
+                    la taille de la photo ne peut donc plus varier d'un rendu à l'autre.
                 -->
                 <com.google.android.material.imageview.ShapeableImageView
                     android:id="@+id/avatarImage"
@@ -55,10 +59,18 @@
                     android:layout_height="match_parent"
                     android:background="@drawable/bg_avatar_circle"
                     android:contentDescription="@string/register_photo_action"
-                    android:padding="@dimen/spacing_m"
                     android:scaleType="centerCrop"
+                    app:shapeAppearanceOverlay="@style/ShapeAppearanceOverlay.Arzikina.Circle" />
+
+                <!-- Icône de repli (aucune photo) : vue séparée de taille fixe — voir doc ci-dessus.
+                     64dp = taille effective de l'ancienne icône (96dp - 2×spacing_m de padding). -->
+                <ImageView
+                    android:id="@+id/avatarPlaceholder"
+                    android:layout_width="@dimen/icon_size_xlarge"
+                    android:layout_height="@dimen/icon_size_xlarge"
+                    android:layout_gravity="center"
+                    android:contentDescription="@null"
                     android:src="@drawable/ic_person_24"
-                    app:shapeAppearanceOverlay="@style/ShapeAppearanceOverlay.Arzikina.Circle"
                     app:tint="?attr/colorOnSurfaceVariant" />
 
                 <ImageView
