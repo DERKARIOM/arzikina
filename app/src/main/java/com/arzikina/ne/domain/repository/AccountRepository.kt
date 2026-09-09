@@ -28,8 +28,8 @@ interface AccountRepository {
 
     /**
      * Persiste un nouvel ordre d'affichage après un glisser-déposer sur l'écran "Comptes" (voir
-     * `presentation/accounts/AccountsFragment`, onglet Comptes uniquement — jamais Cartes
-     * bancaires/Planification, voir sa doc).
+     * `presentation/accounts/AccountsFragment`, onglets Comptes ET Cartes bancaires — jamais
+     * Planification, qui ne partage ni le même adaptateur ni la même entité, voir sa doc).
      *
      * [orderedIds] : TOUS les comptes actuellement visibles dans la sous-liste réordonnée, dans
      * leur position finale après le dépôt (pas seulement celui déplacé) — réattribue une position

@@ -1,5 +1,6 @@
 package com.arzikina.ne.domain.repository
 
+import com.arzikina.ne.domain.model.SecurityQuestion
 import com.arzikina.ne.domain.model.UnifiedAuthResult
 
 /**
@@ -35,7 +36,26 @@ interface UnifiedAuthRepository {
      */
     suspend fun login(email: String, rawPassword: String): UnifiedAuthResult
 
-    /** Inscription volontaire d'un compte entièrement nouveau (serveur + local), avec semis des
-     *  données par défaut. */
-    suspend fun register(fullName: String, email: String, rawPassword: String): UnifiedAuthResult
+    /**
+     * Inscription volontaire d'un compte entièrement nouveau (serveur + local), avec semis des
+     * données par défaut — voir `presentation/auth/RegisterFragment`, écran complet (pas le
+     * parcours simplifié "Gmail + mot de passe" d'origine de cette interface, voir l'historique de
+     * [com.arzikina.ne.data.repository.UnifiedAuthRepositoryImpl]).
+     *
+     * [username]/[securityQuestion]/[securityAnswer] sont RÉELLEMENT envoyés au serveur (voir
+     * `server/api/auth/register.php`) ET stockés localement (hachage PBKDF2, voir
+     * [com.arzikina.ne.util.PasswordHasher]) — contrairement au chemin [login] (connexion, ou
+     * migration silencieuse d'un compte local préexistant), qui ne dispose jamais de ces valeurs
+     * réelles et continue d'utiliser un repli documenté (voir l'implémentation).
+     */
+    suspend fun register(
+        fullName: String,
+        username: String,
+        email: String,
+        phoneNumber: String?,
+        rawPassword: String,
+        profilePhotoUri: String?,
+        securityQuestion: SecurityQuestion,
+        securityAnswer: String
+    ): UnifiedAuthResult
 }

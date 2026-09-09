@@ -72,18 +72,26 @@ class AccountsFragment : Fragment(R.layout.fragment_accounts) {
     private var isReordering = false
 
     /**
-     * Glisser-déposer vertical (voir cahier des charges "réorganiser les comptes") — actif
-     * UNIQUEMENT sur l'onglet [AccountsDisplayTab.ACCOUNTS] ([getDragDirs] renvoie `0` sinon,
-     * jamais sur Cartes bancaires/Planification, voir leur propre logique métier). Animations
-     * volontairement légères (élévation + zoom discret, voir [animateDragStart]/[animateDragEnd]) :
-     * "éviter les animations lourdes" (cahier des charges).
+     * Glisser-déposer vertical (voir cahier des charges "réorganiser les comptes", étendu ensuite
+     * à Cartes bancaires sur demande explicite) — actif sur les onglets [AccountsDisplayTab.ACCOUNTS]
+     * ET [AccountsDisplayTab.BANK_CARDS] ([getDragDirs] renvoie `0` uniquement sur
+     * [AccountsDisplayTab.PLANNING], qui ne partage ni le même adaptateur ni la même liste — voir
+     * `FinancialPlansAdapter`, entièrement séparé, aucun champ d'ordre n'existe pour l'instant sur
+     * [com.arzikina.ne.domain.model.FinancialPlan]). Comptes ET cartes bancaires partagent le MÊME
+     * champ [com.arzikina.ne.domain.model.Account.displayOrder] et le même adaptateur
+     * ([AccountsAdapter]) : chaque onglet ne réordonne QUE sa propre sous-liste filtrée (voir
+     * [AccountUiItem.matchesTab]), sans jamais toucher aux positions de l'autre type de compte
+     * (l'ensemble des ids passé à `reorderAccounts` ne contient que les comptes actuellement
+     * visibles dans l'onglet actif). Animations volontairement légères (élévation + zoom discret,
+     * voir [animateDragStart]/[animateDragEnd]) : "éviter les animations lourdes" (cahier des
+     * charges).
      */
     private val itemTouchHelperCallback = object : ItemTouchHelper.SimpleCallback(
         ItemTouchHelper.UP or ItemTouchHelper.DOWN,
         0
     ) {
         override fun getDragDirs(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder): Int =
-            if (viewModel.selectedTab.value == AccountsDisplayTab.ACCOUNTS) super.getDragDirs(recyclerView, viewHolder) else 0
+            if (viewModel.selectedTab.value != AccountsDisplayTab.PLANNING) super.getDragDirs(recyclerView, viewHolder) else 0
 
         override fun onMove(
             recyclerView: RecyclerView,

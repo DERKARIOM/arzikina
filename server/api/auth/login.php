@@ -53,53 +53,65 @@ if ($identifier === '' || $password === '') {
 
 $pdo = getDatabaseConnection();
 
-$stmt = $pdo->prepare(
-    'SELECT id, password_hash, full_name FROM users
-     WHERE (username = :identifier_username OR email = :identifier_email) AND deleted_at IS NULL
-     LIMIT 1'
-);
-$stmt->execute([
-    'identifier_username' => $identifier,
-    'identifier_email' => $identifier,
-]);
-$user = $stmt->fetch();
+// try/catch AUTOUR DE TOUT LE BLOC métier — même raisonnement que `register.php`/`sync/push.php`/
+// `pull.php` (voir leur doc de tête) : une exception non attrapée ici (connexion DB perdue, etc.)
+// laisserait échapper la page d'erreur HTML par défaut de PHP à la place du JSON attendu, que
+// `SyncAuthRepositoryImpl` (côté Android) ne sait pas parser — il la remonterait comme une erreur
+// réseau/inconnue au lieu d'un `server_error` clair. Pas de cas `PDOException` spécifique à isoler
+// ici (contrairement à `register.php`) : aucune contrainte UNIQUE n'est en jeu pour une simple
+// authentification, un seul type d'échec DB est possible.
+try {
+    $stmt = $pdo->prepare(
+        'SELECT id, password_hash, full_name FROM users
+         WHERE (username = :identifier_username OR email = :identifier_email) AND deleted_at IS NULL
+         LIMIT 1'
+    );
+    $stmt->execute([
+        'identifier_username' => $identifier,
+        'identifier_email' => $identifier,
+    ]);
+    $user = $stmt->fetch();
 
-// Délai fixe AVANT de révéler le résultat — voir doc de tête (atténuation timing-based).
-usleep(150000);
+    // Délai fixe AVANT de révéler le résultat — voir doc de tête (atténuation timing-based).
+    usleep(150000);
 
-if ($user === false || !password_verify($password, $user['password_hash'])) {
-    sendError('invalid_credentials', 'Identifiant ou mot de passe incorrect.', 401);
+    if ($user === false || !password_verify($password, $user['password_hash'])) {
+        sendError('invalid_credentials', 'Identifiant ou mot de passe incorrect.', 401);
+    }
+
+    $rawToken = bin2hex(random_bytes(32));
+    $tokenHash = hash('sha256', $rawToken);
+    $nowMillis = (int) round(microtime(true) * 1000);
+    $expiresAtMillis = $nowMillis + (TOKEN_EXPIRY_SECONDS * 1000);
+
+    $insert = $pdo->prepare(
+        'INSERT INTO auth_tokens (user_id, token_hash, device_id, device_label, created_at, expires_at)
+         VALUES (:user_id, :token_hash, :device_id, :device_label, :created_at, :expires_at)'
+    );
+    $insert->execute([
+        'user_id' => $user['id'],
+        'token_hash' => $tokenHash,
+        'device_id' => $deviceId,
+        'device_label' => $deviceLabel,
+        'created_at' => $nowMillis,
+        'expires_at' => $expiresAtMillis,
+    ]);
+
+    sendJson([
+        'token' => $rawToken,
+        'userId' => $user['id'],
+        'expiresAt' => $expiresAtMillis,
+        // Nom complet réel (colonne users.full_name) — même source que authRepository.observeUser()
+        // côté Android, exposée ici plutôt que dupliquée dans une autre table (voir user_preferences,
+        // qui reste volontairement limité aux préférences d'affichage : thème/devise/verrou).
+        // `?? ''` : garantit le contrat d'API (LoginResponseDto.fullName est non-nullable côté Android,
+        // register.php le garantit toujours non vide à l'inscription — mais un compte plus ancien,
+        // créé avant l'existence de cette colonne ou directement en SQL, peut avoir NULL en base ; sans
+        // ce repli, kotlinx.serialization plante au décodage et la connexion échoue avec une erreur
+        // générique trompeuse côté mobile).
+        'fullName' => $user['full_name'] ?? '',
+    ]);
+} catch (Throwable $e) {
+    error_log('Arzikina API — echec connexion : ' . $e->getMessage());
+    sendError('server_error', 'La connexion a échoué, réessaie plus tard.', 500);
 }
-
-$rawToken = bin2hex(random_bytes(32));
-$tokenHash = hash('sha256', $rawToken);
-$nowMillis = (int) round(microtime(true) * 1000);
-$expiresAtMillis = $nowMillis + (TOKEN_EXPIRY_SECONDS * 1000);
-
-$insert = $pdo->prepare(
-    'INSERT INTO auth_tokens (user_id, token_hash, device_id, device_label, created_at, expires_at)
-     VALUES (:user_id, :token_hash, :device_id, :device_label, :created_at, :expires_at)'
-);
-$insert->execute([
-    'user_id' => $user['id'],
-    'token_hash' => $tokenHash,
-    'device_id' => $deviceId,
-    'device_label' => $deviceLabel,
-    'created_at' => $nowMillis,
-    'expires_at' => $expiresAtMillis,
-]);
-
-sendJson([
-    'token' => $rawToken,
-    'userId' => $user['id'],
-    'expiresAt' => $expiresAtMillis,
-    // Nom complet réel (colonne users.full_name) — même source que authRepository.observeUser()
-    // côté Android, exposée ici plutôt que dupliquée dans une autre table (voir user_preferences,
-    // qui reste volontairement limité aux préférences d'affichage : thème/devise/verrou).
-    // `?? ''` : garantit le contrat d'API (LoginResponseDto.fullName est non-nullable côté Android,
-    // register.php le garantit toujours non vide à l'inscription — mais un compte plus ancien,
-    // créé avant l'existence de cette colonne ou directement en SQL, peut avoir NULL en base ; sans
-    // ce repli, kotlinx.serialization plante au décodage et la connexion échoue avec une erreur
-    // générique trompeuse côté mobile).
-    'fullName' => $user['full_name'] ?? '',
-]);

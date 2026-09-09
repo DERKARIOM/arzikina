@@ -4,11 +4,11 @@ import androidx.annotation.StringRes
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.arzikina.ne.R
-import com.arzikina.ne.domain.model.AuthError
-import com.arzikina.ne.domain.model.AuthResult
 import com.arzikina.ne.domain.model.SecurityQuestion
-import com.arzikina.ne.domain.repository.AuthRepository
+import com.arzikina.ne.domain.model.UnifiedAuthError
+import com.arzikina.ne.domain.model.UnifiedAuthResult
 import com.arzikina.ne.domain.repository.SessionManager
+import com.arzikina.ne.domain.repository.UnifiedAuthRepository
 import com.arzikina.ne.util.AuthValidator
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -23,7 +23,7 @@ import javax.inject.Inject
 
 /**
  * État du formulaire d'inscription. Les erreurs sont des ID de ressource
- * (`@StringRes`), pas du texte en dur : le domaine ([AuthError]) ne produit
+ * (`@StringRes`), pas du texte en dur : le domaine ([UnifiedAuthError]) ne produit
  * jamais de texte affichable (voir sa KDoc), c'est ce ViewModel qui choisit
  * la chaîne localisée correspondante. Rattachées au champ concerné plutôt
  * qu'affichées génériquement : l'utilisateur doit voir immédiatement QUEL
@@ -56,7 +56,7 @@ sealed interface RegisterEvent {
 
 @HiltViewModel
 class RegisterViewModel @Inject constructor(
-    private val authRepository: AuthRepository,
+    private val unifiedAuthRepository: UnifiedAuthRepository,
     private val sessionManager: SessionManager
 ) : ViewModel() {
 
@@ -106,8 +106,9 @@ class RegisterViewModel @Inject constructor(
      * Validation de FORMAT en local (voir [AuthValidator]) avant tout appel
      * au repository : retour instantané, sans aller-retour base de données,
      * pour les erreurs les plus courantes (champ vide, e-mail mal formé...).
-     * [AuthRepository.register] revalide de toute façon ces mêmes règles en
-     * profondeur (défense en profondeur, voir sa KDoc).
+     * [UnifiedAuthRepository.register] revalide de toute façon ces mêmes règles en
+     * profondeur (défense en profondeur, voir sa KDoc), et crée le compte à la
+     * fois sur le serveur et localement — voir sa KDoc pour le détail.
      */
     fun submit() {
         if (_formState.value.isSubmitting) return
@@ -116,7 +117,7 @@ class RegisterViewModel @Inject constructor(
         val state = _formState.value
         _formState.update { it.copy(isSubmitting = true) }
         viewModelScope.launch {
-            val result = authRepository.register(
+            val result = unifiedAuthRepository.register(
                 fullName = state.fullName.trim(),
                 username = state.username.trim(),
                 email = state.email.trim(),
@@ -127,12 +128,12 @@ class RegisterViewModel @Inject constructor(
                 securityAnswer = state.securityAnswer.trim()
             )
             when (result) {
-                is AuthResult.Success -> {
-                    sessionManager.startSession(result.data.id)
+                is UnifiedAuthResult.Success -> {
+                    sessionManager.startSession(result.localUserId)
                     _formState.update { it.copy(isSubmitting = false) }
                     _events.emit(RegisterEvent.Registered)
                 }
-                is AuthResult.Failure -> {
+                is UnifiedAuthResult.Failure -> {
                     _formState.update { it.copy(isSubmitting = false) }
                     handleFailure(result.error)
                 }
@@ -187,18 +188,37 @@ class RegisterViewModel @Inject constructor(
         ).all { it == null }
     }
 
-    private suspend fun handleFailure(error: AuthError) {
+    /**
+     * [UnifiedAuthError.ValidationFailed] ne devrait normalement plus arriver après
+     * [validateFormat] (défense en profondeur côté repository, voir sa KDoc) — mappée
+     * quand même vers le champ concerné plutôt qu'un message générique, par cohérence
+     * avec les mêmes règles déjà utilisées dans [validateFormat].
+     * [UnifiedAuthError.InvalidCredentials] n'est en pratique jamais renvoyée par
+     * [UnifiedAuthRepository.register] (filet de sécurité, voir sa KDoc).
+     */
+    private suspend fun handleFailure(error: UnifiedAuthError) {
         when (error) {
-            AuthError.UsernameAlreadyExists ->
+            UnifiedAuthError.UsernameAlreadyExists ->
                 _formState.update { it.copy(usernameError = R.string.register_error_username_taken) }
-            AuthError.EmailAlreadyExists ->
+            UnifiedAuthError.EmailAlreadyExists ->
                 _formState.update { it.copy(emailError = R.string.register_error_email_taken) }
-            else ->
-                // Couvre AuthError.ValidationFailed (ne devrait plus arriver après
-                // validateFormat(), voir la KDoc d'AuthRepository), InvalidCredentials,
-                // UserNotFound, CurrentPasswordIncorrect (non pertinents pour l'inscription)
-                // et Unknown : un message générique suffit, ce ne sont pas des cas
-                // qu'un utilisateur peut corriger en changeant un champ précis.
+            is UnifiedAuthError.ValidationFailed -> when (error.reason) {
+                UnifiedAuthError.ValidationFailed.ValidationReason.INVALID_EMAIL_FORMAT ->
+                    _formState.update { it.copy(emailError = R.string.register_error_invalid_email) }
+                UnifiedAuthError.ValidationFailed.ValidationReason.PASSWORD_TOO_SHORT ->
+                    _formState.update { it.copy(passwordError = R.string.register_error_password_too_short) }
+                UnifiedAuthError.ValidationFailed.ValidationReason.INVALID_USERNAME ->
+                    _formState.update { it.copy(usernameError = R.string.register_error_invalid_username) }
+                UnifiedAuthError.ValidationFailed.ValidationReason.SECURITY_ANSWER_TOO_SHORT ->
+                    _formState.update { it.copy(securityAnswerError = R.string.register_error_security_answer_too_short) }
+                UnifiedAuthError.ValidationFailed.ValidationReason.REQUIRED_FIELD_MISSING ->
+                    _events.emit(RegisterEvent.ShowError(R.string.register_error_unknown))
+            }
+            UnifiedAuthError.NetworkUnavailableNoLocalFallback ->
+                _events.emit(RegisterEvent.ShowError(R.string.sync_login_error_network))
+            is UnifiedAuthError.ServerError ->
+                _events.emit(RegisterEvent.ShowError(R.string.sync_login_error_server))
+            is UnifiedAuthError.Unknown, UnifiedAuthError.InvalidCredentials ->
                 _events.emit(RegisterEvent.ShowError(R.string.register_error_unknown))
         }
     }

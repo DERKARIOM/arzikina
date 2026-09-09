@@ -18,8 +18,26 @@ sealed class UnifiedAuthError {
      *  connecter plutôt que créer un second compte. */
     data object EmailAlreadyExists : UnifiedAuthError()
 
+    /**
+     * Inscription : le nom d'utilisateur CHOISI par l'utilisateur est déjà pris sur le serveur.
+     * Jamais renvoyée par [com.arzikina.ne.data.repository.UnifiedAuthRepositoryImpl.login]/la
+     * migration silencieuse, qui dérivent un nom invisible pour l'utilisateur et retentent en
+     * silence en cas de collision (voir `registerOnServerWithUsernameRetry`) — ici, au contraire,
+     * le nom fait partie du formulaire rempli consciemment par l'utilisateur : lui substituer un
+     * autre nom sans le prévenir serait trompeur, l'erreur doit donc lui être remontée pour qu'il
+     * en choisisse un autre lui-même.
+     */
+    data object UsernameAlreadyExists : UnifiedAuthError()
+
     data class ValidationFailed(val reason: ValidationReason) : UnifiedAuthError() {
-        enum class ValidationReason { REQUIRED_FIELD_MISSING, INVALID_EMAIL_FORMAT, PASSWORD_TOO_SHORT }
+        /** [INVALID_USERNAME]/[SECURITY_ANSWER_TOO_SHORT] : ajoutées avec l'inscription complète
+         *  (voir [com.arzikina.ne.domain.repository.UnifiedAuthRepository.register]) — sans objet
+         *  pour [com.arzikina.ne.domain.repository.UnifiedAuthRepository.login], qui ne les valide
+         *  jamais. */
+        enum class ValidationReason {
+            REQUIRED_FIELD_MISSING, INVALID_EMAIL_FORMAT, PASSWORD_TOO_SHORT,
+            INVALID_USERNAME, SECURITY_ANSWER_TOO_SHORT
+        }
     }
 
     /**

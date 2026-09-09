@@ -173,9 +173,10 @@ class LoginViewModel @Inject constructor(
             is UnifiedAuthError.ServerError -> R.string.sync_login_error_server
             is UnifiedAuthError.Unknown -> R.string.sync_login_error_server
             is UnifiedAuthError.ValidationFailed -> R.string.register_error_required_field
-            // Réservé à une inscription volontaire (voir UnifiedAuthRepository.register) — jamais
-            // renvoyée par login() en pratique ; filet de sécurité pour rester exhaustif.
+            // Réservées à une inscription volontaire (voir UnifiedAuthRepository.register) — jamais
+            // renvoyées par login() en pratique ; filet de sécurité pour rester exhaustif.
             UnifiedAuthError.EmailAlreadyExists -> R.string.register_error_email_taken
+            UnifiedAuthError.UsernameAlreadyExists -> R.string.register_error_username_taken
         }
         _formState.update { it.copy(formError = messageRes) }
     }

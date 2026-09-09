@@ -24,10 +24,19 @@ import javax.inject.Inject
 /**
  * Implémentation [UnifiedAuthRepository] — voir sa KDoc pour le contrat général. Dépend
  * directement de [UserDao]/[UserServerLinkDao] (couche data), jamais de [AuthRepository] : ce
- * dernier expose des règles de validation/erreurs pensées pour l'ANCIEN écran d'inscription locale
- * autonome (nom d'utilisateur choisi, question de sécurité obligatoire...), qui ne correspondent
- * plus au parcours simplifié "Gmail + mot de passe" — dupliquer ce chemin ici, réduit à ce dont ce
- * flux a réellement besoin, est plus clair que de forcer [AuthRepository] à couvrir les deux.
+ * dernier reste l'authentification 100 % locale historique (toujours utilisée telle quelle par
+ * `presentation/profile`, `ForgotPasswordViewModel`...), dupliquer ici sa logique de validation
+ * plutôt que la réutiliser évite un couplage entre deux flux dont les erreurs typées
+ * ([AuthError]/[UnifiedAuthError]) et les invariants (compte serveur vs. compte 100 % local)
+ * diffèrent réellement.
+ *
+ * MISE À JOUR (audit "création de compte") : [register] couvre désormais le formulaire complet
+ * (nom d'utilisateur choisi, téléphone, question de sécurité) — `RegisterViewModel` l'appelle à la
+ * place de [AuthRepository.register], qui reste néanmoins la référence pour les écrans qui n'ont
+ * pas encore migré vers l'authentification serveur unifiée. Seuls [login]/la migration silencieuse/
+ * le repli hors ligne ci-dessous restent dépourvus d'une vraie question de sécurité (voir
+ * [resolveOrCreateLocalUser]) : ils n'ont jamais accès à la réponse en clair d'un compte créé avant
+ * eux.
  *
  * RATTACHEMENT ANTI-DOUBLON (prolongement direct de l'étape A de ce chantier, voir
  * `SyncEngineImpl.applyCategoryServerState`/`applyAccountServerState`) : [resolveOrCreateLocalUser]
@@ -70,45 +79,93 @@ class UnifiedAuthRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun register(fullName: String, email: String, rawPassword: String): UnifiedAuthResult =
-        withContext(ioDispatcher) {
-            val trimmedEmail = email.trim()
-            val trimmedFullName = fullName.trim()
-            validateFormat(trimmedEmail, rawPassword, trimmedFullName)?.let { return@withContext UnifiedAuthResult.Failure(it) }
+    override suspend fun register(
+        fullName: String,
+        username: String,
+        email: String,
+        phoneNumber: String?,
+        rawPassword: String,
+        profilePhotoUri: String?,
+        securityQuestion: SecurityQuestion,
+        securityAnswer: String
+    ): UnifiedAuthResult = withContext(ioDispatcher) {
+        val trimmedEmail = email.trim()
+        val trimmedFullName = fullName.trim()
+        val trimmedUsername = username.trim()
+        val trimmedSecurityAnswer = AuthValidator.normalizeSecurityAnswer(securityAnswer)
+        validateFormat(
+            email = trimmedEmail,
+            rawPassword = rawPassword,
+            fullName = trimmedFullName,
+            username = trimmedUsername,
+            securityAnswer = trimmedSecurityAnswer
+        )?.let { return@withContext UnifiedAuthResult.Failure(it) }
 
-            registerOnServerWithUsernameRetry(
-                fullName = trimmedFullName,
-                preferredUsername = deriveLocalUsernameCandidate(trimmedEmail),
-                email = trimmedEmail,
-                rawPassword = rawPassword
-            ).let { result ->
-                when (result) {
-                    is SyncAuthResult.Success ->
-                        onServerAuthSuccess(result.data, trimmedEmail, rawPassword, seedDefaultsIfNewLocalUser = true)
+        registerOnServerWithUsernameRetry(
+            fullName = trimmedFullName,
+            preferredUsername = trimmedUsername,
+            email = trimmedEmail,
+            rawPassword = rawPassword,
+            phoneNumber = phoneNumber,
+            securityQuestion = securityQuestion,
+            securityAnswer = trimmedSecurityAnswer,
+            // Nom CHOISI par l'utilisateur (formulaire complet, contrairement à la migration
+            // silencieuse ci-dessous) : jamais de retentative silencieuse sous un autre nom, voir
+            // [UnifiedAuthError.UsernameAlreadyExists].
+            allowUsernameRetry = false
+        ).let { result ->
+            when (result) {
+                is SyncAuthResult.Success ->
+                    onServerAuthSuccess(
+                        session = result.data,
+                        email = trimmedEmail,
+                        rawPassword = rawPassword,
+                        seedDefaultsIfNewLocalUser = true,
+                        // allowUsernameRetry = false ci-dessus : le nom effectivement créé côté
+                        // serveur est garanti identique à trimmedUsername.
+                        username = trimmedUsername,
+                        phoneNumber = phoneNumber,
+                        profilePhotoUri = profilePhotoUri,
+                        securityQuestion = securityQuestion,
+                        securityAnswer = trimmedSecurityAnswer
+                    )
 
-                    is SyncAuthResult.Failure -> when (result.error) {
-                        SyncAuthError.EmailTaken -> UnifiedAuthResult.Failure(UnifiedAuthError.EmailAlreadyExists)
-                        SyncAuthError.NetworkUnavailable -> UnifiedAuthResult.Failure(UnifiedAuthError.NetworkUnavailableNoLocalFallback)
-                        is SyncAuthError.ServerError -> UnifiedAuthResult.Failure(UnifiedAuthError.ServerError(result.error.message))
-                        is SyncAuthError.Unknown -> UnifiedAuthResult.Failure(UnifiedAuthError.Unknown(result.error.cause))
-                        else -> UnifiedAuthResult.Failure(UnifiedAuthError.ServerError(null))
-                    }
+                is SyncAuthResult.Failure -> when (result.error) {
+                    SyncAuthError.EmailTaken -> UnifiedAuthResult.Failure(UnifiedAuthError.EmailAlreadyExists)
+                    SyncAuthError.UsernameTaken -> UnifiedAuthResult.Failure(UnifiedAuthError.UsernameAlreadyExists)
+                    SyncAuthError.NetworkUnavailable -> UnifiedAuthResult.Failure(UnifiedAuthError.NetworkUnavailableNoLocalFallback)
+                    is SyncAuthError.ServerError -> UnifiedAuthResult.Failure(UnifiedAuthError.ServerError(result.error.message))
+                    is SyncAuthError.Unknown -> UnifiedAuthResult.Failure(UnifiedAuthError.Unknown(result.error.cause))
+                    else -> UnifiedAuthResult.Failure(UnifiedAuthError.ServerError(null))
                 }
             }
         }
+    }
 
     private suspend fun onServerAuthSuccess(
         session: SyncSession,
         email: String,
         rawPassword: String,
-        seedDefaultsIfNewLocalUser: Boolean
+        seedDefaultsIfNewLocalUser: Boolean,
+        // Uniquement fournis par [register] (voir sa doc) — `null` pour [login]/[attemptSilentServerMigration]/
+        // [attemptOfflineFallback], qui laissent [resolveOrCreateLocalUser] appliquer son repli.
+        username: String? = null,
+        phoneNumber: String? = null,
+        profilePhotoUri: String? = null,
+        securityQuestion: SecurityQuestion? = null,
+        securityAnswer: String? = null
     ): UnifiedAuthResult {
         val localUserId = resolveOrCreateLocalUser(
             serverUserId = session.serverUserId,
             fullName = session.fullName,
             email = email,
             rawPassword = rawPassword,
-            seedDefaultsIfNewLocalUser = seedDefaultsIfNewLocalUser
+            seedDefaultsIfNewLocalUser = seedDefaultsIfNewLocalUser,
+            username = username,
+            phoneNumber = phoneNumber,
+            profilePhotoUri = profilePhotoUri,
+            securityQuestion = securityQuestion,
+            securityAnswer = securityAnswer
         )
         return UnifiedAuthResult.Success(localUserId, usedLocalFallback = false)
     }
@@ -135,7 +192,11 @@ class UnifiedAuthRepositoryImpl @Inject constructor(
                 fullName = localUser.fullName,
                 preferredUsername = localUser.username,
                 email = email,
-                rawPassword = rawPassword
+                rawPassword = rawPassword,
+                // Nom dérivé lors de l'inscription locale d'origine, jamais choisi consciemment
+                // pour un compte serveur : une collision peut être renommée en silence sans induire
+                // l'utilisateur en erreur (voir la KDoc de [registerOnServerWithUsernameRetry]).
+                allowUsernameRetry = true
             )
         ) {
             is SyncAuthResult.Success ->
@@ -183,7 +244,12 @@ class UnifiedAuthRepositoryImpl @Inject constructor(
         fullName: String,
         email: String,
         rawPassword: String,
-        seedDefaultsIfNewLocalUser: Boolean
+        seedDefaultsIfNewLocalUser: Boolean,
+        username: String? = null,
+        phoneNumber: String? = null,
+        profilePhotoUri: String? = null,
+        securityQuestion: SecurityQuestion? = null,
+        securityAnswer: String? = null
     ): Long {
         userServerLinkDao.getByServerUserId(serverUserId)?.let { return it.localUserId }
 
@@ -193,17 +259,22 @@ class UnifiedAuthRepositoryImpl @Inject constructor(
         } else {
             val entity = UserEntity(
                 fullName = fullName.ifBlank { email },
-                username = deriveLocalUsernameCandidate(email),
+                username = username ?: deriveLocalUsernameCandidate(email),
                 email = email,
-                phoneNumber = null,
+                phoneNumber = phoneNumber,
                 passwordHash = PasswordHasher.hash(rawPassword),
-                profilePhotoUri = null,
-                // Aucune vraie question de sécurité collectée par ce parcours simplifié (voir
-                // register.php, même repli) : la récupération locale par question de sécurité reste
-                // simplement indisponible pour un compte créé ainsi, tant que l'utilisateur n'en
-                // définit pas une réelle depuis Paramètres.
-                securityQuestion = SecurityQuestion.entries.first(),
-                securityAnswerHash = PasswordHasher.hash(UUID.randomUUID().toString()),
+                profilePhotoUri = profilePhotoUri,
+                // `securityQuestion`/`securityAnswer` : uniquement fournis par [register] (inscription
+                // complète, voir sa doc) — `null` pour [login]/la migration silencieuse/le repli hors
+                // ligne, qui ne disposent JAMAIS de la vraie réponse en clair (seul le hash PBKDF2 local,
+                // déjà irréversible, existait avant cette connexion) : impossible de la migrer
+                // fidèlement vers le serveur ou de la re-hacher ici. Repli documenté dans ce cas
+                // seulement : la récupération par question de sécurité reste indisponible tant que
+                // l'utilisateur n'en définit pas une réelle depuis Paramètres — connu, pas corrigé
+                // dans cette étape (voir l'audit "création de compte").
+                securityQuestion = securityQuestion ?: SecurityQuestion.entries.first(),
+                securityAnswerHash = securityAnswer?.let { PasswordHasher.hash(it) }
+                    ?: PasswordHasher.hash(UUID.randomUUID().toString()),
                 createdAt = System.currentTimeMillis()
             )
             val id = userDao.insert(entity)
@@ -219,22 +290,43 @@ class UnifiedAuthRepositoryImpl @Inject constructor(
 
     /**
      * Retente [SyncAuthRepository.register] avec un nom d'utilisateur dérivé DIFFÉRENT si le
-     * serveur répond `username_taken` — un nom d'utilisateur auto-dérivé (voir
+     * serveur répond `username_taken` — UNIQUEMENT quand [allowUsernameRetry] vaut `true`
+     * (migration silencieuse, voir [attemptSilentServerMigration]) : le nom auto-dérivé (voir
      * [deriveLocalUsernameCandidate]) n'a par construction aucune signification pour l'utilisateur,
      * une collision ne doit donc jamais lui être exposée comme une erreur à corriger lui-même.
+     *
+     * Quand [allowUsernameRetry] vaut `false` ([register], nom CHOISI dans le formulaire), un
+     * `username_taken` remonte tel quel dès la première tentative — voir
+     * [UnifiedAuthError.UsernameAlreadyExists] : substituer un autre nom sans le dire à
+     * l'utilisateur serait trompeur.
      */
     private suspend fun registerOnServerWithUsernameRetry(
         fullName: String,
         preferredUsername: String,
         email: String,
         rawPassword: String,
+        phoneNumber: String? = null,
+        securityQuestion: SecurityQuestion? = null,
+        securityAnswer: String? = null,
+        allowUsernameRetry: Boolean,
         attempt: Int = 0
     ): SyncAuthResult<SyncSession> {
         val username = if (attempt == 0) preferredUsername else "${preferredUsername.take(24)}_${(1000..9999).random()}"
-        val result = syncAuthRepository.register(fullName = fullName, username = username, email = email, rawPassword = rawPassword)
+        val result = syncAuthRepository.register(
+            fullName = fullName,
+            username = username,
+            email = email,
+            rawPassword = rawPassword,
+            phoneNumber = phoneNumber,
+            securityQuestion = securityQuestion?.name,
+            securityAnswer = securityAnswer
+        )
         val isUsernameConflict = result is SyncAuthResult.Failure && result.error == SyncAuthError.UsernameTaken
-        return if (isUsernameConflict && attempt < MAX_USERNAME_RETRY_ATTEMPTS) {
-            registerOnServerWithUsernameRetry(fullName, preferredUsername, email, rawPassword, attempt + 1)
+        return if (allowUsernameRetry && isUsernameConflict && attempt < MAX_USERNAME_RETRY_ATTEMPTS) {
+            registerOnServerWithUsernameRetry(
+                fullName, preferredUsername, email, rawPassword, phoneNumber, securityQuestion, securityAnswer,
+                allowUsernameRetry, attempt + 1
+            )
         } else {
             result
         }
@@ -253,8 +345,16 @@ class UnifiedAuthRepositoryImpl @Inject constructor(
         }
     }
 
-    private fun validateFormat(email: String, rawPassword: String, fullName: String? = null): UnifiedAuthError? {
-        if (email.isBlank() || rawPassword.isBlank() || fullName?.isBlank() == true) {
+    /** [username]/[securityAnswer] : uniquement fournis (et donc validés) par [register] — `null`
+     *  pour [login], qui ne les demande pas. */
+    private fun validateFormat(
+        email: String,
+        rawPassword: String,
+        fullName: String? = null,
+        username: String? = null,
+        securityAnswer: String? = null
+    ): UnifiedAuthError? {
+        if (email.isBlank() || rawPassword.isBlank() || fullName?.isBlank() == true || username?.isBlank() == true) {
             return UnifiedAuthError.ValidationFailed(UnifiedAuthError.ValidationFailed.ValidationReason.REQUIRED_FIELD_MISSING)
         }
         if (!AuthValidator.isValidEmail(email)) {
@@ -262,6 +362,12 @@ class UnifiedAuthRepositoryImpl @Inject constructor(
         }
         if (!AuthValidator.isPasswordLongEnough(rawPassword)) {
             return UnifiedAuthError.ValidationFailed(UnifiedAuthError.ValidationFailed.ValidationReason.PASSWORD_TOO_SHORT)
+        }
+        if (username != null && !AuthValidator.isValidUsername(username)) {
+            return UnifiedAuthError.ValidationFailed(UnifiedAuthError.ValidationFailed.ValidationReason.INVALID_USERNAME)
+        }
+        if (securityAnswer != null && !AuthValidator.isSecurityAnswerLongEnough(securityAnswer)) {
+            return UnifiedAuthError.ValidationFailed(UnifiedAuthError.ValidationFailed.ValidationReason.SECURITY_ANSWER_TOO_SHORT)
         }
         return null
     }

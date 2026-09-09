@@ -95,23 +95,30 @@ if ($securityQuestion !== null && $securityAnswer !== null && $securityAnswer !=
 
 $pdo = getDatabaseConnection();
 
-$existing = $pdo->prepare('SELECT id FROM users WHERE username = :username AND deleted_at IS NULL LIMIT 1');
-$existing->execute(['username' => $username]);
-if ($existing->fetch() !== false) {
-    sendError('username_taken', "Ce nom d'utilisateur est déjà pris.", 409);
-}
-
-$existing = $pdo->prepare('SELECT id FROM users WHERE email = :email AND deleted_at IS NULL LIMIT 1');
-$existing->execute(['email' => $email]);
-if ($existing->fetch() !== false) {
-    sendError('email_taken', 'Cette adresse e-mail est déjà associée à un compte.', 409);
-}
-
-$userId = generateUuidV4();
-$nowMillis = (int) round(microtime(true) * 1000);
-$passwordHash = password_hash($password, PASSWORD_DEFAULT);
-
+// try/catch AUTOUR DE TOUT LE BLOC métier (pas seulement l'INSERT `users`) : même raisonnement que
+// `sync/push.php`/`pull.php` (voir leur doc de tête) — une exception non attrapée ici (connexion DB
+// perdue, requête sur une colonne pas encore déployée, etc.) laisserait échapper la page d'erreur
+// HTML par défaut de PHP à la place du JSON attendu, que le Sync Engine / UnifiedAuthRepository
+// Android ne savent pas parser. `PDOException` reste attrapée EN PREMIER (plus spécifique) pour
+// conserver la distinction `username_taken`/`email_taken` (409, cas attendu et actionnable par
+// l'utilisateur) d'une vraie panne serveur (`server_error`, 500, détail uniquement dans le journal).
 try {
+    $existing = $pdo->prepare('SELECT id FROM users WHERE username = :username AND deleted_at IS NULL LIMIT 1');
+    $existing->execute(['username' => $username]);
+    if ($existing->fetch() !== false) {
+        sendError('username_taken', "Ce nom d'utilisateur est déjà pris.", 409);
+    }
+
+    $existing = $pdo->prepare('SELECT id FROM users WHERE email = :email AND deleted_at IS NULL LIMIT 1');
+    $existing->execute(['email' => $email]);
+    if ($existing->fetch() !== false) {
+        sendError('email_taken', 'Cette adresse e-mail est déjà associée à un compte.', 409);
+    }
+
+    $userId = generateUuidV4();
+    $nowMillis = (int) round(microtime(true) * 1000);
+    $passwordHash = password_hash($password, PASSWORD_DEFAULT);
+
     $insertUser = $pdo->prepare(
         'INSERT INTO users
             (id, full_name, username, email, phone_number, password_hash, security_question, security_answer_hash, created_at, updated_at, deleted_at, version)
@@ -130,6 +137,33 @@ try {
         'created_at' => $nowMillis,
         'updated_at' => $nowMillis,
     ]);
+
+    // Émission immédiate d'un token de session — même logique que login.php (aucune duplication de
+    // requête SQL : ce bloc est volontairement identique, une extraction commune serait prématurée
+    // pour deux endpoints seulement, voir cahier des charges "règle de trois").
+    $rawToken = bin2hex(random_bytes(32));
+    $tokenHash = hash('sha256', $rawToken);
+    $expiresAtMillis = $nowMillis + (TOKEN_EXPIRY_SECONDS * 1000);
+
+    $insertToken = $pdo->prepare(
+        'INSERT INTO auth_tokens (user_id, token_hash, device_id, device_label, created_at, expires_at)
+         VALUES (:user_id, :token_hash, :device_id, :device_label, :created_at, :expires_at)'
+    );
+    $insertToken->execute([
+        'user_id' => $userId,
+        'token_hash' => $tokenHash,
+        'device_id' => $deviceId,
+        'device_label' => $deviceLabel,
+        'created_at' => $nowMillis,
+        'expires_at' => $expiresAtMillis,
+    ]);
+
+    sendJson([
+        'token' => $rawToken,
+        'userId' => $userId,
+        'expiresAt' => $expiresAtMillis,
+        'fullName' => $fullName,
+    ], 201);
 } catch (PDOException $e) {
     // Course rarissime entre la vérification d'unicité ci-dessus et l'insertion (voir
     // AuthRepositoryImpl.register côté Android, même raisonnement) : les index UNIQUE de `users`
@@ -137,33 +171,9 @@ try {
     if ((int) $e->errorInfo[1] === 1062) {
         sendError('email_taken', 'Ce nom d\'utilisateur ou cette adresse e-mail est déjà pris.', 409);
     }
-    error_log('Arzikina API — echec inscription : ' . $e->getMessage());
+    error_log('Arzikina API — echec inscription (PDO) : ' . $e->getMessage());
     sendError('registration_failed', "L'inscription a échoué, réessaie plus tard.", 500);
+} catch (Throwable $e) {
+    error_log('Arzikina API — echec inscription : ' . $e->getMessage());
+    sendError('server_error', "L'inscription a échoué, réessaie plus tard.", 500);
 }
-
-// Émission immédiate d'un token de session — même logique que login.php (aucune duplication de
-// requête SQL : ce bloc est volontairement identique, une extraction commune serait prématurée
-// pour deux endpoints seulement, voir cahier des charges "règle de trois").
-$rawToken = bin2hex(random_bytes(32));
-$tokenHash = hash('sha256', $rawToken);
-$expiresAtMillis = $nowMillis + (TOKEN_EXPIRY_SECONDS * 1000);
-
-$insertToken = $pdo->prepare(
-    'INSERT INTO auth_tokens (user_id, token_hash, device_id, device_label, created_at, expires_at)
-     VALUES (:user_id, :token_hash, :device_id, :device_label, :created_at, :expires_at)'
-);
-$insertToken->execute([
-    'user_id' => $userId,
-    'token_hash' => $tokenHash,
-    'device_id' => $deviceId,
-    'device_label' => $deviceLabel,
-    'created_at' => $nowMillis,
-    'expires_at' => $expiresAtMillis,
-]);
-
-sendJson([
-    'token' => $rawToken,
-    'userId' => $userId,
-    'expiresAt' => $expiresAtMillis,
-    'fullName' => $fullName,
-], 201);
