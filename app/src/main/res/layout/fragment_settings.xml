@@ -496,11 +496,11 @@
             </com.google.android.material.card.MaterialCardView>
 
             <!-- Section À propos : STATIQUE (voir SettingsFragment.setUpAboutSection), aucune
-                 action, aucune navigation. Badge générique (cercle @color/colorPrimary + icône
-                 portefeuille) plutôt que @mipmap/ic_launcher : ce dernier est encore le robot
-                 Android par défaut du template, pas un vrai logo Arzikina — décision validée avec
-                 l'utilisateur, à remplacer le jour où un logo définitif existera (voir aboutLogo
-                 ci-dessous, seul endroit à modifier à ce moment-là). -->
+                 action, aucune navigation. aboutLogo ci-dessous utilise désormais le vrai logo
+                 Arzikina (carte inclinée en équilibre) — @drawable/arzikina_logo, un PNG à fond
+                 transparent conçu pour rester lisible aussi bien ici (sur arzikina_postcart_background,
+                 sombre) que sur le cercle blanc de l'écran de verrouillage biométrique (voir
+                 fragment_biometric_lock.xml). -->
             <TextView
                 style="@style/TextAppearance.Material3.LabelMedium"
                 android:layout_width="match_parent"

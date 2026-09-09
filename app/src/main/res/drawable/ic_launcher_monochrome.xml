@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Couche monochrome de l'icône adaptative (icônes thématiques Android 13+, Material You) —
+    silhouette blanche à plat du même glyphe que ic_launcher_foreground.xml : le système applique
+    lui-même la teinte finale (fond + couleur), seule la forme (canal alpha) compte ici. Fichier
+    séparé plutôt que de réutiliser ic_launcher_foreground.xml (qui est multicolore, comme le
+    faisait mipmap-anydpi/ic_launcher.xml avant ce chantier) : un premier plan multicolore rendu
+    dans une seule teinte système donnerait un aplat illisible.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <group
+        android:scaleX="0.6"
+        android:scaleY="0.6"
+        android:translateX="24"
+        android:translateY="24">
+        <path
+            android:fillColor="#FFFFFF"
+            android:pathData="M40,80 L60,80 L50,60 Z" />
+        <group
+            android:pivotX="50"
+            android:pivotY="47"
+            android:rotation="-10">
+            <path
+                android:fillColor="#FFFFFF"
+                android:pathData="M12,28 H88 A8,8 0 0 1 96,36 V58 A8,8 0 0 1 88,66 H12 A8,8 0 0 1 4,58 V36 A8,8 0 0 1 12,28 Z" />
+        </group>
+    </group>
+</vector>
