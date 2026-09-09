@@ -22,6 +22,7 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 /**
@@ -64,7 +65,7 @@ fun AccountUiItem.matchesTab(tab: AccountsDisplayTab): Boolean = when (tab) {
  */
 @HiltViewModel
 class AccountsViewModel @Inject constructor(
-    accountRepository: AccountRepository,
+    private val accountRepository: AccountRepository,
     transactionRepository: TransactionRepository,
     authRepository: AuthRepository,
     sessionManager: SessionManager,
@@ -136,5 +137,15 @@ class AccountsViewModel @Inject constructor(
      * `btnBankCards`/`btnPlanning`. */
     fun onTabSelected(tab: AccountsDisplayTab) {
         _selectedTab.value = tab
+    }
+
+    /** Persistance d'un réordonnancement par glisser-déposer (voir `AccountsFragment`, onglet
+     * [AccountsDisplayTab.ACCOUNTS] uniquement) — délègue entièrement à
+     * [AccountRepository.reorderAccounts] (transaction Room + enfilage sync + déclenchement
+     * immédiat, voir sa KDoc) : ce ViewModel n'ajoute aucune logique propre. [uiState] reflète
+     * automatiquement le nouvel ordre à la prochaine émission de `observeAccounts()` (Flow Room),
+     * aucune mise à jour manuelle de l'état ici. */
+    fun reorderAccounts(orderedIds: List<Long>) {
+        viewModelScope.launch { accountRepository.reorderAccounts(orderedIds) }
     }
 }

@@ -35,6 +35,7 @@ data class AccountSyncPayload(
     val cardExpiryYear: Int?,
     val isExcludedFromStatistics: Boolean,
     val mobileMoneyPackageName: String?,
+    val displayOrder: Long,
     val createdAt: Long,
     val updatedAt: Long
 )
@@ -59,6 +60,10 @@ data class AccountServerStateDto(
      * explicitement côté appelant ([com.arzikina.ne.data.repository.SyncEngineImpl.applyAccountServerState]). */
     val isExcludedFromStatistics: Int = 0,
     val mobileMoneyPackageName: String? = null,
+    /** `0` par défaut : tolère une réponse serveur antérieure au déploiement de cette colonne
+     * (voir `database/migrations/004_add_display_order_to_accounts.sql`), même raisonnement que
+     * les autres champs à défaut de ce DTO. */
+    val displayOrder: Long = 0L,
     val createdAt: Long,
     val updatedAt: Long,
     val deletedAt: Long? = null,

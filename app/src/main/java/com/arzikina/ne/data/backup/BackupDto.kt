@@ -106,7 +106,15 @@ data class AccountDto(
      * installée, l'écran de détail affiche simplement "Application non installée" (voir
      * `MobileMoneyAppUiState.NotInstalled`) — jamais considéré comme une erreur de restauration.
      */
-    val mobileMoneyPackageName: String? = null
+    val mobileMoneyPackageName: String? = null,
+    /**
+     * Ajouté après coup (voir `domain/model/Account.displayOrder`) : défaut `0` pour rester
+     * compatible avec les fichiers exportés avant son existence — un ancien fichier restauré
+     * recrée des comptes qui partagent tous la position `0` (ordre alors arbitraire, pas pire
+     * que le comportement avant l'introduction du glisser-déposer). Un fichier exporté APRÈS
+     * cette fonctionnalité conserve l'ordre choisi par l'utilisateur à travers la restauration.
+     */
+    val displayOrder: Long = 0L
 )
 
 @Serializable

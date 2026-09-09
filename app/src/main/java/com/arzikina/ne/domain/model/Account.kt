@@ -36,6 +36,12 @@ package com.arzikina.ne.domain.model
  * d'un compte après coup). Simple donnée technique (nom de package), jamais interprétée comme
  * autre chose qu'une chaîne à passer à `PackageManager`/`Intent` — voir
  * `util/external/ExternalAppLauncher`.
+ * @param displayOrder position d'affichage choisie par l'utilisateur (réorganisation par
+ * glisser-déposer sur l'écran "Comptes", voir `presentation/accounts/AccountsFragment`) — ordre
+ * croissant, `0` = premier affiché. Attribuée à la création (fin de liste, voir
+ * `AccountRepositoryImpl.saveAccount`) puis réécrite uniquement par un déplacement explicite de
+ * l'utilisateur ; jamais recalculée automatiquement (voir `AccountRepositoryImpl.reorderAccounts`,
+ * pas de recompactage après suppression, les trous éventuels sont sans effet sur `ORDER BY`).
  */
 data class Account(
     val id: Long = 0L,
@@ -50,5 +56,6 @@ data class Account(
     val cardExpiryMonth: Int? = null,
     val cardExpiryYear: Int? = null,
     val isExcludedFromStatistics: Boolean = false,
-    val mobileMoneyPackageName: String? = null
+    val mobileMoneyPackageName: String? = null,
+    val displayOrder: Long = 0L
 )

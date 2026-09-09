@@ -21,7 +21,8 @@ fun AccountEntity.toDomain(): Account = Account(
     cardExpiryMonth = cardExpiryMonth,
     cardExpiryYear = cardExpiryYear,
     isExcludedFromStatistics = isExcludedFromStatistics,
-    mobileMoneyPackageName = mobileMoneyPackageName
+    mobileMoneyPackageName = mobileMoneyPackageName,
+    displayOrder = displayOrder
 )
 
 /** [userId] : fourni par le repository (voir [com.arzikina.ne.domain.repository.SessionManager]), jamais par l'appelant. */
@@ -39,5 +40,6 @@ fun Account.toEntity(userId: Long): AccountEntity = AccountEntity(
     cardExpiryMonth = cardExpiryMonth,
     cardExpiryYear = cardExpiryYear,
     isExcludedFromStatistics = isExcludedFromStatistics,
-    mobileMoneyPackageName = mobileMoneyPackageName
+    mobileMoneyPackageName = mobileMoneyPackageName,
+    displayOrder = displayOrder
 )

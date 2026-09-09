@@ -28,8 +28,23 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface AccountDao {
 
-    @Query("SELECT * FROM accounts WHERE userId = :userId AND deletedAt IS NULL ORDER BY createdAt ASC")
+    @Query("SELECT * FROM accounts WHERE userId = :userId AND deletedAt IS NULL ORDER BY displayOrder ASC")
     fun observeAllForUser(userId: Long): Flow<List<AccountEntity>>
+
+    /** Réservé à `AccountRepositoryImpl.saveAccount` : position à attribuer à un NOUVEAU compte
+     * (toujours en fin de liste, voir [com.arzikina.ne.domain.model.Account.displayOrder]) —
+     * `COUNT` plutôt que `MAX(displayOrder) + 1` pour rester correct même si l'utilisateur n'a
+     * jamais réordonné (valeurs par défaut `0` potentiellement dupliquées entre plusieurs comptes
+     * jamais déplacés, `COUNT` reste toujours strictement croissant). */
+    @Query("SELECT COUNT(*) FROM accounts WHERE userId = :userId AND deletedAt IS NULL")
+    suspend fun countForUser(userId: Long): Int
+
+    /** Réservé à `AccountRepositoryImpl.reorderAccounts` : réécrit UNIQUEMENT la position et
+     * l'horodatage d'un compte déplacé — jamais [AccountEntity.version] (voir la KDoc de
+     * `AccountRepositoryImpl.saveAccount` : la version reste un compteur serveur, réattribuée par
+     * `applyAccountServerState` après confirmation de la synchronisation, jamais localement). */
+    @Query("UPDATE accounts SET displayOrder = :displayOrder, updatedAt = :updatedAt WHERE id = :id AND userId = :userId")
+    suspend fun updateDisplayOrder(id: Long, userId: Long, displayOrder: Long, updatedAt: Long)
 
     @Query("SELECT * FROM accounts WHERE id = :id AND userId = :userId AND deletedAt IS NULL")
     suspend fun getById(id: Long, userId: Long): AccountEntity?

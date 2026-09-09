@@ -128,6 +128,10 @@ import com.arzikina.ne.data.local.entity.UserServerLinkEntity
  *   [MIGRATION_26_27]/[UserProfilePhotoEntity]) — cahier des charges "Gestion de la photo de
  *   profil" : même contournement que la version 26, table séparée plutôt qu'une colonne sur
  *   `UserEntity` (limitation Room/KSP2 toujours en vigueur, voir [MIGRATION_22_23]).
+ * - 28 : Colonne `displayOrder` sur `accounts` (voir [MIGRATION_27_28]/
+ *   [com.arzikina.ne.domain.model.Account.displayOrder]) — cahier des charges "Réorganiser les
+ *   comptes par glisser-déposer" : position d'affichage persistée et synchronisée, rattrapée à
+ *   l'ancien tri (`createdAt`) pour les comptes déjà existants.
  */
 @Database(
     entities = [
@@ -151,7 +155,7 @@ import com.arzikina.ne.data.local.entity.UserServerLinkEntity
         UserServerLinkEntity::class,
         UserProfilePhotoEntity::class
     ],
-    version = 27,
+    version = 28,
     exportSchema = true
 )
 @TypeConverters(Converters::class)

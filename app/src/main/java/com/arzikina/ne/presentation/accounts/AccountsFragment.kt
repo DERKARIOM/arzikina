@@ -9,7 +9,9 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
+import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.arzikina.ne.R
 import com.arzikina.ne.databinding.FragmentAccountsBinding
 import com.arzikina.ne.domain.model.AccountType
@@ -59,6 +61,68 @@ class AccountsFragment : Fragment(R.layout.fragment_accounts) {
      * fondu sur un écran qui vient tout juste d'apparaître). */
     private var lastRenderedTab: AccountsDisplayTab? = null
 
+    /**
+     * `true` entre le début d'un glisser (`ACTION_STATE_DRAG`, voir [itemTouchHelperCallback]) et
+     * son dépôt — [renderList] ignore toute mise à jour de la liste affichée tant que ce drapeau
+     * est actif (voir sa doc) : sans cette garde, une émission de [AccountsViewModel.uiState]
+     * survenant PENDANT le glisser (ex. une synchronisation en arrière-plan qui aboutit à ce moment
+     * précis) ré-appellerait `adapter.submitList(...)` avec l'ordre encore "officiel", ce qui
+     * ferait sauter la carte hors du doigt de l'utilisateur en plein déplacement.
+     */
+    private var isReordering = false
+
+    /**
+     * Glisser-déposer vertical (voir cahier des charges "réorganiser les comptes") — actif
+     * UNIQUEMENT sur l'onglet [AccountsDisplayTab.ACCOUNTS] ([getDragDirs] renvoie `0` sinon,
+     * jamais sur Cartes bancaires/Planification, voir leur propre logique métier). Animations
+     * volontairement légères (élévation + zoom discret, voir [animateDragStart]/[animateDragEnd]) :
+     * "éviter les animations lourdes" (cahier des charges).
+     */
+    private val itemTouchHelperCallback = object : ItemTouchHelper.SimpleCallback(
+        ItemTouchHelper.UP or ItemTouchHelper.DOWN,
+        0
+    ) {
+        override fun getDragDirs(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder): Int =
+            if (viewModel.selectedTab.value == AccountsDisplayTab.ACCOUNTS) super.getDragDirs(recyclerView, viewHolder) else 0
+
+        override fun onMove(
+            recyclerView: RecyclerView,
+            viewHolder: RecyclerView.ViewHolder,
+            target: RecyclerView.ViewHolder
+        ): Boolean {
+            val from = viewHolder.bindingAdapterPosition
+            val to = target.bindingAdapterPosition
+            if (from == RecyclerView.NO_POSITION || to == RecyclerView.NO_POSITION) return false
+            adapter.moveItem(from, to)
+            return true
+        }
+
+        override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) = Unit // pas de swipe sur cet écran
+
+        override fun onSelectedChanged(viewHolder: RecyclerView.ViewHolder?, actionState: Int) {
+            super.onSelectedChanged(viewHolder, actionState)
+            if (actionState == ItemTouchHelper.ACTION_STATE_DRAG && viewHolder != null) {
+                isReordering = true
+                adapter.beginReorder()
+                animateDragStart(viewHolder.itemView)
+            }
+        }
+
+        override fun clearView(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder) {
+            super.clearView(recyclerView, viewHolder)
+            animateDragEnd(viewHolder.itemView)
+            if (!isReordering) return
+            isReordering = false
+            val orderedIds = adapter.endReorder()
+            viewModel.reorderAccounts(orderedIds)
+            // Ré-applique désormais [latestAccounts] (potentiellement mis à jour PENDANT le
+            // glisser, voir la doc d'[isReordering]) — sans effet visible si rien n'a changé
+            // entretemps, puisque l'ordre qu'on vient d'écrire correspond déjà à ce qui est affiché.
+            binding?.let { renderList(it) }
+        }
+    }
+    private val itemTouchHelper = ItemTouchHelper(itemTouchHelperCallback)
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         val viewBinding = FragmentAccountsBinding.bind(view)
@@ -77,6 +141,7 @@ class AccountsFragment : Fragment(R.layout.fragment_accounts) {
         // fondu du conteneur suffit déjà à habiller le changement de contenu.
         viewBinding.accountsList.itemAnimator = null
         viewBinding.planningList.itemAnimator = null
+        itemTouchHelper.attachToRecyclerView(viewBinding.accountsList)
         viewBinding.addAccountButton.setOnClickListener { navigateToForm() }
         viewBinding.planningEmptyAction.setOnClickListener { navigateToFinancialPlanForm() }
 
@@ -264,8 +329,39 @@ class AccountsFragment : Fragment(R.layout.fragment_accounts) {
             val hasAccounts = filtered.isNotEmpty()
             binding.accountsList.visibility = if (hasAccounts) View.VISIBLE else View.GONE
             binding.emptyState.visibility = if (hasAccounts) View.GONE else View.VISIBLE
-            adapter.submitList(filtered)
+            // PAS de mise à jour de l'adapter en plein glisser — voir la doc d'[isReordering].
+            if (!isReordering) {
+                adapter.submitList(filtered)
+            }
         }
+    }
+
+    /** Retour visuel discret au tout début d'un glisser (voir cahier des charges : "légère
+     * animation indiquant que l'élément est sélectionné" + "effet visuel subtil pendant le
+     * déplacement", ce dernier simplement en laissant l'élévation/zoom actifs jusqu'au dépôt) —
+     * `elevation`/`scaleX`/`scaleY` (`ViewPropertyAnimator`, pas de dépendance à
+     * `MaterialCardView.cardElevation` : une simple élévation `View` standard se superpose
+     * proprement à l'ombre déjà dessinée par la carte, sans avoir à connaître son type exact
+     * (`ClassicViewHolder`/`CreditCardViewHolder` partagent tous deux un `MaterialCardView` racine
+     * nommé `accountCard`, mais rien n'oblige [itemView] à en être un ici). */
+    private fun animateDragStart(itemView: View) {
+        itemView.animate()
+            .scaleX(DRAG_SCALE)
+            .scaleY(DRAG_SCALE)
+            .translationZ(resources.getDimension(R.dimen.elevation_raised_focused))
+            .setDuration(DRAG_ANIMATION_MS)
+            .start()
+    }
+
+    /** Retour à la position normale après le dépôt (voir cahier des charges) — symétrique
+     * d'[animateDragStart]. */
+    private fun animateDragEnd(itemView: View) {
+        itemView.animate()
+            .scaleX(1f)
+            .scaleY(1f)
+            .translationZ(0f)
+            .setDuration(DRAG_ANIMATION_MS)
+            .start()
     }
 
     /**
@@ -323,5 +419,11 @@ class AccountsFragment : Fragment(R.layout.fragment_accounts) {
          * 200-250ms demandée pour la transition d'onglet. */
         const val TAB_SWITCH_FADE_OUT_MS = 110L
         const val TAB_SWITCH_FADE_IN_MS = 110L
+
+        /** Voir [animateDragStart]/[animateDragEnd] — léger zoom (3%), à peine perceptible mais
+         * suffisant pour signaler la sélection, cohérent avec la contrainte "animations discrètes"
+         * du projet (voir aussi `AuthAnimations.PRESS_SCALE`, même ordre de grandeur). */
+        const val DRAG_SCALE = 1.03f
+        const val DRAG_ANIMATION_MS = 150L
     }
 }

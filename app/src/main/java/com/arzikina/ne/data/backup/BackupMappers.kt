@@ -65,6 +65,7 @@ fun AccountEntity.toDto() = AccountDto(
     id = id,
     name = name,
     icon = icon.name,
+    displayOrder = displayOrder,
     colorArgb = colorArgb,
     currencyCode = currencyCode,
     initialBalanceMinor = initialBalanceMinor,
@@ -91,7 +92,8 @@ fun AccountDto.toEntity(userId: Long) = AccountEntity(
     cardExpiryMonth = cardExpiryMonth,
     cardExpiryYear = cardExpiryYear,
     isExcludedFromStatistics = isExcludedFromStatistics,
-    mobileMoneyPackageName = mobileMoneyPackageName
+    mobileMoneyPackageName = mobileMoneyPackageName,
+    displayOrder = displayOrder
 )
 
 fun CategoryEntity.toDto() = CategoryDto(

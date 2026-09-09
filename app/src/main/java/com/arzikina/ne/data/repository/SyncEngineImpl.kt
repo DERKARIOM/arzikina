@@ -686,6 +686,7 @@ class SyncEngineImpl @Inject constructor(
                 cardExpiryYear = state.cardExpiryYear,
                 isExcludedFromStatistics = state.isExcludedFromStatistics != 0,
                 mobileMoneyPackageName = state.mobileMoneyPackageName,
+                displayOrder = state.displayOrder,
                 syncId = state.id,
                 updatedAt = state.updatedAt,
                 deletedAt = state.deletedAt,
@@ -714,6 +715,7 @@ class SyncEngineImpl @Inject constructor(
                 cardExpiryYear = entity.cardExpiryYear,
                 isExcludedFromStatistics = entity.isExcludedFromStatistics,
                 mobileMoneyPackageName = entity.mobileMoneyPackageName,
+                displayOrder = entity.displayOrder,
                 createdAt = entity.createdAt,
                 updatedAt = entity.updatedAt
             )

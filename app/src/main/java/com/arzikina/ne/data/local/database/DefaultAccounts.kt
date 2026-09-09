@@ -19,6 +19,11 @@ import com.arzikina.ne.util.Constants
  */
 internal object DefaultAccounts {
 
+    // displayOrder assigné explicitement (0..4, dans l'ordre de la liste ci-dessous) : ces 5
+    // comptes sont insérés en une fois via accountDao.insertAll (@Insert direct, PAS
+    // AccountRepositoryImpl.saveAccount) — sans cela ils partageraient tous la valeur par défaut
+    // `0L` d'AccountEntity.displayOrder, laissant leur ordre initial d'affichage arbitraire (voir
+    // com.arzikina.ne.domain.model.Account.displayOrder).
     fun seed(now: Long, userId: Long): List<AccountEntity> = listOf(
         AccountEntity(
             userId = userId,
@@ -28,7 +33,8 @@ internal object DefaultAccounts {
             colorArgb = 0xFF16A34AL,
             currencyCode = Constants.DEFAULT_CURRENCY_CODE,
             initialBalanceMinor = 0L,
-            createdAt = now
+            createdAt = now,
+            displayOrder = 0L
         ),
         AccountEntity(
             userId = userId,
@@ -38,7 +44,8 @@ internal object DefaultAccounts {
             colorArgb = 0xFF006C4FL,
             currencyCode = Constants.DEFAULT_CURRENCY_CODE,
             initialBalanceMinor = 0L,
-            createdAt = now
+            createdAt = now,
+            displayOrder = 1L
         ),
         AccountEntity(
             userId = userId,
@@ -48,7 +55,8 @@ internal object DefaultAccounts {
             colorArgb = 0xFFF59E0BL,
             currencyCode = Constants.DEFAULT_CURRENCY_CODE,
             initialBalanceMinor = 0L,
-            createdAt = now
+            createdAt = now,
+            displayOrder = 2L
         ),
         AccountEntity(
             userId = userId,
@@ -58,7 +66,8 @@ internal object DefaultAccounts {
             colorArgb = 0xFF00A578L,
             currencyCode = Constants.DEFAULT_CURRENCY_CODE,
             initialBalanceMinor = 0L,
-            createdAt = now
+            createdAt = now,
+            displayOrder = 3L
         ),
         AccountEntity(
             userId = userId,
@@ -70,7 +79,8 @@ internal object DefaultAccounts {
             colorArgb = 0xFF4C6B3FL,
             currencyCode = Constants.DEFAULT_CURRENCY_CODE,
             initialBalanceMinor = 0L,
-            createdAt = now
+            createdAt = now,
+            displayOrder = 4L
         )
     )
 }

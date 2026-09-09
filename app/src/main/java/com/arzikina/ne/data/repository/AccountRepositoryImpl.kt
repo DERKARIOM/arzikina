@@ -1,5 +1,6 @@
 package com.arzikina.ne.data.repository
 
+import android.content.Context
 import androidx.room.withTransaction
 import com.arzikina.ne.data.local.dao.AccountDao
 import com.arzikina.ne.data.local.dao.CardSecretDao
@@ -23,6 +24,8 @@ import com.arzikina.ne.domain.model.SyncOperation
 import com.arzikina.ne.domain.model.computeLoanStatus
 import com.arzikina.ne.domain.repository.AccountRepository
 import com.arzikina.ne.domain.repository.SessionManager
+import com.arzikina.ne.work.SyncWorkScheduler
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flatMapLatest
@@ -58,6 +61,7 @@ class AccountRepositoryImpl @Inject constructor(
     private val transactionSyncEnqueuer: TransactionSyncEnqueuer,
     private val loanSyncEnqueuer: LoanSyncEnqueuer,
     private val json: Json,
+    @ApplicationContext private val context: Context,
     @IoDispatcher private val ioDispatcher: CoroutineDispatcher
 ) : AccountRepository {
 
@@ -89,7 +93,12 @@ class AccountRepositoryImpl @Inject constructor(
             syncId = existing?.syncId ?: UUID.randomUUID().toString(),
             updatedAt = now,
             deletedAt = existing?.deletedAt,
-            version = existing?.version ?: 1
+            version = existing?.version ?: 1,
+            // Nouveau compte : attribué en fin de liste (voir AccountDao.countForUser). Compte
+            // existant : la position n'est JAMAIS modifiée par une simple édition du formulaire
+            // (nom/icône/etc.) — seul un déplacement explicite via reorderAccounts() la change,
+            // account.displayOrder ici n'a de toute façon aucune valeur fiable venant du formulaire.
+            displayOrder = existing?.displayOrder ?: accountDao.countForUser(userId).toLong()
         )
         val generatedId = accountDao.upsert(entity)
         // @Upsert ne retourne l'id généré QUE pour une insertion réelle (nouveau compte, id == 0) ;
@@ -100,6 +109,49 @@ class AccountRepositoryImpl @Inject constructor(
             operation = if (existing == null) SyncOperation.CREATE else SyncOperation.UPDATE
         )
         savedId
+    }
+
+    /**
+     * Voir [AccountRepository.reorderAccounts]. Deux passes DÉLIBÉRÉMENT séparées : la transaction
+     * Room (positions) commit AVANT l'enfilage sync, même principe que [deleteAccount]
+     * (`enqueueAccountSync` ne doit jamais s'exécuter à l'intérieur de `database.withTransaction`,
+     * voir sa doc) — un rollback de la transaction ne doit jamais laisser une entrée `sync_queue`
+     * orpheline décrivant un état qui n'a finalement pas été écrit.
+     */
+    override suspend fun reorderAccounts(orderedIds: List<Long>) = withContext(ioDispatcher) {
+        val userId = requireCurrentUserId()
+        val now = System.currentTimeMillis()
+
+        val changed = mutableListOf<AccountEntity>()
+        database.withTransaction {
+            orderedIds.forEachIndexed { index, id ->
+                val current = accountDao.getById(id, userId) ?: return@forEachIndexed
+                val newOrder = index.toLong()
+                if (current.displayOrder == newOrder) return@forEachIndexed
+
+                // Un compte jamais encore synchronisé (ex. compte par défaut semé à l'inscription,
+                // voir DefaultAccounts.seed) n'a pas encore de syncId — même rattrapage que
+                // saveAccount ci-dessus : enqueueAccountSync exige un syncId non nul. @Upsert
+                // complet dans ce cas (PAS la requête étroite updateDisplayOrder, qui ne touche
+                // jamais syncId) : le nouvel id doit être réellement persisté, pas seulement porté
+                // par la copie en mémoire ci-dessous.
+                val updated = if (current.syncId == null) {
+                    current.copy(displayOrder = newOrder, updatedAt = now, syncId = UUID.randomUUID().toString())
+                        .also { accountDao.upsert(it) }
+                } else {
+                    accountDao.updateDisplayOrder(id = id, userId = userId, displayOrder = newOrder, updatedAt = now)
+                    current.copy(displayOrder = newOrder, updatedAt = now)
+                }
+                changed += updated
+            }
+        }
+
+        if (changed.isEmpty()) return@withContext
+        changed.forEach { entity -> enqueueAccountSync(entity, operation = SyncOperation.UPDATE) }
+        // Tentative d'envoi IMMÉDIATE si une connexion est disponible (même raisonnement que
+        // ProfilePhotoRepositoryImpl.saveNewPhoto) : sans effet si hors ligne, sync_queue garantit
+        // qu'aucun déplacement n'est perdu, WorkManager reprendra dès la reconnexion.
+        SyncWorkScheduler.triggerNow(context)
     }
 
     /**
@@ -310,6 +362,7 @@ class AccountRepositoryImpl @Inject constructor(
             cardExpiryYear = entity.cardExpiryYear,
             isExcludedFromStatistics = entity.isExcludedFromStatistics,
             mobileMoneyPackageName = entity.mobileMoneyPackageName,
+            displayOrder = entity.displayOrder,
             createdAt = entity.createdAt,
             updatedAt = entity.updatedAt
         )

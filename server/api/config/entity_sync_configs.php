@@ -102,6 +102,9 @@ const ENTITY_CONFIGS = [
             // (`castConfiguredValue`, voir `push.php`) : pas de type booléen dédié, `'int'` suffit.
             ['db' => 'is_excluded_from_statistics', 'payload' => 'isExcludedFromStatistics', 'type' => 'int', 'nullable' => false],
             ['db' => 'mobile_money_package_name', 'payload' => 'mobileMoneyPackageName', 'type' => 'string', 'nullable' => true],
+            // Position d'affichage (glisser-déposer sur l'écran "Comptes" Android) — voir
+            // database/migrations/004_add_display_order_to_accounts.sql.
+            ['db' => 'display_order', 'payload' => 'displayOrder', 'type' => 'int', 'nullable' => false],
         ],
     ],
     // Étape 19 : `Loan` référence trois AUTRES lignes synchronisées (personne, compte, transaction

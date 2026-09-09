@@ -14,7 +14,7 @@ import kotlinx.coroutines.flow.Flow
  */
 interface AccountRepository {
 
-    /** Flux réactif de tous les comptes, triés par date de création. */
+    /** Flux réactif de tous les comptes, triés par [Account.displayOrder] (voir sa doc). */
     fun observeAccounts(): Flow<List<Account>>
 
     suspend fun getAccount(id: Long): Account?
@@ -25,6 +25,19 @@ interface AccountRepository {
     suspend fun saveAccount(account: Account): Long
 
     suspend fun deleteAccount(id: Long)
+
+    /**
+     * Persiste un nouvel ordre d'affichage après un glisser-déposer sur l'écran "Comptes" (voir
+     * `presentation/accounts/AccountsFragment`, onglet Comptes uniquement — jamais Cartes
+     * bancaires/Planification, voir sa doc).
+     *
+     * [orderedIds] : TOUS les comptes actuellement visibles dans la sous-liste réordonnée, dans
+     * leur position finale après le dépôt (pas seulement celui déplacé) — réattribue une position
+     * `0..N-1` strictement dans cet ordre. Seuls les comptes dont la position a RÉELLEMENT changé
+     * sont réécrits et synchronisés (voir l'implémentation) : pas de recompactage systématique de
+     * toute la liste à chaque appel.
+     */
+    suspend fun reorderAccounts(orderedIds: List<Long>)
 
     /**
      * Chiffre et enregistre le numéro complet et le CVV d'une carte de crédit (voir

@@ -52,6 +52,10 @@ data class AccountEntity(
      * `MIGRATION_16_17`). `null` par défaut : un compte déjà existant n'a simplement aucune
      * application associée, exactement comme avant l'introduction de ce champ. */
     val mobileMoneyPackageName: String? = null,
+    /** Voir [com.arzikina.ne.domain.model.Account.displayOrder] — ajouté en v28 (voir
+     * `MIGRATION_27_28`), qui rattrape aussi les lignes déjà existantes (comptage par utilisateur,
+     * ordonné par `createdAt`) pour préserver l'ordre affiché avant l'introduction de ce champ. */
+    val displayOrder: Long = 0L,
     /** UUID partagé Android/API/MySQL pour la synchronisation multi-appareils — additif, voir
      * `docs/sync/AUDIT-ET-ARCHITECTURE-SYNC.md` (section 6.3, option B) : l'[id] Room local
      * ci-dessus reste la clé primaire, inchangée. `null` tant que cette ligne n'a jamais été

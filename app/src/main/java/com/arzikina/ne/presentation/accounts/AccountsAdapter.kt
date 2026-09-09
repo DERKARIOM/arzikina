@@ -9,6 +9,7 @@ import com.arzikina.ne.databinding.ItemAccountBinding
 import com.arzikina.ne.databinding.ItemAccountCreditCardBinding
 import com.arzikina.ne.domain.model.Account
 import com.arzikina.ne.domain.model.AccountType
+import java.util.Collections
 
 /**
  * Liste des comptes : une carte dégradée façon carte bancaire par compte
@@ -31,6 +32,15 @@ class AccountsAdapter(
     private val onClick: (Account) -> Unit
 ) : ListAdapter<AccountUiItem, RecyclerView.ViewHolder>(DIFF_CALLBACK) {
 
+    /** Copie de travail utilisée PENDANT un glisser-déposer (voir [beginReorder]/[moveItem]/
+     * [endReorder]) — `submitList` n'est PAS appelé à chaque étape intermédiaire du glisser : un
+     * recalcul complet de `DiffUtil` à chaque frame de déplacement serait inutile (la position
+     * change, jamais le contenu) et pourrait réordonner/animer différemment de ce que l'utilisateur
+     * est en train de faire au doigt. [notifyItemMoved] directement pendant le glisser, `submitList`
+     * une seule fois à la fin ([endReorder]) pour réconcilier proprement l'état interne de cette
+     * `ListAdapter` (`AsyncListDiffer`) avec ce qui est déjà affiché à l'écran. */
+    private var workingList: MutableList<AccountUiItem> = mutableListOf()
+
     override fun getItemViewType(position: Int): Int =
         if (getItem(position).account.type == AccountType.CREDIT_CARD) VIEW_TYPE_CREDIT_CARD else VIEW_TYPE_CLASSIC
 
@@ -49,6 +59,38 @@ class AccountsAdapter(
             is ClassicViewHolder -> holder.bind(item, onClick)
             is CreditCardViewHolder -> holder.bind(item, onClick)
         }
+    }
+
+    /** Démarre un déplacement : clone la liste actuellement affichée dans [workingList] — appelé
+     * par `AccountsFragment` au tout début d'un glisser (`ItemTouchHelper.Callback.onSelectedChanged`,
+     * `ACTION_STATE_DRAG`), jamais rappelé en boucle pendant le glisser lui-même. */
+    fun beginReorder() {
+        workingList = currentList.toMutableList()
+    }
+
+    /**
+     * Déplace l'item de [from] vers [to] dans [workingList] — suite d'échanges adjacents (PAS un
+     * simple `Collections.swap(from, to)` : `to` peut être à plus d'une position de `from` lors
+     * d'un glisser rapide qui saute plusieurs cartes en un seul appel d'`ItemTouchHelper.onMove`),
+     * même algorithme que l'exemple officiel `ItemTouchHelper.Callback`. [notifyItemMoved]
+     * directement (PAS `submitList`, voir la doc de [workingList]).
+     */
+    fun moveItem(from: Int, to: Int) {
+        if (from < to) {
+            for (i in from until to) Collections.swap(workingList, i, i + 1)
+        } else {
+            for (i in from downTo to + 1) Collections.swap(workingList, i, i - 1)
+        }
+        notifyItemMoved(from, to)
+    }
+
+    /** Fin du glisser (dépôt) : réconcilie l'état officiel de la `ListAdapter` avec [workingList]
+     * (voir sa doc) et retourne l'ordre final des ids de compte, pour persistance (voir
+     * `AccountsFragment.itemTouchHelper`/`AccountsViewModel.reorderAccounts`). */
+    fun endReorder(): List<Long> {
+        val orderedIds = workingList.map { it.account.id }
+        submitList(workingList.toList())
+        return orderedIds
     }
 
     class ClassicViewHolder(private val binding: ItemAccountBinding) : RecyclerView.ViewHolder(binding.root) {
