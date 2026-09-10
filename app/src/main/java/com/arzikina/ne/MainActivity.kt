@@ -7,7 +7,6 @@ import android.os.SystemClock
 import android.view.View
 import android.view.ViewGroup
 import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.content.IntentCompat
 import androidx.core.os.bundleOf
 import androidx.core.view.ViewCompat
@@ -19,7 +18,6 @@ import androidx.navigation.fragment.NavHostFragment
 import androidx.lifecycle.lifecycleScope
 import com.arzikina.ne.data.receipts.ReceiptFileStorage
 import com.arzikina.ne.databinding.ActivityMainBinding
-import com.arzikina.ne.domain.model.ThemeMode
 import com.arzikina.ne.domain.repository.BiometricAuthenticator
 import com.arzikina.ne.domain.repository.ReceiptRepository
 import com.arzikina.ne.domain.repository.RecurringTransactionRepository
@@ -93,7 +91,9 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        applyStoredThemeMode()
+        // Le mode nuit est désormais fixé dans `ArzikinaApplication.onCreate()`, AVANT la création
+        // de cette Activity (voir sa doc) — élimine le flash/`recreate()` qu'aurait provoqué un appel
+        // ici, après `super.onCreate()`.
         SystemBars.configure(this)
 
         binding = ActivityMainBinding.inflate(layoutInflater)
@@ -517,9 +517,9 @@ class MainActivity : AppCompatActivity() {
 
     /**
      * Lecture bloquante ponctuelle de la session locale ET du réglage de verrouillage biométrique
-     * (DataStore, source locale, quasi instantanée — même justification que [applyStoredThemeMode]
-     * ci-dessous) : AVANT le premier affichage, pour ne jamais montrer le Dashboard puis rediriger
-     * vers le verrou (ou l'inverse) une fois l'app déjà visible.
+     * (DataStore, source locale, quasi instantanée — même justification que
+     * `ArzikinaApplication.applyStoredThemeMode`) : AVANT le premier affichage, pour ne jamais
+     * montrer le Dashboard puis rediriger vers le verrou (ou l'inverse) une fois l'app déjà visible.
      *
      * Trois cas :
      * - pas de session → `loginFragment`, comme avant (le réglage biométrique n'a aucun sens sans
@@ -540,27 +540,6 @@ class MainActivity : AppCompatActivity() {
         val biometricLockEnabled = userPreferencesRepository.observePreferences().first().biometricLockEnabled
         val biometricLockRequired = biometricLockEnabled && biometricAuthenticator.isAvailable()
         if (biometricLockRequired) R.id.biometricLockFragment else R.id.dashboardFragment
-    }
-
-    /**
-     * Applique la préférence de thème (Système/Clair/Sombre, voir Paramètres)
-     * avant l'inflation des vues, pour éviter un changement visible après
-     * affichage. Lecture bloquante ponctuelle de DataStore (source locale,
-     * quasi instantanée) : pas de dépendance Compose ni d'état réactif ici,
-     * contrairement à l'ancienne implémentation `ArzikinaTheme(darkTheme = ...)`.
-     * L'écran Paramètres devra appeler `recreate()` après un changement pour
-     * que le nouveau mode s'applique immédiatement à l'écran déjà affiché.
-     */
-    private fun applyStoredThemeMode() {
-        val preferences = runBlocking { userPreferencesRepository.observePreferences().first() }
-        val nightMode = when (preferences.themeMode) {
-            ThemeMode.SYSTEM -> AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM
-            ThemeMode.LIGHT -> AppCompatDelegate.MODE_NIGHT_NO
-            ThemeMode.DARK -> AppCompatDelegate.MODE_NIGHT_YES
-        }
-        if (AppCompatDelegate.getDefaultNightMode() != nightMode) {
-            AppCompatDelegate.setDefaultNightMode(nightMode)
-        }
     }
 
     private companion object {

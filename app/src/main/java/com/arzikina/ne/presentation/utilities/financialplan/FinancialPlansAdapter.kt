@@ -2,6 +2,7 @@ package com.arzikina.ne.presentation.utilities.financialplan
 
 import android.view.LayoutInflater
 import android.view.ViewGroup
+import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
@@ -47,6 +48,7 @@ class FinancialPlansAdapter(
             binding.plannedValue.text = Money.format(CurrencyAmount(Constants.DEFAULT_CURRENCY_CODE, item.totalPlanned))
             binding.progressBar.progress = item.progressPercent
             binding.percentUsedLabel.text = context.getString(R.string.financial_plan_card_percent_used, item.progressPercent)
+            bindProgressHead(item.progressPercent)
 
             // Dépassement : le libellé passe de "Reste" à "Dépassement" et le montant devient
             // l'excédent (voir FinancialPlanProgress.calculateRemainingAmount, peut être négatif) —
@@ -64,6 +66,20 @@ class FinancialPlansAdapter(
             }
 
             binding.root.setOnClickListener { onClick(item) }
+        }
+
+        /**
+         * Repositionne @id/progressHead (voir item_financial_plan.xml) à l'extrémité du NIVEAU
+         * réel atteint, pas de la barre complète — même mécanisme `horizontalBias` que
+         * `BudgetModernAdapter.bindTodayCursor`/`todayCursorLine` (réutilisé tel quel, seule la
+         * source du pourcentage change). `coerceIn(0, 100)` : [FinancialPlanUiItem.progressPercent]
+         * peut dépasser 100 en cas de dépassement (voir [FinancialPlanUiItem.isOverBudget]) — le
+         * curseur reste alors collé à l'extrémité droite plutôt que de sortir de la barre.
+         */
+        private fun bindProgressHead(progressPercent: Int) {
+            val bias = (progressPercent.coerceIn(0, 100) / 100f)
+            (binding.progressHead.layoutParams as ConstraintLayout.LayoutParams).horizontalBias = bias
+            binding.progressHead.requestLayout()
         }
     }
 

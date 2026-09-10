@@ -136,7 +136,7 @@ class UserPreferencesRepositoryImpl @Inject constructor(
         val entity = UserPreferencesEntity(
             id = existing?.id ?: 0L,
             userId = userId,
-            themeMode = themeMode ?: existing?.themeMode ?: legacy?.themeMode ?: ThemeMode.SYSTEM,
+            themeMode = themeMode ?: existing?.themeMode ?: legacy?.themeMode ?: ThemeMode.DARK,
             currencyCode = currencyCode ?: existing?.currencyCode ?: legacy?.currencyCode ?: Constants.DEFAULT_CURRENCY_CODE,
             createdAt = existing?.createdAt ?: now,
             syncId = existing?.syncId ?: UUID.randomUUID().toString(),
@@ -149,7 +149,7 @@ class UserPreferencesRepositoryImpl @Inject constructor(
     }
 
     private fun Preferences.toLegacyUserPreferences(): UserPreferences {
-        val themeMode = this[Keys.THEME_MODE]?.let { runCatching { ThemeMode.valueOf(it) }.getOrNull() } ?: ThemeMode.SYSTEM
+        val themeMode = this[Keys.THEME_MODE]?.let { runCatching { ThemeMode.valueOf(it) }.getOrNull() } ?: ThemeMode.DARK
         val currencyCode = this[Keys.CURRENCY_CODE] ?: Constants.DEFAULT_CURRENCY_CODE
         val biometricLockEnabled = this[Keys.BIOMETRIC_LOCK_ENABLED] ?: false
         return UserPreferences(themeMode, currencyCode, biometricLockEnabled)

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Tête/curseur de la barre de progression de la PostCard "Montant disponible" (Planification —
+    voir item_financial_plan.xml/item_financial_plan_detail_header.xml). Positionné dynamiquement à
+    l'extrémité du REMPLISSAGE réel (le "niveau" atteint, piloté par `progress`), pas à l'extrémité
+    fixe de la piste — voir FinancialPlansAdapter.ViewHolder.bind/FinancialPlanDetailAdapter.
+    HeaderViewHolder.bind pour le calcul de position (`horizontalBias`).
+
+    Rond blanc plein + liseré vert foncé (`arzikina_financial_plan_card_end`, déjà utilisé pour le
+    dégradé de CETTE carte, voir colors.xml) : le liseré coloré garantit un contour net quel que
+    soit ce qu'il y a derrière (remplissage blanc plein à haut pourcentage, ou piste blanche ~28%
+    translucide à bas pourcentage) — un simple disque blanc uni se serait fondu dans le remplissage
+    blanc de la barre. Couleurs identiques en thème clair/sombre (carte à fond fixe, voir la doc de
+    colors.xml) : aucune variante -night nécessaire.
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="oval">
+    <solid android:color="@color/white" />
+    <stroke
+        android:width="2dp"
+        android:color="@color/arzikina_financial_plan_card_end" />
+</shape>

@@ -5,6 +5,7 @@ import android.graphics.Paint
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
@@ -79,6 +80,7 @@ class FinancialPlanDetailAdapter(
             binding.plannedValue.text = Money.format(CurrencyAmount(Constants.DEFAULT_CURRENCY_CODE, uiState.totalPlanned))
             binding.progressBar.progress = uiState.progressPercent
             binding.percentUsedLabel.text = context.getString(R.string.financial_plan_card_percent_used, uiState.progressPercent)
+            bindProgressHead(uiState.progressPercent)
 
             if (uiState.isOverBudget) {
                 binding.remainingLabel.text = context.getString(R.string.financial_plan_card_overbudget_label)
@@ -93,6 +95,14 @@ class FinancialPlanDetailAdapter(
             binding.itemsSectionTitle.text =
                 context.getString(R.string.financial_plan_detail_items_title, uiState.items.size)
             binding.itemsEmptyText.visibility = if (uiState.items.isEmpty()) View.VISIBLE else View.GONE
+        }
+
+        /** Voir le commentaire équivalent dans `FinancialPlansAdapter.ViewHolder.bindProgressHead`
+         *  (même carte, même mécanisme). */
+        private fun bindProgressHead(progressPercent: Int) {
+            val bias = (progressPercent.coerceIn(0, 100) / 100f)
+            (binding.progressHead.layoutParams as ConstraintLayout.LayoutParams).horizontalBias = bias
+            binding.progressHead.requestLayout()
         }
     }
 

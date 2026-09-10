@@ -40,7 +40,7 @@ import javax.inject.Inject
 data class SettingsUiState(
     val fullName: String = "",
     val profilePhotoUri: String? = null,
-    val themeMode: ThemeMode = ThemeMode.SYSTEM,
+    val themeMode: ThemeMode = ThemeMode.DARK,
     val currencyCode: String = Constants.DEFAULT_CURRENCY_CODE
 )
 

@@ -138,7 +138,12 @@
                 app:constraint_referenced_ids="plannedValue,remainingValue" />
 
             <!-- D. Barre de progression : remplissage blanc plein, piste blanche ~28% (voir
-                 colors.xml), coins arrondis. -->
+                 colors.xml), coins arrondis.
+
+                 `trackStopIndicatorSize="0dp"` + @id/progressHead : voir le commentaire équivalent
+                 dans `item_financial_plan.xml` (même carte, même correction) — le rond décoratif
+                 fixe de Material Components 1.13.0 (fin de PISTE, 100%) est désactivé au profit
+                 d'une tête positionnée sur le NIVEAU réel (voir progressHead ci-dessous). -->
             <com.google.android.material.progressindicator.LinearProgressIndicator
                 android:id="@+id/progressBar"
                 android:layout_width="0dp"
@@ -150,8 +155,24 @@
                 app:layout_constraintTop_toBottomOf="@id/columnsBarrier"
                 app:trackColor="@color/arzikina_track_on_financial_plan_card"
                 app:trackCornerRadius="5dp"
+                app:trackStopIndicatorSize="0dp"
                 app:trackThickness="10dp"
                 tools:progress="62" />
+
+            <!-- Tête/curseur de fin de NIVEAU — voir le commentaire complet dans
+                 item_financial_plan.xml (même carte). Repositionné dynamiquement dans
+                 FinancialPlanDetailAdapter.HeaderViewHolder.bind. -->
+            <View
+                android:id="@+id/progressHead"
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:background="@drawable/bg_financial_plan_progress_head"
+                android:elevation="1dp"
+                app:layout_constraintBottom_toBottomOf="@id/progressBar"
+                app:layout_constraintEnd_toEndOf="@id/progressBar"
+                app:layout_constraintHorizontal_bias="0.62"
+                app:layout_constraintStart_toStartOf="@id/progressBar"
+                app:layout_constraintTop_toTopOf="@id/progressBar" />
 
             <!-- E. Bas du card : nom de la planification (gauche) et "% utilisé" (droite), même
                  alignement. -->

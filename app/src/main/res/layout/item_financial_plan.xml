@@ -143,7 +143,14 @@
             app:constraint_referenced_ids="plannedValue,remainingValue" />
 
         <!-- D. Barre de progression : remplissage blanc plein, piste blanche ~28% (voir
-             colors.xml), coins arrondis. -->
+             colors.xml), coins arrondis.
+
+             `trackStopIndicatorSize="0dp"` : Material Components 1.13.0 ajoute PAR DÉFAUT (depuis
+             1.12, style M3 standard "Non-text contrast update") un petit rond de 4dp à
+             l'extrémité DROITE de la PISTE — un repère décoratif FIXE marquant la fin de piste
+             (100%), qui ne suit PAS `progress`. Explicitement désactivé ici : ce n'est pas le
+             curseur voulu (voir @id/progressHead juste en dessous, qui marque lui la fin du
+             NIVEAU réel) — le garder aurait affiché deux ronds différents. -->
         <com.google.android.material.progressindicator.LinearProgressIndicator
             android:id="@+id/progressBar"
             android:layout_width="0dp"
@@ -155,8 +162,29 @@
             app:layout_constraintTop_toBottomOf="@id/columnsBarrier"
             app:trackColor="@color/arzikina_track_on_financial_plan_card"
             app:trackCornerRadius="5dp"
+            app:trackStopIndicatorSize="0dp"
             app:trackThickness="10dp"
             tools:progress="62" />
+
+        <!-- Tête/curseur de fin de NIVEAU (pas de la barre complète) : rond blanc à liseré vert
+             foncé (voir bg_financial_plan_progress_head.xml pour le détail du choix visuel),
+             ancré sur @id/progressBar (double contrainte Start/End + horizontalBias, même
+             technique que BudgetModernAdapter.bindTodayCursor/todayCursorLine, réutilisée telle
+             quelle) et repositionné dynamiquement selon `progressPercent` réel — voir
+             FinancialPlansAdapter.ViewHolder.bind. `app:layout_constraintHorizontal_bias="0.62"`
+             ci-dessous n'est qu'un aperçu design-time (cohérent avec tools:progress="62"
+             ci-dessus) : toujours écrasé par le binding réel. -->
+        <View
+            android:id="@+id/progressHead"
+            android:layout_width="16dp"
+            android:layout_height="16dp"
+            android:background="@drawable/bg_financial_plan_progress_head"
+            android:elevation="1dp"
+            app:layout_constraintBottom_toBottomOf="@id/progressBar"
+            app:layout_constraintEnd_toEndOf="@id/progressBar"
+            app:layout_constraintHorizontal_bias="0.62"
+            app:layout_constraintStart_toStartOf="@id/progressBar"
+            app:layout_constraintTop_toTopOf="@id/progressBar" />
 
         <!-- E. Bas du card : nom de la planification (gauche) et "% utilisé" (droite), même
              alignement. -->
