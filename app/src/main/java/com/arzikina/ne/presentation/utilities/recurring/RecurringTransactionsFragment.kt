@@ -20,6 +20,7 @@ import com.arzikina.ne.databinding.FragmentRecurringTransactionsBinding
 import com.arzikina.ne.presentation.components.ConfirmDialogs
 import com.arzikina.ne.presentation.components.NavAnimations
 import com.arzikina.ne.util.AppResult
+import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 
@@ -83,7 +84,8 @@ class RecurringTransactionsFragment : Fragment(R.layout.fragment_recurring_trans
 
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.uiState.collect { state -> render(state) }
+                launch { viewModel.uiState.collect { state -> render(state) } }
+                launch { viewModel.events.collect { event -> handleEvent(event) } }
             }
         }
     }
@@ -91,6 +93,15 @@ class RecurringTransactionsFragment : Fragment(R.layout.fragment_recurring_trans
     override fun onDestroyView() {
         super.onDestroyView()
         binding = null
+    }
+
+    /** Voir `CategoriesFragment.handleEvent` pour le même principe (Snackbar, pas Toast). */
+    private fun handleEvent(event: RecurringTransactionsEvent) {
+        val binding = binding ?: return
+        when (event) {
+            RecurringTransactionsEvent.ActionFailed ->
+                Snackbar.make(binding.root, R.string.recurring_pending_action_failed_message, Snackbar.LENGTH_LONG).show()
+        }
     }
 
     private fun render(state: AppResult<RecurringTransactionsUiState>) {

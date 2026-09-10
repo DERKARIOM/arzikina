@@ -983,6 +983,7 @@
     <string name="recurring_pending_reject_action">Rejeter</string>
     <string name="recurring_queue_reject_confirm_title">Rejeter cette transaction automatique ?</string>
     <string name="recurring_queue_reject_confirm_message">Elle ne sera plus jamais proposée et aucune transaction ne sera créée pour cette échéance.</string>
+    <string name="recurring_pending_action_failed_message">Action impossible pour le moment. Réessaie.</string>
     <!--
         Dialogue d'édition d'une occurrence PENDING (voir RecurringOccurrenceEditDialogFragment) —
         "recurring_transaction_form_type_label"/"_category_label"/"_amount_label"/"_description_label"/

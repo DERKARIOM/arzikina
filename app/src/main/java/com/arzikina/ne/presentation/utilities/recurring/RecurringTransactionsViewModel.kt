@@ -7,9 +7,12 @@ import com.arzikina.ne.domain.repository.CategoryRepository
 import com.arzikina.ne.domain.repository.RecurringTransactionRepository
 import com.arzikina.ne.util.AppResult
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
@@ -18,6 +21,20 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+
+/**
+ * Événement ponctuel (pas un état) : voir `CategoriesViewModel.CategoriesEvent` pour le même
+ * principe (`MutableSharedFlow` plutôt que `StateFlow`, pour ne jamais rejouer un échec déjà
+ * affiché après une recomposition/rotation d'écran).
+ */
+sealed interface RecurringTransactionsEvent {
+    /** Émis quand [RecurringTransactionsViewModel.accept]/[RecurringTransactionsViewModel.reject]
+     *  échoue (ex. connexion perdue pendant l'écriture locale, occurrence déjà traitée entre-temps
+     *  par un autre appareil). Auparavant avalé silencieusement par `performAction` — voir l'audit
+     *  du bug de synchronisation Android→Web du 2026-09-10, qui a mis ce point en évidence comme
+     *  risque de robustesse annexe (pas la cause racine elle-même). */
+    data object ActionFailed : RecurringTransactionsEvent
+}
 
 /**
  * État de l'écran "Transactions planifiées" : les trois sections déjà résolues et jointes à leur
@@ -43,6 +60,9 @@ class RecurringTransactionsViewModel @Inject constructor(
      *  de processus redevient simplement cliquable au redémarrage, aucun état à nettoyer. */
     private val _pendingActionIds = MutableStateFlow<Set<Long>>(emptySet())
     val pendingActionIds: StateFlow<Set<Long>> = _pendingActionIds.asStateFlow()
+
+    private val _events = MutableSharedFlow<RecurringTransactionsEvent>()
+    val events: SharedFlow<RecurringTransactionsEvent> = _events.asSharedFlow()
 
     val uiState: StateFlow<AppResult<RecurringTransactionsUiState>> = combine(
         recurringTransactionRepository.observeRecurringTransactions(),
@@ -127,6 +147,7 @@ class RecurringTransactionsViewModel @Inject constructor(
         _pendingActionIds.update { it + occurrenceId }
         viewModelScope.launch {
             runCatching { action() }
+                .onFailure { _events.emit(RecurringTransactionsEvent.ActionFailed) }
             _pendingActionIds.update { it - occurrenceId }
         }
     }

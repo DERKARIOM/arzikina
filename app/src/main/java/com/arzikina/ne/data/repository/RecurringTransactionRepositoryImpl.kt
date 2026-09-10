@@ -1,5 +1,6 @@
 package com.arzikina.ne.data.repository
 
+import android.content.Context
 import androidx.room.withTransaction
 import com.arzikina.ne.data.local.dao.AccountDao
 import com.arzikina.ne.data.local.dao.CategoryDao
@@ -28,6 +29,8 @@ import com.arzikina.ne.domain.model.generateMissingScheduledDates
 import com.arzikina.ne.domain.repository.AutomationScheduler
 import com.arzikina.ne.domain.repository.RecurringTransactionRepository
 import com.arzikina.ne.domain.repository.SessionManager
+import com.arzikina.ne.work.SyncWorkScheduler
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flatMapLatest
@@ -86,6 +89,7 @@ class RecurringTransactionRepositoryImpl @Inject constructor(
     private val transactionSyncEnqueuer: TransactionSyncEnqueuer,
     private val syncQueueEnqueuer: SyncQueueEnqueuer,
     private val json: Json,
+    @ApplicationContext private val context: Context,
     @IoDispatcher private val ioDispatcher: CoroutineDispatcher
 ) : RecurringTransactionRepository {
 
@@ -269,6 +273,17 @@ class RecurringTransactionRepositoryImpl @Inject constructor(
 
         pendingTransactionOp?.let { (entity, operation) -> transactionSyncEnqueuer.enqueue(entity, operation) }
         pendingOccurrenceOp?.let { (entity, operation) -> enqueueOccurrenceSync(entity, operation) }
+        // Tentative de push quasi immédiate (voir la doc de tête de la classe et
+        // `AccountRepositoryImpl.reorderAccounts`/`ProfilePhotoRepositoryImpl` pour le même
+        // principe) : sans cet appel, la validation reste en `sync_queue` jusqu'au prochain
+        // changement de connectivité, au prochain cycle périodique (6h, voir `SyncWorker`) ou à un
+        // tap manuel sur "Synchroniser maintenant" — absent de cet écran. Cause racine du bug
+        // "validation Android non répercutée sur le Web" (audit du 2026-09-10) : le Web, lui, pousse
+        // sa propre validation de façon synchrone dans l'action utilisateur (`mutate()`).
+        // `triggerNow` est un `object` (pas injectable) avec sa propre contrainte réseau : ne fait
+        // rien de plus qu'enfiler un `OneTimeWorkRequest` best-effort, aucun risque d'échec bloquant
+        // ici si l'appareil est hors-ligne (WorkManager retentera au retour du réseau).
+        SyncWorkScheduler.triggerNow(context)
         result
     }
 
@@ -315,6 +330,8 @@ class RecurringTransactionRepositoryImpl @Inject constructor(
 
         pendingTransactionOp?.let { (entity, operation) -> transactionSyncEnqueuer.enqueue(entity, operation) }
         pendingOccurrenceOp?.let { (entity, operation) -> enqueueOccurrenceSync(entity, operation) }
+        // Voir le commentaire équivalent dans `acceptOccurrence`.
+        SyncWorkScheduler.triggerNow(context)
         result
     }
 
@@ -336,6 +353,8 @@ class RecurringTransactionRepositoryImpl @Inject constructor(
         }
 
         pendingOccurrenceOps.forEach { (entity, operation) -> enqueueOccurrenceSync(entity, operation) }
+        // Voir le commentaire équivalent dans `acceptOccurrence`.
+        SyncWorkScheduler.triggerNow(context)
     }
 
     /**
