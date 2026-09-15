@@ -2,9 +2,11 @@ package com.arzikina.ne.presentation.statistics
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.arzikina.ne.domain.model.Account
 import com.arzikina.ne.domain.model.Category
 import com.arzikina.ne.domain.model.Transaction
 import com.arzikina.ne.domain.model.TransactionType
+import com.arzikina.ne.domain.model.UserPreferences
 import com.arzikina.ne.domain.repository.AccountRepository
 import com.arzikina.ne.domain.repository.CategoryRepository
 import com.arzikina.ne.domain.repository.TransactionRepository
@@ -31,12 +33,23 @@ import javax.inject.Inject
 /** Nombre de mois affichés dans le graphique d'évolution. */
 private const val EVOLUTION_MONTHS_COUNT = 6
 
-/** Répartition des dépenses de la période sélectionnée pour une catégorie. */
+/** Répartition (dépenses OU revenus, voir [BreakdownType]) de la période sélectionnée, par catégorie. */
 data class CategoryBreakdownItem(
     val category: Category?,
     val amountMinor: Long,
     val percentage: Float
 )
+
+/**
+ * Type de mouvement représenté par la section "Répartition" (voir [StatisticsFragment], Spinner
+ * dédié) — [TransactionType.EXPENSE]/[TransactionType.INCOME] uniquement : les virements
+ * ([TransactionType.TRANSFER]) n'ont pas de catégorie de dépense/revenu à répartir, même exclusion
+ * que l'ancien comportement (figé sur les dépenses) avant ce chantier.
+ */
+enum class BreakdownType {
+    EXPENSE,
+    INCOME
+}
 
 /** Un point du graphique d'évolution mensuelle. */
 data class MonthlyEvolutionPoint(
@@ -75,6 +88,7 @@ data class StatisticsUiState(
     val totalIncomeMinor: Long,
     val totalExpenseMinor: Long,
     val totalNetMinor: Long,
+    val breakdownType: BreakdownType,
     val categoryBreakdown: List<CategoryBreakdownItem>,
     val monthlyEvolution: List<MonthlyEvolutionPoint>
 )
@@ -85,9 +99,19 @@ private sealed interface PeriodResolution {
     data class Invalid(val error: StatsPeriodError) : PeriodResolution
 }
 
+/** Regroupe les 4 flux "données" de l'écran pour rester dans la limite de 5 arguments de
+ *  `combine` une fois [StatisticsViewModel.periodSelection]/[StatisticsViewModel.breakdownType]
+ *  ajoutés — même principe que `DashboardBaseData` côté Dashboard. */
+private data class StatisticsBaseData(
+    val accounts: List<Account>,
+    val categories: List<Category>,
+    val transactions: List<Transaction>,
+    val preferences: UserPreferences
+)
+
 /**
  * ViewModel de l'écran Statistiques : totaux revenus/dépenses/solde et
- * répartition des dépenses par catégorie (camembert) sur une période choisie
+ * répartition par catégorie (dépenses OU revenus, voir [BreakdownType]) sur une période choisie
  * par l'utilisateur ([PeriodSelection]/[StatsPeriodPreset]) — même formule et
  * mêmes préréglages que la page Web `statistiques.tsx`
  * ([StatsPeriodPreset.toDateRange], miroir de `resolveStatsPeriodRange`).
@@ -115,14 +139,21 @@ class StatisticsViewModel @Inject constructor(
 ) : ViewModel() {
 
     private val periodSelection = MutableStateFlow(PeriodSelection())
+    private val breakdownType = MutableStateFlow(BreakdownType.EXPENSE)
 
     val uiState: StateFlow<AppResult<StatisticsUiState>> = combine(
-        accountRepository.observeAccounts(),
-        categoryRepository.observeCategories(),
-        transactionRepository.observeTransactions(),
-        userPreferencesRepository.observePreferences(),
-        periodSelection
-    ) { accounts, categories, transactions, preferences, selection ->
+        combine(
+            accountRepository.observeAccounts(),
+            categoryRepository.observeCategories(),
+            transactionRepository.observeTransactions(),
+            userPreferencesRepository.observePreferences()
+        ) { accounts, categories, transactions, preferences ->
+            StatisticsBaseData(accounts, categories, transactions, preferences)
+        },
+        periodSelection,
+        breakdownType
+    ) { base, selection, type ->
+        val (accounts, categories, transactions, preferences) = base
         val categoriesById = categories.associateBy { it.id }
         val personalScope = PersonalStatistics.scope(accounts, transactions)
         val primaryCurrencyAccountIds = personalScope.accounts
@@ -147,7 +178,8 @@ class StatisticsViewModel @Inject constructor(
             totalIncomeMinor = totalIncome,
             totalExpenseMinor = totalExpense,
             totalNetMinor = totalIncome - totalExpense,
-            categoryBreakdown = computeCategoryBreakdown(periodTransactions, categoriesById),
+            breakdownType = type,
+            categoryBreakdown = computeCategoryBreakdown(periodTransactions, categoriesById, type),
             // Volontairement basé sur relevantTransactions (PAS periodTransactions) : voir la doc
             // de tête de la classe.
             monthlyEvolution = computeMonthlyEvolution(relevantTransactions)
@@ -162,7 +194,7 @@ class StatisticsViewModel @Inject constructor(
         )
 
     /**
-     * Choix d'un préréglage (bouton du `MaterialButtonToggleGroup`, voir [StatisticsFragment]). Cas
+     * Choix d'un préréglage (Spinner de période, voir [StatisticsFragment]). Cas
      * particulier de [StatsPeriodPreset.CUSTOM] sélectionné pour la toute première fois (aucune date
      * personnalisée encore choisie) : pré-remplit avec le mois en cours plutôt que de laisser les
      * deux champs vides — évite d'afficher immédiatement [StatsPeriodError.MISSING_DATES] avant même
@@ -193,6 +225,11 @@ class StatisticsViewModel @Inject constructor(
         periodSelection.value = PeriodSelection()
     }
 
+    /** Choix du type de mouvement représenté par "Répartition" (Spinner dédié, voir [StatisticsFragment]). */
+    fun onBreakdownTypeSelected(type: BreakdownType) {
+        breakdownType.value = type
+    }
+
     /**
      * Résout [selection] en bornes epoch ms INCLUSIVES (23:59:59 pour la fin, voir
      * [DatePeriods.toEpochMillisEndOfDay]) — ou en [StatsPeriodError] si la période personnalisée
@@ -213,16 +250,21 @@ class StatisticsViewModel @Inject constructor(
 
     private fun computeCategoryBreakdown(
         transactions: List<Transaction>,
-        categoriesById: Map<Long, Category>
+        categoriesById: Map<Long, Category>,
+        type: BreakdownType
     ): List<CategoryBreakdownItem> {
-        val expenses = transactions.filter { it.type == TransactionType.EXPENSE }
-        val total = expenses.sumOf { it.amount }
+        val transactionType = when (type) {
+            BreakdownType.EXPENSE -> TransactionType.EXPENSE
+            BreakdownType.INCOME -> TransactionType.INCOME
+        }
+        val matching = transactions.filter { it.type == transactionType }
+        val total = matching.sumOf { it.amount }
         if (total <= 0L) return emptyList()
 
         // categoryId n'est `null` que pour un transfert (voir TransactionType.TRANSFER), déjà
-        // exclu de `expenses` par le filtre `type == EXPENSE` ci-dessus ; mapNotNull couvre quand
-        // même ce cas pour rester correct si l'invariant venait à changer.
-        return expenses
+        // exclu de `matching` par le filtre `type == transactionType` ci-dessus ; mapNotNull
+        // couvre quand même ce cas pour rester correct si l'invariant venait à changer.
+        return matching
             .mapNotNull { transaction -> transaction.categoryId?.let { it to transaction } }
             .groupBy({ (categoryId, _) -> categoryId }, { (_, transaction) -> transaction })
             .map { (categoryId, txs) ->

@@ -35,20 +35,15 @@ import java.util.Locale
 private val MonthLabelsKey = ExtraStore.Key<List<String>>()
 
 /**
- * Graphiques (évolution mensuelle, répartition des dépenses). Reconstruite
- * en XML/Views (voir instructions projet) ; [StatisticsViewModel] est
- * inchangé.
+ * Graphiques (évolution mensuelle, répartition par catégorie). [StatisticsViewModel] porte toute
+ * la logique métier (période, type de répartition, totaux) ; ce Fragment ne fait que du rendu.
  *
- * Le graphique d'évolution utilise le module `views` de Vico
- * (`CartesianChartView`) — stable pour cet usage. Le camembert de
- * répartition, lui, N'utilise PAS Vico : `PieChartView` levait de façon
- * reproductible `IllegalArgumentException: The outer size must be greater
- * than the inner size.` dès qu'un modèle non vide lui était fourni, un
- * problème interne au module (désormais en maintenance — corrections
- * critiques uniquement) que deux correctifs successifs n'ont pas résolu.
- * Remplacé par [CategoryPieView], un anneau dessiné directement sur un
- * `Canvas` : aucune dépendance externe, aucun invariant caché, et les
- * couleurs par catégorie restent dynamiques.
+ * Le graphique d'évolution utilise le module `views` de Vico (`CartesianChartView`) — stable pour
+ * cet usage. La répartition par catégorie, elle, N'utilise PAS Vico : dessinée directement via
+ * [CategoryBarChartView] (une couleur DIFFÉRENTE par barre, pas un cas d'usage nativement supporté
+ * par une série Vico unique — voir sa doc de tête), un diagramme en bâtons qui a lui-même remplacé
+ * un premier jet en anneau ([CategoryPieView], toujours utilisée telle quelle par
+ * [com.arzikina.ne.presentation.utilities.loans.LoanStatisticsFragment] pour un besoin différent).
  */
 @AndroidEntryPoint
 class StatisticsFragment : Fragment(R.layout.fragment_statistics) {
@@ -69,6 +64,7 @@ class StatisticsFragment : Fragment(R.layout.fragment_statistics) {
         setUpEvolutionChart(viewBinding)
         setUpBreakdownList(viewBinding)
         setUpPeriodSelector(viewBinding)
+        setUpBreakdownTypeSelector(viewBinding)
 
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -119,6 +115,25 @@ class StatisticsFragment : Fragment(R.layout.fragment_statistics) {
         }
 
         binding.resetPeriodButton.setOnClickListener { viewModel.onResetPeriod() }
+    }
+
+    /** Miroir de [periodPresets] pour le Spinner "Type" (Dépenses/Revenus) de la section
+     *  "Répartition" — voir [StatisticsViewModel.BreakdownType]. */
+    private val breakdownTypes: List<Pair<BreakdownType, Int>> = listOf(
+        BreakdownType.EXPENSE to R.string.statistics_breakdown_type_expense,
+        BreakdownType.INCOME to R.string.statistics_breakdown_type_income
+    )
+
+    /** Spinner "Type" (Dépenses/Revenus) de la section "Répartition" — même composant et même
+     *  câblage que [setUpPeriodSelector] (`item_dropdown_field.xml`). */
+    private fun setUpBreakdownTypeSelector(binding: FragmentStatisticsBinding) {
+        binding.breakdownTypeField.dropdownLayout.hint = getString(R.string.statistics_breakdown_type_label)
+        binding.breakdownTypeField.dropdownInput.setSimpleItems(
+            breakdownTypes.map { (_, labelRes) -> getString(labelRes) }.toTypedArray()
+        )
+        binding.breakdownTypeField.dropdownInput.setOnItemClickListener { _, _, position, _ ->
+            breakdownTypes.getOrNull(position)?.let { (type, _) -> viewModel.onBreakdownTypeSelected(type) }
+        }
     }
 
     /**
@@ -183,7 +198,16 @@ class StatisticsFragment : Fragment(R.layout.fragment_statistics) {
         binding.breakdownSection.visibility = if (hasError) View.GONE else View.VISIBLE
         if (!hasError) {
             renderTotals(binding, state.data)
+            renderBreakdownTypeSelector(binding, state.data)
             renderBreakdown(binding, state.data)
+        }
+    }
+
+    /** Texte affiché par le Spinner "Type" — voir [setUpBreakdownTypeSelector]. */
+    private fun renderBreakdownTypeSelector(binding: FragmentStatisticsBinding, uiState: StatisticsUiState) {
+        val expectedLabel = getString(breakdownTypes.first { (type, _) -> type == uiState.breakdownType }.second)
+        if (binding.breakdownTypeField.dropdownInput.text?.toString() != expectedLabel) {
+            binding.breakdownTypeField.dropdownInput.setText(expectedLabel, false)
         }
     }
 
@@ -248,6 +272,12 @@ class StatisticsFragment : Fragment(R.layout.fragment_statistics) {
         binding.breakdownChart.visibility = if (hasBreakdown) View.VISIBLE else View.GONE
         binding.breakdownLegendList.visibility = if (hasBreakdown) View.VISIBLE else View.GONE
         binding.breakdownEmptyState.visibility = if (hasBreakdown) View.GONE else View.VISIBLE
+        binding.breakdownEmptyState.text = getString(
+            when (uiState.breakdownType) {
+                BreakdownType.EXPENSE -> R.string.statistics_breakdown_empty_expense
+                BreakdownType.INCOME -> R.string.statistics_breakdown_empty_income
+            }
+        )
 
         breakdownAdapter.currencyCode = uiState.currencyCode
         breakdownAdapter.submitList(breakdown)

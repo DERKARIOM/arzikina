@@ -753,10 +753,14 @@
 
     <!-- Statistiques -->
     <string name="statistics_evolution_title">Évolution (6 derniers mois)</string>
-    <!-- Ne mentionne plus "(ce mois)" : la répartition suit désormais la période sélectionnée
-         (voir statistics_period_*), plus systématiquement le mois en cours. -->
-    <string name="statistics_breakdown_title">Répartition des dépenses</string>
-    <string name="statistics_breakdown_empty">Aucune dépense sur la période sélectionnée.</string>
+    <!-- Titre générique (ni "des dépenses" ni "des revenus" en dur) : le type représenté est
+         désormais choisi via le Spinner statistics_breakdown_type_* (voir StatisticsFragment). -->
+    <string name="statistics_breakdown_title">Répartition</string>
+    <string name="statistics_breakdown_type_label">Type</string>
+    <string name="statistics_breakdown_type_expense">Dépenses</string>
+    <string name="statistics_breakdown_type_income">Revenus</string>
+    <string name="statistics_breakdown_empty_expense">Aucune dépense sur la période sélectionnée.</string>
+    <string name="statistics_breakdown_empty_income">Aucun revenu sur la période sélectionnée.</string>
     <string name="statistics_legend_income">Revenus</string>
     <string name="statistics_legend_expense">Dépenses</string>
     <string name="statistics_breakdown_item_subtitle">%1$s · %2$d %%</string>

@@ -258,6 +258,23 @@
                     android:text="@string/statistics_breakdown_title"
                     android:textColor="?attr/colorOnSurface" />
 
+                <!-- Spinner Dépenses/Revenus (voir StatisticsViewModel.BreakdownType) — même
+                     composant "postcard" ExposedDropdownMenu que le Spinner de période plus haut. -->
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/spacing_s"
+                    android:theme="@style/ThemeOverlay.Arzikina.OnBalanceCard"
+                    app:cardBackgroundColor="@color/arzikina_postcart_background"
+                    app:cardCornerRadius="@dimen/corner_radius_medium"
+                    app:cardElevation="@dimen/elevation_raised">
+
+                    <include
+                        android:id="@+id/breakdownTypeField"
+                        layout="@layout/item_dropdown_field" />
+
+                </com.google.android.material.card.MaterialCardView>
+
                 <TextView
                     android:id="@+id/breakdownEmptyState"
                     style="@style/TextAppearance.Material3.BodyMedium"
@@ -265,9 +282,9 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="@dimen/spacing_m"
                     android:gravity="center"
-                    android:text="@string/statistics_breakdown_empty"
                     android:textColor="?attr/colorOnSurfaceVariant"
-                    android:visibility="gone" />
+                    android:visibility="gone"
+                    tools:text="Aucune dépense sur la période sélectionnée." />
 
                 <!-- Diagramme en bâtons (une couleur par catégorie, voir CategoryBarChartView) —
                      remplace l'ancien anneau CategoryPieView sur demande explicite, à la manière du
