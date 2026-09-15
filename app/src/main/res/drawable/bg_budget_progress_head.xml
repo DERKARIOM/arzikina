@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Tête/curseur de la barre de progression de la PostCard Budget "moderne" (item_budget_modern.xml
+    — Fragment Budget uniquement, voir BudgetModernAdapter). Même principe que
+    bg_financial_plan_progress_head.xml (carte Planification) : rond blanc + liseré coloré pour
+    rester net quel que soit ce qu'il y a derrière (remplissage blanc plein ou piste translucide).
+
+    Variante NORMALE (dans le budget) : liseré `arzikina_budget_card_end`, déjà utilisé pour le
+    dégradé de CETTE carte — voir bg_budget_progress_head_overspent.xml pour la variante
+    dépassement (liseré rouge, cohérente avec `indicatorColor` qui passe déjà au rouge dans
+    BudgetModernAdapter.bindProgress quand `item.progress > 1f`).
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="oval">
+    <solid android:color="@color/white" />
+    <stroke
+        android:width="2dp"
+        android:color="@color/arzikina_budget_card_end" />
+</shape>

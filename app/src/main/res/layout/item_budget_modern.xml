@@ -241,7 +241,15 @@
 
         </LinearLayout>
 
-        <!-- C. Barre de progression + pourcentages (gauche/droite, voir cahier des charges section 6). -->
+        <!-- C. Barre de progression + pourcentages (gauche/droite, voir cahier des charges section 6).
+
+             `trackStopIndicatorSize="0dp"` + @id/progressHead juste en dessous : voir le
+             commentaire complet dans item_financial_plan.xml (même correction, même raisonnement)
+             — Material Components 1.13.0 ajoute par défaut un rond FIXE en fin de PISTE (100%),
+             qui ne suit pas `progress` ; désactivé au profit d'un curseur qui suit le NIVEAU réel
+             (`item.progress`, voir BudgetModernAdapter.bindProgressHead). Ne remplace PAS
+             @id/todayCursorLine (juste en dessous) : ce dernier marque le temps écoulé dans la
+             période, un repère totalement différent (voir sa propre doc). -->
         <com.google.android.material.progressindicator.LinearProgressIndicator
             android:id="@+id/progressBar"
             android:layout_width="0dp"
@@ -253,8 +261,27 @@
             app:layout_constraintTop_toBottomOf="@id/financialRow"
             app:trackColor="@color/arzikina_track_on_budget_card"
             app:trackCornerRadius="5dp"
+            app:trackStopIndicatorSize="0dp"
             app:trackThickness="10dp"
             tools:progress="65" />
+
+        <!-- Tête/curseur de fin de NIVEAU (montant dépensé / montant total) — voir
+             bg_budget_progress_head.xml. Positionné dynamiquement (horizontalBias) selon
+             `item.progress` dans BudgetModernAdapter.bindProgressHead, même mécanisme que
+             bindTodayCursor ci-dessous (réutilisé tel quel). Drawable swappé en variante rouge
+             (bg_budget_progress_head_overspent) en cas de dépassement, cohérent avec
+             `indicatorColor` du progressBar (voir bindProgress). -->
+        <View
+            android:id="@+id/progressHead"
+            android:layout_width="16dp"
+            android:layout_height="16dp"
+            android:background="@drawable/bg_budget_progress_head"
+            android:elevation="1dp"
+            app:layout_constraintBottom_toBottomOf="@id/progressBar"
+            app:layout_constraintEnd_toEndOf="@id/progressBar"
+            app:layout_constraintHorizontal_bias="0.65"
+            app:layout_constraintStart_toStartOf="@id/progressBar"
+            app:layout_constraintTop_toTopOf="@id/progressBar" />
 
         <!-- Curseur "Aujourd'hui" (voir util/BudgetPace.kt + BudgetModernAdapter.bindTodayCursor) :
              une simple ligne + un label, repositionnés via `horizontalBias` au binding — pas de vue

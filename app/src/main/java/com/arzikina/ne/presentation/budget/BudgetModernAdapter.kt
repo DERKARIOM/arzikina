@@ -98,6 +98,7 @@ class BudgetModernAdapter(
             bindStatusBadge(context, item)
             bindFinancialColumns(context, item)
             bindProgress(context, item)
+            bindProgressHead(item)
             bindTodayCursor(pace)
             bindPeriodAndDaysRemaining(context, item, pace)
 
@@ -169,6 +170,27 @@ class BudgetModernAdapter(
             val percent = (item.progress * 100).roundToInt()
             binding.percentUsedLabel.text = context.getString(R.string.budget_modern_percent_used, percent)
             binding.percentOfBudgetLabel.text = context.getString(R.string.budget_modern_percent_of_budget, percent)
+        }
+
+        /**
+         * Repositionne @id/progressHead (voir item_financial_plan.xml pour le raisonnement complet
+         * sur pourquoi ce rond existe, désormais dupliqué ici pour Budget) à l'extrémité du NIVEAU
+         * réellement dépensé — `item.progress` (0f..1f, potentiellement > 1f en cas de dépassement,
+         * comme dans [bindProgress] ci-dessus), pas la fin de la piste. Même mécanisme
+         * `horizontalBias` + `requestLayout()` que [bindTodayCursor] juste en dessous — un repère
+         * DIFFÉRENT (le temps, pas le niveau), volontairement laissé intact.
+         *
+         * Drawable swappé en variante rouge (`bg_budget_progress_head_overspent`) en cas de
+         * dépassement, cohérent avec `indicatorColor` du `progressBar` lui-même (voir [bindProgress]).
+         */
+        private fun bindProgressHead(item: BudgetUiItem) {
+            val isOverspent = item.progress > 1f
+            val bias = item.progress.coerceIn(0f, 1f)
+            binding.progressHead.setBackgroundResource(
+                if (isOverspent) R.drawable.bg_budget_progress_head_overspent else R.drawable.bg_budget_progress_head
+            )
+            (binding.progressHead.layoutParams as ConstraintLayout.LayoutParams).horizontalBias = bias
+            binding.progressHead.requestLayout()
         }
 
         /** Repositionne le repère "Aujourd'hui" via `horizontalBias` (voir item_budget_modern.xml) —

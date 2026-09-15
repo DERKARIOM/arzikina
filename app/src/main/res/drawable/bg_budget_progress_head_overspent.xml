@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Variante DÉPASSEMENT de bg_budget_progress_head.xml (voir sa doc) : liseré rouge
+    (@color/expense_red), appliquée par BudgetModernAdapter.bindProgressHead quand
+    `item.progress > 1f` — cohérente avec `indicatorColor` du progressBar lui-même, qui passe déjà
+    au rouge dans ce même cas (voir bindProgress).
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="oval">
+    <solid android:color="@color/white" />
+    <stroke
+        android:width="2dp"
+        android:color="@color/expense_red" />
+</shape>

@@ -538,6 +538,7 @@
     <string name="dashboard_income_label_short">Revenu</string>
     <string name="dashboard_expense_label_short">Dépense</string>
     <string name="dashboard_difference_label">Différence</string>
+    <string name="dashboard_budget_gap_label">Écart Budget</string>
     <string name="dashboard_budget_title">Budget</string>
     <string name="dashboard_budget_see_all">Voir tout</string>
     <string name="dashboard_budget_empty_title">Aucun budget pour l\'instant</string>

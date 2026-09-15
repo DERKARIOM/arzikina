@@ -393,10 +393,17 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:background="@color/arzikina_postcart_background"
-                android:gravity="center_vertical"
+                android:gravity="bottom"
                 android:orientation="horizontal"
                 android:padding="@dimen/spacing_l">
 
+                <!-- gravity="bottom" (plutôt que "center_vertical") : IncomeExpenseBarView dessine
+                     toujours ses barres en partant du BAS de sa propre hauteur fixe (voir
+                     IncomeExpenseBarView.drawBar, top = height - barHeight) — aligner le bas de la
+                     vue sur le bas de la colonne de texte fait donc coïncider le point de départ
+                     des barres avec la ligne "Écart Budget", désormais la dernière ligne de la
+                     colonne depuis son ajout. Un centrage vertical, correct avec 3 lignes, ne l'est
+                     plus avec 4. -->
                 <com.arzikina.ne.presentation.dashboard.IncomeExpenseBarView
                     android:id="@+id/incomeExpenseChart"
                     android:layout_width="56dp"
@@ -483,6 +490,44 @@
                             android:layout_height="wrap_content"
                             android:textColor="@color/arzikina_on_balance_card"
                             tools:text="-12 000 F CFA" />
+
+                    </LinearLayout>
+
+                    <!-- Écart Budget = Solde total - Σ(restants des budgets actifs), même formule
+                         que arzikina-web-sync/src/services/finance.ts (voir
+                         DashboardViewModel.computeBudgetGap). Séparée de Revenu/Dépense/Différence
+                         par son propre séparateur (même style que celui déjà utilisé entre chaque
+                         ligne ci-dessus) : un indicateur dérivé distinct, pas juste une 4e variable
+                         du même triplet. Libellé en style identique à "Différence" (BodyMedium,
+                         arzikina_on_balance_card_variant, sans gras) sur demande explicite — seule
+                         la valeur (budgetGapValue) garde sa couleur dynamique verte/rouge propre à
+                         cet indicateur. -->
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginVertical="@dimen/spacing_s"
+                        android:background="@color/arzikina_on_balance_card_variant" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            style="@style/TextAppearance.Material3.BodyMedium"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="@string/dashboard_budget_gap_label"
+                            android:textColor="@color/arzikina_on_balance_card_variant" />
+
+                        <TextView
+                            android:id="@+id/budgetGapValue"
+                            style="@style/TextAppearance.Material3.TitleSmall"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textColor="@color/income_green"
+                            tools:text="-5 969 F CFA" />
 
                     </LinearLayout>
 

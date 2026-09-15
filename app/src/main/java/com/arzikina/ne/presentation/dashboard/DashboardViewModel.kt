@@ -25,7 +25,10 @@ import com.arzikina.ne.presentation.components.SyncNowUiState
 import com.arzikina.ne.presentation.transactions.TransactionUiItem
 import com.arzikina.ne.presentation.transactions.feeTransactionIds
 import com.arzikina.ne.util.AppResult
+import com.arzikina.ne.util.BudgetPace
+import com.arzikina.ne.util.BudgetPeriodStatus
 import com.arzikina.ne.util.BudgetProgress
+import com.arzikina.ne.util.Constants
 import com.arzikina.ne.util.PersonalStatistics
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharedFlow
@@ -38,6 +41,7 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import java.time.Instant
+import java.time.LocalDate
 import java.time.YearMonth
 import java.time.ZoneId
 import javax.inject.Inject
@@ -56,6 +60,24 @@ data class DashboardUiState(
     val balances: List<CurrencyAmount>,
     val monthlyIncome: List<CurrencyAmount>,
     val monthlyExpense: List<CurrencyAmount>,
+    /**
+     * "Écart Budget" (voir cahier des charges du même nom, reproduit à l'identique depuis
+     * `arzikina-web-sync/src/services/finance.ts`) = solde total personnel (même valeur que
+     * [balances], voir [DashboardViewModel.computeBalances]) − somme des montants RESTANTS
+     * ([BudgetProgress.Result.spentMinor] soustrait de [Budget.limitAmount]) des budgets dont la
+     * période est actuellement EN COURS ([BudgetPace.periodStatus] == [BudgetPeriodStatus.ONGOING],
+     * dates fixes ou récurrent — voir [DashboardViewModel.activeBudgetsRemainingMinor]).
+     *
+     * Toujours renseigné (jamais `null`), y compris sans aucun budget actif : la somme des restants
+     * vaut alors `0`, donc l'écart est égal au solde total — même comportement que
+     * `activeBudgetsRemainingTotal` côté Web, qui retombe sur `0` via son accumulateur `reduce`.
+     *
+     * Une seule devise (voir [CurrencyAmount]) : même convention que [DashboardFragment.renderIncomeExpense]
+     * pour `differenceValue` — la première devise de [balances] (repli [Constants.DEFAULT_CURRENCY_CODE]
+     * si l'utilisateur n'a encore aucun compte), les budgets d'une autre devise n'entrent pas dans la
+     * somme des restants (pas de conversion de change dans ce projet, voir [CurrencyAmount]).
+     */
+    val budgetGap: CurrencyAmount,
     val recentTransactions: List<TransactionUiItem>,
     /**
      * Le budget le plus "urgent" (progression la plus élevée, dépassement
@@ -155,10 +177,13 @@ class DashboardViewModel @Inject constructor(
             YearMonth.from(transaction.dateAsZonedDateTime()) == currentMonth
         }
 
+        val balances = computeBalances(accounts, transactions, personalScope.accounts)
+
         DashboardUiState(
-            balances = computeBalances(accounts, transactions, personalScope.accounts),
+            balances = balances,
             monthlyIncome = sumByAccountCurrency(monthlyPersonalTransactions, TransactionType.INCOME, accountsById),
             monthlyExpense = sumByAccountCurrency(monthlyPersonalTransactions, TransactionType.EXPENSE, accountsById),
+            budgetGap = computeBudgetGap(balances, budgets, personalScope.transactions, accountsById),
             // Flux d'activité brut, PAS une statistique agrégée : continue d'afficher les
             // transactions de TOUS les comptes, exclus ou non (voir cahier des charges). Une
             // transaction de frais liée n'apparaît en revanche jamais comme sa propre ligne (voir
@@ -219,6 +244,59 @@ class DashboardViewModel @Inject constructor(
                 val total = accountsInCurrency.sumOf { account -> balancesByAccount[account.id] ?: account.initialBalance }
                 CurrencyAmount(currencyCode, total)
             }
+    }
+
+    /**
+     * "Écart Budget" — voir la doc complète de [DashboardUiState.budgetGap]. Choisit la devise
+     * exactement comme [DashboardFragment.renderIncomeExpense] choisit celle de `differenceValue`
+     * (première devise de [balances], repli [Constants.DEFAULT_CURRENCY_CODE]) pour rester cohérent
+     * avec le reste de cette carte plutôt que d'introduire une troisième convention de choix de
+     * devise sur le même écran.
+     */
+    private fun computeBudgetGap(
+        balances: List<CurrencyAmount>,
+        budgets: List<Budget>,
+        personalTransactions: List<Transaction>,
+        accountsById: Map<Long, Account>
+    ): CurrencyAmount {
+        val currencyCode = balances.firstOrNull()?.currencyCode ?: Constants.DEFAULT_CURRENCY_CODE
+        val totalMinor = balances.firstOrNull()?.amountMinor ?: 0L
+        val remainingMinor = activeBudgetsRemainingMinor(budgets, personalTransactions, accountsById, currencyCode)
+        return CurrencyAmount(currencyCode, totalMinor - remainingMinor)
+    }
+
+    /**
+     * Somme des montants RESTANTS ([Budget.limitAmount] − [BudgetProgress.Result.spentMinor]) des
+     * budgets dont la période est actuellement EN COURS — réutilise [BudgetProgress.compute] (même
+     * "spent" que [featuredBudget]/l'écran Budget, aucun second calcul divergent) et
+     * [BudgetPace.of] pour le statut de période, seule fonction du projet qui résout correctement
+     * les bornes d'un budget RÉCURRENT (pas seulement à dates fixes, contrairement à
+     * [BudgetPeriodStatus.of] qui renvoie `null` dans ce cas) — équivalent exact de
+     * `budgetPeriodStatus`/`resolveBudgetPeriodBounds` côté Web (`services/finance.ts`).
+     *
+     * `today` calculé UNE SEULE fois par appelant et transmis aux deux fonctions (au lieu de
+     * laisser chacune appeler `LocalDate.now()` séparément) : évite tout risque, même infime, de
+     * changement de jour civil entre les deux appels.
+     *
+     * Budgets filtrés sur [currencyCode] AVANT sommation : ce filtre n'a pas d'équivalent côté Web
+     * (qui ne gère qu'une devise globale) — nécessaire côté Android, qui est multi-devises, pour ne
+     * jamais additionner des montants de devises différentes (voir la doc de [CurrencyAmount]).
+     */
+    private fun activeBudgetsRemainingMinor(
+        budgets: List<Budget>,
+        personalTransactions: List<Transaction>,
+        accountsById: Map<Long, Account>,
+        currencyCode: String
+    ): Long {
+        val today = LocalDate.now()
+        return budgets
+            .asSequence()
+            .filter { it.currencyCode == currencyCode }
+            .map { budget -> budget to BudgetProgress.compute(budget, personalTransactions, accountsById, today) }
+            .filter { (budget, result) ->
+                BudgetPace.of(budget, result.spentMinor, today).periodStatus == BudgetPeriodStatus.ONGOING
+            }
+            .sumOf { (budget, result) -> budget.limitAmount - result.spentMinor }
     }
 
     private fun sumByAccountCurrency(

@@ -243,7 +243,7 @@ class DashboardFragment : Fragment(R.layout.fragment_dashboard) {
 
         latestBalances = uiState.balances
         renderBalanceText()
-        renderIncomeExpense(uiState.monthlyIncome, uiState.monthlyExpense)
+        renderIncomeExpense(uiState.monthlyIncome, uiState.monthlyExpense, uiState.budgetGap)
         renderFeaturedBudget(uiState.featuredBudget)
         renderUserHeader(uiState.userFullName, uiState.userProfilePhotoUri)
         binding.cardNumberText.text = getString(R.string.dashboard_card_number_format, uiState.cardNumberLastDigits)
@@ -315,7 +315,7 @@ class DashboardFragment : Fragment(R.layout.fragment_dashboard) {
     }
 
     /**
-     * Alimente le mini graphique en barres et le texte Revenu/Dépense/Différence.
+     * Alimente le mini graphique en barres et le texte Revenu/Dépense/Différence/Écart Budget.
      *
      * Limite documentée : ne prend en compte que la première devise de chaque
      * liste (comme le graphique n'affiche qu'une seule paire de barres) — si
@@ -323,8 +323,14 @@ class DashboardFragment : Fragment(R.layout.fragment_dashboard) {
      * première est représentée ici. Le texte [formatAmounts], lui, continue
      * d'afficher toutes les devises (une par ligne) pour rester correct dans
      * ce cas, au prix d'un léger désaccord visuel avec le graphique.
+     *
+     * [budgetGap] est calculé séparément par [DashboardViewModel] (déjà dans une seule devise —
+     * voir sa doc) : affiché tel quel via [Money.format], pas recalculé ici. Couleur dynamique
+     * (vert/rouge selon le signe, mêmes couleurs que Revenu/Dépense juste au-dessus) — voir
+     * cahier des charges "Écart Budget" : permet de voir en un coup d'œil si le solde total
+     * dépasse ou non la somme des montants restants des budgets actifs.
      */
-    private fun renderIncomeExpense(income: List<CurrencyAmount>, expense: List<CurrencyAmount>) {
+    private fun renderIncomeExpense(income: List<CurrencyAmount>, expense: List<CurrencyAmount>, budgetGap: CurrencyAmount) {
         val binding = binding ?: return
         binding.incomeValue.text = formatAmounts(income)
         binding.expenseValue.text = formatAmounts(expense)
@@ -343,6 +349,14 @@ class DashboardFragment : Fragment(R.layout.fragment_dashboard) {
             ContextCompat.getColor(
                 requireContext(),
                 if (difference < 0L) R.color.expense_red else R.color.arzikina_on_balance_card
+            )
+        )
+
+        binding.budgetGapValue.text = Money.format(budgetGap)
+        binding.budgetGapValue.setTextColor(
+            ContextCompat.getColor(
+                requireContext(),
+                if (budgetGap.amountMinor < 0L) R.color.expense_red else R.color.income_green
             )
         )
     }
