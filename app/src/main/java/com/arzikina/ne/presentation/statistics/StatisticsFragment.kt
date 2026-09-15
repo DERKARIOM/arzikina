@@ -252,10 +252,14 @@ class StatisticsFragment : Fragment(R.layout.fragment_statistics) {
         breakdownAdapter.currencyCode = uiState.currencyCode
         breakdownAdapter.submitList(breakdown)
 
-        binding.breakdownChart.slices = breakdown.map { item ->
+        binding.breakdownChart.bars = breakdown.map { item ->
             val color = item.category?.colorArgb?.toInt()
                 ?: ContextCompat.getColor(requireContext(), R.color.arzikina_outline)
-            CategoryPieView.Slice(fraction = item.percentage, color = color)
+            CategoryBarChartView.Bar(
+                label = item.category?.name ?: getString(R.string.transaction_uncategorized),
+                amountMinor = item.amountMinor,
+                color = color
+            )
         }
     }
 

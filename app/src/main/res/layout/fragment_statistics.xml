@@ -269,11 +269,15 @@
                     android:textColor="?attr/colorOnSurfaceVariant"
                     android:visibility="gone" />
 
-                <com.arzikina.ne.presentation.statistics.CategoryPieView
+                <!-- Diagramme en bâtons (une couleur par catégorie, voir CategoryBarChartView) —
+                     remplace l'ancien anneau CategoryPieView sur demande explicite, à la manière du
+                     graphique équivalent de la version Web. Pleine largeur (contrairement à l'anneau,
+                     qui était carré) : un graphique en barres a besoin de place horizontale pour
+                     rester lisible avec jusqu'à 8 catégories. -->
+                <com.arzikina.ne.presentation.statistics.CategoryBarChartView
                     android:id="@+id/breakdownChart"
-                    android:layout_width="220dp"
+                    android:layout_width="match_parent"
                     android:layout_height="220dp"
-                    android:layout_gravity="center_horizontal"
                     android:layout_marginTop="@dimen/spacing_s" />
 
                 <androidx.recyclerview.widget.RecyclerView
