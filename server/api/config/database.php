@@ -17,18 +17,24 @@ declare(strict_types=1);
  * instance PDO sans dupliquer le bloc try/catch, et sans jamais renvoyer un message d'erreur brut
  * (potentiellement sensible) au client — voir cahier des charges, section sécurité.
  *
- * Note de déploiement : ce fichier va dans `/var/www/html/arzikina/api/config/database.php` sur le
- * serveur. `/home/Admin/config_arzikina.php` est déjà accessible en lecture par PHP-Apache à ce
- * chemin absolu (utilisé tel quel par `connectBDD.php`), donc aucun ajustement de chemin n'est
- * nécessaire ici.
+ * Note de déploiement (portable, voir docs/DEPLOIEMENT-HOSTINGER.md) : `config_arzikina.php` et
+ * `config_arzikina_secrets.php` vivent à la racine du compte d'hébergement (`$HOME`, HORS de
+ * `public_html`, jamais accessibles par une URL, jamais dans Git) — PAS à un chemin absolu codé en
+ * dur comme `/home/Admin/...`, qui ne correspond qu'au compte du tout premier serveur sur lequel ce
+ * code a tourné et casserait silencieusement sur tout autre compte (nom d'utilisateur différent).
+ * `getenv('HOME')` est déjà positionné correctement par PHP-FPM/Apache pour l'utilisateur du compte
+ * sur un hébergement mutualisé Hostinger — repli sur un chemin relatif si absent (cas rare), plutôt
+ * que de planter sans message exploitable.
  */
 
-require_once '/home/Admin/config_arzikina.php';
+$accountHomeDir = getenv('HOME') ?: dirname(__DIR__, 4);
+
+require_once $accountHomeDir . '/config_arzikina.php';
 
 // Clé de signature des tokens de session et autres secrets PROPRES à l'API (distincts des
-// identifiants de connexion MySQL ci-dessus) — voir secrets.example.php pour le modèle à copier en
-// `/home/Admin/config_arzikina_secrets.php` sur le serveur (jamais dans Git non plus).
-require_once '/home/Admin/config_arzikina_secrets.php';
+// identifiants de connexion MySQL ci-dessus) — voir secrets.example.php pour le modèle, à copier au
+// même endroit que config_arzikina.php ci-dessus (jamais dans Git).
+require_once $accountHomeDir . '/config_arzikina_secrets.php';
 
 /**
  * Retourne la connexion PDO partagée, en la créant si besoin (singleton simple par requête HTTP —

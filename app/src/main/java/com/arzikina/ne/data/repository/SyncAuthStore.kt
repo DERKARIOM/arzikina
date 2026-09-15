@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
+import java.security.GeneralSecurityException
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -65,7 +66,21 @@ class SyncAuthStore @Inject constructor(
         if (toSessionOrNull(prefs) == null) return@withContext null // absent ou expiré
         val ciphertext = prefs[Keys.TOKEN_CIPHERTEXT] ?: return@withContext null
         val iv = prefs[Keys.TOKEN_IV] ?: return@withContext null
-        TokenCipher.decrypt(ciphertext, iv)
+        try {
+            TokenCipher.decrypt(ciphertext, iv)
+        } catch (e: GeneralSecurityException) {
+            // Le ciphertext stocké ne correspond plus à la clé Android Keystore actuelle (voir
+            // AesGcmKeystoreCipher.getOrCreateKey() : réinstallation, effacement partiel des
+            // données, restauration de sauvegarde sans le Keystore...) — cas documenté comme
+            // "attendu" mais qui ne doit JAMAIS faire planter l'app : sans ce catch, l'exception
+            // remonte non interceptée (souvent depuis un thread de fond, ex. SyncWorker au
+            // démarrage) et tue tout le process, en boucle, sans jamais laisser l'utilisateur
+            // atteindre un écran de connexion. On traite ce cas comme une session absente — la
+            // session locale corrompue est effacée pour ne pas re-tenter ce déchiffrement voué à
+            // l'échec à chaque appel, l'utilisateur devra simplement se reconnecter.
+            clear()
+            null
+        }
     }
 
     private fun toSessionOrNull(prefs: Preferences): SyncSession? {

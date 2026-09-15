@@ -8,14 +8,16 @@ package com.arzikina.ne.data.remote
  * suffira le jour où le serveur passera derrière un nom de domaine/HTTPS, ou pour pointer vers un
  * environnement de test différent — aucun autre fichier n'a à changer.
  *
- * TEMPORAIRE : constante en dur pointant vers le serveur LAN de développement. Migrera vers une
- * valeur configurable (écran Réglages, voir cahier des charges section 12 — "Synchroniser
- * maintenant") dans une étape ultérieure du chantier — volontairement pas fait ici pour ne pas
- * mélanger deux préoccupations (fondation réseau vs. UI de configuration) dans la même étape.
+ * API PHP déployée sur Hostinger (voir docs/DEPLOIEMENT-HOSTINGER.md) — HTTPS, plus besoin de
+ * l'exception de trafic en clair qui pointait vers le serveur LAN de développement (voir
+ * `AndroidManifest.xml`/`res/xml/`, supprimés en même temps que ce changement).
+ *
+ * Migration future vers une valeur configurable (écran Réglages, voir cahier des charges
+ * section 12 — "Synchroniser maintenant") toujours prévue, pas encore faite.
  *
  * Doit se terminer par `/` : `SyncAuthApi` (voir `data/remote/api/`) concatène directement cette
  * constante avec le chemin de chaque endpoint (ex. `api/auth/login.php`, sans `/` en tête).
  */
 object RemoteConfig {
-    const val BASE_URL = "http://192.168.49.1:2222/arzikina/"
+    const val BASE_URL = "https://api.opal-niger.com/"
 }

@@ -1,13 +1,13 @@
 {
   "info": {
     "name": "Arzikina API",
-    "description": "Collection de test pour l'API de synchronisation Arzikina (server/api). Requêtes de base : authentification par token, pull/push sur `categories`/`accounts`/`transactions` (voir docs/sync/AUDIT-ET-ARCHITECTURE-SYNC.md, section 10), complétées par `user_preferences` (étape 22 — la seule entité sans référence croisée, la plus simple à diagnostiquer isolément). Les autres entités câblées depuis (budgets, loans, loan_payments, recurring_transactions, recurring_transaction_occurrences, financial_plan_items) ne sont pas encore couvertes ici — ce fichier n'a jamais été tenu à jour à chaque étape, les tests intermédiaires se sont faits directement dans Postman sans être resauvegardés dans la collection.\n\nUtilisation :\n1. Ajuster la variable de collection `baseUrl` si besoin (par défaut : le serveur local du réseau LAN, port 2222).\n2. Lancer d'abord \"Auth > Login\" — le token reçu est automatiquement enregistré dans la variable de collection `token` (script de test), les requêtes suivantes l'utilisent sans copier-coller manuel.\n3. Un utilisateur de test doit déjà exister en base (voir le commentaire en tête de `api/auth/login.php` — pas d'endpoint d'inscription pour l'instant).",
+    "description": "Collection de test pour l'API de synchronisation Arzikina (server/api). Requêtes de base : authentification par token, pull/push sur `categories`/`accounts`/`transactions` (voir docs/sync/AUDIT-ET-ARCHITECTURE-SYNC.md, section 10), complétées par `user_preferences` (étape 22 — la seule entité sans référence croisée, la plus simple à diagnostiquer isolément). Les autres entités câblées depuis (budgets, loans, loan_payments, recurring_transactions, recurring_transaction_occurrences, financial_plan_items) ne sont pas encore couvertes ici — ce fichier n'a jamais été tenu à jour à chaque étape, les tests intermédiaires se sont faits directement dans Postman sans être resauvegardés dans la collection.\n\nUtilisation :\n1. Ajuster la variable de collection `baseUrl` si besoin (par défaut : l'API de production, voir docs/DEPLOIEMENT-HOSTINGER.md — remets l'URL du serveur local du réseau LAN, port 2222, pour tester en dev).\n2. Lancer d'abord \"Auth > Register\" (crée un compte de test — voir api/auth/register.php) OU \"Auth > Login\" si un compte existe déjà. Le token reçu est automatiquement enregistré dans la variable de collection `token` (script de test), les requêtes suivantes l'utilisent sans copier-coller manuel.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
     {
       "key": "baseUrl",
-      "value": "http://192.168.49.1:2222/arzikina",
+      "value": "https://api.opal-niger.com",
       "type": "string"
     },
     {
@@ -41,6 +41,45 @@
       "name": "Auth",
       "item": [
         {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"Test Postman\",\n  \"username\": \"postman_test\",\n  \"email\": \"postman-test@example.com\",\n  \"password\": \"MotDePasseTest123\",\n  \"deviceId\": \"postman-test-device\",\n  \"deviceLabel\": \"Postman\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/register.php",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "register.php"]
+            },
+            "description": "Crée un compte de test sur un serveur fraîchement déployé (aucun utilisateur en base). fullName/username/email/password obligatoires — voir api/auth/register.php pour les règles de format (username 3-30 caractères, mot de passe 8+ caractères). Renvoie directement { token, userId, expiresAt, fullName } (201), pas besoin d'appeler Login juste après. Relancer cette requête une 2e fois échouera normalement avec 'username_taken'/'email_taken' (409) — c'est attendu, utilise alors 'Login' à la place."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const body = pm.response.json();",
+                  "    pm.collectionVariables.set('token', body.token);",
+                  "    pm.collectionVariables.set('userId', body.userId);",
+                  "    pm.test('Register OK — token recu', () => pm.expect(body.token).to.be.a('string'));",
+                  "} else {",
+                  "    pm.test('Register a echoue (normal si le compte de test existe deja — voir 409) — voir le corps de la reponse', () => {",
+                  "        pm.expect.fail(pm.response.text());",
+                  "    });",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
           "name": "Login",
           "request": {
             "method": "POST",
@@ -49,14 +88,14 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"identifier\": \"test\",\n  \"password\": \"test\",\n  \"deviceId\": \"postman-test-device\",\n  \"deviceLabel\": \"Postman\"\n}"
+              "raw": "{\n  \"identifier\": \"postman_test\",\n  \"password\": \"MotDePasseTest123\",\n  \"deviceId\": \"postman-test-device\",\n  \"deviceLabel\": \"Postman\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/auth/login.php",
               "host": ["{{baseUrl}}"],
               "path": ["api", "auth", "login.php"]
             },
-            "description": "Corps attendu : identifier (username ou email), password, deviceId/deviceLabel optionnels. Renvoie { token, userId, expiresAt }. Voir api/auth/login.php pour le SQL de création d'un utilisateur de test."
+            "description": "Corps attendu : identifier (username ou email), password, deviceId/deviceLabel optionnels. Renvoie { token, userId, expiresAt, fullName }. Identifiants par défaut ci-dessus = le compte créé par 'Register' — à utiliser pour les connexions suivantes une fois ce compte déjà créé (Register échouera alors en 409)."
           },
           "event": [
             {

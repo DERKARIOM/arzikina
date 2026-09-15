@@ -8,6 +8,36 @@ declare(strict_types=1);
  * "évite absolument le code dupliqué").
  */
 
+/**
+ * En-têtes CORS — ce fichier est inclus par TOUS les points d'entrée de l'API (`require_once
+ * __DIR__ . '/../utils/json_response.php';`), c'est donc le seul endroit à toucher pour couvrir
+ * chaque endpoint sans dupliquer ce bloc partout. Nécessaire dès que le frontend web (déployé sur
+ * un domaine/sous-domaine DIFFÉRENT de cette API, voir docs/DEPLOIEMENT-HOSTINGER.md) fait un appel
+ * `fetch()` depuis le navigateur : sans ces en-têtes, le navigateur bloque la réponse même si l'API
+ * répond correctement (invisible en testant avec Postman, qui n'applique pas la politique CORS).
+ *
+ * Origine explicite (PAS `*`) : plus sûr, et compatible avec un futur passage à des cookies de
+ * session si besoin (un `*` combiné à des identifiants ne fonctionne de toute façon pas). L'app
+ * Android n'est pas concernée — CORS est une politique appliquée uniquement par les navigateurs.
+ *
+ * TODO déploiement : remplacer cette valeur par le VRAI domaine du frontend web une fois choisi
+ * (voir étape "Décider où exposer le site web" du guide de déploiement). Pas un secret — peut rester
+ * dans le code versionné, contrairement aux identifiants de `config_arzikina_secrets.php`.
+ */
+const ALLOWED_WEB_ORIGIN = 'https://app.tondomaine.com';
+
+header('Access-Control-Allow-Origin: ' . ALLOWED_WEB_ORIGIN);
+header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
+header('Access-Control-Allow-Headers: Content-Type, Authorization');
+
+// Requête de pré-vérification envoyée automatiquement par le navigateur avant tout appel "non
+// simple" (ex. avec un en-tête Authorization) — aucun endpoint ne doit exécuter sa logique métier
+// pour celle-ci, une réponse vide suffit.
+if (($_SERVER['REQUEST_METHOD'] ?? '') === 'OPTIONS') {
+    http_response_code(204);
+    exit;
+}
+
 function sendJson(array $data, int $statusCode = 200): void
 {
     http_response_code($statusCode);

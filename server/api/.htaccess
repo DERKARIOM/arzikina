@@ -1,0 +1,9 @@
+# Certains hébergements mutualisés (Apache/LiteSpeed en mode CGI/FastCGI) suppriment l'en-tête
+# Authorization avant qu'il n'atteigne PHP, ce qui casserait toute l'authentification par token
+# (voir middleware/auth_middleware.php, qui renverrait systématiquement "missing_token"). Ce bloc
+# le restaure explicitement via une variable d'environnement dédiée, en complément du repli déjà
+# présent dans auth_middleware.php (apache_request_headers()) — voir docs/DEPLOIEMENT-HOSTINGER.md,
+# étape 8.
+RewriteEngine On
+RewriteCond %{HTTP:Authorization} ^(.*)
+RewriteRule .* - [E=HTTP_AUTHORIZATION:%1]
