@@ -753,11 +753,32 @@
 
     <!-- Statistiques -->
     <string name="statistics_evolution_title">Évolution (6 derniers mois)</string>
-    <string name="statistics_breakdown_title">Répartition des dépenses (ce mois)</string>
-    <string name="statistics_breakdown_empty">Aucune dépense ce mois-ci.</string>
+    <!-- Ne mentionne plus "(ce mois)" : la répartition suit désormais la période sélectionnée
+         (voir statistics_period_*), plus systématiquement le mois en cours. -->
+    <string name="statistics_breakdown_title">Répartition des dépenses</string>
+    <string name="statistics_breakdown_empty">Aucune dépense sur la période sélectionnée.</string>
     <string name="statistics_legend_income">Revenus</string>
     <string name="statistics_legend_expense">Dépenses</string>
     <string name="statistics_breakdown_item_subtitle">%1$s · %2$d %%</string>
+
+    <!-- Sélecteur de période (voir StatisticsViewModel.PeriodSelection) — mêmes 6 préréglages que
+         la page Web équivalente (arzikina-web-sync/src/routes/statistiques.tsx). -->
+    <string name="statistics_period_label">Période</string>
+    <string name="statistics_period_month">Mois en cours</string>
+    <string name="statistics_period_prev_month">Mois précédent</string>
+    <string name="statistics_period_last_7_days">7 derniers jours</string>
+    <string name="statistics_period_last_30_days">30 derniers jours</string>
+    <string name="statistics_period_year">Cette année</string>
+    <string name="statistics_period_custom">Personnalisée</string>
+    <string name="statistics_period_reset">Réinitialiser</string>
+    <string name="statistics_period_custom_start_label">Date de début</string>
+    <string name="statistics_period_custom_end_label">Date de fin</string>
+    <string name="statistics_period_error_missing_dates">Sélectionne une date de début et une date de fin.</string>
+    <string name="statistics_period_error_start_after_end">La date de début doit être antérieure ou égale à la date de fin.</string>
+
+    <string name="statistics_total_income_label">Revenus</string>
+    <string name="statistics_total_expense_label">Dépenses</string>
+    <string name="statistics_total_balance_label">Solde</string>
 
     <!-- Objectifs d'épargne -->
     <string name="dashboard_savings_goals_action">Gérer mes objectifs d\'épargne</string>

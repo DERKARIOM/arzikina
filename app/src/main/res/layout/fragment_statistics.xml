@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="?attr/colorSurface">
@@ -29,10 +30,291 @@
             android:orientation="vertical"
             android:padding="@dimen/spacing_m">
 
+            <!--
+                Sélecteur de période (voir StatisticsViewModel.PeriodSelection) : même pattern que
+                quickRangeGroup de fragment_budget_form.xml (MaterialButtonToggleGroup dans une
+                HorizontalScrollView, boutons "?attr/materialButtonOutlinedStyle"), réutilisé tel
+                quel plutôt qu'un nouveau composant. Pilote les totaux ci-dessous ET la répartition
+                par catégorie ("Répartition") ; le graphique "Évolution" plus bas reste
+                volontairement indépendant (voir la doc de tête de StatisticsViewModel).
+            -->
             <TextView
                 style="@style/TextAppearance.Material3.TitleSmall"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:text="@string/statistics_period_label"
+                android:textColor="?attr/colorOnSurface" />
+
+            <HorizontalScrollView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_s"
+                android:clipToPadding="false"
+                android:scrollbars="none">
+
+                <com.google.android.material.button.MaterialButtonToggleGroup
+                    android:id="@+id/periodPresetGroup"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    app:selectionRequired="true"
+                    app:singleSelection="true">
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/periodPresetMonth"
+                        style="?attr/materialButtonOutlinedStyle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:checkable="true"
+                        android:text="@string/statistics_period_month"
+                        android:textColor="@color/white"
+                        android:textSize="12sp"
+                        app:cornerRadius="10dp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/periodPresetPrevMonth"
+                        style="?attr/materialButtonOutlinedStyle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:checkable="true"
+                        android:text="@string/statistics_period_prev_month"
+                        android:textColor="@color/white"
+                        android:textSize="12sp"
+                        app:cornerRadius="10dp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/periodPresetLast7Days"
+                        style="?attr/materialButtonOutlinedStyle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:checkable="true"
+                        android:text="@string/statistics_period_last_7_days"
+                        android:textColor="@color/white"
+                        android:textSize="12sp"
+                        app:cornerRadius="10dp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/periodPresetLast30Days"
+                        style="?attr/materialButtonOutlinedStyle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:checkable="true"
+                        android:text="@string/statistics_period_last_30_days"
+                        android:textColor="@color/white"
+                        android:textSize="12sp"
+                        app:cornerRadius="10dp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/periodPresetYear"
+                        style="?attr/materialButtonOutlinedStyle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:checkable="true"
+                        android:text="@string/statistics_period_year"
+                        android:textColor="@color/white"
+                        android:textSize="12sp"
+                        app:cornerRadius="10dp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/periodPresetCustom"
+                        style="?attr/materialButtonOutlinedStyle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:checkable="true"
+                        android:text="@string/statistics_period_custom"
+                        android:textColor="@color/white"
+                        android:textSize="12sp"
+                        app:cornerRadius="10dp" />
+
+                </com.google.android.material.button.MaterialButtonToggleGroup>
+
+            </HorizontalScrollView>
+
+            <!-- Visible uniquement si periodPresetCustom est sélectionné (voir
+                 StatisticsFragment.render) — même Card/include que startDateRow/endDateRow de
+                 fragment_budget_form.xml. -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/customStartRow"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_m"
+                android:checkable="false"
+                android:clickable="true"
+                android:focusable="true"
+                android:theme="@style/ThemeOverlay.Arzikina.OnBalanceCard"
+                android:visibility="gone"
+                app:cardBackgroundColor="@color/arzikina_postcart_background"
+                app:cardCornerRadius="@dimen/corner_radius_medium"
+                app:cardElevation="@dimen/elevation_raised">
+
+                <include
+                    android:id="@+id/customStartField"
+                    layout="@layout/item_date_field" />
+
+            </com.google.android.material.card.MaterialCardView>
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/customEndRow"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_s"
+                android:checkable="false"
+                android:clickable="true"
+                android:focusable="true"
+                android:theme="@style/ThemeOverlay.Arzikina.OnBalanceCard"
+                android:visibility="gone"
+                app:cardBackgroundColor="@color/arzikina_postcart_background"
+                app:cardCornerRadius="@dimen/corner_radius_medium"
+                app:cardElevation="@dimen/elevation_raised">
+
+                <include
+                    android:id="@+id/customEndField"
+                    layout="@layout/item_date_field" />
+
+            </com.google.android.material.card.MaterialCardView>
+
+            <TextView
+                android:id="@+id/periodErrorText"
+                style="@style/TextAppearance.Material3.BodySmall"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_s"
+                android:textColor="@color/expense_red"
+                android:visibility="gone"
+                tools:text="La date de début doit être antérieure ou égale à la date de fin." />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/resetPeriodButton"
+                style="?attr/borderlessButtonStyle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="end"
+                android:layout_marginTop="@dimen/spacing_xs"
+                android:text="@string/statistics_period_reset"
+                android:textColor="@color/arzikina_primary" />
+
+            <!--
+                Totaux Revenus/Dépenses/Solde de la période sélectionnée — nouveauté de ce chantier
+                (l'écran n'affichait auparavant aucun total, voir StatisticsViewModel). Même style de
+                Card que balanceCard/fragment_dashboard.xml (arzikina_postcart_background), pour
+                rester cohérent avec les autres écrans plutôt que d'inventer un nouveau style de
+                carte de statistiques.
+            -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/totalsCard"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_m"
+                app:cardBackgroundColor="@color/arzikina_balance_card"
+                app:cardCornerRadius="@dimen/corner_radius_medium"
+                app:cardElevation="0dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@color/arzikina_postcart_background"
+                    android:orientation="horizontal"
+                    android:padding="@dimen/spacing_m">
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:gravity="center_horizontal"
+                        android:orientation="vertical">
+
+                        <TextView
+                            style="@style/TextAppearance.Material3.BodySmall"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/statistics_total_income_label"
+                            android:textColor="@color/arzikina_on_balance_card_variant" />
+
+                        <TextView
+                            android:id="@+id/totalIncomeValue"
+                            style="@style/TextAppearance.Material3.TitleSmall"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/spacing_xs"
+                            android:textColor="@color/income_green"
+                            tools:text="0 F CFA" />
+
+                    </LinearLayout>
+
+                    <View
+                        android:layout_width="1dp"
+                        android:layout_height="match_parent"
+                        android:background="@color/arzikina_on_balance_card_variant" />
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:gravity="center_horizontal"
+                        android:orientation="vertical">
+
+                        <TextView
+                            style="@style/TextAppearance.Material3.BodySmall"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/statistics_total_expense_label"
+                            android:textColor="@color/arzikina_on_balance_card_variant" />
+
+                        <TextView
+                            android:id="@+id/totalExpenseValue"
+                            style="@style/TextAppearance.Material3.TitleSmall"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/spacing_xs"
+                            android:textColor="@color/expense_red"
+                            tools:text="0 F CFA" />
+
+                    </LinearLayout>
+
+                    <View
+                        android:layout_width="1dp"
+                        android:layout_height="match_parent"
+                        android:background="@color/arzikina_on_balance_card_variant" />
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:gravity="center_horizontal"
+                        android:orientation="vertical">
+
+                        <TextView
+                            style="@style/TextAppearance.Material3.BodySmall"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/statistics_total_balance_label"
+                            android:textColor="@color/arzikina_on_balance_card_variant" />
+
+                        <TextView
+                            android:id="@+id/totalNetValue"
+                            style="@style/TextAppearance.Material3.TitleSmall"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/spacing_xs"
+                            android:textColor="@color/arzikina_on_balance_card"
+                            tools:text="0 F CFA" />
+
+                    </LinearLayout>
+
+                </LinearLayout>
+
+            </com.google.android.material.card.MaterialCardView>
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginTop="@dimen/spacing_l"
+                android:background="?attr/colorOutlineVariant" />
+
+            <TextView
+                style="@style/TextAppearance.Material3.TitleSmall"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_l"
                 android:text="@string/statistics_evolution_title"
                 android:textColor="?attr/colorOnSurface" />
 
@@ -82,45 +364,58 @@
 
             </LinearLayout>
 
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="1dp"
-                android:layout_marginTop="@dimen/spacing_l"
-                android:background="?attr/colorOutlineVariant" />
-
-            <TextView
-                style="@style/TextAppearance.Material3.TitleSmall"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/spacing_l"
-                android:text="@string/statistics_breakdown_title"
-                android:textColor="?attr/colorOnSurface" />
-
-            <TextView
-                android:id="@+id/breakdownEmptyState"
-                style="@style/TextAppearance.Material3.BodyMedium"
+            <!--
+                Section "Répartition" englobée dans un conteneur dédié : bascule d'un seul bloc en
+                GONE quand periodError != null (voir StatisticsFragment.render), plutôt que de gérer
+                la visibilité de chacune de ses 4 vues séparément.
+            -->
+            <LinearLayout
+                android:id="@+id/breakdownSection"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/spacing_m"
-                android:gravity="center"
-                android:text="@string/statistics_breakdown_empty"
-                android:textColor="?attr/colorOnSurfaceVariant"
-                android:visibility="gone" />
+                android:orientation="vertical">
 
-            <com.arzikina.ne.presentation.statistics.CategoryPieView
-                android:id="@+id/breakdownChart"
-                android:layout_width="220dp"
-                android:layout_height="220dp"
-                android:layout_gravity="center_horizontal"
-                android:layout_marginTop="@dimen/spacing_s" />
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:layout_marginTop="@dimen/spacing_l"
+                    android:background="?attr/colorOutlineVariant" />
 
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/breakdownLegendList"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/spacing_m"
-                android:nestedScrollingEnabled="false"
-                android:overScrollMode="never" />
+                <TextView
+                    style="@style/TextAppearance.Material3.TitleSmall"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/spacing_l"
+                    android:text="@string/statistics_breakdown_title"
+                    android:textColor="?attr/colorOnSurface" />
+
+                <TextView
+                    android:id="@+id/breakdownEmptyState"
+                    style="@style/TextAppearance.Material3.BodyMedium"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/spacing_m"
+                    android:gravity="center"
+                    android:text="@string/statistics_breakdown_empty"
+                    android:textColor="?attr/colorOnSurfaceVariant"
+                    android:visibility="gone" />
+
+                <com.arzikina.ne.presentation.statistics.CategoryPieView
+                    android:id="@+id/breakdownChart"
+                    android:layout_width="220dp"
+                    android:layout_height="220dp"
+                    android:layout_gravity="center_horizontal"
+                    android:layout_marginTop="@dimen/spacing_s" />
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/breakdownLegendList"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/spacing_m"
+                    android:nestedScrollingEnabled="false"
+                    android:overScrollMode="never" />
+
+            </LinearLayout>
 
         </LinearLayout>
 

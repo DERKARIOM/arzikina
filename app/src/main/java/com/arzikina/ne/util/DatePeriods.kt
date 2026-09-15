@@ -28,6 +28,16 @@ object DatePeriods {
     fun toEpochMillis(date: LocalDate): Long =
         date.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
 
+    /**
+     * Symétrique de [toEpochMillis] pour la borne DE FIN (inclusive) d'une plage — 23:59:59, fuseau
+     * local. Ajoutée pour [com.arzikina.ne.util.StatsPeriodPreset]/`StatisticsViewModel` (période
+     * personnalisée de l'écran Statistiques) : sans elle, une transaction datée en fin de journée
+     * serait exclue si on comparait seulement au début de journée de la date de fin. Même convention
+     * que `resolveStatsPeriodRange`/`T23:59:59` côté Web (`services/finance.ts`).
+     */
+    fun toEpochMillisEndOfDay(date: LocalDate): Long =
+        date.atTime(23, 59, 59).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
+
     /** Voir [toLocalDate] : même conversion, pour l'heure (ex. "12:30" sur une ligne de transaction). */
     fun toLocalTime(epochMillis: Long): LocalTime =
         Instant.ofEpochMilli(epochMillis).atZone(ZoneId.systemDefault()).toLocalTime()

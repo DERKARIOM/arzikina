@@ -10,15 +10,20 @@ import com.arzikina.ne.domain.repository.CategoryRepository
 import com.arzikina.ne.domain.repository.TransactionRepository
 import com.arzikina.ne.domain.repository.UserPreferencesRepository
 import com.arzikina.ne.util.AppResult
+import com.arzikina.ne.util.DatePeriods
 import com.arzikina.ne.util.PersonalStatistics
+import com.arzikina.ne.util.StatsPeriodPreset
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import java.time.Instant
+import java.time.LocalDate
 import java.time.YearMonth
 import java.time.ZoneId
 import javax.inject.Inject
@@ -26,7 +31,7 @@ import javax.inject.Inject
 /** Nombre de mois affichés dans le graphique d'évolution. */
 private const val EVOLUTION_MONTHS_COUNT = 6
 
-/** Répartition des dépenses du mois en cours pour une catégorie. */
+/** Répartition des dépenses de la période sélectionnée pour une catégorie. */
 data class CategoryBreakdownItem(
     val category: Category?,
     val amountMinor: Long,
@@ -40,28 +45,66 @@ data class MonthlyEvolutionPoint(
     val expenseMinor: Long
 )
 
+/**
+ * Sélection de période courante de l'écran Statistiques — MIROIR de `period`/`customStart`/
+ * `customEnd` côté Web (`routes/statistiques.tsx`). [customStart]/[customEnd] ne sont consultés que
+ * lorsque [preset] vaut [StatsPeriodPreset.CUSTOM] ; conservés même quand un autre préréglage est
+ * sélectionné, pour ne pas perdre la saisie de l'utilisateur s'il revient sur "Personnalisée".
+ */
+data class PeriodSelection(
+    val preset: StatsPeriodPreset = StatsPeriodPreset.MONTH,
+    val customStart: LocalDate? = null,
+    val customEnd: LocalDate? = null
+)
+
+/**
+ * Raison pour laquelle la période personnalisée ne peut pas être appliquée — sealed sur un ENUM
+ * plutôt qu'une chaîne en dur dans le ViewModel : la traduction du message revient à
+ * [StatisticsFragment] (voir `strings.xml`), pour rester compatible avec la prise en charge
+ * multilingue prévue par le projet (voir instructions projet, section "Évolutivité").
+ */
+enum class StatsPeriodError {
+    MISSING_DATES,
+    START_AFTER_END
+}
+
 data class StatisticsUiState(
     val currencyCode: String,
+    val periodSelection: PeriodSelection,
+    val periodError: StatsPeriodError?,
+    val totalIncomeMinor: Long,
+    val totalExpenseMinor: Long,
+    val totalNetMinor: Long,
     val categoryBreakdown: List<CategoryBreakdownItem>,
     val monthlyEvolution: List<MonthlyEvolutionPoint>
 )
 
+/** Résolution interne de [PeriodSelection] en bornes epoch ms — voir [StatisticsViewModel.resolvePeriod]. */
+private sealed interface PeriodResolution {
+    data class Valid(val startMillis: Long, val endMillis: Long) : PeriodResolution
+    data class Invalid(val error: StatsPeriodError) : PeriodResolution
+}
+
 /**
- * ViewModel de l'écran Statistiques : répartition des dépenses du mois par
- * catégorie (camembert) et évolution des revenus/dépenses sur
- * [EVOLUTION_MONTHS_COUNT] mois (barres groupées).
+ * ViewModel de l'écran Statistiques : totaux revenus/dépenses/solde et
+ * répartition des dépenses par catégorie (camembert) sur une période choisie
+ * par l'utilisateur ([PeriodSelection]/[StatsPeriodPreset]) — même formule et
+ * mêmes préréglages que la page Web `statistiques.tsx`
+ * ([StatsPeriodPreset.toDateRange], miroir de `resolveStatsPeriodRange`).
  *
- * Limite volontaire : seules les transactions dont le compte est dans la
- * devise principale de l'utilisateur ([UserPreferencesRepository]) sont
- * prises en compte. Contrairement au tableau de bord (qui regroupe les
- * montants par devise), un graphique ne peut pas comparer plusieurs devises
- * sur un même axe sans conversion de change.
+ * Le graphique d'évolution ([computeMonthlyEvolution]) reste volontairement
+ * INDÉPENDANT de cette sélection : il répond à une question différente
+ * ("comment évolue mon budget dans le temps ?") de celle du sélecteur de
+ * période ("combien ai-je dépensé sur CETTE période ?"), et une tendance
+ * mensuelle sur 6 mois n'a pas de sens pour une période personnalisée d'un
+ * jour ou d'une semaine — décision explicitement confirmée avant
+ * implémentation (voir échanges du chantier).
  *
- * Les comptes exclus des statistiques personnelles ([PersonalStatistics]) sont
- * retirés AVANT le filtre de devise ci-dessus : cet écran n'agrège jamais un
- * solde (seulement des revenus/dépenses par catégorie et par mois), donc aucun
- * traitement particulier des virements n'est nécessaire ici (contrairement au
- * Dashboard, voir [com.arzikina.ne.presentation.dashboard.DashboardViewModel]).
+ * Limite volontaire, inchangée depuis avant ce chantier : seules les
+ * transactions dont le compte est dans la devise principale de l'utilisateur
+ * ([UserPreferencesRepository]) sont prises en compte (pas de conversion de
+ * change). Les comptes exclus des statistiques personnelles
+ * ([PersonalStatistics]) sont retirés AVANT ce filtre de devise.
  */
 @HiltViewModel
 class StatisticsViewModel @Inject constructor(
@@ -71,12 +114,15 @@ class StatisticsViewModel @Inject constructor(
     userPreferencesRepository: UserPreferencesRepository
 ) : ViewModel() {
 
+    private val periodSelection = MutableStateFlow(PeriodSelection())
+
     val uiState: StateFlow<AppResult<StatisticsUiState>> = combine(
         accountRepository.observeAccounts(),
         categoryRepository.observeCategories(),
         transactionRepository.observeTransactions(),
-        userPreferencesRepository.observePreferences()
-    ) { accounts, categories, transactions, preferences ->
+        userPreferencesRepository.observePreferences(),
+        periodSelection
+    ) { accounts, categories, transactions, preferences, selection ->
         val categoriesById = categories.associateBy { it.id }
         val personalScope = PersonalStatistics.scope(accounts, transactions)
         val primaryCurrencyAccountIds = personalScope.accounts
@@ -85,9 +131,25 @@ class StatisticsViewModel @Inject constructor(
             .toSet()
         val relevantTransactions = personalScope.transactions.filter { it.accountId in primaryCurrencyAccountIds }
 
+        val resolution = resolvePeriod(selection)
+        val periodTransactions = when (resolution) {
+            is PeriodResolution.Valid ->
+                relevantTransactions.filter { it.date in resolution.startMillis..resolution.endMillis }
+            is PeriodResolution.Invalid -> emptyList()
+        }
+        val totalIncome = periodTransactions.filter { it.type == TransactionType.INCOME }.sumOf { it.amount }
+        val totalExpense = periodTransactions.filter { it.type == TransactionType.EXPENSE }.sumOf { it.amount }
+
         StatisticsUiState(
             currencyCode = preferences.currencyCode,
-            categoryBreakdown = computeCategoryBreakdown(relevantTransactions, categoriesById),
+            periodSelection = selection,
+            periodError = (resolution as? PeriodResolution.Invalid)?.error,
+            totalIncomeMinor = totalIncome,
+            totalExpenseMinor = totalExpense,
+            totalNetMinor = totalIncome - totalExpense,
+            categoryBreakdown = computeCategoryBreakdown(periodTransactions, categoriesById),
+            // Volontairement basé sur relevantTransactions (PAS periodTransactions) : voir la doc
+            // de tête de la classe.
             monthlyEvolution = computeMonthlyEvolution(relevantTransactions)
         )
     }
@@ -99,21 +161,68 @@ class StatisticsViewModel @Inject constructor(
             initialValue = AppResult.Loading
         )
 
+    /**
+     * Choix d'un préréglage (bouton du `MaterialButtonToggleGroup`, voir [StatisticsFragment]). Cas
+     * particulier de [StatsPeriodPreset.CUSTOM] sélectionné pour la toute première fois (aucune date
+     * personnalisée encore choisie) : pré-remplit avec le mois en cours plutôt que de laisser les
+     * deux champs vides — évite d'afficher immédiatement [StatsPeriodError.MISSING_DATES] avant même
+     * que l'utilisateur ait pu agir, même principe que `routes/statistiques.tsx` côté Web (les deux
+     * `<input type="date">` y sont toujours pré-remplis).
+     */
+    fun onPresetSelected(preset: StatsPeriodPreset) {
+        periodSelection.update { current ->
+            if (preset == StatsPeriodPreset.CUSTOM && current.customStart == null && current.customEnd == null) {
+                val (start, end) = StatsPeriodPreset.MONTH.toDateRange()!!
+                current.copy(preset = preset, customStart = start, customEnd = end)
+            } else {
+                current.copy(preset = preset)
+            }
+        }
+    }
+
+    fun onCustomStartSelected(date: LocalDate) {
+        periodSelection.update { it.copy(preset = StatsPeriodPreset.CUSTOM, customStart = date) }
+    }
+
+    fun onCustomEndSelected(date: LocalDate) {
+        periodSelection.update { it.copy(preset = StatsPeriodPreset.CUSTOM, customEnd = date) }
+    }
+
+    /** Revient au mois en cours — même comportement que le bouton "Réinitialiser" côté Web. */
+    fun onResetPeriod() {
+        periodSelection.value = PeriodSelection()
+    }
+
+    /**
+     * Résout [selection] en bornes epoch ms INCLUSIVES (23:59:59 pour la fin, voir
+     * [DatePeriods.toEpochMillisEndOfDay]) — ou en [StatsPeriodError] si la période personnalisée
+     * n'est pas exploitable. Aucun recalcul de statistiques n'est effectué dans ce dernier cas (voir
+     * l'appelant, qui retombe sur une liste de transactions vide).
+     */
+    private fun resolvePeriod(selection: PeriodSelection): PeriodResolution {
+        if (selection.preset != StatsPeriodPreset.CUSTOM) {
+            val (start, end) = selection.preset.toDateRange()!!
+            return PeriodResolution.Valid(DatePeriods.toEpochMillis(start), DatePeriods.toEpochMillisEndOfDay(end))
+        }
+        val start = selection.customStart
+        val end = selection.customEnd
+        if (start == null || end == null) return PeriodResolution.Invalid(StatsPeriodError.MISSING_DATES)
+        if (start.isAfter(end)) return PeriodResolution.Invalid(StatsPeriodError.START_AFTER_END)
+        return PeriodResolution.Valid(DatePeriods.toEpochMillis(start), DatePeriods.toEpochMillisEndOfDay(end))
+    }
+
     private fun computeCategoryBreakdown(
         transactions: List<Transaction>,
         categoriesById: Map<Long, Category>
     ): List<CategoryBreakdownItem> {
-        val currentMonth = YearMonth.now()
-        val monthlyExpenses = transactions.filter {
-            it.type == TransactionType.EXPENSE && it.date.toYearMonth() == currentMonth
-        }
-        val total = monthlyExpenses.sumOf { it.amount }
+        val expenses = transactions.filter { it.type == TransactionType.EXPENSE }
+        val total = expenses.sumOf { it.amount }
         if (total <= 0L) return emptyList()
 
         // categoryId n'est `null` que pour un transfert (voir TransactionType.TRANSFER), déjà
-        // exclu de monthlyExpenses par le filtre `type == EXPENSE` ci-dessus ; mapNotNull couvre
-        // quand même ce cas pour rester correct si l'invariant venait à changer.
-        return monthlyExpenses
+        // exclu de `expenses` par le filtre `type == EXPENSE` ci-dessus ; mapNotNull couvre quand
+        // même ce cas pour rester correct si l'invariant venait à changer.
+        return expenses
             .mapNotNull { transaction -> transaction.categoryId?.let { it to transaction } }
             .groupBy({ (categoryId, _) -> categoryId }, { (_, transaction) -> transaction })
             .map { (categoryId, txs) ->
