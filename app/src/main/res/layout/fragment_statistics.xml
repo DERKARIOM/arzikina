@@ -230,6 +230,62 @@
 
             </com.google.android.material.card.MaterialCardView>
 
+            <!--
+                Section "Répartition" englobée dans un conteneur dédié : bascule d'un seul bloc en
+                GONE quand periodError != null (voir StatisticsFragment.render), plutôt que de gérer
+                la visibilité de chacune de ses 4 vues séparément. Placée AVANT "Évolution" (ordre
+                inversé sur demande explicite) : c'est elle qui dépend de la période sélectionnée
+                ci-dessus, contrairement à "Évolution" qui reste fixe sur 6 mois — l'ordre de lecture
+                suit maintenant celui du sélecteur de période.
+            -->
+            <LinearLayout
+                android:id="@+id/breakdownSection"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:layout_marginTop="@dimen/spacing_l"
+                    android:background="?attr/colorOutlineVariant" />
+
+                <TextView
+                    style="@style/TextAppearance.Material3.TitleSmall"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/spacing_l"
+                    android:text="@string/statistics_breakdown_title"
+                    android:textColor="?attr/colorOnSurface" />
+
+                <TextView
+                    android:id="@+id/breakdownEmptyState"
+                    style="@style/TextAppearance.Material3.BodyMedium"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/spacing_m"
+                    android:gravity="center"
+                    android:text="@string/statistics_breakdown_empty"
+                    android:textColor="?attr/colorOnSurfaceVariant"
+                    android:visibility="gone" />
+
+                <com.arzikina.ne.presentation.statistics.CategoryPieView
+                    android:id="@+id/breakdownChart"
+                    android:layout_width="220dp"
+                    android:layout_height="220dp"
+                    android:layout_gravity="center_horizontal"
+                    android:layout_marginTop="@dimen/spacing_s" />
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/breakdownLegendList"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/spacing_m"
+                    android:nestedScrollingEnabled="false"
+                    android:overScrollMode="never" />
+
+            </LinearLayout>
+
             <View
                 android:layout_width="match_parent"
                 android:layout_height="1dp"
@@ -287,59 +343,6 @@
                     android:layout_marginStart="@dimen/spacing_xs"
                     android:text="@string/statistics_legend_expense"
                     android:textColor="?attr/colorOnSurfaceVariant" />
-
-            </LinearLayout>
-
-            <!--
-                Section "Répartition" englobée dans un conteneur dédié : bascule d'un seul bloc en
-                GONE quand periodError != null (voir StatisticsFragment.render), plutôt que de gérer
-                la visibilité de chacune de ses 4 vues séparément.
-            -->
-            <LinearLayout
-                android:id="@+id/breakdownSection"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical">
-
-                <View
-                    android:layout_width="match_parent"
-                    android:layout_height="1dp"
-                    android:layout_marginTop="@dimen/spacing_l"
-                    android:background="?attr/colorOutlineVariant" />
-
-                <TextView
-                    style="@style/TextAppearance.Material3.TitleSmall"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="@dimen/spacing_l"
-                    android:text="@string/statistics_breakdown_title"
-                    android:textColor="?attr/colorOnSurface" />
-
-                <TextView
-                    android:id="@+id/breakdownEmptyState"
-                    style="@style/TextAppearance.Material3.BodyMedium"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="@dimen/spacing_m"
-                    android:gravity="center"
-                    android:text="@string/statistics_breakdown_empty"
-                    android:textColor="?attr/colorOnSurfaceVariant"
-                    android:visibility="gone" />
-
-                <com.arzikina.ne.presentation.statistics.CategoryPieView
-                    android:id="@+id/breakdownChart"
-                    android:layout_width="220dp"
-                    android:layout_height="220dp"
-                    android:layout_gravity="center_horizontal"
-                    android:layout_marginTop="@dimen/spacing_s" />
-
-                <androidx.recyclerview.widget.RecyclerView
-                    android:id="@+id/breakdownLegendList"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="@dimen/spacing_m"
-                    android:nestedScrollingEnabled="false"
-                    android:overScrollMode="never" />
 
             </LinearLayout>
 
