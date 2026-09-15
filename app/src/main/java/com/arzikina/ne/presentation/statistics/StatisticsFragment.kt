@@ -78,12 +78,37 @@ class StatisticsFragment : Fragment(R.layout.fragment_statistics) {
     }
 
     /**
-     * Sélecteur de période (voir [StatisticsViewModel.PeriodSelection]) : même pattern que
-     * `BudgetFormFragment.setUpQuickRangeGroup`/`showDatePicker` (`MaterialButtonToggleGroup` +
-     * `MaterialDatePicker`, conversion UTC→LocalDate identique), réutilisé tel quel plutôt qu'un
-     * nouveau composant de sélection de date.
+     * Préréglages affichés dans le Spinner [FragmentStatisticsBinding.periodPresetField], DANS CET
+     * ORDRE (celui du menu déroulant) — sert à la fois à peupler la liste
+     * ([MaterialAutoCompleteTextView.setSimpleItems]) et à retrouver le préréglage correspondant à
+     * la position cliquée (voir [setUpPeriodSelector]), même principe que `latestCategories` de
+     * `BudgetFormFragment.setUpCategoryDropdown`.
+     */
+    private val periodPresets: List<Pair<StatsPeriodPreset, Int>> = listOf(
+        StatsPeriodPreset.MONTH to R.string.statistics_period_month,
+        StatsPeriodPreset.PREV_MONTH to R.string.statistics_period_prev_month,
+        StatsPeriodPreset.LAST_7_DAYS to R.string.statistics_period_last_7_days,
+        StatsPeriodPreset.LAST_30_DAYS to R.string.statistics_period_last_30_days,
+        StatsPeriodPreset.YEAR to R.string.statistics_period_year,
+        StatsPeriodPreset.CUSTOM to R.string.statistics_period_custom
+    )
+
+    /**
+     * Sélecteur de période (voir [StatisticsViewModel.PeriodSelection]) : Spinner Material3
+     * ("postcard" `ExposedDropdownMenu`, `item_dropdown_field.xml`) — même pattern que
+     * `BudgetFormFragment.setUpCategoryDropdown`/`setUpCurrencyDropdown`, réutilisé tel quel plutôt
+     * qu'un nouveau composant. Les dates personnalisées gardent le sélecteur
+     * `MaterialDatePicker`/`showDatePicker` déjà établi par `BudgetFormFragment`.
      */
     private fun setUpPeriodSelector(binding: FragmentStatisticsBinding) {
+        binding.periodPresetField.dropdownLayout.hint = getString(R.string.statistics_period_label)
+        binding.periodPresetField.dropdownInput.setSimpleItems(
+            periodPresets.map { (_, labelRes) -> getString(labelRes) }.toTypedArray()
+        )
+        binding.periodPresetField.dropdownInput.setOnItemClickListener { _, _, position, _ ->
+            periodPresets.getOrNull(position)?.let { (preset, _) -> viewModel.onPresetSelected(preset) }
+        }
+
         binding.customStartField.dateFieldLabel.text = getString(R.string.statistics_period_custom_start_label)
         binding.customStartRow.setOnClickListener {
             showDatePicker(R.string.statistics_period_custom_start_label) { viewModel.onCustomStartSelected(it) }
@@ -93,31 +118,7 @@ class StatisticsFragment : Fragment(R.layout.fragment_statistics) {
             showDatePicker(R.string.statistics_period_custom_end_label) { viewModel.onCustomEndSelected(it) }
         }
 
-        binding.periodPresetGroup.addOnButtonCheckedListener { _, checkedId, isChecked ->
-            if (!isChecked) return@addOnButtonCheckedListener
-            presetForButtonId(checkedId)?.let { viewModel.onPresetSelected(it) }
-        }
-
         binding.resetPeriodButton.setOnClickListener { viewModel.onResetPeriod() }
-    }
-
-    private fun presetForButtonId(buttonId: Int): StatsPeriodPreset? = when (buttonId) {
-        R.id.periodPresetMonth -> StatsPeriodPreset.MONTH
-        R.id.periodPresetPrevMonth -> StatsPeriodPreset.PREV_MONTH
-        R.id.periodPresetLast7Days -> StatsPeriodPreset.LAST_7_DAYS
-        R.id.periodPresetLast30Days -> StatsPeriodPreset.LAST_30_DAYS
-        R.id.periodPresetYear -> StatsPeriodPreset.YEAR
-        R.id.periodPresetCustom -> StatsPeriodPreset.CUSTOM
-        else -> null
-    }
-
-    private fun buttonIdForPreset(preset: StatsPeriodPreset): Int = when (preset) {
-        StatsPeriodPreset.MONTH -> R.id.periodPresetMonth
-        StatsPeriodPreset.PREV_MONTH -> R.id.periodPresetPrevMonth
-        StatsPeriodPreset.LAST_7_DAYS -> R.id.periodPresetLast7Days
-        StatsPeriodPreset.LAST_30_DAYS -> R.id.periodPresetLast30Days
-        StatsPeriodPreset.YEAR -> R.id.periodPresetYear
-        StatsPeriodPreset.CUSTOM -> R.id.periodPresetCustom
     }
 
     /**
@@ -186,14 +187,17 @@ class StatisticsFragment : Fragment(R.layout.fragment_statistics) {
         }
     }
 
-    /** Boutons de préréglage, champs de dates personnalisées et message d'erreur — voir
+    /** Spinner de préréglage, champs de dates personnalisées et message d'erreur — voir
      *  [StatisticsViewModel.PeriodSelection]/[StatsPeriodError]. */
     private fun renderPeriodSelector(binding: FragmentStatisticsBinding, uiState: StatisticsUiState) {
         val selection = uiState.periodSelection
 
-        val expectedButtonId = buttonIdForPreset(selection.preset)
-        if (binding.periodPresetGroup.checkedButtonId != expectedButtonId) {
-            binding.periodPresetGroup.check(expectedButtonId)
+        // Ne réécrit le texte que s'il a changé (même garde que
+        // `BudgetFormFragment.render`/`categoryField`) : évite de perturber le menu ouvert si le
+        // ViewModel réémet un état identique pendant que l'utilisateur interagit.
+        val expectedLabel = getString(periodPresets.first { (preset, _) -> preset == selection.preset }.second)
+        if (binding.periodPresetField.dropdownInput.text?.toString() != expectedLabel) {
+            binding.periodPresetField.dropdownInput.setText(expectedLabel, false)
         }
 
         val isCustom = selection.preset == StatsPeriodPreset.CUSTOM

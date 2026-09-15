@@ -31,106 +31,32 @@
             android:padding="@dimen/spacing_m">
 
             <!--
-                Sélecteur de période (voir StatisticsViewModel.PeriodSelection) : même pattern que
-                quickRangeGroup de fragment_budget_form.xml (MaterialButtonToggleGroup dans une
-                HorizontalScrollView, boutons "?attr/materialButtonOutlinedStyle"), réutilisé tel
-                quel plutôt qu'un nouveau composant. Pilote les totaux ci-dessous ET la répartition
-                par catégorie ("Répartition") ; le graphique "Évolution" plus bas reste
-                volontairement indépendant (voir la doc de tête de StatisticsViewModel).
+                Sélecteur de période (voir StatisticsViewModel.PeriodSelection) : menu déroulant
+                "postcard" ExposedDropdownMenu — item_dropdown_field.xml, le "spinner moderne" déjà
+                centralisé et utilisé partout ailleurs dans l'app (Type, Devise, Catégorie budget,
+                filtres Transactions...), réutilisé tel quel plutôt qu'un nouveau composant (voir
+                aussi categoryField de fragment_budget_form.xml pour le même pattern Card+include).
+                Remplace le MaterialButtonToggleGroup du premier jet de ce chantier, jugé moins
+                cohérent avec le reste de l'app qu'un Spinner Material3. Pilote les totaux ci-dessous
+                ET la répartition par catégorie ("Répartition") ; le graphique "Évolution" plus bas
+                reste volontairement indépendant (voir la doc de tête de StatisticsViewModel).
             -->
-            <TextView
-                style="@style/TextAppearance.Material3.TitleSmall"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/statistics_period_label"
-                android:textColor="?attr/colorOnSurface" />
-
-            <HorizontalScrollView
+            <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/spacing_s"
-                android:clipToPadding="false"
-                android:scrollbars="none">
+                android:theme="@style/ThemeOverlay.Arzikina.OnBalanceCard"
+                app:cardBackgroundColor="@color/arzikina_postcart_background"
+                app:cardCornerRadius="@dimen/corner_radius_medium"
+                app:cardElevation="@dimen/elevation_raised">
 
-                <com.google.android.material.button.MaterialButtonToggleGroup
-                    android:id="@+id/periodPresetGroup"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    app:selectionRequired="true"
-                    app:singleSelection="true">
+                <include
+                    android:id="@+id/periodPresetField"
+                    layout="@layout/item_dropdown_field" />
 
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/periodPresetMonth"
-                        style="?attr/materialButtonOutlinedStyle"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:checkable="true"
-                        android:text="@string/statistics_period_month"
-                        android:textColor="@color/white"
-                        android:textSize="12sp"
-                        app:cornerRadius="10dp" />
+            </com.google.android.material.card.MaterialCardView>
 
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/periodPresetPrevMonth"
-                        style="?attr/materialButtonOutlinedStyle"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:checkable="true"
-                        android:text="@string/statistics_period_prev_month"
-                        android:textColor="@color/white"
-                        android:textSize="12sp"
-                        app:cornerRadius="10dp" />
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/periodPresetLast7Days"
-                        style="?attr/materialButtonOutlinedStyle"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:checkable="true"
-                        android:text="@string/statistics_period_last_7_days"
-                        android:textColor="@color/white"
-                        android:textSize="12sp"
-                        app:cornerRadius="10dp" />
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/periodPresetLast30Days"
-                        style="?attr/materialButtonOutlinedStyle"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:checkable="true"
-                        android:text="@string/statistics_period_last_30_days"
-                        android:textColor="@color/white"
-                        android:textSize="12sp"
-                        app:cornerRadius="10dp" />
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/periodPresetYear"
-                        style="?attr/materialButtonOutlinedStyle"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:checkable="true"
-                        android:text="@string/statistics_period_year"
-                        android:textColor="@color/white"
-                        android:textSize="12sp"
-                        app:cornerRadius="10dp" />
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/periodPresetCustom"
-                        style="?attr/materialButtonOutlinedStyle"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:checkable="true"
-                        android:text="@string/statistics_period_custom"
-                        android:textColor="@color/white"
-                        android:textSize="12sp"
-                        app:cornerRadius="10dp" />
-
-                </com.google.android.material.button.MaterialButtonToggleGroup>
-
-            </HorizontalScrollView>
-
-            <!-- Visible uniquement si periodPresetCustom est sélectionné (voir
-                 StatisticsFragment.render) — même Card/include que startDateRow/endDateRow de
+            <!-- Visible uniquement si "Personnalisée" est sélectionnée dans le Spinner ci-dessus
+                 (voir StatisticsFragment.render) — même Card/include que startDateRow/endDateRow de
                  fragment_budget_form.xml. -->
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/customStartRow"
