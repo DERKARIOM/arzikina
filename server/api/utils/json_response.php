@@ -20,11 +20,11 @@ declare(strict_types=1);
  * session si besoin (un `*` combiné à des identifiants ne fonctionne de toute façon pas). L'app
  * Android n'est pas concernée — CORS est une politique appliquée uniquement par les navigateurs.
  *
- * TODO déploiement : remplacer cette valeur par le VRAI domaine du frontend web une fois choisi
- * (voir étape "Décider où exposer le site web" du guide de déploiement). Pas un secret — peut rester
- * dans le code versionné, contrairement aux identifiants de `config_arzikina_secrets.php`.
+ * Frontend web déployé sur Render (voir arzikina-web-sync/render.yaml) — pas un secret, peut
+ * rester dans le code versionné, contrairement aux identifiants de `config_arzikina_secrets.php`.
+ * Sans slash final : un en-tête Origin de navigateur n'en a jamais.
  */
-const ALLOWED_WEB_ORIGIN = 'https://app.tondomaine.com';
+const ALLOWED_WEB_ORIGIN = 'https://arziki.naniger.com';
 
 header('Access-Control-Allow-Origin: ' . ALLOWED_WEB_ORIGIN);
 header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
