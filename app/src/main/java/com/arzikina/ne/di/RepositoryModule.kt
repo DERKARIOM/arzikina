@@ -19,6 +19,7 @@ import com.arzikina.ne.data.repository.SyncEngineImpl
 import com.arzikina.ne.data.repository.TokenProvider
 import com.arzikina.ne.data.repository.TokenProviderImpl
 import com.arzikina.ne.data.repository.TransactionRepositoryImpl
+import com.arzikina.ne.data.repository.TransactionTemplateRepositoryImpl
 import com.arzikina.ne.data.repository.UnifiedAuthRepositoryImpl
 import com.arzikina.ne.data.repository.UserPreferencesRepositoryImpl
 import com.arzikina.ne.work.AutomationSchedulerImpl
@@ -40,6 +41,7 @@ import com.arzikina.ne.domain.repository.SessionManager
 import com.arzikina.ne.domain.repository.SyncAuthRepository
 import com.arzikina.ne.domain.repository.SyncEngine
 import com.arzikina.ne.domain.repository.TransactionRepository
+import com.arzikina.ne.domain.repository.TransactionTemplateRepository
 import com.arzikina.ne.domain.repository.UnifiedAuthRepository
 import com.arzikina.ne.domain.repository.UserPreferencesRepository
 import dagger.Binds
@@ -153,4 +155,10 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindProfilePhotoRepository(impl: ProfilePhotoRepositoryImpl): ProfilePhotoRepository
+
+    /** Cahier des charges "Marketplace personnelle" — voir la KDoc de [TransactionTemplateRepository]
+     *  (bibliothèque personnelle de modèles de transaction, aucun lien avec une marketplace publique). */
+    @Binds
+    @Singleton
+    abstract fun bindTransactionTemplateRepository(impl: TransactionTemplateRepositoryImpl): TransactionTemplateRepository
 }

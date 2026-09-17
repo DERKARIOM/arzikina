@@ -18,6 +18,7 @@ import com.arzikina.ne.data.local.dao.RecurringTransactionOccurrenceDao
 import com.arzikina.ne.data.local.dao.SavingsGoalDao
 import com.arzikina.ne.data.local.dao.SyncQueueDao
 import com.arzikina.ne.data.local.dao.TransactionDao
+import com.arzikina.ne.data.local.dao.TransactionTemplateDao
 import com.arzikina.ne.data.local.dao.UserDao
 import com.arzikina.ne.data.local.dao.UserPreferencesDao
 import com.arzikina.ne.data.local.dao.UserProfilePhotoDao
@@ -37,6 +38,7 @@ import com.arzikina.ne.data.local.entity.RecurringTransactionOccurrenceEntity
 import com.arzikina.ne.data.local.entity.SavingsGoalEntity
 import com.arzikina.ne.data.local.entity.SyncQueueEntity
 import com.arzikina.ne.data.local.entity.TransactionEntity
+import com.arzikina.ne.data.local.entity.TransactionTemplateEntity
 import com.arzikina.ne.data.local.entity.UserEntity
 import com.arzikina.ne.data.local.entity.UserPreferencesEntity
 import com.arzikina.ne.data.local.entity.UserProfilePhotoEntity
@@ -132,6 +134,11 @@ import com.arzikina.ne.data.local.entity.UserServerLinkEntity
  *   [com.arzikina.ne.domain.model.Account.displayOrder]) — cahier des charges "Réorganiser les
  *   comptes par glisser-déposer" : position d'affichage persistée et synchronisée, rattrapée à
  *   l'ancien tri (`createdAt`) pour les comptes déjà existants.
+ * - 29 : Modèles de transaction réutilisables, table `transaction_templates` (voir
+ *   [MIGRATION_28_29]/[TransactionTemplateEntity]/[com.arzikina.ne.domain.model.TransactionTemplate])
+ *   — cahier des charges "Marketplace personnelle" : bibliothèque personnelle de raccourcis vers la
+ *   création de transaction, sans lien vers une transaction réelle une fois créée (pas de FK, voir
+ *   sa doc de tête).
  */
 @Database(
     entities = [
@@ -153,9 +160,10 @@ import com.arzikina.ne.data.local.entity.UserServerLinkEntity
         SyncQueueEntity::class,
         UserPreferencesEntity::class,
         UserServerLinkEntity::class,
-        UserProfilePhotoEntity::class
+        UserProfilePhotoEntity::class,
+        TransactionTemplateEntity::class
     ],
-    version = 28,
+    version = 29,
     exportSchema = true
 )
 @TypeConverters(Converters::class)
@@ -179,4 +187,5 @@ abstract class ArzikinaDatabase : RoomDatabase() {
     abstract fun userPreferencesDao(): UserPreferencesDao
     abstract fun userServerLinkDao(): UserServerLinkDao
     abstract fun userProfilePhotoDao(): UserProfilePhotoDao
+    abstract fun transactionTemplateDao(): TransactionTemplateDao
 }
