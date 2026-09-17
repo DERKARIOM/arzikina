@@ -5,9 +5,19 @@
     plus du bouton "Enregistrer la transaction" en bas de l'écran, pas à sa
     place : les deux appellent TransactionFormViewModel.save(), pratique pour
     valider sans avoir à faire défiler tout le formulaire.
+
+    "Choisir un modèle" (cahier des charges "Marketplace personnelle", extension "Choisir un
+    modèle depuis l'ajout de transaction") — visible UNIQUEMENT en création (voir
+    TransactionFormFragment.setUpToolbar, masqué en modification) : ouvre TemplatePickerDialog,
+    remplit montant/type/catégorie/description/heure en conservant le compte déjà sélectionné.
 -->
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
+    <item
+        android:id="@+id/action_choose_template"
+        android:icon="@drawable/ic_storefront_24"
+        android:title="@string/action_choose_template"
+        app:showAsAction="ifRoom" />
     <item
         android:id="@+id/action_save_transaction"
         android:icon="@drawable/ic_check_24"

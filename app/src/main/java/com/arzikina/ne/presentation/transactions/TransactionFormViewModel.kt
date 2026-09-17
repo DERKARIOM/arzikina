@@ -10,12 +10,14 @@ import com.arzikina.ne.domain.model.FeeType
 import com.arzikina.ne.domain.model.PaymentMethod
 import com.arzikina.ne.domain.model.Transaction
 import com.arzikina.ne.domain.model.TransactionFee
+import com.arzikina.ne.domain.model.TransactionTemplate
 import com.arzikina.ne.domain.model.TransactionType
 import com.arzikina.ne.domain.model.LoanCategoryNames
 import com.arzikina.ne.domain.repository.AccountRepository
 import com.arzikina.ne.domain.repository.CategoryRepository
 import com.arzikina.ne.domain.repository.LoanRepository
 import com.arzikina.ne.domain.repository.TransactionRepository
+import com.arzikina.ne.domain.repository.TransactionTemplateRepository
 import com.arzikina.ne.presentation.accounts.computeCurrentBalances
 import com.arzikina.ne.util.Money
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -122,7 +124,8 @@ class TransactionFormViewModel @Inject constructor(
     private val transactionRepository: TransactionRepository,
     private val accountRepository: AccountRepository,
     private val categoryRepository: CategoryRepository,
-    private val loanRepository: LoanRepository
+    private val loanRepository: LoanRepository,
+    private val templateRepository: TransactionTemplateRepository
 ) : ViewModel() {
 
     private val transactionId: Long = savedStateHandle.get<Long>(TRANSACTION_ID_ARG) ?: 0L
@@ -156,6 +159,37 @@ class TransactionFormViewModel @Inject constructor(
         .flatMapLatest { type -> categoryRepository.observeCategoriesByType(type) }
         .map { categories -> categories.filterNot { it.name in LoanCategoryNames.ALL || it.name in FeeCategoryNames.ALL } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    /**
+     * Catégories de TOUS types, contrairement à [categories] (filtré par [TransactionFormState.type])
+     * — nécessaire pour résoudre l'icône/nom de catégorie d'un modèle quelconque dans
+     * [com.arzikina.ne.presentation.components.TemplatePickerDialog] : un modèle peut être un revenu
+     * alors que ce formulaire est actuellement en mode dépense (et inversement), voir cahier des
+     * charges "Marketplace personnelle", extension "Choisir un modèle depuis l'ajout de transaction".
+     * N'exclut PAS les catégories système (contrairement à [categories]) : un modèle ne peut de toute
+     * façon jamais référencer une catégorie système (voir `MarketplaceFormViewModel.categories`, qui
+     * exclut déjà Prêts/Emprunts/Frais des choix possibles à la création d'un modèle).
+     *
+     * `SharingStarted.Eagerly` (PAS `WhileSubscribed`, contrairement à [categories]/[accounts]
+     * ci-dessous) : ce flux n'est lu que ponctuellement via `.value` au moment où
+     * [com.arzikina.ne.presentation.components.TemplatePickerDialog] s'ouvre (voir
+     * `TransactionFormFragment.showTemplatePicker`), jamais `collect`é en continu par [render]
+     * (contrairement à [accounts]/[categories]/[accountBalances], observés dans le `combine` de
+     * `onViewCreated`, ce qui les garde "actifs"). Avec `WhileSubscribed`, sans aucun abonnement,
+     * `.value` resterait figé sur `emptyList()` (la valeur initiale) même si des modèles existent
+     * réellement en base — bug constaté : le sélecteur affichait "Aucun modèle" malgré des modèles
+     * existants. `Eagerly` démarre la collecte dès la création du ViewModel, indépendamment de tout
+     * abonnement UI.
+     */
+    val allCategories: StateFlow<List<Category>> = categoryRepository.observeCategories()
+        .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+
+    /** Modèles réutilisables (voir [com.arzikina.ne.presentation.components.TemplatePickerDialog]/
+     * [applyTemplate]) — même flux que `MarketplaceViewModel`, favoris en tête (voir
+     * `TransactionTemplateDao.observeAllForUser`). `SharingStarted.Eagerly` : même raisonnement que
+     * [allCategories] ci-dessus (lu uniquement via `.value`, jamais `collect`é par [render]). */
+    val templates: StateFlow<List<TransactionTemplate>> = templateRepository.observeTemplates()
+        .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
     /**
      * Solde COURANT de chaque compte (voir [computeCurrentBalances]), affiché
@@ -277,6 +311,47 @@ class TransactionFormViewModel @Inject constructor(
                 // `update` s'exécute (deux appels synchrones dans le même bloc init).
                 feeAccountId = if (feeAmountMinor != null && state.feeAccountId == 0L) state.accountId else state.feeAccountId,
                 receiptId = receiptId ?: state.receiptId
+            )
+        }
+    }
+
+    /**
+     * Applique un modèle réutilisable (cahier des charges "Marketplace personnelle", extension
+     * "Choisir un modèle depuis l'ajout de transaction" — voir
+     * [com.arzikina.ne.presentation.components.TemplatePickerDialog]) : remplit montant/type/
+     * catégorie/description/heure par défaut (si définie, voir [TransactionTemplate.defaultHour]),
+     * mais CONSERVE [TransactionFormState.accountId] tel quel — choix explicite (contrairement au
+     * bouton "Acheter" de `MarketplaceFragment`, qui applique le compte du modèle) : ce formulaire a
+     * été ouvert "depuis un compte" précis (voir `AccountDetailFragment.navigateToNewTransactionForm`),
+     * qui doit rester le compte utilisé quel que soit le modèle choisi.
+     *
+     * Écrase ces champs sans confirmation : choisir un modèle est une action volontaire et
+     * réversible (l'utilisateur peut encore tout modifier avant [save]). `isDescriptionAutoFilled =
+     * false` : une description venant d'un modèle est une saisie CONFIRMÉE, jamais régénérée par
+     * [autoFillTransferDescription] — même raisonnement que [applyReceiptPresets] (sans objet ici de
+     * toute façon : un modèle n'est jamais [TransactionType.TRANSFER]).
+     *
+     * Ne touche PAS à `transferAccountId`/`hasFee`/`paymentMethod`/etc. : un modèle ne les concerne
+     * pas, ces champs restent ce que l'utilisateur avait déjà saisi.
+     */
+    fun applyTemplate(template: TransactionTemplate) {
+        _formState.update { state ->
+            val dateTimeMillis = if (template.defaultHour != null && template.defaultMinute != null) {
+                val currentDate = Instant.ofEpochMilli(state.dateTimeMillis).atZone(ZoneId.systemDefault()).toLocalDate()
+                currentDate.atTime(LocalTime.of(template.defaultHour, template.defaultMinute))
+                    .atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
+            } else {
+                state.dateTimeMillis
+            }
+            state.copy(
+                amountInput = Money.formatForInput(template.amount),
+                type = template.type,
+                categoryId = template.categoryId,
+                description = template.description,
+                isDescriptionAutoFilled = false,
+                dateTimeMillis = dateTimeMillis,
+                amountError = null,
+                categoryError = null
             )
         }
     }

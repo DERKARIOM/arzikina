@@ -94,6 +94,9 @@
          ci-dessus plutôt qu'une chaîne propre à chaque fonctionnalité (cf. budget_item_menu_edit,
          antérieure et propre au Fragment Budget). -->
     <string name="action_edit">Modifier</string>
+    <!-- Bouton de fermeture d'une simple boîte de dialogue informative (pas une confirmation, voir
+         ConfirmDialogs) — ex. TemplatePickerDialog quand aucun modèle n'existe encore. -->
+    <string name="action_close">Fermer</string>
 
     <!-- Authentification — Inscription -->
     <!-- Toujours utilisé comme android:label de la destination dans nav_graph.xml (titre
@@ -1171,4 +1174,14 @@
          actuelle. -->
     <string name="marketplace_form_default_time_toggle">Définir une heure par défaut</string>
     <string name="marketplace_form_default_time_label">Heure par défaut</string>
+
+    <!-- Sélecteur de modèle depuis le formulaire de transaction (voir TemplatePickerDialog,
+         extension "Choisir un modèle depuis l'ajout de transaction" du cahier des charges
+         "Marketplace personnelle"). Réutilise transaction_form_account_balance-like formatage déjà
+         existant pour le montant (voir TemplatePickerDialog.bind). -->
+    <string name="action_choose_template">Choisir un modèle</string>
+    <string name="transaction_form_template_picker_title">Choisir un modèle</string>
+    <string name="transaction_form_template_picker_empty">Aucun modèle enregistré pour le moment. Crée-en un depuis Marketplace personnelle (Utilitaires).</string>
+    <!-- %1$s = nom de la catégorie, %2$s = montant formaté (voir TemplatePickerDialog.bind). -->
+    <string name="transaction_form_template_picker_subtitle">%1$s · %2$s</string>
 </resources>

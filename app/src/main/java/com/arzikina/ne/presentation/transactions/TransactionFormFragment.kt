@@ -30,6 +30,7 @@ import com.arzikina.ne.presentation.accounts.AccountIconMapper
 import com.arzikina.ne.presentation.components.AccountPickerDialog
 import com.arzikina.ne.presentation.components.ConfirmDialogs
 import com.arzikina.ne.presentation.components.NavAnimations
+import com.arzikina.ne.presentation.components.TemplatePickerDialog
 import com.arzikina.ne.util.Constants
 import com.arzikina.ne.util.Money
 import com.arzikina.ne.util.MoneyInputFormatter
@@ -63,6 +64,12 @@ import java.util.Locale
  * Les champs date/heure restent non focusables (voir `fragment_transaction_form.xml`) :
  * la saisie se fait uniquement via [MaterialDatePicker]/[MaterialTimePicker],
  * enchaînés l'un après l'autre depuis une seule ligne désormais.
+ *
+ * "Choisir un modèle" (icône de la Toolbar, création uniquement — voir [showTemplatePicker]) :
+ * cahier des charges "Marketplace personnelle", extension "Choisir un modèle depuis l'ajout de
+ * transaction". Remplit montant/type/catégorie/description/heure depuis un
+ * [com.arzikina.ne.domain.model.TransactionTemplate] existant, sans jamais changer le compte déjà
+ * sélectionné (voir [TransactionFormViewModel.applyTemplate]).
  */
 @AndroidEntryPoint
 class TransactionFormFragment : Fragment(R.layout.fragment_transaction_form) {
@@ -153,6 +160,13 @@ class TransactionFormFragment : Fragment(R.layout.fragment_transaction_form) {
         binding.toolbar.setNavigationOnClickListener { findNavController().navigateUp() }
         binding.toolbar.inflateMenu(R.menu.transaction_form_menu)
 
+        // "Choisir un modèle" (cahier des charges "Marketplace personnelle", extension "Choisir un
+        // modèle depuis l'ajout de transaction") — UNIQUEMENT en création (voir sa doc de tête dans
+        // transaction_form_menu.xml) : appliquer un modèle par-dessus une transaction déjà
+        // enregistrée n'a pas de sens. Figé une seule fois ici (ne dépend d'aucun état observé,
+        // contrairement au reste de [render]).
+        binding.toolbar.menu.findItem(R.id.action_choose_template)?.isVisible = !viewModel.isEditMode
+
         // app:iconTint sur MaterialToolbar ne s'applique pas de façon fiable aux icônes
         // de menu selon la version de Material Components : on tinte l'icône "✓"
         // directement ici pour qu'elle suive ?attr/colorOnSurface (blanc en dark mode,
@@ -164,14 +178,42 @@ class TransactionFormFragment : Fragment(R.layout.fragment_transaction_form) {
             }
 
         binding.toolbar.setOnMenuItemClickListener { item ->
-            if (item.itemId == R.id.action_save_transaction) {
-                viewModel.save()
-                true
-            } else {
-                false
+            when (item.itemId) {
+                R.id.action_save_transaction -> {
+                    viewModel.save()
+                    true
+                }
+                R.id.action_choose_template -> {
+                    showTemplatePicker()
+                    true
+                }
+                else -> false
             }
         }
         binding.deleteButton.visibility = if (viewModel.isEditMode) View.VISIBLE else View.GONE
+    }
+
+    /**
+     * Ouvre [TemplatePickerDialog] (cahier des charges "Marketplace personnelle", extension
+     * "Choisir un modèle depuis l'ajout de transaction") — [TransactionFormViewModel.allCategories]
+     * (pas [TransactionFormViewModel.categories], filtré par le type courant du formulaire) pour
+     * résoudre l'icône/le nom de catégorie de n'importe quel modèle, quel que soit son type. Devise
+     * du compte ACTUELLEMENT sélectionné (voir la doc de tête de [TemplatePickerDialog]) — celui
+     * de l'utilisateur par défaut ([Constants.DEFAULT_CURRENCY_CODE]) si aucun compte n'est encore
+     * choisi.
+     */
+    private fun showTemplatePicker() {
+        val currentAccountId = viewModel.formState.value.accountId
+        val currencyCode = latestAccounts.firstOrNull { it.id == currentAccountId }?.currencyCode
+            ?: Constants.DEFAULT_CURRENCY_CODE
+        val categoriesById = viewModel.allCategories.value.associateBy { it.id }
+        TemplatePickerDialog.show(
+            context = requireContext(),
+            templates = viewModel.templates.value,
+            categoryFor = { categoryId -> categoriesById[categoryId] },
+            currencyCode = currencyCode,
+            onSelect = { template -> viewModel.applyTemplate(template) }
+        )
     }
 
     /**
