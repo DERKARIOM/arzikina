@@ -74,8 +74,8 @@
     <string name="settings_backup_description">Exporte toutes tes données (comptes, catégories, transactions, frais, budgets, objectifs d\'épargne, prêts/emprunts, transactions automatiques, profil) dans un fichier, ou restaure une sauvegarde précédente.</string>
     <string name="settings_backup_export_action">Sauvegarder mes données</string>
     <string name="settings_backup_import_action">Restaurer mes données</string>
-    <string name="settings_backup_export_success">Export réussi : %1$d comptes, %2$d catégories, %3$d transactions, %4$d budgets, %5$d objectifs, %6$d prêts/emprunts, %7$d transactions automatiques, %8$d occurrences, %9$d planifications, %10$d dépenses prévues, %11$d reçus.</string>
-    <string name="settings_backup_import_success">Importation réussie : %1$d comptes, %2$d catégories, %3$d transactions, %4$d budgets, %5$d objectifs, %6$d prêts/emprunts, %7$d transactions automatiques, %8$d occurrences, %9$d planifications, %10$d dépenses prévues, %11$d reçus.</string>
+    <string name="settings_backup_export_success">Export réussi : %1$d comptes, %2$d catégories, %3$d transactions, %4$d budgets, %5$d objectifs, %6$d prêts/emprunts, %7$d transactions automatiques, %8$d occurrences, %9$d planifications, %10$d dépenses prévues, %11$d reçus, %12$d modèles.</string>
+    <string name="settings_backup_import_success">Importation réussie : %1$d comptes, %2$d catégories, %3$d transactions, %4$d budgets, %5$d objectifs, %6$d prêts/emprunts, %7$d transactions automatiques, %8$d occurrences, %9$d planifications, %10$d dépenses prévues, %11$d reçus, %12$d modèles.</string>
     <string name="settings_backup_error_prefix">Échec :</string>
     <string name="settings_backup_import_confirm_title">Remplacer toutes les données ?</string>
     <string name="settings_backup_import_confirm_message">L\'importation remplace définitivement toutes les données actuelles (comptes, catégories, transactions, frais, budgets, objectifs d\'épargne, prêts/emprunts, transactions automatiques, profil) par celles du fichier choisi. Cette action est irréversible.</string>

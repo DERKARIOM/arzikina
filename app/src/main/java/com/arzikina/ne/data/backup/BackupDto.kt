@@ -53,7 +53,12 @@ data class BackupPayload(
      * ce fichier, chaque [ReceiptDto] embarque le contenu BINAIRE complet d'un PDF (voir sa doc) —
      * accepté explicitement : un fichier de sauvegarde qui contient beaucoup de reçus, ou des PDF
      * volumineux, peut donc devenir nettement plus lourd qu'avant cette fonctionnalité. */
-    val receipts: List<ReceiptDto> = emptyList()
+    val receipts: List<ReceiptDto> = emptyList(),
+    /** Ajoutés après coup (voir `TransactionTemplateEntity`, cahier des charges "Marketplace
+     * personnelle") : liste vide par défaut pour rester compatible avec les fichiers exportés
+     * avant leur existence — un ancien fichier restauré ne recrée simplement aucun modèle, sans
+     * erreur (même comportement que les autres listes ajoutées après coup ci-dessus). */
+    val transactionTemplates: List<TransactionTemplateDto> = emptyList()
 )
 
 /**
@@ -389,4 +394,30 @@ data class ReceiptDto(
      * `BackupRepositoryImpl` (via `ReceiptFileStorage`), jamais par ce DTO ni par les fonctions de
      * `BackupMappers` qui le manipulent. */
     val pdfBase64: String
+)
+
+/**
+ * Un modèle de transaction réutilisable (voir `TransactionTemplateEntity`/
+ * [com.arzikina.ne.domain.model.TransactionTemplate], cahier des charges "Marketplace
+ * personnelle") — aucune table ne référence son [id] (contrairement à [LoanDto.transactionId] ou
+ * [FinancialPlanItemDto.transactionId]) : une simple table de correspondance ancien → nouvel id
+ * suffit à la restauration, jamais de 2ème passe nécessaire.
+ *
+ * [defaultHour]/[defaultMinute] : voir `TransactionTemplateEntity` — `null` par défaut pour rester
+ * compatible avec les fichiers exportés avant l'extension "Heure par défaut".
+ */
+@Serializable
+data class TransactionTemplateDto(
+    val id: Long,
+    val name: String,
+    val type: String,
+    val amount: Long,
+    val categoryId: Long,
+    val accountId: Long,
+    val description: String,
+    val isFavorite: Boolean,
+    val createdAt: Long,
+    val updatedAt: Long,
+    val defaultHour: Int? = null,
+    val defaultMinute: Int? = null
 )

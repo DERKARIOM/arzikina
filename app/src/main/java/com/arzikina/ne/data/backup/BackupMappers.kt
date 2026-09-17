@@ -13,6 +13,7 @@ import com.arzikina.ne.data.local.entity.RecurringTransactionEntity
 import com.arzikina.ne.data.local.entity.RecurringTransactionOccurrenceEntity
 import com.arzikina.ne.data.local.entity.SavingsGoalEntity
 import com.arzikina.ne.data.local.entity.TransactionEntity
+import com.arzikina.ne.data.local.entity.TransactionTemplateEntity
 import com.arzikina.ne.data.local.entity.UserEntity
 import com.arzikina.ne.domain.model.AccountIcon
 import com.arzikina.ne.domain.model.AccountType
@@ -617,4 +618,50 @@ fun ReceiptDto.toEntity(userId: Long, localPath: String, fileSize: Long) = Recei
     amountMinor = amountMinor,
     createdAt = createdAt,
     updatedAt = updatedAt
+)
+
+fun TransactionTemplateEntity.toDto() = TransactionTemplateDto(
+    id = id,
+    name = name,
+    type = type.name,
+    amount = amount,
+    categoryId = categoryId,
+    accountId = accountId,
+    description = description,
+    isFavorite = isFavorite,
+    createdAt = createdAt,
+    updatedAt = updatedAt,
+    defaultHour = defaultHour,
+    defaultMinute = defaultMinute
+)
+
+fun TransactionTemplateDto.toEntity(userId: Long) = TransactionTemplateEntity(
+    id = id,
+    userId = userId,
+    name = name,
+    type = runCatching { TransactionType.valueOf(type) }.getOrDefault(TransactionType.EXPENSE),
+    amount = amount,
+    categoryId = categoryId,
+    accountId = accountId,
+    description = description,
+    isFavorite = isFavorite,
+    createdAt = createdAt,
+    updatedAt = updatedAt,
+    defaultHour = defaultHour,
+    defaultMinute = defaultMinute
+)
+
+/** Voir la doc de tête de ce fichier. `accountId`/`categoryId` tous deux obligatoires (voir
+ * `TransactionTemplateEntity`, `categoryId` toujours `NOT NULL` pour un modèle — jamais de
+ * transfert, voir sa doc de tête) : `getValue` échoue bruyamment pour les deux si absents de
+ * [accountIdMap]/[categoryIdMap] (fichier corrompu), contrairement à [RecurringTransactionDto.remapIds]
+ * qui tolère un `categoryId` absent. */
+fun TransactionTemplateDto.remapIds(
+    newId: Long,
+    accountIdMap: Map<Long, Long>,
+    categoryIdMap: Map<Long, Long>
+): TransactionTemplateDto = copy(
+    id = newId,
+    accountId = accountIdMap.getValue(accountId),
+    categoryId = categoryIdMap.getValue(categoryId)
 )

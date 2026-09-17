@@ -26,5 +26,9 @@ data class BackupResult(
     /** Voir `ReceiptDto` — nombre de reçus PDF (métadonnées ET fichier physique, voir
      * `BackupRepositoryImpl`), ajouté en même temps que leur prise en charge par la sauvegarde
      * (Étape 9). */
-    val receiptsCount: Int = 0
+    val receiptsCount: Int = 0,
+    /** Voir `TransactionTemplateDto` — nombre de modèles de transaction réutilisables (cahier des
+     * charges "Marketplace personnelle"), ajouté en même temps que leur prise en charge par la
+     * sauvegarde. */
+    val templatesCount: Int = 0
 )

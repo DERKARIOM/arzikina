@@ -21,6 +21,7 @@ import com.arzikina.ne.data.local.dao.RecurringTransactionDao
 import com.arzikina.ne.data.local.dao.RecurringTransactionOccurrenceDao
 import com.arzikina.ne.data.local.dao.SavingsGoalDao
 import com.arzikina.ne.data.local.dao.TransactionDao
+import com.arzikina.ne.data.local.dao.TransactionTemplateDao
 import com.arzikina.ne.data.local.dao.UserDao
 import com.arzikina.ne.data.local.database.ArzikinaDatabase
 import com.arzikina.ne.data.receipts.ReceiptFileStorage
@@ -78,6 +79,10 @@ import javax.inject.Inject
  * de la transaction ci-dessous (voir la fin de [importBackup]) : si l'import échoue et annule la
  * transaction, aucun fichier existant n'a alors été perdu.
  *
+ * "Marketplace personnelle" fait également partie intégrante de la sauvegarde
+ * (`transactionTemplates`) — table simple (aucune ligne ne référence son id, contrairement à
+ * `RecurringTransactionEntity`/`FinancialPlanEntity`), voir [com.arzikina.ne.data.backup.TransactionTemplateDto].
+ *
  * Réattribution des ids (voir la doc de tête de `data/backup/BackupMappers`) : l'import
  * n'insère JAMAIS les `id` du fichier tels quels — chaque table reçoit `id = 0L` (nouvel id
  * généré par SQLite), et les ids générés alimentent des tables de correspondance ancien → nouvel
@@ -102,6 +107,7 @@ class BackupRepositoryImpl @Inject constructor(
     private val financialPlanItemDao: FinancialPlanItemDao,
     private val receiptDao: ReceiptDao,
     private val receiptFileStorage: ReceiptFileStorage,
+    private val transactionTemplateDao: TransactionTemplateDao,
     private val userDao: UserDao,
     private val userPreferencesRepository: UserPreferencesRepository,
     private val sessionManager: SessionManager,
@@ -141,6 +147,7 @@ class BackupRepositoryImpl @Inject constructor(
                 val recurringTransactionOccurrences = recurringTransactionOccurrenceDao.observeAllForUser(userId).first()
                 val financialPlans = financialPlanDao.observeAllForUser(userId).first()
                 val financialPlanItems = financialPlanItemDao.observeAllForUser(userId).first()
+                val transactionTemplates = transactionTemplateDao.observeAllForUser(userId).first()
                 // Voir la doc de tête de cette classe et de `ReceiptDto` : chaque ligne exportée
                 // embarque le contenu binaire du PDF, lu ici (jamais dans BackupMappers, qui reste
                 // pur). `mapNotNull` plutôt que `map` : une ligne Room dont le fichier n'existe déjà
@@ -176,7 +183,8 @@ class BackupRepositoryImpl @Inject constructor(
                     recurringTransactionOccurrences = recurringTransactionOccurrences.map { it.toDto() },
                     financialPlans = financialPlans.map { it.toDto() },
                     financialPlanItems = financialPlanItems.map { it.toDto() },
-                    receipts = receiptDtos
+                    receipts = receiptDtos,
+                    transactionTemplates = transactionTemplates.map { it.toDto() }
                 )
 
                 stream.write(json.encodeToString(payload).encodeToByteArray())
@@ -192,7 +200,8 @@ class BackupRepositoryImpl @Inject constructor(
                     occurrencesCount = recurringTransactionOccurrences.size,
                     plansCount = financialPlans.size,
                     planItemsCount = financialPlanItems.size,
-                    receiptsCount = receiptDtos.size
+                    receiptsCount = receiptDtos.size,
+                    templatesCount = transactionTemplates.size
                 )
             }
         }
@@ -256,6 +265,11 @@ class BackupRepositoryImpl @Inject constructor(
                 loanDao.deleteAllForUser(userId)
                 recurringTransactionOccurrenceDao.deleteAllForUser(userId)
                 recurringTransactionDao.deleteAllForUser(userId)
+                // Modèles de transaction (voir la doc de tête de cette classe) : comme
+                // recurring_transactions ci-dessus, dépend uniquement de accounts/categories —
+                // supprimé avant eux, sans ordre particulier vis-à-vis des autres tables ci-dessous
+                // (aucune dépendance croisée).
+                transactionTemplateDao.deleteAllForUser(userId)
                 transactionDao.deleteAllForUser(userId)
                 budgetDao.deleteAllForUser(userId)
                 financialPlanItemDao.deleteAllForUser(userId)
@@ -327,6 +341,14 @@ class BackupRepositoryImpl @Inject constructor(
                         )
                     )
                     .associate { (dto, newId) -> dto.id to newId }
+
+                // Modèles de transaction (voir la doc de tête de cette classe/de
+                // TransactionTemplateDto) : comme les règles récurrentes ci-dessus, uniquement
+                // dépendants de accounts/categories, déjà connus. Aucune table de correspondance à
+                // construire (aucune ligne ne référence l'id d'un modèle) — `insertAll` suffit.
+                transactionTemplateDao.insertAll(
+                    payload.transactionTemplates.map { it.remapIds(0L, accountIdMap, categoryIdMap).toEntity(userId) }
+                )
 
                 // Transactions, 1ère passe (voir TransactionDto.remapIds) : accountId/categoryId/
                 // receiptId déjà connus (comptes, catégories et reçus tous insérés plus haut),
@@ -419,7 +441,8 @@ class BackupRepositoryImpl @Inject constructor(
                 occurrencesCount = payload.recurringTransactionOccurrences.size,
                 plansCount = payload.financialPlans.size,
                 planItemsCount = payload.financialPlanItems.size,
-                receiptsCount = payload.receipts.size
+                receiptsCount = payload.receipts.size,
+                templatesCount = payload.transactionTemplates.size
             )
         }
 
