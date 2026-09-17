@@ -89,6 +89,11 @@
     <string name="action_delete">Supprimer</string>
     <string name="action_cancel">Annuler</string>
     <string name="action_add">Ajouter</string>
+    <!-- Ajoutée pour le menu ⋮ de marketplace_template_actions_menu.xml (voir MarketplaceAdapter) —
+         réutilisable par de futurs menus contextuels génériques, même raisonnement que action_delete
+         ci-dessus plutôt qu'une chaîne propre à chaque fonctionnalité (cf. budget_item_menu_edit,
+         antérieure et propre au Fragment Budget). -->
+    <string name="action_edit">Modifier</string>
 
     <!-- Authentification — Inscription -->
     <!-- Toujours utilisé comme android:label de la destination dans nav_graph.xml (titre
@@ -1119,4 +1124,51 @@
          `binding.toolbar.title = ...`) — même principe que "loan_detail_title". -->
     <string name="receipt_detail_title">Détail du reçu</string>
     <string name="receipt_viewer_title">Aperçu du reçu</string>
+
+    <!--
+        Marketplace personnelle (cahier des charges du même nom) — bibliothèque personnelle de
+        modèles de transaction réutilisables. Voir presentation/utilities/marketplace/
+        MarketplaceFragment/MarketplaceViewModel/MarketplaceAdapter.
+    -->
+    <string name="utility_marketplace_title">Marketplace personnelle</string>
+    <string name="marketplace_search_placeholder">Rechercher un modèle…</string>
+    <!-- Chip "Toutes" du filtre par catégorie (voir MarketplaceFragment.setUpCategoryChips) — les
+         autres chips reprennent directement Category.name, aucune chaîne dédiée nécessaire. -->
+    <string name="marketplace_filter_all">Toutes</string>
+    <!-- En-têtes de section (voir MarketplaceListRow.SectionHeader, cahier des charges section 7). -->
+    <string name="marketplace_section_favorites">⭐ Mes favoris</string>
+    <string name="marketplace_section_all">Tous les modèles</string>
+    <!-- Bouton principal d'une Card (voir item_marketplace_template.xml, cahier des charges
+         section 4) — ne réalise AUCUN paiement réel, voir sa KDoc de tête. -->
+    <string name="marketplace_buy_action">Acheter</string>
+    <string name="marketplace_add_action">Créer un modèle</string>
+    <string name="marketplace_item_menu_content_description">Actions sur ce modèle</string>
+    <string name="marketplace_favorite_badge_content_description">Modèle favori</string>
+    <!-- Libellé du bascule ⭐ du menu ⋮ (voir MarketplaceAdapter.showActionsMenu) — déterminé au
+         moment de l'ouverture selon l'état actuel, jamais les deux affichés en même temps. -->
+    <string name="marketplace_action_add_favorite">Ajouter aux favoris</string>
+    <string name="marketplace_action_remove_favorite">Retirer des favoris</string>
+    <string name="marketplace_action_duplicate">Dupliquer</string>
+    <string name="marketplace_delete_confirm_title">Supprimer ce modèle ?</string>
+    <!-- %1$s = nom du modèle (voir ConfirmDialogs.confirm). Précise explicitement que la
+         suppression n'affecte AUCUNE transaction déjà créée à partir de ce modèle (cahier des
+         charges section 5, "le modèle ne doit pas être modifié" — s'applique aussi après coup). -->
+    <string name="marketplace_delete_confirm_message">"%1$s" sera définitivement supprimé. Les transactions déjà créées à partir de ce modèle ne sont pas affectées.</string>
+    <string name="marketplace_empty_title">Aucun modèle pour le moment</string>
+    <string name="marketplace_empty_message">Créez vos modèles de dépenses habituelles pour enregistrer vos transactions plus rapidement.</string>
+    <string name="marketplace_no_results_title">Aucun modèle trouvé</string>
+    <string name="marketplace_no_results_message">Essayez une autre recherche ou un autre filtre.</string>
+
+    <!-- Formulaire de modèle (voir MarketplaceFormFragment/MarketplaceFormViewModel). Réutilise
+         volontairement plusieurs chaînes déjà existantes (recurring_transaction_form_*,
+         category_type_*, transaction_form_account_*, action_save/action_delete) plutôt que d'en
+         dupliquer des équivalentes — voir leur propre doc de tête. -->
+    <string name="marketplace_form_title_add">Nouveau modèle</string>
+    <string name="marketplace_form_title_edit">Modifier le modèle</string>
+    <string name="marketplace_form_name_label">Nom du modèle</string>
+    <!-- Heure par défaut optionnelle (voir MarketplaceFormViewModel.hasDefaultTime) : préremplit
+         l'heure de la transaction créée par "Acheter" (sur la date du jour) au lieu de l'heure
+         actuelle. -->
+    <string name="marketplace_form_default_time_toggle">Définir une heure par défaut</string>
+    <string name="marketplace_form_default_time_label">Heure par défaut</string>
 </resources>

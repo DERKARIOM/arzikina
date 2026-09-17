@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Ligne "Aucun résultat" de l'écran "Marketplace personnelle" (voir MarketplaceListRow.NoResults) :
+    affichée quand la recherche/le filtre par catégorie courant ne retourne aucun modèle — texte
+    simple, sans illustration ni bouton, même registre que item_loans_no_results.xml.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:gravity="center"
+    android:orientation="vertical"
+    android:padding="@dimen/spacing_l">
+
+    <TextView
+        style="@style/TextAppearance.Material3.TitleMedium"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:text="@string/marketplace_no_results_title"
+        android:textColor="?attr/colorOnSurface" />
+
+    <TextView
+        style="@style/TextAppearance.Material3.BodyMedium"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/spacing_s"
+        android:gravity="center"
+        android:text="@string/marketplace_no_results_message"
+        android:textColor="?attr/colorOnSurfaceVariant" />
+
+</LinearLayout>

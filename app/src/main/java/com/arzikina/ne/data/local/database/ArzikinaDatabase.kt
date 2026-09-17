@@ -139,6 +139,10 @@ import com.arzikina.ne.data.local.entity.UserServerLinkEntity
  *   — cahier des charges "Marketplace personnelle" : bibliothèque personnelle de raccourcis vers la
  *   création de transaction, sans lien vers une transaction réelle une fois créée (pas de FK, voir
  *   sa doc de tête).
+ * - 30 : Heure par défaut optionnelle (`defaultHour`/`defaultMinute`) sur un modèle de transaction
+ *   (voir [MIGRATION_29_30]/[TransactionTemplateEntity]) — cahier des charges "Marketplace
+ *   personnelle", extension : préremplit l'heure de la transaction créée par "Acheter" (sur la date
+ *   du jour), `NULL` = comportement inchangé (heure actuelle).
  */
 @Database(
     entities = [
@@ -163,7 +167,7 @@ import com.arzikina.ne.data.local.entity.UserServerLinkEntity
         UserProfilePhotoEntity::class,
         TransactionTemplateEntity::class
     ],
-    version = 29,
+    version = 30,
     exportSchema = true
 )
 @TypeConverters(Converters::class)

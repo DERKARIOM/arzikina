@@ -46,6 +46,11 @@ data class TransactionTemplateEntity(
     val isFavorite: Boolean,
     val createdAt: Long,
     val updatedAt: Long,
+    /** Heure par défaut appliquée à l'achat (voir la doc de tête de
+     * [com.arzikina.ne.domain.model.TransactionTemplate]) — `null` = pas d'heure par défaut,
+     * toujours `null` en même temps que [defaultMinute]. */
+    val defaultHour: Int? = null,
+    val defaultMinute: Int? = null,
     /** UUID partagé Android/API/MySQL pour une future synchronisation multi-appareils — additif,
      * même convention que toutes les autres entités (voir `docs/sync/AUDIT-ET-ARCHITECTURE-SYNC.md`,
      * section 6.3, option B). Posé dès maintenant, non encore activement synchronisé (voir la KDoc

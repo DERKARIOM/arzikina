@@ -7,7 +7,7 @@ import com.arzikina.ne.R
  * ([com.arzikina.ne.presentation.dashboard.DashboardFragment]) et l'écran complet
  * ([AllUtilitiesFragment]) ne divergent en dupliquant chacun leur propre liste.
  *
- * Aujourd'hui les deux écrans affichent la totalité de [all] (6 entrées). Quand
+ * Aujourd'hui les deux écrans affichent la totalité de [all] (7 entrées). Quand
  * d'autres utilitaires seront ajoutés (calculateur d'intérêts, convertisseur de devises,
  * rappels...), il faudra probablement que le Dashboard n'en affiche plus qu'une sélection
  * restreinte (les plus utilisés) plutôt que la totalité — à ce moment-là, ajouter ici un
@@ -45,6 +45,15 @@ object UtilityCatalog {
             iconRes = R.drawable.ic_receipt_long_24,
             titleRes = R.string.utility_receipts_title,
             destinationId = R.id.receiptsFragment
+        ),
+        // Cahier des charges "Marketplace personnelle" — voir
+        // presentation/utilities/marketplace/MarketplaceFragment. ic_storefront_24 déjà utilisée
+        // par l'état vide de cet écran (voir fragment_marketplace.xml) : même icône, cohérente
+        // partout où cette fonctionnalité apparaît.
+        UtilityItem(
+            iconRes = R.drawable.ic_storefront_24,
+            titleRes = R.string.utility_marketplace_title,
+            destinationId = R.id.marketplaceFragment
         )
     )
 }

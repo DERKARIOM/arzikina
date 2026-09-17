@@ -546,4 +546,33 @@
         android:label="@string/update_security_question_title"
         tools:layout="@layout/fragment_security_question" />
 
+    <!--
+        "Marketplace personnelle" (voir presentation/utilities/marketplace/MarketplaceFragment,
+        cahier des charges du même nom), même principe que loansFragment/receiptsFragment
+        ci-dessus. PAS encore d'entrée dans UtilityCatalog (étape "Navigation" à venir) : ces deux
+        destinations existent pour permettre la navigation INTERNE entre elles (liste <-> formulaire),
+        l'écran reste inatteignable depuis le reste de l'app jusqu'à cette étape suivante.
+    -->
+    <fragment
+        android:id="@+id/marketplaceFragment"
+        android:name="com.arzikina.ne.presentation.utilities.marketplace.MarketplaceFragment"
+        android:label="@string/utility_marketplace_title"
+        tools:layout="@layout/fragment_marketplace" />
+
+    <!--
+        Création/édition d'un modèle (voir presentation/utilities/marketplace/MarketplaceFormFragment).
+        templateId = 0L (défaut) : nouveau modèle — même convention que recurringTransactionFormFragment
+        ci-dessus.
+    -->
+    <fragment
+        android:id="@+id/marketplaceTemplateFormFragment"
+        android:name="com.arzikina.ne.presentation.utilities.marketplace.MarketplaceFormFragment"
+        android:label="@string/marketplace_form_title_add"
+        tools:layout="@layout/fragment_marketplace_form">
+        <argument
+            android:name="templateId"
+            android:defaultValue="0L"
+            app:argType="long" />
+    </fragment>
+
 </navigation>

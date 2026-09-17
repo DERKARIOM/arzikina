@@ -27,6 +27,15 @@ package com.arzikina.ne.domain.model
  * conflit de signature. Un champ `customIcon` optionnel pourra être ajouté plus tard par une
  * migration additive si le besoin se confirme, sans casser ce modèle.
  * @param isFavorite affiché en tête de liste (cahier des charges section 7, "Mes favoris").
+ * @param defaultHour heure par défaut (0-23) appliquée au moment de l'achat (voir
+ * `MarketplaceFragment.onBuyClicked`) : préremplit l'heure de la transaction créée à la place de
+ * l'heure actuelle, sur la date DU JOUR (jamais une date figée). `null` = pas d'heure par défaut,
+ * comportement inchangé (heure actuelle). Toujours `null` en même temps que [defaultMinute] — même
+ * convention deux-`Int` que [com.arzikina.ne.domain.model.RecurringTransaction.triggerHour], choisie
+ * plutôt qu'un `LocalTime`/`Instant` car aucun `TypeConverter` n'existe pour ces types dans ce
+ * projet (voir `Converters.kt`) ; ici nullable (contrairement à `RecurringTransaction`, où l'heure
+ * est obligatoire) car cette fonctionnalité est explicitement OPTIONNELLE.
+ * @param defaultMinute minute par défaut (0-59), voir [defaultHour].
  */
 data class TransactionTemplate(
     val id: Long = 0L,
@@ -38,5 +47,7 @@ data class TransactionTemplate(
     val description: String = "",
     val isFavorite: Boolean = false,
     val createdAt: Long,
-    val updatedAt: Long
+    val updatedAt: Long,
+    val defaultHour: Int? = null,
+    val defaultMinute: Int? = null
 )

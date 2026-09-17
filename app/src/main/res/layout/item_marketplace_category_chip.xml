@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Chip de filtre par catégorie (cahier des charges "Marketplace personnelle", section 8) — inflaté
+    dynamiquement par MarketplaceFragment.setUpCategoryChips (contrairement à periodChipGroup de
+    fragment_receipts.xml, qui a un nombre de chips FIXE connu à l'avance) : les catégories sont
+    propres à chaque utilisateur, leur nombre ne peut pas être connu au moment d'écrire ce layout.
+    Même style Widget.Material3.Chip.Filter que le reste de l'app.
+-->
+<com.google.android.material.chip.Chip xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/categoryChip"
+    style="@style/Widget.Material3.Chip.Filter"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:textColor="@color/white"
+    tools:text="Alimentation" />

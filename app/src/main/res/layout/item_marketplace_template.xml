@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    PostCard d'UN modèle de transaction (cahier des charges "Marketplace personnelle", section 2) —
+    même postcard sombre que item_loan.xml/item_account.xml (arzikina_postcart_background,
+    corner_radius_medium, elevation_raised) : reste cohérent avec le reste de l'app plutôt que
+    d'inventer un style "vitrine commerciale" (voir cahier des charges section 11, "éviter une
+    interface ressemblant à une marketplace commerciale").
+
+    Toutes les valeurs visibles ici sont des placeholders `tools:` : le remplissage réel est fait
+    par MarketplaceAdapter.TemplateViewHolder.bind (aucune donnée statique dans ce fichier).
+-->
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/templateCard"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginHorizontal="@dimen/spacing_m"
+    android:layout_marginTop="@dimen/spacing_m"
+    android:checkable="false"
+    android:clickable="false"
+    android:focusable="false"
+    app:cardBackgroundColor="@color/arzikina_postcart_background"
+    app:cardCornerRadius="@dimen/corner_radius_medium"
+    app:cardElevation="@dimen/elevation_raised">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="@dimen/spacing_m">
+
+        <ImageView
+            android:id="@+id/templateIcon"
+            android:layout_width="@dimen/icon_size_large"
+            android:layout_height="@dimen/icon_size_large"
+            android:background="@drawable/bg_icon_circle"
+            android:contentDescription="@null"
+            android:padding="@dimen/spacing_s"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:tint="@color/white"
+            tools:ignore="ImageContrastCheck"
+            tools:src="@drawable/ic_category_food_24" />
+
+        <!-- Petite étoile en surimpression, visible UNIQUEMENT si favori (voir
+             MarketplaceAdapter.bind) — pastille circulaire pour rester lisible sur n'importe
+             quelle couleur de fond d'icône. -->
+        <ImageView
+            android:id="@+id/favoriteIcon"
+            android:layout_width="18dp"
+            android:layout_height="18dp"
+            android:background="@drawable/bg_icon_circle"
+            android:backgroundTint="@color/arzikina_postcart_background"
+            android:contentDescription="@string/marketplace_favorite_badge_content_description"
+            android:padding="2dp"
+            android:src="@drawable/ic_star_24"
+            app:layout_constraintBottom_toBottomOf="@id/templateIcon"
+            app:layout_constraintEnd_toEndOf="@id/templateIcon"
+            app:tint="@color/warning_amber"
+            tools:visibility="visible" />
+
+        <ImageButton
+            android:id="@+id/menuButton"
+            android:layout_width="@dimen/icon_size_default"
+            android:layout_height="@dimen/icon_size_default"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/marketplace_item_menu_content_description"
+            android:src="@drawable/ic_more_horiz_24"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="@id/templateIcon"
+            app:tint="@android:color/white" />
+
+        <TextView
+            android:id="@+id/templateName"
+            style="@style/TextAppearance.Material3.TitleMedium"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/spacing_m"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textColor="@android:color/white"
+            android:textStyle="bold"
+            app:layout_constraintEnd_toStartOf="@id/menuButton"
+            app:layout_constraintStart_toEndOf="@id/templateIcon"
+            app:layout_constraintTop_toTopOf="@id/templateIcon"
+            tools:text="Déjeuner" />
+
+        <TextView
+            android:id="@+id/templateCategory"
+            style="@style/TextAppearance.Material3.BodySmall"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/spacing_m"
+            android:layout_marginTop="2dp"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textColor="@color/arzikina_on_balance_card_variant"
+            app:layout_constraintEnd_toStartOf="@id/menuButton"
+            app:layout_constraintStart_toEndOf="@id/templateIcon"
+            app:layout_constraintTop_toBottomOf="@id/templateName"
+            tools:text="Alimentation" />
+
+        <androidx.constraintlayout.widget.Barrier
+            android:id="@+id/headerBarrier"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:barrierDirection="bottom"
+            app:constraint_referenced_ids="templateIcon,templateCategory" />
+
+        <TextView
+            android:id="@+id/templateAmount"
+            style="@style/TextAppearance.Material3.TitleLarge"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/spacing_m"
+            android:textColor="@android:color/white"
+            android:textStyle="bold"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/headerBarrier"
+            tools:text="1 500 F CFA" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/buyButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/spacing_s"
+            app:cornerRadius="10dp"
+            android:text="@string/marketplace_buy_action"
+            android:textColor="@color/white"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/templateAmount" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</com.google.android.material.card.MaterialCardView>
