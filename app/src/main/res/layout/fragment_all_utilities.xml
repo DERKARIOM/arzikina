@@ -23,13 +23,15 @@
         app:titleTextColor="?attr/colorOnSurface" />
 
     <!--
-        Grille (pas une simple liste verticale) : même item que le bloc horizontal du Dashboard
-        (voir item_utility_tile.xml/UtilityTileAdapter, réutilisés à l'identique — seul le
-        LayoutManager change), plutôt qu'une liste de lignes façon item_more_menu.xml. Cohérent
-        avec l'esthétique "tuiles" du bloc Utilitaires, et s'agrandit naturellement (plus de
-        lignes) au fur et à mesure que de nouveaux utilitaires sont ajoutés à UtilityCatalog,
-        sans jamais changer cette structure — même principe que categoryGrid sur
-        fragment_transaction_form.xml (GridLayoutManager, spanCount fixe).
+        Grille (pas une simple liste verticale) : même UtilityTileAdapter que le bloc horizontal
+        du Dashboard, mais avec useCardStyle = true (voir AllUtilitiesFragment/UtilityTileAdapter)
+        — chaque tuile est posée dans une postcard moderne (item_utility_tile_card.xml), plutôt
+        que les tuiles compactes du Dashboard (item_utility_tile.xml) ou une liste de lignes façon
+        item_more_menu.xml. Cohérent avec l'esthétique "postcard" du reste de l'app (voir
+        item_loan.xml/item_account.xml), et s'agrandit naturellement (plus de lignes) au fur et à
+        mesure que de nouveaux utilitaires sont ajoutés à UtilityCatalog, sans jamais changer
+        cette structure — même principe que categoryGrid sur fragment_transaction_form.xml
+        (GridLayoutManager, spanCount fixe).
     -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/allUtilitiesList"
@@ -44,6 +46,6 @@
         app:layout_constraintTop_toBottomOf="@id/toolbar"
         app:spanCount="4"
         tools:itemCount="8"
-        tools:listitem="@layout/item_utility_tile" />
+        tools:listitem="@layout/item_utility_tile_card" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

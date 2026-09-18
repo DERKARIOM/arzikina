@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Variante "postcard moderne" de item_utility_tile.xml — réservée à l'écran "Tous les
+    utilitaires" (voir AllUtilitiesFragment, qui construit UtilityTileAdapter avec
+    useCardStyle = true). Même contenu, mêmes ID (@+id/utilityIcon / utilityBadge / utilityTitle,
+    voir UtilityTileAdapter.ViewHolder qui les lit indifféremment de la mise en page choisie),
+    mais posé dans une MaterialCardView — sur le modèle EXACT de item_loan.xml/item_account.xml/
+    item_marketplace_template.xml (arzikina_postcart_background, corner_radius_medium,
+    elevation_raised, rippleColor blanc) : cohérent avec le reste de l'app plutôt qu'une nouvelle
+    convention de carte.
+
+    Le bloc Utilitaires du Dashboard continue d'utiliser item_utility_tile.xml (tuiles compactes,
+    sans carte, dans un RecyclerView horizontal) — demande explicitement limitée à l'écran "Tous
+    les utilitaires", voir la doc de tête de UtilityTileAdapter.
+-->
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="@dimen/utility_tile_width"
+    android:layout_height="wrap_content"
+    android:layout_margin="@dimen/spacing_xs"
+    android:checkable="false"
+    android:clickable="true"
+    android:focusable="true"
+    app:cardBackgroundColor="@color/arzikina_postcart_background"
+    app:cardCornerRadius="@dimen/corner_radius_medium"
+    app:cardElevation="@dimen/elevation_raised"
+    app:rippleColor="@android:color/white">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:paddingHorizontal="@dimen/spacing_s"
+        android:paddingVertical="@dimen/spacing_m">
+
+        <FrameLayout
+            android:layout_width="50dp"
+            android:layout_height="50dp">
+
+            <ImageView
+                android:id="@+id/utilityIcon"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
+                android:contentDescription="@null"
+                android:padding="@dimen/spacing_s"
+                tools:ignore="ContentDescription"
+                tools:src="@drawable/ic_label_24" />
+
+            <TextView
+                android:id="@+id/utilityBadge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="top|end"
+                android:layout_marginTop="-2dp"
+                android:layout_marginEnd="-2dp"
+                android:background="@drawable/bg_badge_circle"
+                android:gravity="center"
+                android:includeFontPadding="false"
+                android:minWidth="18dp"
+                android:minHeight="18dp"
+                android:paddingHorizontal="4dp"
+                android:textColor="@android:color/white"
+                android:textSize="10sp"
+                android:textStyle="bold"
+                android:visibility="gone"
+                tools:text="3"
+                tools:visibility="visible" />
+
+        </FrameLayout>
+
+        <TextView
+            android:id="@+id/utilityTitle"
+            style="@style/TextAppearance.Material3.LabelSmall"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/spacing_xs"
+            android:ellipsize="end"
+            android:gravity="center"
+            android:maxLines="2"
+            android:textColor="?attr/colorOnSurface"
+            android:textSize="10dp"
+            tools:text="Catégories" />
+
+    </LinearLayout>
+
+</com.google.android.material.card.MaterialCardView>

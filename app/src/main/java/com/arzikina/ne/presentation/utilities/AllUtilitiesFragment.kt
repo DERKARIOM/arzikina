@@ -28,7 +28,10 @@ class AllUtilitiesFragment : Fragment(R.layout.fragment_all_utilities) {
         binding = viewBinding
         viewBinding.toolbar.setNavigationOnClickListener { findNavController().navigateUp() }
 
-        viewBinding.allUtilitiesList.adapter = UtilityTileAdapter(UtilityCatalog.all()) { item ->
+        // useCardStyle = true : postcard moderne par tuile (voir la doc de tête de
+        // UtilityTileAdapter) — demande explicitement limitée à cet écran, le Dashboard garde ses
+        // tuiles compactes.
+        viewBinding.allUtilitiesList.adapter = UtilityTileAdapter(UtilityCatalog.all(), useCardStyle = true) { item ->
             findNavController().navigate(item.destinationId, null, NavAnimations.push)
         }
     }
