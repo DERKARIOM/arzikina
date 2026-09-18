@@ -92,7 +92,7 @@ class ProfilePhotoApi @Inject constructor(
             override fun onResponse(call: Call, response: Response) {
                 response.use {
                     if (!it.isSuccessful) {
-                        continuation.resumeWithException(HttpFailureException(it.code, it.message))
+                        continuation.resumeWithException(HttpFailureException(it.code, httpFailureMessage(it.code, it.message)))
                         return
                     }
                     continuation.resume(it.body?.bytes() ?: ByteArray(0))
@@ -114,7 +114,7 @@ class ProfilePhotoApi @Inject constructor(
             override fun onResponse(call: Call, response: Response) {
                 response.use {
                     if (!it.isSuccessful) {
-                        continuation.resumeWithException(HttpFailureException(it.code, it.body?.string()))
+                        continuation.resumeWithException(HttpFailureException(it.code, httpFailureMessage(it.code, it.body?.string())))
                         return
                     }
                     continuation.resume(it.body?.string().orEmpty())
@@ -125,5 +125,16 @@ class ProfilePhotoApi @Inject constructor(
 
     private companion object {
         val JPEG_MEDIA_TYPE = "image/jpeg".toMediaType()
+
+        /** Le code HTTP est TOUJOURS présent dans le message, même quand [detail] (raison HTTP ou
+         *  corps de réponse) est vide — bug remonté en prod : un `downloadPhoto` en échec loggait
+         *  "HttpFailureException: " sans aucune information exploitable, certains serveurs renvoyant
+         *  une raison HTTP vide. [HttpFailureException.code] reste accessible séparément pour un
+         *  appelant qui voudrait distinguer par code (voir SyncAuthRepositoryImpl.runCatchingAuthCall
+         *  pour ce pattern ailleurs dans le projet) — ceci ne fait qu'enrichir le message texte. */
+        fun httpFailureMessage(code: Int, detail: String?): String {
+            val trimmed = detail?.trim()
+            return if (trimmed.isNullOrEmpty()) "HTTP $code" else "HTTP $code — $trimmed"
+        }
     }
 }

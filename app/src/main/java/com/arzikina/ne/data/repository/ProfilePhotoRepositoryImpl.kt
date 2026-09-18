@@ -5,7 +5,9 @@ import com.arzikina.ne.data.local.dao.UserDao
 import com.arzikina.ne.data.local.dao.UserProfilePhotoDao
 import com.arzikina.ne.data.local.entity.UserProfilePhotoEntity
 import com.arzikina.ne.data.profile.ProfilePhotoFileStorage
+import com.arzikina.ne.data.remote.api.HttpFailureException
 import com.arzikina.ne.data.remote.api.ProfilePhotoApi
+import com.arzikina.ne.data.remote.dto.ProfilePhotoSyncResponseDto
 import com.arzikina.ne.di.IoDispatcher
 import com.arzikina.ne.domain.repository.ProfilePhotoRepository
 import com.arzikina.ne.domain.repository.SessionManager
@@ -108,9 +110,14 @@ class ProfilePhotoRepositoryImpl @Inject constructor(
 
     /**
      * Voir la KDoc de tête de [ProfilePhotoRepository.syncWithServer]. Exceptions volontairement
-     * NON interceptées ici : elles remontent jusqu'à [com.arzikina.ne.work.SyncWorker], qui les
-     * traite déjà comme un échec transitoire (`Result.retry()`) — dupliquer cette logique ici
-     * introduirait un second mécanisme de retry, contrairement aux instructions du projet.
+     * NON interceptées ici (sauf un cas précis, voir ci-dessous) : elles remontent jusqu'à
+     * [com.arzikina.ne.work.SyncWorker], qui les traite déjà comme un échec transitoire
+     * (`Result.retry()`) — dupliquer cette logique ici introduirait un second mécanisme de retry,
+     * contrairement aux instructions du projet.
+     *
+     * Seule exception : [pullRemoteChangeIfNewer] intercepte elle-même un 404 sur le téléchargement
+     * de la photo (fichier serveur introuvable — PAS transitoire, jamais résolu par un retry) plutôt
+     * que de le laisser remonter jusqu'ici.
      */
     override suspend fun syncWithServer() = withContext(ioDispatcher) {
         val userId = sessionManager.getCurrentUserIdOnce() ?: return@withContext
@@ -161,20 +168,11 @@ class ProfilePhotoRepositoryImpl @Inject constructor(
 
         val remotePhotoPath = response.photoPath
         if (remotePhotoPath == null) {
-            local?.localPath?.let { fileStorage.deleteFile(it) }
-            userProfilePhotoDao.upsert(
-                UserProfilePhotoEntity(
-                    id = local?.id ?: 0L,
-                    userId = userId,
-                    localPath = null,
-                    serverUrl = null,
-                    version = response.version,
-                    pendingUpload = false,
-                    updatedAt = response.updatedAt
-                )
-            )
-            userDao.updateProfilePhotoUri(userId, null)
-        } else {
+            clearLocalPhoto(userId, local, response)
+            return
+        }
+
+        try {
             val bytes = profilePhotoApi.downloadPhoto(remotePhotoPath)
             val newLocalPath = fileStorage.writeOptimizedImage(bytes)
             val oldLocalPath = local?.localPath
@@ -193,6 +191,40 @@ class ProfilePhotoRepositoryImpl @Inject constructor(
             userDao.updateProfilePhotoUri(userId, fileStorage.contentUriFor(newLocalPath).toString())
 
             oldLocalPath?.takeIf { it != newLocalPath }?.let { fileStorage.deleteFile(it) }
+        } catch (e: HttpFailureException) {
+            // 404 : le fichier référencé par `photo_path` n'existe plus côté serveur (supprimé
+            // hors du flux normal, chemin corrompu...) — PAS une erreur transitoire. La laisser
+            // remonter ferait boucler SyncWorker indéfiniment en `Result.retry()` (voir sa KDoc)
+            // sans jamais réussir. Traité comme `remotePhotoPath == null` ci-dessus : avatar par
+            // défaut affiché localement plutôt qu'une boucle de retry sur une ressource qui ne
+            // reviendra pas d'elle-même. Toute autre erreur (réseau, 5xx...) continue de remonter
+            // normalement : c'est bien transitoire, le retry reste la bonne réponse.
+            if (e.code != 404) throw e
+            clearLocalPhoto(userId, local, response)
         }
+    }
+
+    /** État local "pas de photo" — factorisé entre `remotePhotoPath == null` (suppression confirmée
+     *  par le serveur) et un 404 au téléchargement (fichier serveur introuvable, voir
+     *  [pullRemoteChangeIfNewer]) : même résultat dans les deux cas, jamais de photo orpheline
+     *  affichée localement ni de fichier local qui ne correspond plus à rien côté serveur. */
+    private suspend fun clearLocalPhoto(
+        userId: Long,
+        local: UserProfilePhotoEntity?,
+        response: ProfilePhotoSyncResponseDto
+    ) {
+        local?.localPath?.let { fileStorage.deleteFile(it) }
+        userProfilePhotoDao.upsert(
+            UserProfilePhotoEntity(
+                id = local?.id ?: 0L,
+                userId = userId,
+                localPath = null,
+                serverUrl = null,
+                version = response.version,
+                pendingUpload = false,
+                updatedAt = response.updatedAt
+            )
+        )
+        userDao.updateProfilePhotoUri(userId, null)
     }
 }

@@ -13,6 +13,7 @@ import com.arzikina.ne.data.local.dao.RecurringTransactionOccurrenceDao
 import com.arzikina.ne.data.local.dao.SavingsGoalDao
 import com.arzikina.ne.data.local.dao.SyncQueueDao
 import com.arzikina.ne.data.local.dao.TransactionDao
+import com.arzikina.ne.data.local.dao.TransactionTemplateDao
 import com.arzikina.ne.data.local.dao.UserPreferencesDao
 import com.arzikina.ne.data.local.entity.AccountEntity
 import com.arzikina.ne.data.local.entity.BudgetEntity
@@ -27,6 +28,7 @@ import com.arzikina.ne.data.local.entity.RecurringTransactionOccurrenceEntity
 import com.arzikina.ne.data.local.entity.SavingsGoalEntity
 import com.arzikina.ne.data.local.entity.SyncQueueEntity
 import com.arzikina.ne.data.local.entity.TransactionEntity
+import com.arzikina.ne.data.local.entity.TransactionTemplateEntity
 import com.arzikina.ne.data.local.entity.UserPreferencesEntity
 import com.arzikina.ne.data.remote.api.SyncApi
 import com.arzikina.ne.data.remote.dto.AccountServerStateDto
@@ -52,6 +54,8 @@ import com.arzikina.ne.data.remote.dto.SavingsGoalSyncPayload
 import com.arzikina.ne.data.remote.dto.SyncPushOperationDto
 import com.arzikina.ne.data.remote.dto.SyncPushRequestDto
 import com.arzikina.ne.data.remote.dto.TransactionServerStateDto
+import com.arzikina.ne.data.remote.dto.TransactionTemplateServerStateDto
+import com.arzikina.ne.data.remote.dto.TransactionTemplateSyncPayload
 import com.arzikina.ne.data.remote.dto.UserPreferencesServerStateDto
 import com.arzikina.ne.data.remote.dto.UserPreferencesSyncPayload
 import com.arzikina.ne.domain.model.AccountIcon
@@ -127,6 +131,7 @@ class SyncEngineImpl @Inject constructor(
     private val occurrenceDao: RecurringTransactionOccurrenceDao,
     private val financialPlanItemDao: FinancialPlanItemDao,
     private val userPreferencesDao: UserPreferencesDao,
+    private val transactionTemplateDao: TransactionTemplateDao,
     private val syncApi: SyncApi,
     private val syncCursorStore: SyncCursorStore,
     private val syncQueueEnqueuer: SyncQueueEnqueuer,
@@ -352,6 +357,8 @@ class SyncEngineImpl @Inject constructor(
                 applyFinancialPlanItemServerState(json.decodeFromJsonElement(FinancialPlanItemServerStateDto.serializer(), element), allowCreate)
             "user_preferences" ->
                 applyUserPreferencesServerState(json.decodeFromJsonElement(UserPreferencesServerStateDto.serializer(), element), allowCreate)
+            "transaction_templates" ->
+                applyTransactionTemplateServerState(json.decodeFromJsonElement(TransactionTemplateServerStateDto.serializer(), element), allowCreate)
         }
     }
 
@@ -474,6 +481,11 @@ class SyncEngineImpl @Inject constructor(
         // dernière nullable, voir la KDoc de tête de `FinancialPlanItemSyncPayload.kt`) — même
         // raisonnement que `recurring_transaction_occurrences` ci-dessus.
         enqueueUnsyncedFinancialPlanItems(userId)
+        // ENCORE APRÈS `accounts`/`categories` (référencées directement, voir la KDoc de tête de
+        // `TransactionTemplateSyncPayload.kt`) — aucune autre entité de ce registre ne référence à
+        // son tour un modèle par son `syncId`, sa place n'a donc pas d'importance vis-à-vis de ce
+        // qui suit (contrairement à `recurring_transactions`/`financial_plan_items` ci-dessus).
+        enqueueUnsyncedTransactionTemplates(userId)
         // AUCUNE contrainte d'ordre (voir la KDoc de tête de [applyUserPreferencesServerState]) :
         // seule entité de ce registre sans la moindre référence croisée, sa place ici est arbitraire.
         enqueueUnsyncedUserPreferences(userId)
@@ -1242,6 +1254,96 @@ class SyncEngineImpl @Inject constructor(
     }
 
     /**
+     * Voir [applyRecurringTransactionServerState] pour le principe général (référence NON nullable
+     * `accountSyncId` + référence NON nullable `categorySyncId`, contrairement à `RecurringTransaction`
+     * où cette dernière est nullable — voir la KDoc de tête de `TransactionTemplateSyncPayload.kt`,
+     * "TOUJOURS renseigné").
+     *
+     * [state.accountSyncId]/[state.categorySyncId] introuvables localement : ligne ignorée
+     * silencieusement (`?: return`), comme n'importe quelle entrée malformée — ne devrait
+     * quasiment jamais arriver grâce à l'ordre de [SUPPORTED_ENTITY_TYPES] (`transaction_templates`
+     * toujours APRÈS `accounts`/`categories`).
+     *
+     * [state.isFavorite] : `Int` (`0`/`1`), pas `Boolean` — voir la KDoc de tête de
+     * [TransactionTemplateServerStateDto] (même raisonnement que
+     * `RecurringTransactionServerStateDto.isActive`).
+     */
+    private suspend fun applyTransactionTemplateServerState(state: TransactionTemplateServerStateDto, allowCreate: Boolean) {
+        val local = transactionTemplateDao.getBySyncId(state.id)
+        if (local == null && !allowCreate) return
+        val userId = local?.userId ?: sessionManager.getCurrentUserIdOnce() ?: return
+        val accountId = accountDao.getBySyncId(state.accountSyncId)?.id ?: return
+        val categoryId = categoryDao.getBySyncId(state.categorySyncId)?.id ?: return
+
+        transactionTemplateDao.upsert(
+            TransactionTemplateEntity(
+                id = local?.id ?: 0L,
+                userId = userId,
+                name = state.name,
+                type = runCatching { TransactionType.valueOf(state.type) }.getOrDefault(local?.type ?: TransactionType.EXPENSE),
+                amount = state.amount,
+                categoryId = categoryId,
+                accountId = accountId,
+                description = state.description,
+                isFavorite = state.isFavorite != 0,
+                defaultHour = state.defaultHour,
+                defaultMinute = state.defaultMinute,
+                createdAt = state.createdAt,
+                updatedAt = state.updatedAt,
+                syncId = state.id,
+                deletedAt = state.deletedAt,
+                version = state.version
+            )
+        )
+    }
+
+    /**
+     * Voir [enqueueUnsyncedRecurringTransactions] pour le principe général — même raisonnement pour
+     * la résolution `accountId`/`categoryId` → `accountSyncId`/`categorySyncId` (filet de sécurité
+     * inclus), DUPLIQUÉE ici plutôt que déléguée à une classe partagée (un seul appelant : voir la
+     * KDoc de tête de `TransactionTemplateSyncPayload.kt`). `categoryId` JAMAIS nul pour un modèle
+     * (contrairement à `recurring_transactions.categoryId`) : ligne ignorée silencieusement
+     * (`?: return@forEach`) si le COMPTE OU la CATÉGORIE est introuvable, les deux obligatoires ici.
+     */
+    private suspend fun enqueueUnsyncedTransactionTemplates(userId: Long) {
+        transactionTemplateDao.getUnsyncedForUser(userId).forEach { template ->
+            val entity = template.copy(syncId = UUID.randomUUID().toString())
+            transactionTemplateDao.upsert(entity)
+
+            val account = accountDao.getById(entity.accountId, userId) ?: return@forEach
+            val accountSyncId = account.syncId ?: UUID.randomUUID().toString().also { newSyncId ->
+                accountDao.upsert(account.copy(syncId = newSyncId))
+            }
+            val category = categoryDao.getById(entity.categoryId, userId) ?: return@forEach
+            val categorySyncId = category.syncId ?: UUID.randomUUID().toString().also { newSyncId ->
+                categoryDao.upsert(category.copy(syncId = newSyncId))
+            }
+
+            val payload = TransactionTemplateSyncPayload(
+                id = requireNotNull(entity.syncId),
+                baseVersion = null,
+                name = entity.name,
+                type = entity.type.name,
+                amount = entity.amount,
+                categorySyncId = categorySyncId,
+                accountSyncId = accountSyncId,
+                description = entity.description,
+                isFavorite = entity.isFavorite,
+                defaultHour = entity.defaultHour,
+                defaultMinute = entity.defaultMinute,
+                createdAt = entity.createdAt,
+                updatedAt = entity.updatedAt
+            )
+            syncQueueEnqueuer.enqueue(
+                entityType = "transaction_templates",
+                entitySyncId = payload.id,
+                operation = SyncOperation.CREATE,
+                payloadJson = json.encodeToString(TransactionTemplateSyncPayload.serializer(), payload)
+            )
+        }
+    }
+
+    /**
      * SEULE entité de tout ce moteur SANS AUCUNE référence croisée à résoudre (voir la KDoc de tête
      * de `UserPreferencesSyncPayload.kt`) — aucune contrainte d'ordre avec les autres entités dans
      * [SUPPORTED_ENTITY_TYPES]. `state.id` (`syncId`) résout directement la ligne locale, comme
@@ -1349,11 +1451,17 @@ class SyncEngineImpl @Inject constructor(
          *  ces entités référencent d'autres entités synchronisées par leur `syncId`, qui doivent
          *  déjà être connues (pull) ou déjà persistées (push/backfill) au moment où elles sont
          *  traitées à leur tour. `setOf` (donc `LinkedHashSet`) préserve l'ordre d'insertion —
-         *  [pullRemoteChanges] itère dans CET ordre. */
+         *  [pullRemoteChanges] itère dans CET ordre.
+         *
+         *  `transaction_templates` (Marketplace personnelle) : DOIT rester APRÈS `accounts`/
+         *  `categories` (les deux référencées, voir [applyTransactionTemplateServerState]) — sans
+         *  contrainte vis-à-vis du reste, aucune autre entité de ce registre ne référence à son tour
+         *  un modèle par son `syncId`. */
         val SUPPORTED_ENTITY_TYPES = setOf(
             "categories", "budgets", "savings_goals", "financial_plans", "persons", "accounts",
             "transactions", "loans", "loan_payments", "recurring_transactions",
-            "recurring_transaction_occurrences", "financial_plan_items", "user_preferences"
+            "recurring_transaction_occurrences", "financial_plan_items", "user_preferences",
+            "transaction_templates"
         )
         const val MAX_ERROR_MESSAGE_LENGTH = 200
 

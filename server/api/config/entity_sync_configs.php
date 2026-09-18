@@ -270,4 +270,31 @@ const ENTITY_CONFIGS = [
             ['db' => 'currency_code', 'payload' => 'currencyCode', 'type' => 'string', 'nullable' => false],
         ],
     ],
+    // "Marketplace personnelle" (modèles de transaction réutilisables) : référence DEUX autres
+    // entités synchronisées (compte, catégorie — cette dernière TOUJOURS renseignée, contrairement à
+    // `recurring_transactions.category_id`, voir la doc de tête de `TransactionTemplate.kt` côté
+    // Android, "jamais de virement pour un modèle") — même raisonnement que `recurring_transactions`
+    // ci-dessus. Contrairement à cette dernière (et à `budgets`/`loans`), le schéma initial de
+    // `transaction_templates` (voir database/migrations/005_add_transaction_templates.sql) n'a
+    // JAMAIS eu de `FOREIGN KEY` sur `account_id`/`category_id` : leçon déjà tirée des entités
+    // précédentes, appliquée directement plutôt que corrigée après coup — rien à supprimer avant
+    // déploiement ici.
+    'transaction_templates' => [
+        'table' => 'transaction_templates',
+        'columns' => [
+            ['db' => 'name', 'payload' => 'name', 'type' => 'string', 'nullable' => false],
+            ['db' => 'type', 'payload' => 'type', 'type' => 'string', 'nullable' => false],
+            ['db' => 'amount', 'payload' => 'amount', 'type' => 'int', 'nullable' => false],
+            ['db' => 'category_id', 'payload' => 'categorySyncId', 'type' => 'string', 'nullable' => false],
+            ['db' => 'account_id', 'payload' => 'accountSyncId', 'type' => 'string', 'nullable' => false],
+            ['db' => 'description', 'payload' => 'description', 'type' => 'string', 'nullable' => false],
+            // Booléen Kotlin → JSON `true`/`false` → `(int) true|false` = `1`/`0` côté PHP, même
+            // raisonnement que `accounts.is_excluded_from_statistics`/`recurring_transactions.is_active`.
+            ['db' => 'is_favorite', 'payload' => 'isFavorite', 'type' => 'int', 'nullable' => false],
+            // "Heure par défaut" (extension optionnelle) : `NULL` = pas d'heure par défaut, même
+            // convention que côté Android (`TransactionTemplateEntity.defaultHour`/`defaultMinute`).
+            ['db' => 'default_hour', 'payload' => 'defaultHour', 'type' => 'int', 'nullable' => true],
+            ['db' => 'default_minute', 'payload' => 'defaultMinute', 'type' => 'int', 'nullable' => true],
+        ],
+    ],
 ];
