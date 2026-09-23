@@ -16,4 +16,10 @@
     <files-path
         name="profile_photos"
         path="profile_photos/" />
+    <!-- Photo de profil prise avec l'appareil photo, AVANT recadrage (voir
+         presentation/profile/CameraCaptureFile) : fichier temporaire du cache, écrasé à chaque
+         prise de vue. Seul ce sous-dossier du cache est exposé. -->
+    <cache-path
+        name="camera_captures"
+        path="camera_captures/" />
 </paths>

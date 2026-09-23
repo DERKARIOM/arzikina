@@ -1,12 +1,16 @@
 package com.naniger.arzikina.presentation.profile
 
 import android.Manifest
+import android.content.ActivityNotFoundException
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
+import android.net.Uri
 import android.os.Bundle
 import android.view.View
+import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
+import androidx.core.os.BundleCompat
 import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
@@ -66,17 +70,48 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
     }
 
     /**
+     * URI du fichier dans lequel l'appareil photo écrit (voir [CameraCaptureFile]). Conservée dans
+     * [onSaveInstanceState] : Android peut détruire ce processus pendant que l'appareil photo est au
+     * premier plan, et le résultat de [takePhoto] ne contient pas l'URI.
+     */
+    private var pendingCaptureUri: Uri? = null
+
+    /** "Choisir dans la galerie" : sélecteur de photos du système (Photo Picker). Aucune
+     *  permission nécessaire, sur toutes les versions d'Android supportées. `null` = annulé. */
+    private val pickPhoto = registerForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+        uri?.let(::launchCrop)
+    }
+
+    /** "Prendre une photo" : application appareil photo du téléphone, qui écrit dans
+     *  [pendingCaptureUri]. `false` = prise de vue annulée. */
+    private val takePhoto = registerForActivityResult(ActivityResultContracts.TakePicture()) { saved ->
+        val captureUri = pendingCaptureUri
+        pendingCaptureUri = null
+        if (saved && captureUri != null) launchCrop(captureUri)
+    }
+
+    /**
      * Demandée UNIQUEMENT quand l'utilisateur choisit "Prendre une photo" (jamais au démarrage de
      * l'app ni à l'ouverture de cet écran) — voir cahier des charges "Gérer correctement les
      * permissions caméra". "Choisir dans la galerie" ne nécessite AUCUNE permission (voir
-     * [launchCrop], sélecteur système "Photo Picker").
+     * [pickPhoto], sélecteur système "Photo Picker").
      */
     private val requestCameraPermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         if (granted) {
-            launchCrop(includeCamera = true, includeGallery = false)
+            launchCamera()
         } else {
             binding?.let { Snackbar.make(it.root, R.string.profile_photo_camera_permission_denied, Snackbar.LENGTH_LONG).show() }
         }
+    }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        pendingCaptureUri = savedInstanceState?.let { BundleCompat.getParcelable(it, STATE_PENDING_CAPTURE_URI, Uri::class.java) }
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        pendingCaptureUri?.let { outState.putParcelable(STATE_PENDING_CAPTURE_URI, it) }
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -136,7 +171,8 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
     private fun onChangePhotoActionSelected(action: String?) {
         when (action) {
             ChangeProfilePhotoBottomSheet.ACTION_TAKE_PHOTO -> onTakePhotoSelected()
-            ChangeProfilePhotoBottomSheet.ACTION_CHOOSE_FROM_GALLERY -> launchCrop(includeCamera = false, includeGallery = true)
+            ChangeProfilePhotoBottomSheet.ACTION_CHOOSE_FROM_GALLERY ->
+                pickPhoto.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
             ChangeProfilePhotoBottomSheet.ACTION_DELETE_PHOTO -> confirmDeletePhoto()
         }
     }
@@ -147,17 +183,28 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
             Manifest.permission.CAMERA
         ) == PackageManager.PERMISSION_GRANTED
         if (granted) {
-            launchCrop(includeCamera = true, includeGallery = false)
+            launchCamera()
         } else {
             requestCameraPermission.launch(Manifest.permission.CAMERA)
         }
     }
 
+    /** Aucune application appareil photo (rare : profil professionnel restreint, émulateur…) :
+     *  message d'erreur plutôt qu'un plantage. */
+    private fun launchCamera() {
+        val captureUri = CameraCaptureFile.createUri(requireContext())
+        pendingCaptureUri = captureUri
+        try {
+            takePhoto.launch(captureUri)
+        } catch (e: ActivityNotFoundException) {
+            pendingCaptureUri = null
+            binding?.let { Snackbar.make(it.root, R.string.profile_photo_error_message, Snackbar.LENGTH_LONG).show() }
+        }
+    }
+
     /**
-     * [includeCamera]/[includeGallery] sont TOUJOURS mutuellement exclusifs ici (jamais les deux à
-     * `true` en même temps) : l'utilisateur a déjà choisi sa source dans
-     * [ChangeProfilePhotoBottomSheet], la bibliothèque de recadrage n'a donc jamais besoin d'afficher
-     * son propre sélecteur "Caméra/Galerie" interne.
+     * [source] : photo déjà choisie par l'utilisateur ([pickPhoto]) ou déjà prise ([takePhoto]). La
+     * bibliothèque de recadrage ne choisit plus elle-même la source : elle ne fait que recadrer.
      *
      * Options choisies pour une photo de profil (cahier des charges "Recadrage de la photo",
      * "Optimisation de l'image") :
@@ -176,13 +223,11 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
      *   des charges (déplacer, zoomer, aperçu en temps réel, Annuler/Valider) — pas de fonctions
      *   supplémentaires non demandées.
      */
-    private fun launchCrop(includeCamera: Boolean, includeGallery: Boolean) {
+    private fun launchCrop(source: Uri) {
         cropImage.launch(
             CropImageContractOptions(
-                uri = null,
+                uri = source,
                 cropImageOptions = CropImageOptions(
-                    imageSourceIncludeCamera = includeCamera,
-                    imageSourceIncludeGallery = includeGallery,
                     cropShape = CropImageView.CropShape.RECTANGLE,
                     fixAspectRatio = true,
                     aspectRatioX = 1,
@@ -345,5 +390,7 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
          *  synchronisation (cahier des charges "Optimisation de l'image"). */
         const val PROFILE_PHOTO_TARGET_SIZE_PX = 512
         const val PROFILE_PHOTO_JPEG_QUALITY = 85
+
+        const val STATE_PENDING_CAPTURE_URI = "pending_capture_uri"
     }
 }
