@@ -70,7 +70,7 @@ object AccountPickerDialog {
             val context = binding.root.context
             binding.accountIcon.setImageResource(AccountIconMapper.iconFor(account.icon))
             binding.accountIcon.backgroundTintList = ColorStateList.valueOf(account.colorArgb.toInt())
-            binding.accountName.text = account.name
+            binding.accountName.text = account.displayName(context)
             binding.accountBalance.text = context.getString(
                 R.string.transaction_form_account_balance,
                 Money.format(CurrencyAmount(account.currencyCode, currentBalance))

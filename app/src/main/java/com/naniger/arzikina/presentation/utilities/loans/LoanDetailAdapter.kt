@@ -1,5 +1,6 @@
 package com.naniger.arzikina.presentation.utilities.loans
 
+import android.content.Context
 import android.content.res.ColorStateList
 import android.view.LayoutInflater
 import android.view.View
@@ -14,10 +15,9 @@ import com.naniger.arzikina.databinding.ItemLoanPaymentBinding
 import com.naniger.arzikina.domain.model.CurrencyAmount
 import com.naniger.arzikina.domain.model.LoanPayment
 import com.naniger.arzikina.domain.model.LoanType
+import com.naniger.arzikina.util.AppDateFormats
 import com.naniger.arzikina.util.DatePeriods
 import com.naniger.arzikina.util.Money
-import java.time.format.DateTimeFormatter
-import java.util.Locale
 
 /**
  * Liste de l'écran "Détail du prêt/emprunt" : une ligne [LoanDetailListRow.Header] (résumé +
@@ -93,8 +93,8 @@ class LoanDetailAdapter(
             binding.progressBar.progress = computeLoanProgressPercent(loan.amountRepaid, loan.amount)
             binding.progressPercent.text = context.getString(R.string.loans_progress_percent, binding.progressBar.progress)
 
-            binding.createdValue.text = loan.startDate.toFormattedDate()
-            binding.dueValue.text = loan.dueDate.toFormattedDate()
+            binding.createdValue.text = loan.startDate.toFormattedDate(binding.root.context)
+            binding.dueValue.text = loan.dueDate.toFormattedDate(binding.root.context)
 
             val description = loan.description.trim()
             binding.descriptionContainer.visibility = if (description.isEmpty()) View.GONE else View.VISIBLE
@@ -114,7 +114,7 @@ class LoanDetailAdapter(
             val context = binding.root.context
             val payment = row.payment
 
-            binding.paymentDate.text = payment.date.toFormattedDate()
+            binding.paymentDate.text = payment.date.toFormattedDate(binding.root.context)
             binding.paymentAccountName.text = row.accountName
 
             val note = payment.note.trim()
@@ -141,8 +141,8 @@ class LoanDetailAdapter(
         /** [DatePeriods.toLocalDate] : même conversion que [com.naniger.arzikina.presentation.transactions.TransactionItemBinder],
          * mais avec l'année (contrairement au format court des transactions récentes) — un prêt/
          * emprunt s'étend souvent sur plusieurs mois, voire change d'année. */
-        private val dateFormatter = DateTimeFormatter.ofPattern("d MMMM yyyy", Locale.FRENCH)
-        private fun Long.toFormattedDate(): String = DatePeriods.toLocalDate(this).format(dateFormatter)
+        private fun Long.toFormattedDate(context: Context): String =
+            DatePeriods.toLocalDate(this).format(AppDateFormats.longDate(context))
 
         val DIFF_CALLBACK = object : DiffUtil.ItemCallback<LoanDetailListRow>() {
             override fun areItemsTheSame(oldItem: LoanDetailListRow, newItem: LoanDetailListRow): Boolean = when {

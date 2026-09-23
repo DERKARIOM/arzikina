@@ -1,8 +1,10 @@
 package com.naniger.arzikina.presentation.savings
 
+import androidx.annotation.StringRes
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.naniger.arzikina.R
 import com.naniger.arzikina.domain.model.SavingsGoal
 import com.naniger.arzikina.domain.repository.SavingsGoalRepository
 import com.naniger.arzikina.util.Constants
@@ -36,9 +38,9 @@ data class SavingsGoalFormState(
     val hasDeadline: Boolean = false,
     val deadlineMillis: Long = System.currentTimeMillis(),
     val createdAt: Long? = null,
-    val nameError: String? = null,
-    val targetError: String? = null,
-    val currentError: String? = null
+    @StringRes val nameError: Int? = null,
+    @StringRes val targetError: Int? = null,
+    @StringRes val currentError: Int? = null
 )
 
 sealed interface SavingsGoalFormEvent {
@@ -112,19 +114,19 @@ class SavingsGoalFormViewModel @Inject constructor(
         val state = _formState.value
         val trimmedName = state.name.trim()
         if (trimmedName.isEmpty()) {
-            _formState.update { it.copy(nameError = "Le nom est obligatoire") }
+            _formState.update { it.copy(nameError = R.string.error_name_required) }
             return
         }
 
         val targetMinor = Money.parseToMinorUnits(state.targetInput)
         if (targetMinor == null || targetMinor <= 0L) {
-            _formState.update { it.copy(targetError = "Montant cible invalide") }
+            _formState.update { it.copy(targetError = R.string.error_invalid_target_amount) }
             return
         }
 
         val currentMinor = Money.parseToMinorUnits(state.currentInput)
         if (currentMinor == null) {
-            _formState.update { it.copy(currentError = "Montant invalide") }
+            _formState.update { it.copy(currentError = R.string.error_invalid_amount) }
             return
         }
 

@@ -20,9 +20,11 @@ import com.naniger.arzikina.domain.repository.ReceiptRepository
 import com.naniger.arzikina.domain.repository.TransactionRepository
 import com.naniger.arzikina.util.AppResult
 import com.naniger.arzikina.util.ReceiptAmountParser
+import com.naniger.arzikina.util.ReceiptCounterparty
 import com.naniger.arzikina.util.ReceiptTransactionInfo
 import com.naniger.arzikina.util.ReceiptTransactionInfoParser
 import com.naniger.arzikina.util.ReceiptTransactionMatcher
+import com.naniger.arzikina.util.technicalMessage
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -71,7 +73,7 @@ data class TransactionPrefill(
     val amountMinor: Long?,
     val feeAmountMinor: Long?,
     val dateTimeMillis: Long?,
-    val description: String?,
+    val counterparty: ReceiptCounterparty?,
     val categoryId: Long?,
     val accountId: Long?,
     val type: TransactionType?,
@@ -121,7 +123,7 @@ class ReceiptDetailViewModel @Inject constructor(
     @IoDispatcher private val ioDispatcher: CoroutineDispatcher
 ) : ViewModel() {
 
-    val receiptId: Long = savedStateHandle.get<Long>(RECEIPT_ID_ARG) ?: 0L
+    val receiptId: Long = ReceiptDetailFragmentArgs.fromSavedStateHandle(savedStateHandle).receiptId
 
     private val _events = MutableSharedFlow<ReceiptDetailEvent>()
     val events: SharedFlow<ReceiptDetailEvent> = _events.asSharedFlow()
@@ -158,9 +160,9 @@ class ReceiptDetailViewModel @Inject constructor(
     val uiState: StateFlow<AppResult<Receipt>> = receiptRepository.observeReceipts()
         .map<List<Receipt>, AppResult<Receipt>> { receipts ->
             receipts.find { it.id == receiptId }?.let { AppResult.Success(it) }
-                ?: AppResult.Error("Reçu introuvable")
+                ?: AppResult.Error("Receipt not found")
         }
-        .catch { throwable -> emit(AppResult.Error(throwable.message ?: "Erreur inconnue", throwable)) }
+        .catch { throwable -> emit(AppResult.Error(throwable.technicalMessage(), throwable)) }
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(stopTimeoutMillis = 5_000),
@@ -360,7 +362,7 @@ class ReceiptDetailViewModel @Inject constructor(
                         amountMinor = info.amountMinor,
                         feeAmountMinor = info.feeMinor,
                         dateTimeMillis = info.dateTimeMillis,
-                        description = info.description,
+                        counterparty = info.counterparty,
                         categoryId = matchedCategory?.id,
                         accountId = matchedAccount?.id,
                         type = info.transactionType,
@@ -395,8 +397,6 @@ class ReceiptDetailViewModel @Inject constructor(
     }
 
     private companion object {
-        const val RECEIPT_ID_ARG = "receiptId"
-
         /** Largeur cible du rendu de l'aperçu, en pixels — voir `fragment_receipt_detail.xml`
          * (`previewImage`) : suffisant pour un aperçu net sur un écran de téléphone courant sans
          * générer un bitmap inutilement volumineux (voir cahier des charges, "optimiser... la

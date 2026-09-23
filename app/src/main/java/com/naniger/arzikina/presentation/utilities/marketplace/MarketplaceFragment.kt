@@ -2,7 +2,6 @@ package com.naniger.arzikina.presentation.utilities.marketplace
 
 import android.os.Bundle
 import android.view.View
-import androidx.core.os.bundleOf
 import androidx.core.view.children
 import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.Fragment
@@ -17,6 +16,8 @@ import com.naniger.arzikina.databinding.FragmentMarketplaceBinding
 import com.naniger.arzikina.domain.model.Category
 import com.naniger.arzikina.presentation.components.ConfirmDialogs
 import com.naniger.arzikina.presentation.components.NavAnimations
+import com.naniger.arzikina.presentation.components.displayName
+import com.naniger.arzikina.presentation.transactions.TransactionFormFragmentArgs
 import com.naniger.arzikina.util.AppResult
 import com.google.android.material.chip.Chip
 import com.google.android.material.chip.ChipGroup
@@ -133,7 +134,7 @@ class MarketplaceFragment : Fragment(R.layout.fragment_marketplace) {
         categories.forEach { category ->
             val chip = inflateCategoryChip(chipGroup).apply {
                 id = View.generateViewId()
-                text = category.name
+                text = category.displayName(context)
                 tag = category.id
             }
             chipGroup.addView(chip)
@@ -160,7 +161,8 @@ class MarketplaceFragment : Fragment(R.layout.fragment_marketplace) {
         binding.loadingState.visibility = if (state is AppResult.Loading) View.VISIBLE else View.GONE
         binding.errorState.visibility = if (state is AppResult.Error) View.VISIBLE else View.GONE
         if (state is AppResult.Error) {
-            binding.errorMessage.text = state.message
+            // Jamais `state.message` (message technique, voir AppResult.Error) : texte traduit.
+            binding.errorMessage.setText(R.string.error_generic)
         }
         if (state !is AppResult.Success) {
             binding.templatesList.visibility = View.GONE
@@ -223,14 +225,14 @@ class MarketplaceFragment : Fragment(R.layout.fragment_marketplace) {
     private fun onBuyClicked(item: TransactionTemplateListItem) {
         findNavController().navigate(
             R.id.transactionFormFragment,
-            bundleOf(
-                "presetAccountId" to item.accountId,
-                "presetAmountMinor" to item.amount,
-                "presetDescription" to item.description.ifBlank { null },
-                "presetCategoryId" to item.categoryId,
-                "presetType" to item.type.name,
-                "presetDateTimeMillis" to computePresetDateTimeMillis(item.defaultHour, item.defaultMinute)
-            ),
+            TransactionFormFragmentArgs(
+                presetAccountId = item.accountId,
+                presetAmountMinor = item.amount,
+                presetDescription = item.description.ifBlank { null },
+                presetCategoryId = item.categoryId,
+                presetType = item.type.name,
+                presetDateTimeMillis = computePresetDateTimeMillis(item.defaultHour, item.defaultMinute)
+            ).toBundle(),
             NavAnimations.push
         )
     }
@@ -254,7 +256,7 @@ class MarketplaceFragment : Fragment(R.layout.fragment_marketplace) {
     private fun navigateToForm(templateId: Long) {
         findNavController().navigate(
             R.id.marketplaceTemplateFormFragment,
-            bundleOf("templateId" to templateId),
+            MarketplaceFormFragmentArgs(templateId = templateId).toBundle(),
             NavAnimations.push
         )
     }

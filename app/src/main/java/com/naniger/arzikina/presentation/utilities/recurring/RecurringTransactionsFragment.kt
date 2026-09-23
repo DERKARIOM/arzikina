@@ -7,7 +7,6 @@ import android.os.Bundle
 import android.view.View
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
-import androidx.core.os.bundleOf
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
@@ -176,7 +175,7 @@ class RecurringTransactionsFragment : Fragment(R.layout.fragment_recurring_trans
             }
             RecurringSection.UPCOMING -> findNavController().navigate(
                 R.id.recurringTransactionFormFragment,
-                bundleOf("recurringTransactionId" to item.recurringTransaction.id),
+                RecurringTransactionFormFragmentArgs(recurringTransactionId = item.recurringTransaction.id).toBundle(),
                 NavAnimations.push
             )
             RecurringSection.HISTORY -> Unit

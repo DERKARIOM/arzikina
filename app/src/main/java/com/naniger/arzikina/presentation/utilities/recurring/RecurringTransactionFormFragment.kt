@@ -23,7 +23,9 @@ import com.naniger.arzikina.domain.model.TransactionType
 import com.naniger.arzikina.presentation.accounts.AccountIconMapper
 import com.naniger.arzikina.presentation.components.AccountPickerDialog
 import com.naniger.arzikina.presentation.components.ConfirmDialogs
+import com.naniger.arzikina.presentation.components.displayName
 import com.naniger.arzikina.presentation.transactions.displayTextRes
+import com.naniger.arzikina.util.AppDateFormats
 import com.naniger.arzikina.util.Money
 import com.naniger.arzikina.util.MoneyInputFormatter
 import com.naniger.arzikina.util.TriggerTimeFormatter
@@ -36,7 +38,6 @@ import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.ZoneId
 import java.time.ZoneOffset
-import java.time.format.DateTimeFormatter
 
 /**
  * Formulaire de création/édition d'une règle récurrente (voir [RecurringTransactionFormViewModel]).
@@ -261,21 +262,21 @@ class RecurringTransactionFormFragment : Fragment(R.layout.fragment_recurring_tr
             binding.typeGroup.check(expectedTypeButtonId)
         }
 
-        binding.categoryField.dropdownInput.setSimpleItems(data.categories.map { it.name }.toTypedArray())
-        val categoryLabel = data.categories.firstOrNull { it.id == state.categoryId }?.name.orEmpty()
+        binding.categoryField.dropdownInput.setSimpleItems(data.categories.map { it.displayName(requireContext()) }.toTypedArray())
+        val categoryLabel = data.categories.firstOrNull { it.id == state.categoryId }?.displayName(requireContext()).orEmpty()
         if (binding.categoryField.dropdownInput.text?.toString() != categoryLabel) {
             binding.categoryField.dropdownInput.setText(categoryLabel, false)
         }
-        binding.categoryField.dropdownLayout.error = state.categoryError
+        binding.categoryField.dropdownLayout.error = state.categoryError?.let { getString(it) }
 
         if (binding.amountInput.text?.toString() != state.amountInput) {
             binding.amountInput.setText(state.amountInput)
         }
-        binding.amountLayout.error = state.amountError
+        binding.amountLayout.error = state.amountError?.let { getString(it) }
 
         val selectedAccount = data.accounts.firstOrNull { it.id == state.accountId }
         bindAccountField(binding, selectedAccount)
-        binding.accountErrorText.text = state.accountError
+        binding.accountErrorText.text = state.accountError?.let { getString(it) }
         binding.accountErrorText.visibility = if (state.accountError != null) View.VISIBLE else View.GONE
 
         if (binding.descriptionInput.text?.toString() != state.description) {
@@ -308,7 +309,7 @@ class RecurringTransactionFormFragment : Fragment(R.layout.fragment_recurring_tr
         }
         binding.endDateCard.visibility = if (state.hasEndDate) View.VISIBLE else View.GONE
         binding.endDateField.dateFieldValue.text = formatDate(state.endDate)
-        binding.endDateErrorText.text = state.endDateError
+        binding.endDateErrorText.text = state.endDateError?.let { getString(it) }
         binding.endDateErrorText.visibility = if (state.endDateError != null) View.VISIBLE else View.GONE
 
         binding.deleteButton.visibility = if (viewModel.isEditMode) View.VISIBLE else View.GONE
@@ -322,7 +323,7 @@ class RecurringTransactionFormFragment : Fragment(R.layout.fragment_recurring_tr
         if (account != null) {
             fieldBinding.accountFieldIcon.setImageResource(AccountIconMapper.iconFor(account.icon))
             fieldBinding.accountFieldIcon.backgroundTintList = ColorStateList.valueOf(account.colorArgb.toInt())
-            fieldBinding.accountFieldName.text = account.name
+            fieldBinding.accountFieldName.text = account.displayName(requireContext())
             val balance = latestAccountBalances[account.id] ?: account.initialBalance
             fieldBinding.accountFieldBalance.text = getString(
                 R.string.transaction_form_account_balance,
@@ -340,7 +341,7 @@ class RecurringTransactionFormFragment : Fragment(R.layout.fragment_recurring_tr
     }
 
     private fun formatDate(millis: Long): String =
-        Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault()).toLocalDate().format(DATE_FORMATTER)
+        Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault()).toLocalDate().format(AppDateFormats.NUMERIC_DATE)
 
     /** Regroupe les 4 flux observés pour éviter un `combine` imbriqué illisible (voir
      * [onViewCreated]) — même principe que `LoanFormFragment.LoanFormRenderState`. */
@@ -350,8 +351,4 @@ class RecurringTransactionFormFragment : Fragment(R.layout.fragment_recurring_tr
         val categories: List<Category>,
         val accountBalances: Map<Long, Long>
     )
-
-    private companion object {
-        val DATE_FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
-    }
 }

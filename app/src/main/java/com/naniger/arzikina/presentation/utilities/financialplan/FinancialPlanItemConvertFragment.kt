@@ -20,6 +20,8 @@ import com.naniger.arzikina.presentation.accounts.AccountIconMapper
 import com.naniger.arzikina.presentation.categories.CategoryIconMapper
 import com.naniger.arzikina.presentation.components.AccountPickerDialog
 import com.naniger.arzikina.presentation.components.CategoryPickerDialog
+import com.naniger.arzikina.presentation.components.displayName
+import com.naniger.arzikina.util.AppDateFormats
 import com.naniger.arzikina.util.Constants
 import com.naniger.arzikina.util.Money
 import com.naniger.arzikina.util.MoneyInputFormatter
@@ -31,7 +33,6 @@ import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.ZoneId
 import java.time.ZoneOffset
-import java.time.format.DateTimeFormatter
 
 /**
  * "Enregistrer comme transaction" (voir cahier des charges "Planification financière", section
@@ -158,17 +159,17 @@ class FinancialPlanItemConvertFragment : Fragment(R.layout.fragment_financial_pl
 
         val selectedAccount = latestAccounts.firstOrNull { it.id == state.accountId }
         bindAccountField(binding, selectedAccount)
-        binding.accountErrorText.text = state.accountError
+        binding.accountErrorText.text = state.accountError?.let { getString(it) }
         binding.accountErrorText.visibility = if (state.accountError != null) View.VISIBLE else View.GONE
 
         bindCategoryField(binding, latestCategories.firstOrNull { it.id == state.categoryId })
-        binding.categoryErrorText.text = state.categoryError
+        binding.categoryErrorText.text = state.categoryError?.let { getString(it) }
         binding.categoryErrorText.visibility = if (state.categoryError != null) View.VISIBLE else View.GONE
 
         if (binding.amountInput.text?.toString() != state.actualAmountInput) {
             binding.amountInput.setText(state.actualAmountInput)
         }
-        binding.amountLayout.error = state.amountError
+        binding.amountLayout.error = state.amountError?.let { getString(it) }
 
         binding.dateField.dateFieldValue.text = formatDate(state.dateMillis)
 
@@ -184,7 +185,7 @@ class FinancialPlanItemConvertFragment : Fragment(R.layout.fragment_financial_pl
         if (account != null) {
             fieldBinding.accountFieldIcon.setImageResource(AccountIconMapper.iconFor(account.icon))
             fieldBinding.accountFieldIcon.backgroundTintList = ColorStateList.valueOf(account.colorArgb.toInt())
-            fieldBinding.accountFieldName.text = account.name
+            fieldBinding.accountFieldName.text = account.displayName(requireContext())
             val balance = latestAccountBalances[account.id] ?: account.initialBalance
             fieldBinding.accountFieldBalance.text = getString(
                 R.string.transaction_form_account_balance,
@@ -207,7 +208,7 @@ class FinancialPlanItemConvertFragment : Fragment(R.layout.fragment_financial_pl
         if (category != null) {
             fieldBinding.categoryFieldIcon.setImageResource(CategoryIconMapper.iconFor(category.icon))
             fieldBinding.categoryFieldIcon.backgroundTintList = ColorStateList.valueOf(category.colorArgb.toInt())
-            fieldBinding.categoryFieldName.text = category.name
+            fieldBinding.categoryFieldName.text = category.displayName(requireContext())
         } else {
             fieldBinding.categoryFieldIcon.setImageResource(R.drawable.ic_category_other_24)
             fieldBinding.categoryFieldIcon.backgroundTintList =
@@ -217,7 +218,7 @@ class FinancialPlanItemConvertFragment : Fragment(R.layout.fragment_financial_pl
     }
 
     private fun formatDate(millis: Long): String =
-        Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault()).toLocalDate().format(DATE_FORMATTER)
+        Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault()).toLocalDate().format(AppDateFormats.NUMERIC_DATE)
 
     private data class RenderState(
         val formState: FinancialPlanItemConvertState,
@@ -225,8 +226,4 @@ class FinancialPlanItemConvertFragment : Fragment(R.layout.fragment_financial_pl
         val accountBalances: Map<Long, Long>,
         val categories: List<Category>
     )
-
-    private companion object {
-        val DATE_FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
-    }
 }

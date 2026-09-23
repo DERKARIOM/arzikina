@@ -1,8 +1,10 @@
 package com.naniger.arzikina.presentation.utilities.marketplace
 
+import androidx.annotation.StringRes
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.naniger.arzikina.R
 import com.naniger.arzikina.domain.model.Account
 import com.naniger.arzikina.domain.model.Category
 import com.naniger.arzikina.domain.model.TransactionTemplate
@@ -61,10 +63,10 @@ data class MarketplaceFormState(
     val hasDefaultTime: Boolean = false,
     val defaultHour: Int = 8,
     val defaultMinute: Int = 0,
-    val nameError: String? = null,
-    val amountError: String? = null,
-    val categoryError: String? = null,
-    val accountError: String? = null
+    @StringRes val nameError: Int? = null,
+    @StringRes val amountError: Int? = null,
+    @StringRes val categoryError: Int? = null,
+    @StringRes val accountError: Int? = null
 )
 
 sealed interface MarketplaceFormEvent {
@@ -87,7 +89,7 @@ class MarketplaceFormViewModel @Inject constructor(
     transactionRepository: TransactionRepository
 ) : ViewModel() {
 
-    private val templateId: Long = savedStateHandle.get<Long>(TEMPLATE_ID_ARG) ?: 0L
+    private val templateId: Long = MarketplaceFormFragmentArgs.fromSavedStateHandle(savedStateHandle).templateId
     val isEditMode: Boolean = templateId != 0L
 
     private val _formState = MutableStateFlow(MarketplaceFormState())
@@ -191,10 +193,10 @@ class MarketplaceFormViewModel @Inject constructor(
         if (!nameValid || !amountValid || !categoryValid || !accountValid) {
             _formState.update {
                 it.copy(
-                    nameError = if (!nameValid) "Nom requis" else null,
-                    amountError = if (!amountValid) "Montant invalide" else null,
-                    categoryError = if (!categoryValid) "Choisis une catégorie" else null,
-                    accountError = if (!accountValid) "Choisis un compte" else null
+                    nameError = if (!nameValid) R.string.error_name_required else null,
+                    amountError = if (!amountValid) R.string.error_invalid_amount else null,
+                    categoryError = if (!categoryValid) R.string.error_select_category else null,
+                    accountError = if (!accountValid) R.string.error_select_account else null
                 )
             }
             return
@@ -206,7 +208,7 @@ class MarketplaceFormViewModel @Inject constructor(
                     id = templateId,
                     name = state.name.trim(),
                     type = state.type,
-                    amount = amountMinor!!,
+                    amount = amountMinor,
                     categoryId = state.categoryId,
                     accountId = state.accountId,
                     description = state.description,
@@ -230,9 +232,5 @@ class MarketplaceFormViewModel @Inject constructor(
             templateRepository.deleteTemplate(templateId)
             _events.emit(MarketplaceFormEvent.Deleted)
         }
-    }
-
-    private companion object {
-        const val TEMPLATE_ID_ARG = "templateId"
     }
 }

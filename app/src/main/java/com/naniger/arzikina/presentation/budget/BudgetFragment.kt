@@ -2,7 +2,6 @@ package com.naniger.arzikina.presentation.budget
 
 import android.os.Bundle
 import android.view.View
-import androidx.core.os.bundleOf
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
@@ -113,6 +112,6 @@ class BudgetFragment : Fragment(R.layout.fragment_budget) {
     }
 
     private fun navigateToForm(budgetId: Long) {
-        findNavController().navigate(R.id.budgetFormFragment, bundleOf("budgetId" to budgetId), NavAnimations.push)
+        findNavController().navigate(R.id.budgetFormFragment, BudgetFormFragmentArgs(budgetId = budgetId).toBundle(), NavAnimations.push)
     }
 }

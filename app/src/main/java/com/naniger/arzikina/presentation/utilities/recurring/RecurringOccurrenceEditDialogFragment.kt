@@ -10,7 +10,6 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.annotation.StringRes
 import androidx.core.content.ContextCompat
-import androidx.core.os.bundleOf
 import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.FragmentManager
@@ -28,7 +27,9 @@ import com.naniger.arzikina.domain.model.TransactionType
 import com.naniger.arzikina.domain.model.combineDayAndTime
 import com.naniger.arzikina.presentation.accounts.AccountIconMapper
 import com.naniger.arzikina.presentation.components.AccountPickerDialog
+import com.naniger.arzikina.presentation.components.displayName
 import com.naniger.arzikina.presentation.transactions.displayTextRes
+import com.naniger.arzikina.util.AppDateFormats
 import com.naniger.arzikina.util.Money
 import com.naniger.arzikina.util.MoneyInputFormatter
 import com.google.android.material.datepicker.MaterialDatePicker
@@ -38,7 +39,6 @@ import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.ZoneId
 import java.time.ZoneOffset
-import java.time.format.DateTimeFormatter
 
 /**
  * Formulaire d'édition d'UNE occurrence `PENDING` avant validation (voir cahier des charges
@@ -189,21 +189,21 @@ class RecurringOccurrenceEditDialogFragment : DialogFragment() {
             binding.editTypeGroup.check(expectedTypeButtonId)
         }
 
-        binding.editCategoryField.dropdownInput.setSimpleItems(latestCategories.map { it.name }.toTypedArray())
-        val categoryLabel = latestCategories.firstOrNull { it.id == edit.categoryId }?.name.orEmpty()
+        binding.editCategoryField.dropdownInput.setSimpleItems(latestCategories.map { it.displayName(requireContext()) }.toTypedArray())
+        val categoryLabel = latestCategories.firstOrNull { it.id == edit.categoryId }?.displayName(requireContext()).orEmpty()
         if (binding.editCategoryField.dropdownInput.text?.toString() != categoryLabel) {
             binding.editCategoryField.dropdownInput.setText(categoryLabel, false)
         }
-        binding.editCategoryField.dropdownLayout.error = edit.categoryError
+        binding.editCategoryField.dropdownLayout.error = edit.categoryError?.let { getString(it) }
 
         if (binding.editAmountInput.text?.toString() != edit.amountInput) {
             binding.editAmountInput.setText(edit.amountInput)
         }
-        binding.editAmountLayout.error = edit.amountError
+        binding.editAmountLayout.error = edit.amountError?.let { getString(it) }
 
         val selectedAccount = latestAccounts.firstOrNull { it.id == edit.accountId }
         bindAccountField(binding, selectedAccount)
-        binding.editAccountErrorText.text = edit.accountError
+        binding.editAccountErrorText.text = edit.accountError?.let { getString(it) }
         binding.editAccountErrorText.visibility = if (edit.accountError != null) View.VISIBLE else View.GONE
 
         if (binding.editDescriptionInput.text?.toString() != edit.description) {
@@ -232,7 +232,7 @@ class RecurringOccurrenceEditDialogFragment : DialogFragment() {
         if (account != null) {
             fieldBinding.accountFieldIcon.setImageResource(AccountIconMapper.iconFor(account.icon))
             fieldBinding.accountFieldIcon.backgroundTintList = ColorStateList.valueOf(account.colorArgb.toInt())
-            fieldBinding.accountFieldName.text = account.name
+            fieldBinding.accountFieldName.text = account.displayName(requireContext())
             val balance = latestAccountBalances[account.id] ?: account.initialBalance
             fieldBinding.accountFieldBalance.text = getString(
                 R.string.transaction_form_account_balance,
@@ -250,7 +250,7 @@ class RecurringOccurrenceEditDialogFragment : DialogFragment() {
     }
 
     private fun formatDate(millis: Long): String =
-        Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault()).toLocalDate().format(DATE_FORMATTER)
+        Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault()).toLocalDate().format(AppDateFormats.NUMERIC_DATE)
 
     /** Regroupe les 4 flux observés pour éviter un `combine` imbriqué illisible (voir
      * [onViewCreated]) — même principe que `LoanFormFragment.LoanFormRenderState`. */
@@ -262,7 +262,6 @@ class RecurringOccurrenceEditDialogFragment : DialogFragment() {
     )
 
     companion object {
-        private val DATE_FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
         private const val TAG = "recurring_occurrence_edit"
 
         /** Point d'entrée UNIQUE pour ouvrir ce dialogue (voir
@@ -272,7 +271,7 @@ class RecurringOccurrenceEditDialogFragment : DialogFragment() {
         fun show(fragmentManager: FragmentManager, occurrenceId: Long) {
             if (fragmentManager.findFragmentByTag(TAG) != null) return
             val fragment = RecurringOccurrenceEditDialogFragment().apply {
-                arguments = bundleOf(RecurringOccurrenceEditViewModel.ARG_OCCURRENCE_ID to occurrenceId)
+                arguments = Bundle(1).apply { putLong(RecurringOccurrenceEditViewModel.ARG_OCCURRENCE_ID, occurrenceId) }
             }
             fragment.show(fragmentManager, TAG)
         }

@@ -90,7 +90,7 @@ object TemplatePickerDialog {
             binding.templatePickerName.text = template.name
             binding.templatePickerSubtitle.text = context.getString(
                 R.string.transaction_form_template_picker_subtitle,
-                category?.name.orEmpty(),
+                category?.displayName(context).orEmpty(),
                 Money.format(CurrencyAmount(currencyCode, template.amount))
             )
             binding.root.setOnClickListener { onClick() }

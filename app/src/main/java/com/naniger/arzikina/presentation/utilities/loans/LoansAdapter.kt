@@ -53,10 +53,10 @@ class LoansAdapter(
         fun bind(summary: LoansSummary) {
             val context = binding.root.context
             binding.receivableAmount.text = formatCurrencyAmounts(summary.totalReceivable)
-            binding.receivableCount.text = context.getString(R.string.loans_summary_receivable_count, summary.lentCount)
+            binding.receivableCount.text = context.resources.getQuantityString(R.plurals.loans_summary_receivable_count, summary.lentCount, summary.lentCount)
             binding.owedAmount.text = formatCurrencyAmounts(summary.totalOwed)
-            binding.owedCount.text = context.getString(R.string.loans_summary_owed_count, summary.borrowedCount)
-            binding.listCount.text = context.getString(R.string.loans_list_count, summary.totalCount)
+            binding.owedCount.text = context.resources.getQuantityString(R.plurals.loans_summary_owed_count, summary.borrowedCount, summary.borrowedCount)
+            binding.listCount.text = context.resources.getQuantityString(R.plurals.loans_list_count, summary.totalCount, summary.totalCount)
         }
     }
 

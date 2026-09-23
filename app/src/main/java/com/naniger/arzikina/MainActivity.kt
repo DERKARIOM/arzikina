@@ -8,7 +8,6 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.IntentCompat
-import androidx.core.os.bundleOf
 import androidx.core.view.ViewCompat
 import androidx.core.widget.NestedScrollView
 import androidx.fragment.app.Fragment
@@ -25,6 +24,7 @@ import com.naniger.arzikina.domain.repository.SessionManager
 import com.naniger.arzikina.domain.repository.UserPreferencesRepository
 import com.naniger.arzikina.presentation.components.NavAnimations
 import com.naniger.arzikina.presentation.security.BiometricLockFragment
+import com.naniger.arzikina.presentation.security.BiometricLockFragmentArgs
 import com.naniger.arzikina.util.Constants
 import com.naniger.arzikina.util.SystemBars
 import com.naniger.arzikina.util.external.ExternalAppLauncher
@@ -284,7 +284,7 @@ class MainActivity : AppCompatActivity() {
 
             navController.navigate(
                 R.id.biometricLockFragment,
-                bundleOf(BiometricLockFragment.ARG_IS_RESUME_CHECK to true),
+                BiometricLockFragmentArgs(isResumeCheck = true).toBundle(),
                 NavAnimations.push
             )
         }

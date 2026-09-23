@@ -20,6 +20,7 @@ import com.naniger.arzikina.presentation.transactions.feeTransactionIds
 import com.naniger.arzikina.presentation.transactions.groupByDay
 import com.naniger.arzikina.util.AppResult
 import com.naniger.arzikina.util.external.ExternalAppLauncher
+import com.naniger.arzikina.util.technicalMessage
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Job
@@ -96,7 +97,7 @@ class AccountDetailViewModel @Inject constructor(
     @IoDispatcher private val ioDispatcher: CoroutineDispatcher
 ) : ViewModel() {
 
-    val accountId: Long = savedStateHandle.get<Long>(ACCOUNT_ID_ARG) ?: 0L
+    val accountId: Long = AccountDetailFragmentArgs.fromSavedStateHandle(savedStateHandle).accountId
 
     val uiState: StateFlow<AppResult<AccountDetailUiState>> = combine(
         accountRepository.observeAccounts(),
@@ -149,9 +150,9 @@ class AccountDetailViewModel @Inject constructor(
         )
     }
         .map<AccountDetailUiState?, AppResult<AccountDetailUiState>> { state ->
-            state?.let { AppResult.Success(it) } ?: AppResult.Error("Compte introuvable")
+            state?.let { AppResult.Success(it) } ?: AppResult.Error("Account not found")
         }
-        .catch { throwable -> emit(AppResult.Error(throwable.message ?: "Erreur inconnue", throwable)) }
+        .catch { throwable -> emit(AppResult.Error(throwable.technicalMessage(), throwable)) }
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(stopTimeoutMillis = 5_000),
@@ -276,8 +277,6 @@ class AccountDetailViewModel @Inject constructor(
     }
 
     private companion object {
-        const val ACCOUNT_ID_ARG = "accountId"
-
         /** Délai avant remasquage automatique des informations de la carte (section sécurité). */
         const val AUTO_HIDE_DELAY_MILLIS = 10_000L
     }

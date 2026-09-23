@@ -10,6 +10,7 @@ import com.naniger.arzikina.domain.repository.CategoryRepository
 import com.naniger.arzikina.domain.repository.FinancialPlanRepository
 import com.naniger.arzikina.util.AppResult
 import com.naniger.arzikina.util.FinancialPlanProgress
+import com.naniger.arzikina.util.technicalMessage
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -46,7 +47,7 @@ class FinancialPlanDetailViewModel @Inject constructor(
     categoryRepository: CategoryRepository
 ) : ViewModel() {
 
-    val planId: Long = savedStateHandle.get<Long>(PLAN_ID_ARG) ?: 0L
+    val planId: Long = FinancialPlanDetailFragmentArgs.fromSavedStateHandle(savedStateHandle).planId
 
     /** Même raisonnement que `LoanDetailViewModel.uiState` : `AppResult.Error` si la planification
      * a été supprimée depuis un autre écran (ex. suppression rapide depuis [FinancialPlansFragment])
@@ -70,9 +71,9 @@ class FinancialPlanDetailViewModel @Inject constructor(
         )
     }
         .map<FinancialPlanDetailUiState?, AppResult<FinancialPlanDetailUiState>> { state ->
-            state?.let { AppResult.Success(it) } ?: AppResult.Error("Planification introuvable")
+            state?.let { AppResult.Success(it) } ?: AppResult.Error("Financial plan not found")
         }
-        .catch { throwable -> emit(AppResult.Error(throwable.message ?: "Erreur inconnue", throwable)) }
+        .catch { throwable -> emit(AppResult.Error(throwable.technicalMessage(), throwable)) }
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(stopTimeoutMillis = 5_000),
@@ -89,9 +90,5 @@ class FinancialPlanDetailViewModel @Inject constructor(
         viewModelScope.launch {
             financialPlanRepository.deleteItem(itemId)
         }
-    }
-
-    private companion object {
-        const val PLAN_ID_ARG = "planId"
     }
 }

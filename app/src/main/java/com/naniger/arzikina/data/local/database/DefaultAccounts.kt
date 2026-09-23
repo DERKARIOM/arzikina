@@ -3,6 +3,7 @@ package com.naniger.arzikina.data.local.database
 import com.naniger.arzikina.data.local.entity.AccountEntity
 import com.naniger.arzikina.domain.model.AccountIcon
 import com.naniger.arzikina.domain.model.AccountType
+import com.naniger.arzikina.domain.model.DefaultAccountKey
 import com.naniger.arzikina.util.Constants
 
 /**
@@ -27,7 +28,7 @@ internal object DefaultAccounts {
     fun seed(now: Long, userId: Long): List<AccountEntity> = listOf(
         AccountEntity(
             userId = userId,
-            name = "Espèces",
+            name = DefaultAccountKey.CASH.canonicalName,
             icon = AccountIcon.CASH,
             type = AccountType.CASH,
             colorArgb = 0xFF16A34AL,
@@ -38,7 +39,7 @@ internal object DefaultAccounts {
         ),
         AccountEntity(
             userId = userId,
-            name = "Banque",
+            name = DefaultAccountKey.BANK.canonicalName,
             icon = AccountIcon.BANK,
             type = AccountType.BANK,
             colorArgb = 0xFF006C4FL,
@@ -49,7 +50,7 @@ internal object DefaultAccounts {
         ),
         AccountEntity(
             userId = userId,
-            name = "Mobile Money",
+            name = DefaultAccountKey.MOBILE_MONEY.canonicalName,
             icon = AccountIcon.MOBILE_MONEY,
             type = AccountType.MOBILE_MONEY,
             colorArgb = 0xFFF59E0BL,
@@ -60,7 +61,7 @@ internal object DefaultAccounts {
         ),
         AccountEntity(
             userId = userId,
-            name = "Épargne",
+            name = DefaultAccountKey.SAVINGS.canonicalName,
             icon = AccountIcon.SAVINGS,
             type = AccountType.SAVINGS,
             colorArgb = 0xFF00A578L,
@@ -71,7 +72,7 @@ internal object DefaultAccounts {
         ),
         AccountEntity(
             userId = userId,
-            name = "Wallet",
+            name = DefaultAccountKey.WALLET.canonicalName,
             icon = AccountIcon.WALLET,
             // Pas d'équivalent WALLET dans AccountType (voir sa doc) : même
             // repli que la migration pour un compte existant sans type dédié.

@@ -42,9 +42,9 @@ object ReceiptTransactionMatcher {
      * courts (< [MIN_CATEGORY_NAME_LENGTH_FOR_MATCH]) sont ignorés pour éviter un faux positif sur un
      * nom de catégorie très générique (ex. "IT") qui apparaîtrait par hasard dans presque tout texte.
      *
-     * @param keyword texte source de la comparaison (ex. [ReceiptTransactionInfo.description], ou le
-     * texte brut du reçu pour maximiser les chances d'une correspondance) — `null`/vide : aucune
-     * correspondance possible, retourne `null` immédiatement.
+     * @param keyword texte source de la comparaison (en pratique le texte brut du reçu, pour
+     * maximiser les chances d'une correspondance) — `null`/vide : aucune correspondance possible,
+     * retourne `null` immédiatement.
      */
     fun matchCategoryByKeyword(categories: List<Category>, keyword: String?): Category? {
         val normalizedKeyword = keyword

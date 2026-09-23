@@ -2,7 +2,6 @@ package com.naniger.arzikina.presentation.utilities
 
 import android.os.Bundle
 import android.view.View
-import androidx.core.os.bundleOf
 import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
@@ -14,6 +13,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.naniger.arzikina.R
 import com.naniger.arzikina.databinding.FragmentLoansBinding
 import com.naniger.arzikina.presentation.components.NavAnimations
+import com.naniger.arzikina.presentation.utilities.loans.LoanDetailFragmentArgs
 import com.naniger.arzikina.presentation.utilities.loans.LoanFilters
 import com.naniger.arzikina.presentation.utilities.loans.LoanListItem
 import com.naniger.arzikina.presentation.utilities.loans.LoanStatusFilterOption
@@ -196,7 +196,7 @@ class LoansFragment : Fragment(R.layout.fragment_loans) {
     }
 
     private fun navigateToLoanDetail(item: LoanListItem) {
-        findNavController().navigate(R.id.loanDetailFragment, bundleOf("loanId" to item.id), NavAnimations.push)
+        findNavController().navigate(R.id.loanDetailFragment, LoanDetailFragmentArgs(loanId = item.id).toBundle(), NavAnimations.push)
     }
 
     private fun navigateToStatistics() {

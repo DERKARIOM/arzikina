@@ -1,7 +1,9 @@
 package com.naniger.arzikina.presentation.utilities.loans
 
+import androidx.annotation.StringRes
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.naniger.arzikina.R
 import com.naniger.arzikina.domain.model.Account
 import com.naniger.arzikina.domain.model.Loan
 import com.naniger.arzikina.domain.model.LoanPayment
@@ -59,12 +61,12 @@ data class LoanFormState(
     val description: String = "",
     val firstPaymentAmountInput: String = "",
     val firstPaymentDateMillis: Long = System.currentTimeMillis(),
-    val personError: String? = null,
-    val accountError: String? = null,
-    val amountError: String? = null,
-    val dueDateError: String? = null,
-    val firstPaymentAmountError: String? = null,
-    val firstPaymentDateError: String? = null,
+    @StringRes val personError: Int? = null,
+    @StringRes val accountError: Int? = null,
+    @StringRes val amountError: Int? = null,
+    @StringRes val dueDateError: Int? = null,
+    @StringRes val firstPaymentAmountError: Int? = null,
+    @StringRes val firstPaymentDateError: Int? = null,
     val isSaving: Boolean = false
 )
 
@@ -153,11 +155,11 @@ class LoanFormViewModel @Inject constructor(
         val state = _formState.value
         val amountMinor = Money.parseToMinorUnits(state.amountInput)
 
-        val personError = if (state.personId == 0L) "Choisis une personne" else null
-        val accountError = if (state.accountId == 0L) "Choisis un compte" else null
-        val amountError = if (amountMinor == null || amountMinor <= 0L) "Montant invalide" else null
+        val personError = if (state.personId == 0L) R.string.error_select_person else null
+        val accountError = if (state.accountId == 0L) R.string.error_select_account else null
+        val amountError = if (amountMinor == null || amountMinor <= 0L) R.string.error_invalid_amount else null
         val dueDateError = if (state.dueDateMillis <= state.startDateMillis) {
-            "L'échéance doit être après la date de début"
+            R.string.error_due_date_before_start
         } else {
             null
         }
@@ -195,15 +197,15 @@ class LoanFormViewModel @Inject constructor(
         if (state.firstPaymentAmountInput.isNotBlank()) {
             val parsed = Money.parseToMinorUnits(state.firstPaymentAmountInput)
             if (parsed == null || parsed <= 0L) {
-                _formState.update { it.copy(firstPaymentAmountError = "Montant invalide") }
+                _formState.update { it.copy(firstPaymentAmountError = R.string.error_invalid_amount) }
                 return
             }
             if (parsed > amountMinor) {
-                _formState.update { it.copy(firstPaymentAmountError = "Ne peut pas dépasser le montant total") }
+                _formState.update { it.copy(firstPaymentAmountError = R.string.error_amount_exceeds_total) }
                 return
             }
             if (state.firstPaymentDateMillis < state.startDateMillis) {
-                _formState.update { it.copy(firstPaymentDateError = "Ne peut pas être avant la date de début") }
+                _formState.update { it.copy(firstPaymentDateError = R.string.error_date_before_start) }
                 return
             }
             firstPaymentMinor = parsed

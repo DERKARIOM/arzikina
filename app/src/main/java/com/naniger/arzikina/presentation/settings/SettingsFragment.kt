@@ -23,6 +23,8 @@ import com.naniger.arzikina.domain.model.ThemeMode
 import com.naniger.arzikina.domain.model.SupportedCurrency
 import com.naniger.arzikina.presentation.components.NavAnimations
 import com.naniger.arzikina.presentation.components.SyncButtonEvent
+import com.naniger.arzikina.presentation.components.pickerLabel
+import com.naniger.arzikina.presentation.components.syncResultMessage
 import com.naniger.arzikina.presentation.components.SyncIndicatorLevel
 import com.naniger.arzikina.presentation.components.SyncIndicatorUiState
 import com.naniger.arzikina.presentation.components.SyncNowUiState
@@ -403,19 +405,7 @@ class SettingsFragment : Fragment(R.layout.fragment_settings) {
     }
 
     private fun handleEvent(binding: FragmentSettingsBinding, event: SyncButtonEvent) {
-        val message = when (event) {
-            is SyncButtonEvent.SyncFinished -> when {
-                event.pushResult.pushed == 0 && event.pullResult.received == 0 ->
-                    getString(R.string.settings_sync_now_nothing_pending)
-                else -> getString(
-                    R.string.settings_sync_now_result,
-                    event.pushResult.succeeded,
-                    event.pushResult.failed,
-                    event.pullResult.applied
-                )
-            }
-            is SyncButtonEvent.SyncError -> getString(R.string.settings_sync_now_error)
-        }
+        val message = requireContext().syncResultMessage(event)
         Snackbar.make(binding.root, message, Snackbar.LENGTH_LONG).show()
     }
 
@@ -449,7 +439,7 @@ class SettingsFragment : Fragment(R.layout.fragment_settings) {
      * cohérent avec le comportement d'un réglage instantané). */
     private fun showCurrencyPicker() {
         val currencies = SupportedCurrency.entries
-        val labels = currencies.map { "${it.displayName} (${it.symbol})" }.toTypedArray()
+        val labels = currencies.map { it.pickerLabel(requireContext()) }.toTypedArray()
         val currentIndex = currencies.indexOfFirst { it.code == viewModel.uiState.value.currencyCode }.coerceAtLeast(0)
 
         MaterialAlertDialogBuilder(requireContext())

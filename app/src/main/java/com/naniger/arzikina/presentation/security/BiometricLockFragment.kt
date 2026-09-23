@@ -10,6 +10,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.NavOptions
 import androidx.navigation.fragment.findNavController
+import androidx.navigation.fragment.navArgs
 import com.naniger.arzikina.R
 import com.naniger.arzikina.databinding.FragmentBiometricLockBinding
 import com.naniger.arzikina.domain.repository.BiometricAuthenticator
@@ -59,7 +60,9 @@ class BiometricLockFragment : Fragment(R.layout.fragment_biometric_lock) {
     /** Voir la doc de classe : distingue les deux points d'entrée. Défaut à `false` cohérent avec
      * `nav_graph.xml` (utilisé si ce Fragment est ouvert sans argument, ex. aperçu Android Studio). */
     private val isResumeCheck: Boolean
-        get() = arguments?.getBoolean(ARG_IS_RESUME_CHECK) ?: false
+        get() = navArgs.isResumeCheck
+
+    private val navArgs: BiometricLockFragmentArgs by navArgs()
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -145,10 +148,5 @@ class BiometricLockFragment : Fragment(R.layout.fragment_biometric_lock) {
             .setPopUpTo(R.id.nav_graph, true)
             .build()
         findNavController().navigate(destinationId, null, options)
-    }
-
-    companion object {
-        /** Voir `nav_graph.xml` — même nom d'argument des deux côtés. */
-        const val ARG_IS_RESUME_CHECK = "isResumeCheck"
     }
 }

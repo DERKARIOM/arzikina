@@ -106,7 +106,7 @@ class CategoryFormFragment : Fragment(R.layout.fragment_category_form) {
         if (binding.nameInput.text?.toString() != state.name) {
             binding.nameInput.setText(state.name)
         }
-        binding.nameLayout.error = state.nameError
+        binding.nameLayout.error = state.nameError?.let { getString(it) }
 
         val expectedTypeButtonId = if (state.type == TransactionType.INCOME) R.id.typeIncome else R.id.typeExpense
         if (binding.typeGroup.checkedButtonId != expectedTypeButtonId) {

@@ -9,12 +9,12 @@ import com.naniger.arzikina.databinding.ItemTransactionCompactBinding
 import com.naniger.arzikina.domain.model.OccurrenceStatus
 import com.naniger.arzikina.domain.model.TransactionType
 import com.naniger.arzikina.presentation.categories.CategoryIconMapper
+import com.naniger.arzikina.presentation.components.displayName
 import com.naniger.arzikina.presentation.transactions.TransactionAmountTone
 import com.naniger.arzikina.presentation.transactions.transactionAmountDisplay
+import com.naniger.arzikina.util.AppDateFormats
 import com.naniger.arzikina.util.DatePeriods
 import com.naniger.arzikina.util.TriggerTimeFormatter
-import java.time.format.DateTimeFormatter
-import java.util.Locale
 
 /**
  * Remplit une ligne `item_transaction_compact.xml` à partir d'un [RecurringOccurrenceUiItem] —
@@ -28,8 +28,6 @@ import java.util.Locale
  */
 object RecurringOccurrenceItemBinder {
 
-    private val dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy", Locale.FRENCH)
-
     fun bind(binding: ItemTransactionCompactBinding, item: RecurringOccurrenceUiItem, section: RecurringSection) {
         val context = binding.root.context
         val category = item.category
@@ -41,7 +39,7 @@ object RecurringOccurrenceItemBinder {
         val circleColor = category?.colorArgb?.toInt() ?: ContextCompat.getColor(context, R.color.arzikina_outline)
         binding.categoryIcon.backgroundTintList = ColorStateList.valueOf(circleColor)
 
-        binding.categoryName.text = category?.name ?: context.getString(R.string.transaction_uncategorized)
+        binding.categoryName.text = category?.displayName(context) ?: context.getString(R.string.transaction_uncategorized)
 
         binding.subtitle.visibility = View.VISIBLE
         binding.subtitle.text = subtitleFor(context, item, section)
@@ -63,7 +61,7 @@ object RecurringOccurrenceItemBinder {
     }
 
     private fun subtitleFor(context: Context, item: RecurringOccurrenceUiItem, section: RecurringSection): String {
-        val date = DatePeriods.toLocalDate(item.scheduledDate).format(dateFormatter)
+        val date = DatePeriods.toLocalDate(item.scheduledDate).format(AppDateFormats.NUMERIC_DATE)
         return when (section) {
             // Heure de déclenchement ajoutée ici (voir TriggerTimeFormatter) : c'est précisément
             // dans ces deux sections qu'elle a du sens ("à quelle heure ceci va-t-il se déclencher

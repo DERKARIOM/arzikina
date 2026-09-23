@@ -15,6 +15,9 @@ import com.naniger.arzikina.domain.model.BudgetPeriod
 import com.naniger.arzikina.domain.model.Category
 import com.naniger.arzikina.domain.model.SupportedCurrency
 import com.naniger.arzikina.presentation.components.ConfirmDialogs
+import com.naniger.arzikina.presentation.components.displayName
+import com.naniger.arzikina.presentation.components.pickerLabel
+import com.naniger.arzikina.util.AppDateFormats
 import com.naniger.arzikina.util.MoneyInputFormatter
 import com.naniger.arzikina.util.QuickDateRange
 import com.google.android.material.datepicker.MaterialDatePicker
@@ -24,7 +27,6 @@ import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.ZoneId
 import java.time.ZoneOffset
-import java.time.format.DateTimeFormatter
 
 /**
  * Formulaire d'ajout/édition d'un budget. Reconstruit en XML/Views (voir
@@ -104,7 +106,7 @@ class BudgetFormFragment : Fragment(R.layout.fragment_budget_form) {
 
     private fun setUpCurrencyDropdown(binding: FragmentBudgetFormBinding) {
         binding.currencyField.dropdownLayout.hint = getString(R.string.account_form_currency_label)
-        val labels = SupportedCurrency.entries.map { "${it.displayName} (${it.symbol})" }
+        val labels = SupportedCurrency.entries.map { it.pickerLabel(requireContext()) }
         binding.currencyField.dropdownInput.setSimpleItems(labels.toTypedArray())
         binding.currencyField.dropdownInput.setOnItemClickListener { _, _, position, _ ->
             viewModel.onCurrencyChange(SupportedCurrency.entries[position].code)
@@ -173,7 +175,7 @@ class BudgetFormFragment : Fragment(R.layout.fragment_budget_form) {
     }
 
     private fun formatDate(millis: Long?): String =
-        millis?.let { Instant.ofEpochMilli(it).atZone(ZoneId.systemDefault()).toLocalDate().format(DATE_FORMATTER) }
+        millis?.let { Instant.ofEpochMilli(it).atZone(ZoneId.systemDefault()).toLocalDate().format(AppDateFormats.NUMERIC_DATE) }
             ?: getString(R.string.budget_form_date_placeholder)
 
     private fun render(state: BudgetFormState, categories: List<Category>) {
@@ -184,12 +186,12 @@ class BudgetFormFragment : Fragment(R.layout.fragment_budget_form) {
         binding.categoryField.dropdownLayout.isEnabled = canPickCategory
         binding.noCategoriesHint.visibility = if (canPickCategory) View.GONE else View.VISIBLE
 
-        binding.categoryField.dropdownInput.setSimpleItems(categories.map { it.name }.toTypedArray())
-        val categoryLabel = categories.firstOrNull { it.id == state.categoryId }?.name.orEmpty()
+        binding.categoryField.dropdownInput.setSimpleItems(categories.map { it.displayName(requireContext()) }.toTypedArray())
+        val categoryLabel = categories.firstOrNull { it.id == state.categoryId }?.displayName(requireContext()).orEmpty()
         if (binding.categoryField.dropdownInput.text?.toString() != categoryLabel) {
             binding.categoryField.dropdownInput.setText(categoryLabel, false)
         }
-        binding.categoryField.dropdownLayout.error = state.categoryError
+        binding.categoryField.dropdownLayout.error = state.categoryError?.let { getString(it) }
 
         // Les deux blocs sont mutuellement exclusifs (voir BudgetFormState.isLegacyRecurring et
         // fragment_budget_form.xml) : jamais affichés en même temps.
@@ -217,16 +219,16 @@ class BudgetFormFragment : Fragment(R.layout.fragment_budget_form) {
         }
         binding.startDateField.dateFieldValue.text = formatDate(state.startDate)
         binding.endDateField.dateFieldValue.text = formatDate(state.endDate)
-        binding.dateErrorText.text = state.dateError
+        binding.dateErrorText.text = state.dateError?.let { getString(it) }
         binding.dateErrorText.visibility = if (state.dateError != null) View.VISIBLE else View.GONE
 
         if (binding.limitInput.text?.toString() != state.limitInput) {
             binding.limitInput.setText(state.limitInput)
         }
-        binding.limitLayout.error = state.limitError
+        binding.limitLayout.error = state.limitError?.let { getString(it) }
 
         val currencyLabel = SupportedCurrency.entries.firstOrNull { it.code == state.currencyCode }
-            ?.let { "${it.displayName} (${it.symbol})" }
+            ?.pickerLabel(requireContext())
             .orEmpty()
         if (binding.currencyField.dropdownInput.text?.toString() != currencyLabel) {
             binding.currencyField.dropdownInput.setText(currencyLabel, false)
@@ -246,9 +248,5 @@ class BudgetFormFragment : Fragment(R.layout.fragment_budget_form) {
             message = getString(R.string.budgets_delete_message),
             onConfirm = { viewModel.delete() }
         )
-    }
-
-    private companion object {
-        val DATE_FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
     }
 }

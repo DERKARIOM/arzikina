@@ -142,7 +142,10 @@ class BackupFragment : Fragment(R.layout.fragment_backup) {
         val message = when (event) {
             is BackupEvent.ExportSuccess -> formatResult(R.string.settings_backup_export_success, event.result)
             is BackupEvent.ImportSuccess -> formatResult(R.string.settings_backup_import_success, event.result)
-            is BackupEvent.Error -> "${getString(R.string.settings_backup_error_prefix)} ${event.message}"
+            is BackupEvent.Error -> getString(
+                R.string.settings_backup_error_message,
+                getString(event.messageRes, *listOfNotNull(event.formatArg).toTypedArray())
+            )
         }
         Snackbar.make(binding.root, message, Snackbar.LENGTH_LONG).show()
     }

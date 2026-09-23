@@ -1,19 +1,23 @@
 package com.naniger.arzikina.presentation.accounts
 
+import androidx.annotation.StringRes
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.naniger.arzikina.R
 import com.naniger.arzikina.di.IoDispatcher
 import com.naniger.arzikina.domain.model.Account
 import com.naniger.arzikina.domain.model.AccountIcon
 import com.naniger.arzikina.domain.model.AccountType
 import com.naniger.arzikina.domain.repository.AccountRepository
+import com.naniger.arzikina.presentation.components.DefaultNameLocalizer
 import com.naniger.arzikina.util.CardInputFormatter
 import com.naniger.arzikina.util.Constants
 import com.naniger.arzikina.util.Money
 import com.naniger.arzikina.util.external.ExternalAppInfo
 import com.naniger.arzikina.util.external.ExternalAppLauncher
 import dagger.hilt.android.lifecycle.HiltViewModel
+import java.util.Locale
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -76,11 +80,11 @@ data class AccountFormState(
      * maintenant).
      */
     val mobileMoneyAppLabel: String? = null,
-    val nameError: String? = null,
-    val balanceError: String? = null,
-    val cardNumberError: String? = null,
-    val cardExpiryError: String? = null,
-    val cardCvvError: String? = null
+    @StringRes val nameError: Int? = null,
+    @StringRes val balanceError: Int? = null,
+    @StringRes val cardNumberError: Int? = null,
+    @StringRes val cardExpiryError: Int? = null,
+    @StringRes val cardCvvError: Int? = null
 ) {
     /**
      * `toString()` explicite qui REDACTE [cardNumberInput]/[cardCvvInput] (voir section
@@ -114,10 +118,12 @@ class AccountFormViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val accountRepository: AccountRepository,
     private val externalAppLauncher: ExternalAppLauncher,
-    @IoDispatcher private val ioDispatcher: CoroutineDispatcher
+    @IoDispatcher private val ioDispatcher: CoroutineDispatcher,
+    private val defaultNameLocalizer: DefaultNameLocalizer
 ) : ViewModel() {
 
-    private val accountId: Long = savedStateHandle.get<Long>(ACCOUNT_ID_ARG) ?: 0L
+    private val args = AccountFormFragmentArgs.fromSavedStateHandle(savedStateHandle)
+    private val accountId: Long = args.accountId
     val isEditMode: Boolean = accountId != 0L
 
     /** Voir `nav_graph.xml` (`initialType`) — présélection du type UNIQUEMENT à la création
@@ -125,7 +131,7 @@ class AccountFormViewModel @Inject constructor(
      * bancaires) au moment d'ouvrir ce formulaire. Lecture défensive : une valeur absente ou ne
      * correspondant à aucun [AccountType] connu retombe silencieusement sur le comportement
      * précédent (type par défaut de [AccountFormState]), plutôt que de planter. */
-    private val initialType: AccountType? = savedStateHandle.get<String>(INITIAL_TYPE_ARG)
+    private val initialType: AccountType? = args.initialType
         ?.let { raw -> AccountType.entries.find { it.name == raw } }
 
     private val _formState = MutableStateFlow(AccountFormState())
@@ -140,7 +146,8 @@ class AccountFormViewModel @Inject constructor(
                 accountRepository.getAccount(accountId)?.let { account ->
                     _formState.update {
                         it.copy(
-                            name = account.name,
+                            // « Cash » en anglais : voir DefaultNameLocalizer (et save()).
+                            name = defaultNameLocalizer.displayName(account),
                             icon = account.icon,
                             colorArgb = account.colorArgb,
                             currencyCode = account.currencyCode,
@@ -150,7 +157,7 @@ class AccountFormViewModel @Inject constructor(
                             // Expiration éditable normalement (elle EST conservée, contrairement
                             // au numéro complet/CVV) : pré-remplie au format "MM/AA" de formatExpiry.
                             cardExpiryInput = if (account.cardExpiryMonth != null && account.cardExpiryYear != null) {
-                                "%02d/%02d".format(account.cardExpiryMonth, account.cardExpiryYear % 100)
+                                String.format(Locale.ROOT, "%02d/%02d", account.cardExpiryMonth, account.cardExpiryYear % 100)
                             } else {
                                 ""
                             },
@@ -273,13 +280,13 @@ class AccountFormViewModel @Inject constructor(
         val state = _formState.value
         val trimmedName = state.name.trim()
         if (trimmedName.isEmpty()) {
-            _formState.update { it.copy(nameError = "Le nom est obligatoire") }
+            _formState.update { it.copy(nameError = R.string.error_name_required) }
             return
         }
 
         val balanceMinor = Money.parseToMinorUnits(state.initialBalanceInput)
         if (balanceMinor == null) {
-            _formState.update { it.copy(balanceError = "Montant invalide") }
+            _formState.update { it.copy(balanceError = R.string.error_invalid_amount) }
             return
         }
 
@@ -298,11 +305,11 @@ class AccountFormViewModel @Inject constructor(
                 cardLastFourDigits = state.existingCardLastFourDigits
             } else {
                 if (!CardInputFormatter.isValidCardNumber(state.cardNumberInput)) {
-                    _formState.update { it.copy(cardNumberError = "Numéro de carte invalide") }
+                    _formState.update { it.copy(cardNumberError = R.string.error_invalid_card_number) }
                     return
                 }
                 if (!CardInputFormatter.isValidCvv(state.cardCvvInput)) {
-                    _formState.update { it.copy(cardCvvError = "Code de sécurité invalide") }
+                    _formState.update { it.copy(cardCvvError = R.string.error_invalid_card_cvv) }
                     return
                 }
                 cardLastFourDigits = state.cardNumberInput.takeLast(4)
@@ -311,7 +318,7 @@ class AccountFormViewModel @Inject constructor(
             val expiryDigits = state.cardExpiryInput.filter { it.isDigit() }
             val now = YearMonth.now()
             if (!CardInputFormatter.isValidExpiry(expiryDigits, now.year, now.monthValue)) {
-                _formState.update { it.copy(cardExpiryError = "Date d'expiration invalide") }
+                _formState.update { it.copy(cardExpiryError = R.string.error_invalid_card_expiry) }
                 return
             }
             cardExpiryMonth = expiryDigits.substring(0, 2).toInt()
@@ -337,7 +344,7 @@ class AccountFormViewModel @Inject constructor(
             val savedAccountId = accountRepository.saveAccount(
                 Account(
                     id = accountId,
-                    name = trimmedName,
+                    name = defaultNameLocalizer.canonicalAccountName(trimmedName),
                     icon = state.icon,
                     colorArgb = state.colorArgb,
                     currencyCode = state.currencyCode,
@@ -366,10 +373,5 @@ class AccountFormViewModel @Inject constructor(
             accountRepository.deleteAccount(accountId)
             _events.emit(AccountFormEvent.Deleted)
         }
-    }
-
-    private companion object {
-        const val ACCOUNT_ID_ARG = "accountId"
-        const val INITIAL_TYPE_ARG = "initialType"
     }
 }

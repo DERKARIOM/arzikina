@@ -1,8 +1,10 @@
 package com.naniger.arzikina.presentation.utilities.financialplan
 
+import androidx.annotation.StringRes
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.naniger.arzikina.R
 import com.naniger.arzikina.domain.model.Category
 import com.naniger.arzikina.domain.model.FinancialPlanItem
 import com.naniger.arzikina.domain.model.PlanItemPriority
@@ -64,8 +66,8 @@ data class FinancialPlanItemFormState(
      * "Enregistrer comme transaction" (une dépense ne se convertit jamais deux fois, voir
      * [FinancialPlanRepository.convertItemToTransaction]). Toujours `false` en création. */
     val isAlreadyConverted: Boolean = false,
-    val nameError: String? = null,
-    val amountError: String? = null,
+    @StringRes val nameError: Int? = null,
+    @StringRes val amountError: Int? = null,
     val isSaving: Boolean = false
 )
 
@@ -80,10 +82,11 @@ class FinancialPlanItemFormViewModel @Inject constructor(
     categoryRepository: CategoryRepository
 ) : ViewModel() {
 
-    private val planId: Long = savedStateHandle.get<Long>(PLAN_ID_ARG) ?: 0L
+    private val args = FinancialPlanItemFormFragmentArgs.fromSavedStateHandle(savedStateHandle)
+    private val planId: Long = args.planId
     /** Exposé (pas `private`) : [FinancialPlanItemFormFragment] en a besoin pour naviguer vers
      * [FinancialPlanItemConvertFragment] ("Enregistrer comme transaction"). */
-    val itemId: Long = savedStateHandle.get<Long>(ITEM_ID_ARG) ?: 0L
+    val itemId: Long = args.itemId
     val isEditMode: Boolean = itemId != 0L
 
     private val _formState = MutableStateFlow(FinancialPlanItemFormState())
@@ -186,9 +189,9 @@ class FinancialPlanItemFormViewModel @Inject constructor(
         val state = _formState.value
         if (state.isSaving) return
 
-        val nameError = if (state.nameInput.isBlank()) "Nom requis" else null
+        val nameError = if (state.nameInput.isBlank()) R.string.error_name_required else null
         val amountMinor = Money.parseToMinorUnits(state.amountInput)
-        val amountError = if (amountMinor == null || amountMinor <= 0L) "Montant invalide" else null
+        val amountError = if (amountMinor == null || amountMinor <= 0L) R.string.error_invalid_amount else null
 
         if (nameError != null || amountError != null) {
             _formState.update { it.copy(nameError = nameError, amountError = amountError) }
@@ -218,10 +221,5 @@ class FinancialPlanItemFormViewModel @Inject constructor(
             _formState.update { it.copy(isSaving = false) }
             _events.emit(FinancialPlanItemFormEvent.Saved)
         }
-    }
-
-    private companion object {
-        const val PLAN_ID_ARG = "planId"
-        const val ITEM_ID_ARG = "itemId"
     }
 }

@@ -8,8 +8,10 @@ import com.naniger.arzikina.domain.model.TransactionType
 import com.naniger.arzikina.domain.repository.AccountRepository
 import com.naniger.arzikina.domain.repository.CategoryRepository
 import com.naniger.arzikina.domain.repository.TransactionRepository
+import com.naniger.arzikina.presentation.components.DefaultNameLocalizer
 import com.naniger.arzikina.util.AppResult
 import com.naniger.arzikina.util.DatePeriods
+import com.naniger.arzikina.util.technicalMessage
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -71,7 +73,8 @@ data class TransactionFilters(
 class TransactionsViewModel @Inject constructor(
     private val transactionRepository: TransactionRepository,
     accountRepository: AccountRepository,
-    categoryRepository: CategoryRepository
+    categoryRepository: CategoryRepository,
+    private val defaultNameLocalizer: DefaultNameLocalizer
 ) : ViewModel() {
 
     private val _filters = MutableStateFlow(TransactionFilters())
@@ -120,11 +123,10 @@ class TransactionsViewModel @Inject constructor(
                 // vue (compte affiché, sens du montant) — voir TransactionItemBinder — sans quoi
                 // le transfert resterait invisible pour ce filtre (voir point 3 ci-dessous).
                 val isTransferReceived = filters.accountId != null && transaction.transferAccountId == filters.accountId
-                // `?:` défensif : isTransferReceived garantit transferAccountId non-null en
-                // pratique (il est comparé à filters.accountId, lui-même non-null dans ce cas),
-                // mais le compilateur ne peut pas le déduire d'un `if` à deux branches typées différemment.
+                // Pas de `?:` : isTransferReceived garantit transferAccountId non-null (il est égal à
+                // filters.accountId, lui-même non-null) — le compilateur Kotlin 2 le déduit seul.
                 val perspectiveAccountId: Long = if (isTransferReceived) {
-                    transaction.transferAccountId ?: transaction.accountId
+                    transaction.transferAccountId
                 } else {
                     transaction.accountId
                 }
@@ -155,7 +157,7 @@ class TransactionsViewModel @Inject constructor(
             .groupByDay()
     }
         .map<List<TransactionDaySection>, AppResult<List<TransactionDaySection>>> { AppResult.Success(it) }
-        .catch { throwable -> emit(AppResult.Error(throwable.message ?: "Erreur inconnue", throwable)) }
+        .catch { throwable -> emit(AppResult.Error(throwable.technicalMessage(), throwable)) }
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(stopTimeoutMillis = 5_000),
@@ -203,7 +205,10 @@ class TransactionsViewModel @Inject constructor(
     private fun matchesQuery(item: TransactionUiItem, query: String): Boolean {
         if (query.isEmpty()) return true
         return item.transaction.description.contains(query, ignoreCase = true) ||
+            // Nom affiché (ex. « Salary ») ET nom enregistré (« Salaire ») : voir DefaultNameLocalizer.
+            item.category?.let { defaultNameLocalizer.displayName(it).contains(query, ignoreCase = true) } == true ||
             item.category?.name?.contains(query, ignoreCase = true) == true ||
+            item.account?.let { defaultNameLocalizer.displayName(it).contains(query, ignoreCase = true) } == true ||
             item.account?.name?.contains(query, ignoreCase = true) == true
     }
 }

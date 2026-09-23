@@ -26,7 +26,9 @@ class ReceiptTransactionInfoParserTest {
         assertEquals(1_000_000L, info.amountMinor) // 10 000 CFA
         assertEquals(30_000L, info.feeMinor) // 300 CFA, jamais confondu avec "Type de Frais"
         assertEquals(TransactionType.EXPENSE, info.transactionType) // "Débit"
-        assertEquals("Transfert vers Ari Aoua", info.description)
+        // Débit : le destinataire, jamais l'expéditeur. La phrase affichée (« Transfert vers … »)
+        // est construite dans la langue de l'interface, voir ReceiptCounterpartyDisplay.kt.
+        assertEquals(ReceiptCounterparty.Recipient("Ari Aoua"), info.counterparty)
         assertEquals("MYNITA1ABA77D905DF3", info.transactionReference)
 
         val expectedMillis = DatePeriods.toEpochMillis(LocalDate.of(2026, 8, 12), LocalTime.of(14, 13, 36))
@@ -45,6 +47,23 @@ class ReceiptTransactionInfoParserTest {
         val text = "Type d'opération : Crédit"
 
         assertEquals(TransactionType.INCOME, ReceiptTransactionInfoParser.parse(text).transactionType)
+    }
+
+    @Test
+    fun `credit - l expediteur est retenu comme autre partie`() {
+        val text = "Expéditeur : Abdoul Kader Bachir\nDestinataire : Ari Aoua\nType d'opération : Crédit"
+
+        assertEquals(
+            ReceiptCounterparty.Sender("Abdoul Kader Bachir"),
+            ReceiptTransactionInfoParser.parse(text).counterparty
+        )
+    }
+
+    @Test
+    fun `type inconnu - le destinataire est retenu en priorite`() {
+        val text = "Expéditeur : Abdoul Kader Bachir\nDestinataire : Ari Aoua"
+
+        assertEquals(ReceiptCounterparty.Recipient("Ari Aoua"), ReceiptTransactionInfoParser.parse(text).counterparty)
     }
 
     @Test
@@ -69,7 +88,7 @@ class ReceiptTransactionInfoParserTest {
         assertNull(info.amountMinor)
         assertNull(info.feeMinor)
         assertNull(info.dateTimeMillis)
-        assertNull(info.description)
+        assertNull(info.counterparty)
         assertNull(info.transactionType)
         assertNull(info.transactionReference)
     }

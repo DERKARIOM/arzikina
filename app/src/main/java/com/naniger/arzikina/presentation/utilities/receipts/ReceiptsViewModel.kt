@@ -8,6 +8,7 @@ import com.naniger.arzikina.domain.repository.TransactionRepository
 import com.naniger.arzikina.util.AppResult
 import com.naniger.arzikina.util.DatePeriods
 import com.naniger.arzikina.util.Money
+import com.naniger.arzikina.util.technicalMessage
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -110,7 +111,7 @@ class ReceiptsViewModel @Inject constructor(
             .groupByDay()
     }
         .map<List<ReceiptDaySection>, AppResult<List<ReceiptDaySection>>> { AppResult.Success(it) }
-        .catch { throwable -> emit(AppResult.Error(throwable.message ?: "Erreur inconnue", throwable)) }
+        .catch { throwable -> emit(AppResult.Error(throwable.technicalMessage(), throwable)) }
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(stopTimeoutMillis = 5_000),
@@ -147,7 +148,7 @@ class ReceiptsViewModel @Inject constructor(
                 receiptRepository.importReceipt(sourceUri, displayName, mimeType, sourceApp = null, sourceName = null)
             }
                 .onSuccess { _events.emit(ReceiptImportEvent.Success) }
-                .onFailure { _events.emit(ReceiptImportEvent.Failure(it.message ?: "Erreur inconnue")) }
+                .onFailure { _events.emit(ReceiptImportEvent.Failure(it.technicalMessage())) }
         }
     }
 

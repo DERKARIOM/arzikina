@@ -52,7 +52,7 @@ class ReceiptPdfViewerViewModel @Inject constructor(
     @IoDispatcher private val ioDispatcher: CoroutineDispatcher
 ) : ViewModel() {
 
-    private val receiptId: Long = savedStateHandle.get<Long>(RECEIPT_ID_ARG) ?: 0L
+    private val receiptId: Long = ReceiptPdfViewerFragmentArgs.fromSavedStateHandle(savedStateHandle).receiptId
 
     private var session: ReceiptPdfRenderer.Session? = null
 
@@ -117,8 +117,6 @@ class ReceiptPdfViewerViewModel @Inject constructor(
     }
 
     private companion object {
-        const val RECEIPT_ID_ARG = "receiptId"
-
         /** Plus large que `ReceiptDetailViewModel.PREVIEW_WIDTH_PX` : cet écran occupe tout l'écran,
          * un rendu plus net y est justifié (voir cahier des charges, "excellente lisibilité"). */
         const val PAGE_WIDTH_PX = 1080

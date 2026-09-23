@@ -4,7 +4,6 @@ import android.net.Uri
 import android.os.Bundle
 import android.view.View
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.core.os.bundleOf
 import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
@@ -177,7 +176,7 @@ class ReceiptsFragment : Fragment(R.layout.fragment_receipts) {
     private fun onReceiptClicked(receipt: Receipt) {
         findNavController().navigate(
             R.id.receiptDetailFragment,
-            bundleOf("receiptId" to receipt.id),
+            ReceiptDetailFragmentArgs(receiptId = receipt.id).toBundle(),
             NavAnimations.push
         )
     }

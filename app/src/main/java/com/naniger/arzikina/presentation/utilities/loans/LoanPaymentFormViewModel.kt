@@ -1,8 +1,10 @@
 package com.naniger.arzikina.presentation.utilities.loans
 
+import androidx.annotation.StringRes
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.naniger.arzikina.R
 import com.naniger.arzikina.domain.model.Account
 import com.naniger.arzikina.domain.model.LoanPayment
 import com.naniger.arzikina.domain.model.LoanType
@@ -64,8 +66,8 @@ data class LoanPaymentFormState(
     val amountInput: String = "",
     val dateMillis: Long = System.currentTimeMillis(),
     val note: String = "",
-    val accountError: String? = null,
-    val amountError: String? = null,
+    @StringRes val accountError: Int? = null,
+    @StringRes val amountError: Int? = null,
     val isSaving: Boolean = false
 )
 
@@ -82,7 +84,7 @@ class LoanPaymentFormViewModel @Inject constructor(
     transactionRepository: TransactionRepository
 ) : ViewModel() {
 
-    private val loanId: Long = savedStateHandle.get<Long>(LOAN_ID_ARG) ?: 0L
+    private val loanId: Long = LoanPaymentFormFragmentArgs.fromSavedStateHandle(savedStateHandle).loanId
 
     private val _formState = MutableStateFlow(LoanPaymentFormState())
     val formState: StateFlow<LoanPaymentFormState> = _formState.asStateFlow()
@@ -143,11 +145,11 @@ class LoanPaymentFormViewModel @Inject constructor(
         val state = _formState.value
         // Garde anti double-soumission : voir `LoanFormViewModel.save` pour le même raisonnement.
         if (state.isSaving) return
-        val accountError = if (state.accountId == 0L) "Choisis un compte" else null
+        val accountError = if (state.accountId == 0L) R.string.error_select_account else null
         val amountMinor = Money.parseToMinorUnits(state.amountInput)
         val amountError = when {
-            amountMinor == null || amountMinor <= 0L -> "Montant invalide"
-            amountMinor > state.loanRemainingAmount -> "Ne peut pas dépasser le solde restant"
+            amountMinor == null || amountMinor <= 0L -> R.string.error_invalid_amount
+            amountMinor > state.loanRemainingAmount -> R.string.error_amount_exceeds_remaining
             else -> null
         }
 
@@ -174,9 +176,5 @@ class LoanPaymentFormViewModel @Inject constructor(
             _formState.update { it.copy(isSaving = false) }
             _events.emit(LoanPaymentFormEvent.Saved)
         }
-    }
-
-    private companion object {
-        const val LOAN_ID_ARG = "loanId"
     }
 }

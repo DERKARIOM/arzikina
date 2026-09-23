@@ -19,6 +19,8 @@ import com.naniger.arzikina.domain.model.LoanType
 import com.naniger.arzikina.domain.model.SupportedCurrency
 import com.naniger.arzikina.presentation.accounts.AccountIconMapper
 import com.naniger.arzikina.presentation.components.AccountPickerDialog
+import com.naniger.arzikina.presentation.components.displayName
+import com.naniger.arzikina.util.AppDateFormats
 import com.naniger.arzikina.util.Money
 import com.naniger.arzikina.util.MoneyInputFormatter
 import com.google.android.material.datepicker.MaterialDatePicker
@@ -29,7 +31,6 @@ import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.ZoneId
 import java.time.ZoneOffset
-import java.time.format.DateTimeFormatter
 
 /**
  * Enregistrement d'un remboursement, atteint depuis le bouton "Enregistrer un remboursement" de
@@ -154,7 +155,7 @@ class LoanPaymentFormFragment : Fragment(R.layout.fragment_loan_payment_form) {
 
         val selectedAccount = latestAccounts.firstOrNull { it.id == state.accountId }
         bindAccountField(binding, selectedAccount)
-        binding.accountErrorText.text = state.accountError
+        binding.accountErrorText.text = state.accountError?.let { getString(it) }
         binding.accountErrorText.visibility = if (state.accountError != null) View.VISIBLE else View.GONE
         // Avertissement non bloquant (voir la doc de LoanPaymentFormState.amountInput) : le montant
         // saisi est toujours interprété dans la devise DU PRÊT, jamais convertie.
@@ -164,7 +165,7 @@ class LoanPaymentFormFragment : Fragment(R.layout.fragment_loan_payment_form) {
         if (binding.amountInput.text?.toString() != state.amountInput) {
             binding.amountInput.setText(state.amountInput)
         }
-        binding.amountErrorText.text = state.amountError
+        binding.amountErrorText.text = state.amountError?.let { getString(it) }
         binding.amountErrorText.visibility = if (state.amountError != null) View.VISIBLE else View.GONE
         binding.amountCurrencyBadge.text = currencySymbol(state.loanCurrencyCode)
 
@@ -181,7 +182,7 @@ class LoanPaymentFormFragment : Fragment(R.layout.fragment_loan_payment_form) {
         if (account != null) {
             fieldBinding.accountFieldIcon.setImageResource(AccountIconMapper.iconFor(account.icon))
             fieldBinding.accountFieldIcon.backgroundTintList = ColorStateList.valueOf(account.colorArgb.toInt())
-            fieldBinding.accountFieldName.text = account.name
+            fieldBinding.accountFieldName.text = account.displayName(requireContext())
             val balance = latestAccountBalances[account.id] ?: account.initialBalance
             fieldBinding.accountFieldBalance.text = getString(
                 R.string.transaction_form_account_balance,
@@ -202,15 +203,11 @@ class LoanPaymentFormFragment : Fragment(R.layout.fragment_loan_payment_form) {
         SupportedCurrency.entries.firstOrNull { it.code == currencyCode }?.symbol ?: currencyCode
 
     private fun formatDate(millis: Long): String =
-        Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault()).toLocalDate().format(DATE_FORMATTER)
+        Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault()).toLocalDate().format(AppDateFormats.NUMERIC_DATE)
 
     private data class RenderState(
         val formState: LoanPaymentFormState,
         val accounts: List<Account>,
         val accountBalances: Map<Long, Long>
     )
-
-    private companion object {
-        val DATE_FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
-    }
 }

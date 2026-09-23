@@ -3,6 +3,7 @@ package com.naniger.arzikina.presentation.utilities.loans
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.naniger.arzikina.domain.model.Account
 import com.naniger.arzikina.domain.model.Loan
 import com.naniger.arzikina.domain.model.LoanPayment
 import com.naniger.arzikina.domain.model.computeLoanStatus
@@ -11,6 +12,7 @@ import com.naniger.arzikina.domain.repository.LoanRepository
 import com.naniger.arzikina.domain.repository.PersonRepository
 import com.naniger.arzikina.util.AppResult
 import com.naniger.arzikina.util.Constants
+import com.naniger.arzikina.util.technicalMessage
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -32,7 +34,7 @@ import javax.inject.Inject
  * plan de développement Prêts/Emprunts (l'Étape "Gestion des remboursements" suit celle-ci). Cet
  * écran reste donc fidèle aux données réelles plutôt que d'inventer un versement à venir.
  *
- * @param accountNamesById TOUS les comptes (pas seulement [Loan.accountId]) : un [LoanPayment]
+ * @param accountsById TOUS les comptes (pas seulement [Loan.accountId]) : un [LoanPayment]
  * peut être réglé sur un compte différent de celui utilisé à la création du prêt/emprunt (voir la
  * doc de [LoanPayment.accountId]) — nécessaire pour afficher le bon nom de compte sur chaque ligne
  * de la section "Versements" (cahier des charges section 11).
@@ -42,7 +44,7 @@ data class LoanDetailUiState(
     val personName: String,
     val currencyCode: String,
     val payments: List<LoanPayment>,
-    val accountNamesById: Map<Long, String>
+    val accountsById: Map<Long, Account>
 )
 
 @HiltViewModel
@@ -53,7 +55,7 @@ class LoanDetailViewModel @Inject constructor(
     accountRepository: AccountRepository
 ) : ViewModel() {
 
-    val loanId: Long = savedStateHandle.get<Long>(LOAN_ID_ARG) ?: 0L
+    val loanId: Long = LoanDetailFragmentArgs.fromSavedStateHandle(savedStateHandle).loanId
 
     val uiState: StateFlow<AppResult<LoanDetailUiState>> = combine(
         loanRepository.observeLoans(),
@@ -78,13 +80,13 @@ class LoanDetailViewModel @Inject constructor(
             personName = persons.find { it.id == loan.personId }?.name.orEmpty(),
             currencyCode = accounts.find { it.id == loan.accountId }?.currencyCode ?: Constants.DEFAULT_CURRENCY_CODE,
             payments = payments,
-            accountNamesById = accounts.associate { it.id to it.name }
+            accountsById = accounts.associateBy { it.id }
         )
     }
         .map<LoanDetailUiState?, AppResult<LoanDetailUiState>> { state ->
-            state?.let { AppResult.Success(it) } ?: AppResult.Error("Prêt/emprunt introuvable")
+            state?.let { AppResult.Success(it) } ?: AppResult.Error("Loan not found")
         }
-        .catch { throwable -> emit(AppResult.Error(throwable.message ?: "Erreur inconnue", throwable)) }
+        .catch { throwable -> emit(AppResult.Error(throwable.technicalMessage(), throwable)) }
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(stopTimeoutMillis = 5_000),
@@ -105,9 +107,5 @@ class LoanDetailViewModel @Inject constructor(
         viewModelScope.launch {
             loanRepository.deletePayment(paymentId)
         }
-    }
-
-    private companion object {
-        const val LOAN_ID_ARG = "loanId"
     }
 }

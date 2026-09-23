@@ -16,6 +16,8 @@ import com.naniger.arzikina.databinding.ItemBudgetModernBinding
 import com.naniger.arzikina.domain.model.BudgetPeriod
 import com.naniger.arzikina.domain.model.CurrencyAmount
 import com.naniger.arzikina.presentation.categories.CategoryIconMapper
+import com.naniger.arzikina.presentation.components.displayName
+import com.naniger.arzikina.util.AppDateFormats
 import com.naniger.arzikina.util.BudgetPace
 import com.naniger.arzikina.util.BudgetPaceState
 import com.naniger.arzikina.util.BudgetPeriodStatus
@@ -23,9 +25,7 @@ import com.naniger.arzikina.util.DatePeriods
 import com.naniger.arzikina.util.Money
 import com.naniger.arzikina.util.daysRemaining
 import java.time.LocalDate
-import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
-import java.util.Locale
 import kotlin.math.roundToInt
 
 /**
@@ -117,7 +117,7 @@ class BudgetModernAdapter(
             )
             binding.categoryIcon.backgroundTintList =
                 ColorStateList.valueOf(ContextCompat.getColor(context, R.color.arzikina_chip_on_budget_card))
-            binding.categoryName.text = category?.name ?: context.getString(R.string.transaction_uncategorized)
+            binding.categoryName.text = category?.displayName(context) ?: context.getString(R.string.transaction_uncategorized)
         }
 
         /**
@@ -219,17 +219,17 @@ class BudgetModernAdapter(
                 val end = DatePeriods.toLocalDate(item.budget.endDate!!)
                 binding.periodValue.text = context.getString(
                     R.string.budget_modern_period_range,
-                    start.format(DATE_FORMATTER),
-                    end.format(DATE_FORMATTER)
+                    start.format(AppDateFormats.NUMERIC_DATE),
+                    end.format(AppDateFormats.NUMERIC_DATE)
                 )
                 when (status) {
                     BudgetPeriodStatus.COMPLETED -> context.getString(R.string.budget_modern_completed_chip)
                     BudgetPeriodStatus.UPCOMING -> {
-                        val daysUntilStart = ChronoUnit.DAYS.between(today, DatePeriods.toLocalDate(item.budget.startDate!!))
+                        val daysUntilStart = ChronoUnit.DAYS.between(today, start)
                         context.getString(R.string.budget_modern_starts_in_days, daysUntilStart)
                     }
                     BudgetPeriodStatus.ONGOING -> {
-                        val remaining = daysRemaining(item.budget.endDate!!, today)
+                        val remaining = daysRemaining(item.budget.endDate, today)
                         context.getString(R.string.budget_modern_days_remaining, remaining)
                     }
                 }
@@ -306,8 +306,6 @@ class BudgetModernAdapter(
             override fun areContentsTheSame(oldItem: BudgetUiItem, newItem: BudgetUiItem): Boolean =
                 oldItem == newItem
         }
-
-        val DATE_FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy", Locale.FRENCH)
 
         /** Voir [animateAppearance] — reste dans la fourchette 200-300 ms demandée. */
         const val ENTRANCE_ANIMATION_DURATION_MS = 260L

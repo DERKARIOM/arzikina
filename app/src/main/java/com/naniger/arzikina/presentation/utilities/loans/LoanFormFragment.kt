@@ -22,6 +22,8 @@ import com.naniger.arzikina.domain.model.Person
 import com.naniger.arzikina.domain.model.SupportedCurrency
 import com.naniger.arzikina.presentation.accounts.AccountIconMapper
 import com.naniger.arzikina.presentation.components.AccountPickerDialog
+import com.naniger.arzikina.presentation.components.displayName
+import com.naniger.arzikina.util.AppDateFormats
 import com.naniger.arzikina.util.Constants
 import com.naniger.arzikina.util.Money
 import com.naniger.arzikina.util.MoneyInputFormatter
@@ -34,7 +36,6 @@ import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.ZoneId
 import java.time.ZoneOffset
-import java.time.format.DateTimeFormatter
 
 /**
  * Ajout d'un prêt/emprunt, en 2 pages (voir maquette et la doc de [LoanFormViewModel]).
@@ -197,24 +198,24 @@ class LoanFormFragment : Fragment(R.layout.fragment_loan_form) {
         renderTypeCard(binding.typeBorrowedCard, isSelected = state.type == LoanType.BORROWED, selectedColorRes = R.color.expense_red)
 
         binding.personFieldName.text = state.personName.ifBlank { getString(R.string.loan_form_person_placeholder) }
-        binding.personErrorText.text = state.personError
+        binding.personErrorText.text = state.personError?.let { getString(it) }
         binding.personErrorText.visibility = if (state.personError != null) View.VISIBLE else View.GONE
 
         val selectedAccount = latestAccounts.firstOrNull { it.id == state.accountId }
         bindAccountField(binding, selectedAccount)
-        binding.accountErrorText.text = state.accountError
+        binding.accountErrorText.text = state.accountError?.let { getString(it) }
         binding.accountErrorText.visibility = if (state.accountError != null) View.VISIBLE else View.GONE
 
         if (binding.amountInput.text?.toString() != state.amountInput) {
             binding.amountInput.setText(state.amountInput)
         }
-        binding.amountErrorText.text = state.amountError
+        binding.amountErrorText.text = state.amountError?.let { getString(it) }
         binding.amountErrorText.visibility = if (state.amountError != null) View.VISIBLE else View.GONE
         binding.amountCurrencyBadge.text = selectedAccount?.let { currencySymbol(it.currencyCode) }.orEmpty()
 
         binding.startDateField.dateFieldValue.text = formatDate(state.startDateMillis)
         binding.dueDateField.dateFieldValue.text = formatDate(state.dueDateMillis)
-        binding.dueDateErrorText.text = state.dueDateError
+        binding.dueDateErrorText.text = state.dueDateError?.let { getString(it) }
         binding.dueDateErrorText.visibility = if (state.dueDateError != null) View.VISIBLE else View.GONE
     }
 
@@ -244,10 +245,10 @@ class LoanFormFragment : Fragment(R.layout.fragment_loan_form) {
         if (binding.firstPaymentAmountInput.text?.toString() != state.firstPaymentAmountInput) {
             binding.firstPaymentAmountInput.setText(state.firstPaymentAmountInput)
         }
-        binding.firstPaymentAmountLayout.error = state.firstPaymentAmountError
+        binding.firstPaymentAmountLayout.error = state.firstPaymentAmountError?.let { getString(it) }
 
         binding.firstPaymentDateField.dateFieldValue.text = formatDate(state.firstPaymentDateMillis)
-        binding.firstPaymentDateErrorText.text = state.firstPaymentDateError
+        binding.firstPaymentDateErrorText.text = state.firstPaymentDateError?.let { getString(it) }
         binding.firstPaymentDateErrorText.visibility = if (state.firstPaymentDateError != null) View.VISIBLE else View.GONE
     }
 
@@ -267,7 +268,7 @@ class LoanFormFragment : Fragment(R.layout.fragment_loan_form) {
         if (account != null) {
             fieldBinding.accountFieldIcon.setImageResource(AccountIconMapper.iconFor(account.icon))
             fieldBinding.accountFieldIcon.backgroundTintList = ColorStateList.valueOf(account.colorArgb.toInt())
-            fieldBinding.accountFieldName.text = account.name
+            fieldBinding.accountFieldName.text = account.displayName(requireContext())
             val balance = latestAccountBalances[account.id] ?: account.initialBalance
             fieldBinding.accountFieldBalance.text = getString(
                 R.string.transaction_form_account_balance,
@@ -288,7 +289,7 @@ class LoanFormFragment : Fragment(R.layout.fragment_loan_form) {
         SupportedCurrency.entries.firstOrNull { it.code == currencyCode }?.symbol ?: currencyCode
 
     private fun formatDate(millis: Long): String =
-        Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault()).toLocalDate().format(DATE_FORMATTER)
+        Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault()).toLocalDate().format(AppDateFormats.NUMERIC_DATE)
 
     /** Regroupe les 4 flux observés pour éviter un `combine` imbriqué illisible (voir
      * [onViewCreated]) — même principe que `TransactionFormFragment.FormRenderState`. */
@@ -301,6 +302,5 @@ class LoanFormFragment : Fragment(R.layout.fragment_loan_form) {
 
     private companion object {
         const val TOTAL_STEPS = 2
-        val DATE_FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
     }
 }

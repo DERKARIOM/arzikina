@@ -15,6 +15,7 @@ import com.naniger.arzikina.util.AppResult
 import com.naniger.arzikina.util.DatePeriods
 import com.naniger.arzikina.util.PersonalStatistics
 import com.naniger.arzikina.util.StatsPeriodPreset
+import com.naniger.arzikina.util.technicalMessage
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -186,7 +187,7 @@ class StatisticsViewModel @Inject constructor(
         )
     }
         .map<StatisticsUiState, AppResult<StatisticsUiState>> { AppResult.Success(it) }
-        .catch { throwable -> emit(AppResult.Error(throwable.message ?: "Erreur inconnue", throwable)) }
+        .catch { throwable -> emit(AppResult.Error(throwable.technicalMessage(), throwable)) }
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(stopTimeoutMillis = 5_000),

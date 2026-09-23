@@ -1,5 +1,6 @@
 <resources>
-    <string name="app_name">Arzikina</string>
+    <!-- Nom de marque : identique dans toutes les langues. -->
+    <string name="app_name" translatable="false">Arzikina</string>
     <!-- Accroche courte sous le logo (voir item_auth_header.xml, écrans Connexion/Inscription) —
          purement cosmétique, aucune logique associée. -->
     <string name="auth_header_tagline">Gérez aujourd\'hui un meilleur demain</string>
@@ -88,7 +89,14 @@
     <string name="settings_backup_import_action">Restaurer mes données</string>
     <string name="settings_backup_export_success">Export réussi : %1$d comptes, %2$d catégories, %3$d transactions, %4$d budgets, %5$d objectifs, %6$d prêts/emprunts, %7$d transactions automatiques, %8$d occurrences, %9$d planifications, %10$d dépenses prévues, %11$d reçus, %12$d modèles.</string>
     <string name="settings_backup_import_success">Importation réussie : %1$d comptes, %2$d catégories, %3$d transactions, %4$d budgets, %5$d objectifs, %6$d prêts/emprunts, %7$d transactions automatiques, %8$d occurrences, %9$d planifications, %10$d dépenses prévues, %11$d reçus, %12$d modèles.</string>
-    <string name="settings_backup_error_prefix">Échec :</string>
+    <!-- %1$s = cause traduite (backup_error_* ou error_generic, voir BackupViewModel.toBackupError). -->
+    <string name="settings_backup_error_message">Échec : %1$s</string>
+    <string name="backup_error_newer_version">ce fichier provient d\'une version plus récente d\'Arzikina. Mets l\'application à jour puis réessaie.</string>
+    <string name="backup_error_invalid_file">ce fichier n\'est pas une sauvegarde Arzikina valide.</string>
+    <!-- %1$s = nom d'utilisateur contenu dans le fichier. -->
+    <string name="backup_error_username_conflict">le nom d\'utilisateur « %1$s » est déjà utilisé par un autre compte sur cet appareil.</string>
+    <!-- %1$s = adresse e-mail contenue dans le fichier. -->
+    <string name="backup_error_email_conflict">l\'adresse e-mail « %1$s » est déjà utilisée par un autre compte sur cet appareil.</string>
     <string name="settings_backup_import_confirm_title">Remplacer toutes les données ?</string>
     <string name="settings_backup_import_confirm_message">L\'importation remplace définitivement toutes les données actuelles (comptes, catégories, transactions, frais, budgets, objectifs d\'épargne, prêts/emprunts, transactions automatiques, profil) par celles du fichier choisi. Cette action est irréversible.</string>
     <string name="settings_backup_import_confirm_action">Remplacer</string>
@@ -231,7 +239,22 @@
     <string name="settings_sync_now_in_progress">Synchronisation en cours…</string>
     <!-- %1$d = envoyées avec succès (push), %2$d = en erreur (push), %3$d = reçues et appliquées
          (pull) — voir SettingsViewModel.syncNow, qui enchaîne toujours push PUIS pull. -->
-    <string name="settings_sync_now_result">%1$d envoyée(s), %2$d en erreur, %3$d reçue(s)</string>
+    <!-- Chantier i18n, étape 3 : chaque compteur est un <plurals> (sync_*_count ci-dessous), ce
+         gabarit ne fait que les assembler — voir presentation/components/SyncResultMessage.kt. -->
+    <string name="settings_sync_now_result">%1$s, %2$s, %3$s</string>
+    <!-- En français, la forme "one" couvre 0 et 1 (« 0 envoyée », « 1 envoyée »). -->
+    <plurals name="sync_sent_count">
+        <item quantity="one">%d envoyée</item>
+        <item quantity="other">%d envoyées</item>
+    </plurals>
+    <plurals name="sync_failed_count">
+        <item quantity="one">%d en erreur</item>
+        <item quantity="other">%d en erreur</item>
+    </plurals>
+    <plurals name="sync_received_count">
+        <item quantity="one">%d reçue</item>
+        <item quantity="other">%d reçues</item>
+    </plurals>
     <string name="settings_sync_now_nothing_pending">Rien à synchroniser</string>
     <string name="settings_sync_now_error">Synchronisation impossible, réessaie plus tard</string>
 
@@ -278,6 +301,8 @@
     <string name="profile_photo_delete_confirm_message">Tu reviendras à l\'avatar par défaut. Tu pourras ajouter une nouvelle photo à tout moment.</string>
     <string name="profile_photo_crop_title">Recadrer la photo</string>
     <string name="profile_photo_crop_confirm_action">Valider</string>
+    <!-- Lecteur d'écran : zone de recadrage (voir fragment_profile_photo_crop.xml). -->
+    <string name="profile_photo_crop_area_description">Zone de recadrage. Déplacez la photo avec un doigt, zoomez avec deux doigts.</string>
     <string name="profile_photo_preview_title">Aperçu de votre photo de profil</string>
     <string name="profile_photo_use_this_photo_action">Utiliser cette photo</string>
     <string name="profile_photo_error_message">Impossible de traiter cette photo. Réessaie.</string>
@@ -390,6 +415,8 @@
          garde le numéro déjà enregistré (seuls ses 4 derniers chiffres, %s, sont connus). -->
     <string name="account_form_card_number_helper_edit">Laisser vide pour conserver le numéro se terminant par %s</string>
     <string name="account_form_card_expiry_label">Expiration (MM/AA)</string>
+    <!-- Exemple de saisie (mois/année), voir cardExpiryInput. -->
+    <string name="account_form_card_expiry_hint">MM/AA</string>
     <string name="account_form_card_cvv_label">Code de sécurité (CVV/CVC)</string>
     <!-- Voir excludeFromStatisticsCard (fragment_account_form.xml) et Account.isExcludedFromStatistics :
          permet de détenir de l'argent pour le compte d'un tiers sans qu'il compte dans le patrimoine
@@ -407,6 +434,8 @@
          Visible uniquement pour AccountType.MOBILE_MONEY. -->
     <string name="account_form_mobile_money_section_label">Application Mobile Money</string>
     <string name="account_form_mobile_money_package_label">Package Android</string>
+    <!-- Exemple de nom de package Android, voir mobileMoneyPackageInput. -->
+    <string name="account_form_mobile_money_package_hint">com.exemple.mobilemoney</string>
     <string name="account_form_mobile_money_package_description">Entrez le nom du package Android de l\'application Mobile Money à ouvrir, ou sélectionnez-la dans la liste des applications installées.</string>
     <string name="account_form_mobile_money_select_app_action">Sélectionner une application</string>
     <!-- Nom lisible de l'application détectée pour le package actuellement saisi (voir
@@ -461,6 +490,9 @@
     <string name="category_form_name_label">Nom de la catégorie</string>
     <string name="category_form_icon_label">Icône</string>
     <string name="category_form_color_label">Couleur</string>
+    <!-- Lecteur d'écran (TalkBack) : position dans les sélecteurs d'icône et de couleur (IconPickerAdapter, ColorPickerAdapter). L'état « sélectionné » est annoncé automatiquement. -->
+    <string name="icon_picker_item_description">Icône %1$d sur %2$d</string>
+    <string name="color_picker_item_description">Couleur %1$d sur %2$d</string>
 
     <!-- Transactions -->
     <string name="transactions_add">Ajouter</string>
@@ -558,6 +590,7 @@
     <string name="dashboard_income_label_short">Revenu</string>
     <string name="dashboard_expense_label_short">Dépense</string>
     <string name="dashboard_difference_label">Différence</string>
+    <string name="dashboard_income_expense_title">Dépenses vs revenus</string>
     <string name="dashboard_budget_gap_label">Écart Budget</string>
     <string name="dashboard_budget_title">Budget</string>
     <string name="dashboard_budget_see_all">Voir tout</string>
@@ -832,11 +865,20 @@
         "utility_loans_title" (existante, voir plus haut) reste le titre de la barre d'outils.
     -->
     <string name="loans_summary_receivable_title">Total reçu</string>
-    <string name="loans_summary_receivable_count">%d prêt(s) accordé(s)</string>
+    <plurals name="loans_summary_receivable_count">
+        <item quantity="one">%d prêt accordé</item>
+        <item quantity="other">%d prêts accordés</item>
+    </plurals>
     <string name="loans_summary_owed_title">Total dû</string>
-    <string name="loans_summary_owed_count">%d emprunt(s)</string>
+    <plurals name="loans_summary_owed_count">
+        <item quantity="one">%d emprunt</item>
+        <item quantity="other">%d emprunts</item>
+    </plurals>
     <string name="loans_list_title">Mes prêts et emprunts</string>
-    <string name="loans_list_count">%d élément(s)</string>
+    <plurals name="loans_list_count">
+        <item quantity="one">%d élément</item>
+        <item quantity="other">%d éléments</item>
+    </plurals>
     <string name="loans_default_title_lent">Prêt</string>
     <string name="loans_default_title_borrowed">Emprunt</string>
     <string name="loans_person_prefix_lent">À %s</string>
@@ -1139,6 +1181,10 @@
          `binding.toolbar.title = ...`) — même principe que "loan_detail_title". -->
     <string name="receipt_detail_title">Détail du reçu</string>
     <string name="receipt_viewer_title">Aperçu du reçu</string>
+    <!-- Description proposée pour une transaction créée depuis un reçu (voir
+         ReceiptCounterpartyDisplay.kt). %1$s = nom lu sur le reçu, jamais traduit. -->
+    <string name="receipt_description_transfer_to">Transfert vers %1$s</string>
+    <string name="receipt_description_received_from">Reçu de %1$s</string>
 
     <!--
         Marketplace personnelle (cahier des charges du même nom) — bibliothèque personnelle de
@@ -1168,7 +1214,7 @@
     <!-- %1$s = nom du modèle (voir ConfirmDialogs.confirm). Précise explicitement que la
          suppression n'affecte AUCUNE transaction déjà créée à partir de ce modèle (cahier des
          charges section 5, "le modèle ne doit pas être modifié" — s'applique aussi après coup). -->
-    <string name="marketplace_delete_confirm_message">"%1$s" sera définitivement supprimé. Les transactions déjà créées à partir de ce modèle ne sont pas affectées.</string>
+    <string name="marketplace_delete_confirm_message">« %1$s » sera définitivement supprimé. Les transactions déjà créées à partir de ce modèle ne sont pas affectées.</string>
     <string name="marketplace_empty_title">Aucun modèle pour le moment</string>
     <string name="marketplace_empty_message">Créez vos modèles de dépenses habituelles pour enregistrer vos transactions plus rapidement.</string>
     <string name="marketplace_no_results_title">Aucun modèle trouvé</string>
@@ -1196,4 +1242,76 @@
     <string name="transaction_form_template_picker_empty">Aucun modèle enregistré pour le moment. Crée-en un depuis Marketplace personnelle (Utilitaires).</string>
     <!-- %1$s = nom de la catégorie, %2$s = montant formaté (voir TemplatePickerDialog.bind). -->
     <string name="transaction_form_template_picker_subtitle">%1$s · %2$s</string>
+
+    <!-- ================================================================================
+         Messages d'erreur communs (chantier i18n, étape 2) : UN seul texte par erreur,
+         réutilisé par tous les formulaires (ViewModels → @StringRes, Fragments → getString).
+         Ne jamais réécrire l'un de ces textes en dur dans le code.
+         ================================================================================ -->
+    <string name="error_generic">Une erreur est survenue. Réessaie.</string>
+    <string name="error_name_required">Le nom est obligatoire</string>
+    <string name="error_invalid_amount">Montant invalide</string>
+    <string name="error_invalid_fee_amount">Montant des frais invalide</string>
+    <string name="error_invalid_target_amount">Montant cible invalide</string>
+    <string name="error_invalid_limit">Plafond invalide</string>
+    <string name="error_amount_exceeds_total">Ne peut pas dépasser le montant total</string>
+    <string name="error_amount_exceeds_remaining">Ne peut pas dépasser le solde restant</string>
+    <string name="error_select_account">Choisis un compte</string>
+    <string name="error_select_destination_account">Choisis un compte de destination</string>
+    <string name="error_select_fee_account">Choisis un compte pour les frais</string>
+    <string name="error_same_transfer_account">Le compte de destination doit être différent du compte source</string>
+    <string name="error_select_category">Choisis une catégorie</string>
+    <string name="error_select_person">Choisis une personne</string>
+    <string name="error_select_period">Choisis une période</string>
+    <string name="error_end_date_before_start">La date de fin doit être après la date de début</string>
+    <string name="error_end_date_before_start_inclusive">La date de fin doit être après ou égale à la date de début</string>
+    <string name="error_due_date_before_start">L\'échéance doit être après la date de début</string>
+    <string name="error_date_before_start">Ne peut pas être avant la date de début</string>
+    <string name="error_invalid_card_number">Numéro de carte invalide</string>
+    <string name="error_invalid_card_expiry">Date d\'expiration invalide</string>
+    <string name="error_invalid_card_cvv">Code de sécurité invalide</string>
+
+    <!-- Tailles de fichier (reçus), voir util/FileSizeFormatter.kt. %1$s = nombre déjà formaté
+         avec le séparateur décimal de la langue ; %1$d = nombre d'octets. -->
+    <string name="file_size_bytes">%1$d o</string>
+    <string name="file_size_kilobytes">%1$s Ko</string>
+    <string name="file_size_megabytes">%1$s Mo</string>
+
+    <!-- ================================================================================
+         Noms créés par Arzikina (chantier i18n, étape 4) — voir DefaultNamesDisplay.kt.
+         En base, ces catégories et comptes gardent TOUJOURS leur nom canonique français
+         (SystemCategoryKey / DefaultAccountKey) : seuls ces libellés d'affichage se traduisent.
+         En français, chaque libellé doit rester IDENTIQUE au nom canonique.
+         ================================================================================ -->
+    <string name="category_default_salary">Salaire</string>
+    <string name="category_default_other_income">Divers</string>
+    <string name="category_default_food">Nourriture</string>
+    <string name="category_default_transport">Transport</string>
+    <string name="category_default_health">Santé</string>
+    <string name="category_default_shopping">Shopping</string>
+    <string name="category_default_gifts">Cadeaux</string>
+    <string name="category_default_internet">Internet</string>
+    <string name="category_default_water">Eau</string>
+    <string name="category_default_electricity">Électricité</string>
+    <string name="category_default_education">Éducation</string>
+    <string name="category_default_home">Maison</string>
+    <string name="category_default_other_expense">Divers</string>
+    <string name="category_system_loan_disbursement_lent">Prêt accordé</string>
+    <string name="category_system_loan_repayment_lent">Remboursement de prêt reçu</string>
+    <string name="category_system_loan_disbursement_borrowed">Emprunt reçu</string>
+    <string name="category_system_loan_repayment_borrowed">Remboursement d\'emprunt</string>
+    <string name="category_system_fees">Frais et commissions</string>
+    <string name="account_default_cash">Espèces</string>
+    <string name="account_default_bank">Banque</string>
+    <string name="account_default_mobile_money">Mobile Money</string>
+    <string name="account_default_savings">Épargne</string>
+    <string name="account_default_wallet">Wallet</string>
+
+    <!-- Noms des devises (voir SupportedCurrency.nameRes) : le code ISO et le symbole restent
+         dans le domaine, ils ne dépendent d'aucune langue. -->
+    <string name="currency_name_xof">Franc CFA (UEMOA)</string>
+    <string name="currency_name_ngn">Naira nigérian</string>
+    <string name="currency_name_ghs">Cedi ghanéen</string>
+    <string name="currency_name_eur">Euro</string>
+    <string name="currency_name_usd">Dollar américain</string>
 </resources>

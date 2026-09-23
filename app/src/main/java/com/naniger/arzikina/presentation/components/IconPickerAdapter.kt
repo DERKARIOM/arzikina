@@ -4,6 +4,7 @@ import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.annotation.DrawableRes
 import androidx.recyclerview.widget.RecyclerView
+import com.naniger.arzikina.R
 import com.naniger.arzikina.databinding.ItemIconPickerBinding
 
 /**
@@ -36,15 +37,21 @@ class IconPickerAdapter<T>(
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val item = items[position]
-        holder.bind(item, iconRes(item), item == selected, onSelect)
+        holder.bind(item, iconRes(item), item == selected, position, items.size, onSelect)
     }
 
     override fun getItemCount(): Int = items.size
 
     class ViewHolder(private val binding: ItemIconPickerBinding) : RecyclerView.ViewHolder(binding.root) {
-        fun <T> bind(item: T, @DrawableRes iconRes: Int, isSelected: Boolean, onSelect: (T) -> Unit) {
+        /**
+         * [position] (base 0) et [count] ne servent qu'au lecteur d'écran : « Icône 3 sur 24 ». Les
+         * icônes n'ont pas de nom métier ; l'état sélectionné est annoncé via [android.view.View.isSelected].
+         */
+        fun <T> bind(item: T, @DrawableRes iconRes: Int, isSelected: Boolean, position: Int, count: Int, onSelect: (T) -> Unit) {
             binding.iconImage.setImageResource(iconRes)
             binding.iconImage.isSelected = isSelected
+            binding.iconImage.contentDescription =
+                binding.root.context.getString(R.string.icon_picker_item_description, position + 1, count)
             binding.iconImage.setOnClickListener { onSelect(item) }
         }
     }

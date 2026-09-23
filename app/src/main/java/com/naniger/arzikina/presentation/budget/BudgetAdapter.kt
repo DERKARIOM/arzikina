@@ -13,6 +13,8 @@ import com.naniger.arzikina.databinding.ItemBudgetBinding
 import com.naniger.arzikina.domain.model.BudgetPeriod
 import com.naniger.arzikina.domain.model.CurrencyAmount
 import com.naniger.arzikina.presentation.categories.CategoryIconMapper
+import com.naniger.arzikina.presentation.components.displayName
+import com.naniger.arzikina.util.AppDateFormats
 import com.naniger.arzikina.util.BudgetPace
 import com.naniger.arzikina.util.BudgetPaceState
 import com.naniger.arzikina.util.BudgetPeriodStatus
@@ -20,9 +22,7 @@ import com.naniger.arzikina.util.DatePeriods
 import com.naniger.arzikina.util.Money
 import com.naniger.arzikina.util.daysRemaining
 import java.time.LocalDate
-import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
-import java.util.Locale
 import kotlin.math.roundToInt
 
 /**
@@ -55,19 +55,19 @@ class BudgetAdapter(
             val circleColor = category?.colorArgb?.toInt()
                 ?: ContextCompat.getColor(context, R.color.arzikina_outline)
             binding.categoryIcon.backgroundTintList = ColorStateList.valueOf(circleColor)
-            binding.categoryName.text = category?.name
+            binding.categoryName.text = category?.displayName(context)
                 ?: context.getString(R.string.transaction_uncategorized)
 
             val today = LocalDate.now()
             val status = BudgetPeriodStatus.of(item.budget.startDate, item.budget.endDate, today)
 
             // Plage de dates courte (même format "d MMM" que l'ancienne ligne "Expire le ...", voir
-            // EXPIRATION_DATE_FORMATTER) si période fixe, sinon comportement inchangé (Hebdomadaire/
+            // AppDateFormats.dayMonth) si période fixe, sinon comportement inchangé (Hebdomadaire/
             // Mensuel) pour un budget récurrent legacy — voir Budget, doc de tête.
             val periodText = if (status != null) {
                 val start = DatePeriods.toLocalDate(item.budget.startDate!!)
                 val end = DatePeriods.toLocalDate(item.budget.endDate!!)
-                "${start.format(EXPIRATION_DATE_FORMATTER)} - ${end.format(EXPIRATION_DATE_FORMATTER)}"
+                "${start.format(AppDateFormats.dayMonth(context))} - ${end.format(AppDateFormats.dayMonth(context))}"
             } else {
                 context.getString(
                     if (item.budget.period == BudgetPeriod.WEEKLY) R.string.budget_period_weekly else R.string.budget_period_monthly
@@ -127,7 +127,7 @@ class BudgetAdapter(
                 val daysUntilExpiration = ChronoUnit.DAYS.between(today, periodEnd)
                 val isExpiringSoon = daysUntilExpiration <= EXPIRATION_WARNING_THRESHOLD_DAYS
                 val color = if (isExpiringSoon) R.color.expense_red else R.color.arzikina_on_surface_variant
-                context.getString(R.string.budget_expires_prefix, periodEnd.format(EXPIRATION_DATE_FORMATTER)) to color
+                context.getString(R.string.budget_expires_prefix, periodEnd.format(AppDateFormats.dayMonth(context))) to color
             }
             binding.expirationLabel.text = expirationText
             val expirationTextColor = ContextCompat.getColor(context, expirationColor)
@@ -162,6 +162,5 @@ class BudgetAdapter(
         /** Nombre de jours restants à partir duquel la date d'expiration est mise en évidence en rouge. */
         const val EXPIRATION_WARNING_THRESHOLD_DAYS = 3L
 
-        val EXPIRATION_DATE_FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPattern("d MMM", Locale.FRENCH)
     }
 }

@@ -10,6 +10,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.naniger.arzikina.R
 import com.naniger.arzikina.databinding.ItemCategoryBreakdownBinding
 import com.naniger.arzikina.domain.model.CurrencyAmount
+import com.naniger.arzikina.presentation.components.displayName
 import com.naniger.arzikina.util.Money
 import kotlin.math.roundToInt
 
@@ -44,7 +45,7 @@ class CategoryBreakdownAdapter :
                 ?: ContextCompat.getColor(context, R.color.arzikina_outline)
             binding.colorDot.backgroundTintList = ColorStateList.valueOf(dotColor)
 
-            binding.categoryName.text = item.category?.name
+            binding.categoryName.text = item.category?.displayName(binding.root.context)
                 ?: context.getString(R.string.transaction_uncategorized)
 
             val amountText = Money.format(CurrencyAmount(currencyCode, item.amountMinor))

@@ -7,12 +7,12 @@ import android.graphics.Paint
 import android.graphics.RectF
 import android.text.TextPaint
 import android.util.AttributeSet
+import android.util.TypedValue
 import android.view.View
 import androidx.annotation.ColorInt
 import com.naniger.arzikina.util.Money
 import com.google.android.material.color.MaterialColors
 import java.text.NumberFormat
-import java.util.Locale
 import kotlin.math.floor
 import kotlin.math.log10
 import kotlin.math.pow
@@ -65,16 +65,18 @@ class CategoryBarChartView @JvmOverloads constructor(
     }
 
     private val axisLabelPaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
-        textSize = 11f * resources.displayMetrics.scaledDensity
+        // applyDimension(SP) plutôt que `scaledDensity` (déprécié) : respecte aussi la mise à
+        // l'échelle NON linéaire des polices d'Android 14+ (grandes tailles d'accessibilité).
+        textSize = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, 11f, resources.displayMetrics)
         textAlign = Paint.Align.RIGHT
     }
 
     private val barRect = RectF()
 
     // Pas de décimales sur l'axe (voir niceCeiling : toujours un multiple "rond") — même
-    // NumberFormat.getNumberInstance(Locale.FRENCH) que Money.kt, pour le même séparateur de
+    // NumberFormat.getNumberInstance(Money.AMOUNT_LOCALE) que Money.kt, pour le même séparateur de
     // milliers que partout ailleurs dans l'app.
-    private val axisNumberFormat = NumberFormat.getNumberInstance(Locale.FRENCH).apply {
+    private val axisNumberFormat = NumberFormat.getNumberInstance(Money.AMOUNT_LOCALE).apply {
         maximumFractionDigits = 0
     }
 

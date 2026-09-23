@@ -2,7 +2,6 @@ package com.naniger.arzikina.presentation.transactions
 
 import android.os.Bundle
 import android.view.View
-import androidx.core.os.bundleOf
 import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
@@ -16,6 +15,7 @@ import com.naniger.arzikina.databinding.FragmentTransactionsBinding
 import com.naniger.arzikina.domain.model.Account
 import com.naniger.arzikina.domain.model.Category
 import com.naniger.arzikina.presentation.components.NavAnimations
+import com.naniger.arzikina.presentation.components.displayName
 import com.naniger.arzikina.util.AppResult
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.combine
@@ -186,17 +186,17 @@ class TransactionsFragment : Fragment(R.layout.fragment_transactions) {
             binding.periodChipGroup.check(expectedPeriodChip)
         }
 
-        val accountLabels = listOf(getString(R.string.transactions_filter_all_accounts)) + accounts.map { it.name }
+        val accountLabels = listOf(getString(R.string.transactions_filter_all_accounts)) + accounts.map { it.displayName(requireContext()) }
         binding.accountFilterField.dropdownInput.setSimpleItems(accountLabels.toTypedArray())
-        val accountLabel = accounts.firstOrNull { it.id == filters.accountId }?.name
+        val accountLabel = accounts.firstOrNull { it.id == filters.accountId }?.displayName(requireContext())
             ?: getString(R.string.transactions_filter_all_accounts)
         if (binding.accountFilterField.dropdownInput.text?.toString() != accountLabel) {
             binding.accountFilterField.dropdownInput.setText(accountLabel, false)
         }
 
-        val categoryLabels = listOf(getString(R.string.transactions_filter_all_categories)) + categories.map { it.name }
+        val categoryLabels = listOf(getString(R.string.transactions_filter_all_categories)) + categories.map { it.displayName(requireContext()) }
         binding.categoryFilterField.dropdownInput.setSimpleItems(categoryLabels.toTypedArray())
-        val categoryLabel = categories.firstOrNull { it.id == filters.categoryId }?.name
+        val categoryLabel = categories.firstOrNull { it.id == filters.categoryId }?.displayName(requireContext())
             ?: getString(R.string.transactions_filter_all_categories)
         if (binding.categoryFilterField.dropdownInput.text?.toString() != categoryLabel) {
             binding.categoryFilterField.dropdownInput.setText(categoryLabel, false)
@@ -206,6 +206,6 @@ class TransactionsFragment : Fragment(R.layout.fragment_transactions) {
     }
 
     private fun navigateToForm(transactionId: Long) {
-        findNavController().navigate(R.id.transactionFormFragment, bundleOf("transactionId" to transactionId), NavAnimations.push)
+        findNavController().navigate(R.id.transactionFormFragment, TransactionFormFragmentArgs(transactionId = transactionId).toBundle(), NavAnimations.push)
     }
 }

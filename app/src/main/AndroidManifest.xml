@@ -186,27 +186,6 @@
                 <data android:mimeType="application/pdf" />
             </intent-filter>
         </activity>
-
-        <!--
-            Photo de profil — écran de recadrage (com.canhub.cropper.CropImageActivity, bibliothèque
-            "image-cropper", voir docs/RAPPORT-photo-profil.md). Cette activité vient du fichier
-            AndroidManifest.xml de la BIBLIOTHÈQUE (pas déclarée ailleurs dans notre code) : la
-            redéclarer ici avec les MÊMES android:name permet à la fusion de manifeste de lui
-            appliquer un thème différent du reste de l'app.
-
-            Pourquoi c'est nécessaire (bug corrigé, "recadrage bloqué, aucun bouton visible pour
-            valider") : CropImageActivity n'a PAS de Toolbar dans son layout — le bouton de
-            validation (et rotation/miroir) est un item de menu (onCreateOptionsMenu) qui ne peut
-            s'afficher QUE sur une vraie ActionBar système. Notre thème global (Theme.Arzikina)
-            hérite de Theme.Material3.DayNight.NoActionBar : sans cette redéclaration, l'activité
-            hérite du thème global, n'a donc AUCUNE ActionBar, et le bouton n'apparaît nulle part —
-            l'utilisateur reste bloqué sur l'écran de recadrage sans aucun moyen de le valider.
-            Theme.Arzikina.Cropper (voir themes.xml) répare cela en fournissant une ActionBar tout
-            en conservant les couleurs Arzikina.
-        -->
-        <activity
-            android:name="com.canhub.cropper.CropImageActivity"
-            android:theme="@style/Theme.Arzikina.Cropper" />
     </application>
 
-</manifest>
+</manifest>

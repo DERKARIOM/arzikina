@@ -5,6 +5,7 @@ import com.naniger.arzikina.domain.model.SyncPullResult
 import com.naniger.arzikina.domain.repository.ProfilePhotoRepository
 import com.naniger.arzikina.domain.repository.SyncAuthRepository
 import com.naniger.arzikina.domain.repository.SyncEngine
+import com.naniger.arzikina.util.technicalMessage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -127,7 +128,7 @@ class SyncButtonController @Inject constructor(
                 pushResult to pullResult
             }
                 .onSuccess { (pushResult, pullResult) -> _events.emit(SyncButtonEvent.SyncFinished(pushResult, pullResult)) }
-                .onFailure { _events.emit(SyncButtonEvent.SyncError(it.message ?: "Erreur inconnue")) }
+                .onFailure { _events.emit(SyncButtonEvent.SyncError(it.technicalMessage())) }
             _syncNowState.update { it.copy(isSyncing = false) }
         }
     }

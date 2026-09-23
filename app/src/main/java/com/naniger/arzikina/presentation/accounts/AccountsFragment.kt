@@ -2,7 +2,6 @@ package com.naniger.arzikina.presentation.accounts
 
 import android.os.Bundle
 import android.view.View
-import androidx.core.os.bundleOf
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
@@ -16,6 +15,7 @@ import com.naniger.arzikina.R
 import com.naniger.arzikina.databinding.FragmentAccountsBinding
 import com.naniger.arzikina.domain.model.AccountType
 import com.naniger.arzikina.presentation.components.NavAnimations
+import com.naniger.arzikina.presentation.utilities.financialplan.FinancialPlanDetailFragmentArgs
 import com.naniger.arzikina.presentation.utilities.financialplan.FinancialPlanUiItem
 import com.naniger.arzikina.presentation.utilities.financialplan.FinancialPlansAdapter
 import com.naniger.arzikina.util.AppResult
@@ -395,7 +395,7 @@ class AccountsFragment : Fragment(R.layout.fragment_accounts) {
         }
         findNavController().navigate(
             R.id.accountFormFragment,
-            bundleOf("accountId" to 0L, "initialType" to initialType),
+            AccountFormFragmentArgs(initialType = initialType).toBundle(),
             NavAnimations.push
         )
     }
@@ -406,14 +406,14 @@ class AccountsFragment : Fragment(R.layout.fragment_accounts) {
      * un compte se fait dorénavant depuis le menu "⋮" de cet écran détail.
      */
     private fun navigateToDetail(accountId: Long) {
-        findNavController().navigate(R.id.accountDetailFragment, bundleOf("accountId" to accountId), NavAnimations.push)
+        findNavController().navigate(R.id.accountDetailFragment, AccountDetailFragmentArgs(accountId = accountId).toBundle(), NavAnimations.push)
     }
 
     /** Clic sur une carte de planification : ouvre son détail — même destination/navigation que
      * [com.naniger.arzikina.presentation.utilities.financialplan.FinancialPlansFragment.navigateToDetail]
      * (écran dédié), aucune logique de navigation propre à cet onglet. */
     private fun navigateToFinancialPlanDetail(planId: Long) {
-        findNavController().navigate(R.id.financialPlanDetailFragment, bundleOf("planId" to planId), NavAnimations.push)
+        findNavController().navigate(R.id.financialPlanDetailFragment, FinancialPlanDetailFragmentArgs(planId = planId).toBundle(), NavAnimations.push)
     }
 
     /** `planId` par défaut (0L, voir `nav_graph.xml`) : toujours une création depuis cet onglet,

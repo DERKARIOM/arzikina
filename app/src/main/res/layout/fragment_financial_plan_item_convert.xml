@@ -19,6 +19,7 @@
         android:layout_height="?attr/actionBarSize"
         android:background="?attr/colorSurface"
         app:layout_constraintTop_toTopOf="parent"
+        app:navigationContentDescription="@string/action_back"
         app:navigationIcon="@drawable/ic_arrow_back_24"
         app:title="@string/financial_plan_item_convert_title"
         app:titleTextColor="?attr/colorOnSurface" />

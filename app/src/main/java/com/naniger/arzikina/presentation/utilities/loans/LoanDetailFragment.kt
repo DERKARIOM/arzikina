@@ -2,7 +2,6 @@ package com.naniger.arzikina.presentation.utilities.loans
 
 import android.os.Bundle
 import android.view.View
-import androidx.core.os.bundleOf
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
@@ -16,6 +15,7 @@ import com.naniger.arzikina.domain.model.CurrencyAmount
 import com.naniger.arzikina.domain.model.LoanPayment
 import com.naniger.arzikina.presentation.components.ConfirmDialogs
 import com.naniger.arzikina.presentation.components.NavAnimations
+import com.naniger.arzikina.presentation.components.displayName
 import com.naniger.arzikina.util.AppResult
 import com.naniger.arzikina.util.Money
 import com.google.android.material.snackbar.Snackbar
@@ -110,7 +110,7 @@ class LoanDetailFragment : Fragment(R.layout.fragment_loan_detail) {
                 uiState.payments.map { payment ->
                     LoanDetailListRow.PaymentRow(
                         payment = payment,
-                        accountName = uiState.accountNamesById[payment.accountId].orEmpty(),
+                        accountName = uiState.accountsById[payment.accountId]?.displayName(requireContext()).orEmpty(),
                         loanType = uiState.loan.type,
                         currencyCode = uiState.currencyCode
                     )
@@ -146,6 +146,6 @@ class LoanDetailFragment : Fragment(R.layout.fragment_loan_detail) {
     }
 
     private fun navigateToPaymentForm() {
-        findNavController().navigate(R.id.loanPaymentFormFragment, bundleOf("loanId" to viewModel.loanId), NavAnimations.push)
+        findNavController().navigate(R.id.loanPaymentFormFragment, LoanPaymentFormFragmentArgs(loanId = viewModel.loanId).toBundle(), NavAnimations.push)
     }
 }

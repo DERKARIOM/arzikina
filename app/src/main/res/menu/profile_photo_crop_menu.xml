@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Action « Valider » de l'écran de recadrage (voir ProfilePhotoCropFragment) : texte plutôt
+     qu'icône, l'action principale de l'écran doit être explicite. -->
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <item
+        android:id="@+id/action_confirm_crop"
+        android:title="@string/profile_photo_crop_confirm_action"
+        app:showAsAction="always" />
+</menu>

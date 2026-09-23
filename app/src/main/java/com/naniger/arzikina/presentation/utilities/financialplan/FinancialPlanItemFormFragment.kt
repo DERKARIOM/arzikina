@@ -4,7 +4,6 @@ import android.content.res.ColorStateList
 import android.os.Bundle
 import android.view.View
 import androidx.core.content.ContextCompat
-import androidx.core.os.bundleOf
 import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
@@ -21,6 +20,8 @@ import com.naniger.arzikina.domain.model.PlanItemStatus
 import com.naniger.arzikina.presentation.categories.CategoryIconMapper
 import com.naniger.arzikina.presentation.components.CategoryPickerDialog
 import com.naniger.arzikina.presentation.components.NavAnimations
+import com.naniger.arzikina.presentation.components.displayName
+import com.naniger.arzikina.util.AppDateFormats
 import com.naniger.arzikina.util.Constants
 import com.naniger.arzikina.util.Money
 import com.naniger.arzikina.util.MoneyInputFormatter
@@ -32,7 +33,6 @@ import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.ZoneId
 import java.time.ZoneOffset
-import java.time.format.DateTimeFormatter
 
 /**
  * Ajout/modification d'une dépense prévue, atteint depuis le FAB de [FinancialPlanDetailFragment]
@@ -64,7 +64,7 @@ class FinancialPlanItemFormFragment : Fragment(R.layout.fragment_financial_plan_
         viewBinding.convertButton.setOnClickListener {
             findNavController().navigate(
                 R.id.financialPlanItemConvertFragment,
-                bundleOf("itemId" to viewModel.itemId),
+                FinancialPlanItemConvertFragmentArgs(itemId = viewModel.itemId).toBundle(),
                 NavAnimations.push
             )
         }
@@ -206,12 +206,12 @@ class FinancialPlanItemFormFragment : Fragment(R.layout.fragment_financial_plan_
         if (binding.nameInput.text?.toString() != state.nameInput) {
             binding.nameInput.setText(state.nameInput)
         }
-        binding.nameLayout.error = state.nameError
+        binding.nameLayout.error = state.nameError?.let { getString(it) }
 
         if (binding.amountInput.text?.toString() != state.amountInput) {
             binding.amountInput.setText(state.amountInput)
         }
-        binding.amountLayout.error = state.amountError
+        binding.amountLayout.error = state.amountError?.let { getString(it) }
 
         bindCategoryField(binding, categories.firstOrNull { it.id == state.categoryId })
 
@@ -251,7 +251,7 @@ class FinancialPlanItemFormFragment : Fragment(R.layout.fragment_financial_plan_
         if (category != null) {
             fieldBinding.categoryFieldIcon.setImageResource(CategoryIconMapper.iconFor(category.icon))
             fieldBinding.categoryFieldIcon.backgroundTintList = ColorStateList.valueOf(category.colorArgb.toInt())
-            fieldBinding.categoryFieldName.text = category.name
+            fieldBinding.categoryFieldName.text = category.displayName(requireContext())
         } else {
             fieldBinding.categoryFieldIcon.setImageResource(R.drawable.ic_category_other_24)
             fieldBinding.categoryFieldIcon.backgroundTintList =
@@ -261,9 +261,5 @@ class FinancialPlanItemFormFragment : Fragment(R.layout.fragment_financial_plan_
     }
 
     private fun formatDate(millis: Long): String =
-        Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault()).toLocalDate().format(DATE_FORMATTER)
-
-    private companion object {
-        val DATE_FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
-    }
+        Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault()).toLocalDate().format(AppDateFormats.NUMERIC_DATE)
 }

@@ -88,7 +88,9 @@ class TransactionTemplateRepositoryImpl @Inject constructor(
             template.id
         }
 
-        pendingOp?.let { (entity, operation) -> enqueueTemplateSync(entity, operation) }
+        // Toujours non-null ici : chacune des deux branches ci-dessus renseigne pendingOp.
+        val (syncedEntity, operation) = pendingOp
+        enqueueTemplateSync(syncedEntity, operation)
         id
     }
 

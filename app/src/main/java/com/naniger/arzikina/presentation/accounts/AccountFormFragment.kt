@@ -21,6 +21,7 @@ import com.naniger.arzikina.presentation.components.ColorPickerAdapter
 import com.naniger.arzikina.presentation.components.ConfirmDialogs
 import com.naniger.arzikina.presentation.components.ExternalAppPickerDialog
 import com.naniger.arzikina.presentation.components.IconPickerAdapter
+import com.naniger.arzikina.presentation.components.pickerLabel
 import com.naniger.arzikina.util.MoneyInputFormatter
 import com.naniger.arzikina.util.external.ExternalAppInfo
 import dagger.hilt.android.AndroidEntryPoint
@@ -117,7 +118,7 @@ class AccountFormFragment : Fragment(R.layout.fragment_account_form) {
 
     private fun setUpCurrencyDropdown(binding: FragmentAccountFormBinding) {
         binding.currencyField.dropdownLayout.hint = getString(R.string.account_form_currency_label)
-        val labels = SupportedCurrency.entries.map { "${it.displayName} (${it.symbol})" }
+        val labels = SupportedCurrency.entries.map { it.pickerLabel(requireContext()) }
         binding.currencyField.dropdownInput.setSimpleItems(labels.toTypedArray())
         binding.currencyField.dropdownInput.setOnItemClickListener { _, _, position, _ ->
             viewModel.onCurrencyChange(SupportedCurrency.entries[position].code)
@@ -158,15 +159,15 @@ class AccountFormFragment : Fragment(R.layout.fragment_account_form) {
         if (binding.nameInput.text?.toString() != state.name) {
             binding.nameInput.setText(state.name)
         }
-        binding.nameLayout.error = state.nameError
+        binding.nameLayout.error = state.nameError?.let { getString(it) }
 
         if (binding.balanceInput.text?.toString() != state.initialBalanceInput) {
             binding.balanceInput.setText(state.initialBalanceInput)
         }
-        binding.balanceLayout.error = state.balanceError
+        binding.balanceLayout.error = state.balanceError?.let { getString(it) }
 
         val currencyLabel = SupportedCurrency.entries.firstOrNull { it.code == state.currencyCode }
-            ?.let { "${it.displayName} (${it.symbol})" }
+            ?.pickerLabel(requireContext())
             .orEmpty()
         if (binding.currencyField.dropdownInput.text?.toString() != currencyLabel) {
             binding.currencyField.dropdownInput.setText(currencyLabel, false)
@@ -198,7 +199,7 @@ class AccountFormFragment : Fragment(R.layout.fragment_account_form) {
                 binding.cardNumberInput.setText(state.cardNumberInput)
                 binding.cardNumberInput.setSelection(state.cardNumberInput.length)
             }
-            binding.cardNumberLayout.error = state.cardNumberError
+            binding.cardNumberLayout.error = state.cardNumberError?.let { getString(it) }
             binding.cardNumberLayout.helperText = state.existingCardLastFourDigits?.let {
                 getString(R.string.account_form_card_number_helper_edit, it)
             }
@@ -207,13 +208,13 @@ class AccountFormFragment : Fragment(R.layout.fragment_account_form) {
                 binding.cardExpiryInput.setText(state.cardExpiryInput)
                 binding.cardExpiryInput.setSelection(state.cardExpiryInput.length)
             }
-            binding.cardExpiryLayout.error = state.cardExpiryError
+            binding.cardExpiryLayout.error = state.cardExpiryError?.let { getString(it) }
 
             if (binding.cardCvvInput.text?.toString() != state.cardCvvInput) {
                 binding.cardCvvInput.setText(state.cardCvvInput)
                 binding.cardCvvInput.setSelection(state.cardCvvInput.length)
             }
-            binding.cardCvvLayout.error = state.cardCvvError
+            binding.cardCvvLayout.error = state.cardCvvError?.let { getString(it) }
         }
 
         val isMobileMoney = state.type == AccountType.MOBILE_MONEY

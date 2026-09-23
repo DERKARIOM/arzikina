@@ -5,6 +5,7 @@ import android.view.View
 import com.naniger.arzikina.databinding.ItemAccountBinding
 import com.naniger.arzikina.domain.model.Account
 import com.naniger.arzikina.domain.model.CurrencyAmount
+import com.naniger.arzikina.presentation.components.displayName
 import com.naniger.arzikina.util.Money
 
 /**
@@ -24,7 +25,7 @@ object AccountCardBinder {
         binding.accountIcon.setImageResource(AccountIconMapper.iconFor(account.icon))
         binding.accountIcon.imageTintList = ColorStateList.valueOf(account.colorArgb.toInt())
 
-        binding.accountName.text = account.name
+        binding.accountName.text = account.displayName(binding.root.context)
         binding.accountType.text = context.getString(account.icon.displayTextRes())
         binding.accountBalance.text = Money.format(CurrencyAmount(account.currencyCode, currentBalance))
 

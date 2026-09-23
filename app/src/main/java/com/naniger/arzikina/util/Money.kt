@@ -18,7 +18,19 @@ import java.util.Locale
  * convertisseur évoluera.
  */
 object Money {
-    private const val MINOR_UNITS_PER_MAJOR = 100
+    /** Facteur unité majeure → mineure (voir la doc de la classe). Public pour les rares
+     *  affichages qui partent d'un montant en unités majeures (ex. raccourcis « +1 000 »). */
+    const val MINOR_UNITS_PER_MAJOR = 100
+
+    /**
+     * Locale de formatage de TOUS les montants, quelle que soit la langue de l'interface (décision
+     * produit, chantier i18n) : « 10 000 F CFA » en français comme en anglais. Un montant ne doit
+     * jamais changer d'apparence avec la langue, et [parseToMinorUnits] lit la virgule comme
+     * séparateur décimal : « 10,000 » y serait compris comme dix. Seule cette constante est à
+     * modifier si Arzikina adopte un jour un format de montant par langue.
+     */
+    val AMOUNT_LOCALE: Locale = Locale.FRENCH
+
 
     /**
      * Retourne `null` si [input] n'est pas un nombre positif valide.
@@ -129,7 +141,7 @@ object Money {
      */
     fun formatAmount(minorUnits: Long): String {
         val hasCents = minorUnits % MINOR_UNITS_PER_MAJOR != 0L
-        val numberFormat = NumberFormat.getNumberInstance(Locale.FRENCH).apply {
+        val numberFormat = NumberFormat.getNumberInstance(AMOUNT_LOCALE).apply {
             minimumFractionDigits = if (hasCents) 2 else 0
             maximumFractionDigits = if (hasCents) 2 else 0
         }

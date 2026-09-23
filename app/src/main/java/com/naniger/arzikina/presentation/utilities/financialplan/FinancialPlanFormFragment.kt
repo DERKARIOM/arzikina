@@ -18,6 +18,7 @@ import com.naniger.arzikina.domain.model.PlanPeriodType
 import com.naniger.arzikina.presentation.components.ColorPickerAdapter
 import com.naniger.arzikina.presentation.components.ConfirmDialogs
 import com.naniger.arzikina.presentation.components.IconPickerAdapter
+import com.naniger.arzikina.util.AppDateFormats
 import com.naniger.arzikina.util.MoneyInputFormatter
 import com.google.android.material.datepicker.MaterialDatePicker
 import dagger.hilt.android.AndroidEntryPoint
@@ -25,7 +26,6 @@ import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.ZoneId
 import java.time.ZoneOffset
-import java.time.format.DateTimeFormatter
 
 /**
  * Formulaire d'ajout/édition d'une planification — nom, montant disponible, icône, couleur (voir
@@ -153,17 +153,17 @@ class FinancialPlanFormFragment : Fragment(R.layout.fragment_financial_plan_form
         if (binding.nameInput.text?.toString() != state.nameInput) {
             binding.nameInput.setText(state.nameInput)
         }
-        binding.nameLayout.error = state.nameError
+        binding.nameLayout.error = state.nameError?.let { getString(it) }
 
         if (binding.availableAmountInput.text?.toString() != state.availableAmountInput) {
             binding.availableAmountInput.setText(state.availableAmountInput)
         }
-        binding.availableAmountLayout.error = state.availableAmountError
+        binding.availableAmountLayout.error = state.availableAmountError?.let { getString(it) }
 
         if (binding.targetAmountInput.text?.toString() != state.targetAmountInput) {
             binding.targetAmountInput.setText(state.targetAmountInput)
         }
-        binding.targetAmountLayout.error = state.targetAmountError
+        binding.targetAmountLayout.error = state.targetAmountError?.let { getString(it) }
 
         val periodLabel = getString(state.periodType.labelRes())
         if (binding.periodField.dropdownInput.text?.toString() != periodLabel) {
@@ -175,7 +175,7 @@ class FinancialPlanFormFragment : Fragment(R.layout.fragment_financial_plan_form
         binding.endDateRow.visibility = if (hasPeriod) View.VISIBLE else View.GONE
         binding.startDateField.dateFieldValue.text = formatDate(state.startDate)
         binding.endDateField.dateFieldValue.text = formatDate(state.endDate)
-        binding.dateErrorText.text = state.dateError
+        binding.dateErrorText.text = state.dateError?.let { getString(it) }
         binding.dateErrorText.visibility = if (state.dateError != null) View.VISIBLE else View.GONE
 
         iconPickerAdapter.setSelected(state.icon)
@@ -183,7 +183,7 @@ class FinancialPlanFormFragment : Fragment(R.layout.fragment_financial_plan_form
     }
 
     private fun formatDate(millis: Long): String =
-        Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault()).toLocalDate().format(DATE_FORMATTER)
+        Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault()).toLocalDate().format(AppDateFormats.NUMERIC_DATE)
 
     private fun handleEvent(event: FinancialPlanFormEvent) {
         when (event) {
@@ -198,9 +198,5 @@ class FinancialPlanFormFragment : Fragment(R.layout.fragment_financial_plan_form
             message = getString(R.string.financial_plans_delete_message),
             onConfirm = { viewModel.delete() }
         )
-    }
-
-    private companion object {
-        val DATE_FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
     }
 }

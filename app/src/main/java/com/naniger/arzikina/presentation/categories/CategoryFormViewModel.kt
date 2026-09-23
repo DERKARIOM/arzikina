@@ -1,12 +1,15 @@
 package com.naniger.arzikina.presentation.categories
 
+import androidx.annotation.StringRes
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.naniger.arzikina.R
 import com.naniger.arzikina.domain.model.Category
 import com.naniger.arzikina.domain.model.CategoryIcon
 import com.naniger.arzikina.domain.model.TransactionType
 import com.naniger.arzikina.domain.repository.CategoryRepository
+import com.naniger.arzikina.presentation.components.DefaultNameLocalizer
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -30,7 +33,7 @@ data class CategoryFormState(
     val colorArgb: Long = 0xFF10B981L,
     val type: TransactionType = TransactionType.EXPENSE,
     val createdAt: Long? = null,
-    val nameError: String? = null
+    @StringRes val nameError: Int? = null
 )
 
 sealed interface CategoryFormEvent {
@@ -46,10 +49,11 @@ sealed interface CategoryFormEvent {
 @HiltViewModel
 class CategoryFormViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
-    private val categoryRepository: CategoryRepository
+    private val categoryRepository: CategoryRepository,
+    private val defaultNameLocalizer: DefaultNameLocalizer
 ) : ViewModel() {
 
-    private val categoryId: Long = savedStateHandle.get<Long>(CATEGORY_ID_ARG) ?: 0L
+    private val categoryId: Long = CategoryFormFragmentArgs.fromSavedStateHandle(savedStateHandle).categoryId
     val isEditMode: Boolean = categoryId != 0L
 
     private val _formState = MutableStateFlow(CategoryFormState())
@@ -64,7 +68,8 @@ class CategoryFormViewModel @Inject constructor(
                 categoryRepository.getCategory(categoryId)?.let { category ->
                     _formState.update {
                         it.copy(
-                            name = category.name,
+                            // « Salary » en anglais : voir DefaultNameLocalizer (et save()).
+                            name = defaultNameLocalizer.displayName(category),
                             icon = category.icon,
                             colorArgb = category.colorArgb,
                             type = category.type,
@@ -96,7 +101,7 @@ class CategoryFormViewModel @Inject constructor(
         val state = _formState.value
         val trimmedName = state.name.trim()
         if (trimmedName.isEmpty()) {
-            _formState.update { it.copy(nameError = "Le nom est obligatoire") }
+            _formState.update { it.copy(nameError = R.string.error_name_required) }
             return
         }
 
@@ -104,7 +109,7 @@ class CategoryFormViewModel @Inject constructor(
             categoryRepository.saveCategory(
                 Category(
                     id = categoryId,
-                    name = trimmedName,
+                    name = defaultNameLocalizer.canonicalCategoryName(trimmedName, state.type),
                     icon = state.icon,
                     colorArgb = state.colorArgb,
                     type = state.type,
@@ -124,9 +129,5 @@ class CategoryFormViewModel @Inject constructor(
                 .onSuccess { _events.emit(CategoryFormEvent.Deleted) }
                 .onFailure { _events.emit(CategoryFormEvent.DeleteBlocked) }
         }
-    }
-
-    private companion object {
-        const val CATEGORY_ID_ARG = "categoryId"
     }
 }

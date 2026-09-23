@@ -7,7 +7,6 @@ import android.transition.TransitionManager
 import android.view.View
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.drawable.DrawableCompat
-import androidx.core.os.bundleOf
 import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
@@ -27,10 +26,15 @@ import com.naniger.arzikina.domain.model.PaymentMethod
 import com.naniger.arzikina.domain.model.SupportedCurrency
 import com.naniger.arzikina.domain.model.TransactionType
 import com.naniger.arzikina.presentation.accounts.AccountIconMapper
+import com.naniger.arzikina.presentation.categories.CategoryFormFragmentArgs
 import com.naniger.arzikina.presentation.components.AccountPickerDialog
 import com.naniger.arzikina.presentation.components.ConfirmDialogs
 import com.naniger.arzikina.presentation.components.NavAnimations
 import com.naniger.arzikina.presentation.components.TemplatePickerDialog
+import com.naniger.arzikina.presentation.components.displayName
+import com.naniger.arzikina.presentation.utilities.loans.LoanDetailFragmentArgs
+import com.naniger.arzikina.presentation.utilities.receipts.ReceiptDetailFragmentArgs
+import com.naniger.arzikina.util.AppDateFormats
 import com.naniger.arzikina.util.Constants
 import com.naniger.arzikina.util.Money
 import com.naniger.arzikina.util.MoneyInputFormatter
@@ -38,17 +42,15 @@ import com.google.android.material.color.MaterialColors
 import com.google.android.material.datepicker.MaterialDatePicker
 import com.google.android.material.timepicker.MaterialTimePicker
 import com.google.android.material.timepicker.TimeFormat
+import com.naniger.arzikina.util.TriggerTimeFormatter
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
-import java.text.NumberFormat
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneId
 import java.time.ZoneOffset
-import java.time.format.DateTimeFormatter
-import java.util.Locale
 
 /**
  * Formulaire d'ajout/édition d'une transaction. Refonte visuelle (voir
@@ -232,11 +234,11 @@ class TransactionFormFragment : Fragment(R.layout.fragment_transaction_form) {
 
     /** Raccourcis "+1 000"/"+5 000"/"+10 000" : voir [TransactionFormViewModel.onQuickAmountAdd]. */
     private fun setUpQuickAmounts(binding: FragmentTransactionFormBinding) {
-        val formatter = NumberFormat.getIntegerInstance(Locale.FRENCH)
         val buttons = listOf(binding.quickAmount1Button, binding.quickAmount2Button, binding.quickAmount3Button)
         buttons.forEachIndexed { index, button ->
             val amount = QUICK_AMOUNTS[index]
-            button.text = "+${formatter.format(amount)}"
+            // Montant en unités majeures → mineures : même format que tous les montants (voir Money).
+            button.text = "+${Money.formatAmount(amount * Money.MINOR_UNITS_PER_MAJOR)}"
             button.setOnClickListener { if (!isLoanLinked()) viewModel.onQuickAmountAdd(amount) }
         }
     }
@@ -434,7 +436,7 @@ class TransactionFormFragment : Fragment(R.layout.fragment_transaction_form) {
         // toute la carte disparaît plutôt que de la vider, pour ne pas laisser un bloc vide.
         binding.categoryCard.visibility = if (isTransfer) View.GONE else View.VISIBLE
         renderCategoryGrid()
-        binding.categoryErrorText.text = state.categoryError
+        binding.categoryErrorText.text = state.categoryError?.let { getString(it) }
         binding.categoryErrorText.visibility = if (!isTransfer && state.categoryError != null) View.VISIBLE else View.GONE
 
         renderAccountRow(binding, state, data.accounts, data.accountBalances)
@@ -476,7 +478,7 @@ class TransactionFormFragment : Fragment(R.layout.fragment_transaction_form) {
         if (binding.amountInput.text?.toString() != state.amountInput) {
             binding.amountInput.setText(state.amountInput)
         }
-        binding.amountErrorText.text = state.amountError
+        binding.amountErrorText.text = state.amountError?.let { getString(it) }
         binding.amountErrorText.visibility = if (state.amountError != null) View.VISIBLE else View.GONE
 
         // `when` exhaustif (pas de `else`) : le compilateur signale l'oubli si un
@@ -522,7 +524,7 @@ class TransactionFormFragment : Fragment(R.layout.fragment_transaction_form) {
         if (binding.feeAmountInput.text?.toString() != state.feeAmountInput) {
             binding.feeAmountInput.setText(state.feeAmountInput)
         }
-        binding.feeAmountErrorText.text = state.feeAmountError
+        binding.feeAmountErrorText.text = state.feeAmountError?.let { getString(it) }
         binding.feeAmountErrorText.visibility = if (state.feeAmountError != null) View.VISIBLE else View.GONE
 
         val feeTypeLabel = getString(state.feeType.displayTextRes())
@@ -535,7 +537,7 @@ class TransactionFormFragment : Fragment(R.layout.fragment_transaction_form) {
         }
 
         bindAccountField(binding.feeAccountField, accounts.firstOrNull { it.id == state.feeAccountId }, accountBalances)
-        binding.feeAccountErrorText.text = state.feeAccountError
+        binding.feeAccountErrorText.text = state.feeAccountError?.let { getString(it) }
         binding.feeAccountErrorText.visibility = if (state.feeAccountError != null) View.VISIBLE else View.GONE
 
         renderFeeSummary(binding, state, accounts)
@@ -589,7 +591,7 @@ class TransactionFormFragment : Fragment(R.layout.fragment_transaction_form) {
         accountBalances: Map<Long, Long>
     ) {
         bindAccountField(binding.accountField, accounts.firstOrNull { it.id == state.accountId }, accountBalances)
-        binding.accountErrorText.text = state.accountError
+        binding.accountErrorText.text = state.accountError?.let { getString(it) }
         binding.accountErrorText.visibility = if (state.accountError != null) View.VISIBLE else View.GONE
     }
 
@@ -607,7 +609,7 @@ class TransactionFormFragment : Fragment(R.layout.fragment_transaction_form) {
             return
         }
         bindAccountField(binding.destinationAccountField, accounts.firstOrNull { it.id == state.transferAccountId }, accountBalances)
-        binding.destinationAccountErrorText.text = state.transferAccountError
+        binding.destinationAccountErrorText.text = state.transferAccountError?.let { getString(it) }
         binding.destinationAccountErrorText.visibility = if (state.transferAccountError != null) View.VISIBLE else View.GONE
     }
 
@@ -620,7 +622,7 @@ class TransactionFormFragment : Fragment(R.layout.fragment_transaction_form) {
         if (account != null) {
             fieldBinding.accountFieldIcon.setImageResource(AccountIconMapper.iconFor(account.icon))
             fieldBinding.accountFieldIcon.backgroundTintList = ColorStateList.valueOf(account.colorArgb.toInt())
-            fieldBinding.accountFieldName.text = account.name
+            fieldBinding.accountFieldName.text = account.displayName(requireContext())
             val balance = accountBalances[account.id] ?: account.initialBalance
             fieldBinding.accountFieldBalance.text = getString(
                 R.string.transaction_form_account_balance,
@@ -652,8 +654,8 @@ class TransactionFormFragment : Fragment(R.layout.fragment_transaction_form) {
             today.minusDays(1) -> getString(R.string.transaction_day_yesterday)
             else -> null
         }
-        val datePart = date.format(DATE_FORMATTER)
-        val timePart = zonedDateTime.toLocalTime().format(TIME_FORMATTER)
+        val datePart = date.format(AppDateFormats.NUMERIC_DATE)
+        val timePart = TriggerTimeFormatter.format(requireContext(), zonedDateTime.hour, zonedDateTime.minute)
         val dateLabel = if (relativeLabel != null) "$relativeLabel - $datePart" else datePart
         return "$dateLabel · $timePart"
     }
@@ -676,7 +678,7 @@ class TransactionFormFragment : Fragment(R.layout.fragment_transaction_form) {
     }
 
     private fun navigateToNewCategory() {
-        findNavController().navigate(R.id.categoryFormFragment, bundleOf("categoryId" to 0L), NavAnimations.push)
+        findNavController().navigate(R.id.categoryFormFragment, CategoryFormFragmentArgs().toBundle(), NavAnimations.push)
     }
 
     /** Voir `fragment_transaction_form.xml` (`linkedReceiptRow`) — cahier des charges "Créer une
@@ -687,7 +689,7 @@ class TransactionFormFragment : Fragment(R.layout.fragment_transaction_form) {
     private fun navigateToLinkedReceipt(receiptId: Long) {
         findNavController().navigate(
             R.id.receiptDetailFragment,
-            bundleOf("receiptId" to receiptId),
+            ReceiptDetailFragmentArgs(receiptId = receiptId).toBundle(),
             NavAnimations.push
         )
     }
@@ -711,7 +713,7 @@ class TransactionFormFragment : Fragment(R.layout.fragment_transaction_form) {
             .setPopExitAnim(R.anim.slide_pop_exit)
             .setPopUpTo(R.id.transactionFormFragment, inclusive = true)
             .build()
-        findNavController().navigate(R.id.loanDetailFragment, bundleOf("loanId" to loanId), options)
+        findNavController().navigate(R.id.loanDetailFragment, LoanDetailFragmentArgs(loanId = loanId).toBundle(), options)
     }
 
     /** Regroupe les 4 flux observés pour éviter un `combine` imbriqué illisible (voir [onViewCreated]). */
@@ -723,8 +725,6 @@ class TransactionFormFragment : Fragment(R.layout.fragment_transaction_form) {
     )
 
     private companion object {
-        val DATE_FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy", Locale.FRENCH)
-        val TIME_FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm", Locale.FRENCH)
         const val COLLAPSED_CATEGORY_LIMIT = 7
         val QUICK_AMOUNTS = listOf(1_000L, 5_000L, 10_000L)
 

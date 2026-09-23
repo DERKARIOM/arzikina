@@ -6,6 +6,7 @@ import com.naniger.arzikina.domain.model.Category
 import com.naniger.arzikina.domain.model.TransactionType
 import com.naniger.arzikina.domain.repository.CategoryRepository
 import com.naniger.arzikina.util.AppResult
+import com.naniger.arzikina.util.technicalMessage
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -55,7 +56,7 @@ class CategoriesViewModel @Inject constructor(
             }
         }
         .map<List<Category>, AppResult<List<Category>>> { AppResult.Success(it) }
-        .catch { throwable -> emit(AppResult.Error(throwable.message ?: "Erreur inconnue", throwable)) }
+        .catch { throwable -> emit(AppResult.Error(throwable.technicalMessage(), throwable)) }
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(stopTimeoutMillis = 5_000),

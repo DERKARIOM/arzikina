@@ -2,7 +2,6 @@ package com.naniger.arzikina.presentation.categories
 
 import android.os.Bundle
 import android.view.View
-import androidx.core.os.bundleOf
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
@@ -15,6 +14,7 @@ import com.naniger.arzikina.databinding.FragmentCategoriesBinding
 import com.naniger.arzikina.domain.model.Category
 import com.naniger.arzikina.presentation.components.ConfirmDialogs
 import com.naniger.arzikina.presentation.components.NavAnimations
+import com.naniger.arzikina.presentation.components.displayName
 import com.naniger.arzikina.util.AppResult
 import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
@@ -89,12 +89,12 @@ class CategoriesFragment : Fragment(R.layout.fragment_categories) {
         ConfirmDialogs.confirm(
             context = requireContext(),
             title = getString(R.string.categories_delete_title),
-            message = getString(R.string.categories_delete_message, category.name),
+            message = getString(R.string.categories_delete_message, category.displayName(requireContext())),
             onConfirm = { viewModel.deleteCategory(category.id) }
         )
     }
 
     private fun navigateToForm(categoryId: Long) {
-        findNavController().navigate(R.id.categoryFormFragment, bundleOf("categoryId" to categoryId), NavAnimations.push)
+        findNavController().navigate(R.id.categoryFormFragment, CategoryFormFragmentArgs(categoryId = categoryId).toBundle(), NavAnimations.push)
     }
 }

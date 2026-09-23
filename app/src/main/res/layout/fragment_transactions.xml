@@ -15,6 +15,7 @@
         android:background="?attr/colorSurface"
         app:layout_constraintTop_toTopOf="parent"
         app:menu="@menu/transactions_menu"
+        app:navigationContentDescription="@string/action_back"
         app:navigationIcon="@drawable/ic_arrow_back_24"
         app:title="@string/nav_transactions"
         app:titleTextColor="?attr/colorOnSurface" />

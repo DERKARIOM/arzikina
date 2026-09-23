@@ -18,11 +18,10 @@ import com.naniger.arzikina.domain.model.CurrencyAmount
 import com.naniger.arzikina.domain.model.FinancialPlanItem
 import com.naniger.arzikina.domain.model.PlanItemStatus
 import com.naniger.arzikina.presentation.categories.CategoryIconMapper
+import com.naniger.arzikina.util.AppDateFormats
 import com.naniger.arzikina.util.Constants
 import com.naniger.arzikina.util.DatePeriods
 import com.naniger.arzikina.util.Money
-import java.time.format.DateTimeFormatter
-import java.util.Locale
 
 /**
  * Liste de l'écran "Détail de la planification" : une ligne [FinancialPlanDetailListRow.Header]
@@ -157,7 +156,7 @@ class FinancialPlanDetailAdapter(
             val plannedDate = item.plannedDate
             binding.itemDateLabel.visibility = if (plannedDate != null) View.VISIBLE else View.GONE
             if (plannedDate != null) {
-                binding.itemDateLabel.text = DatePeriods.toLocalDate(plannedDate).format(DATE_FORMATTER)
+                binding.itemDateLabel.text = DatePeriods.toLocalDate(plannedDate).format(AppDateFormats.mediumDate(context))
             }
 
             val description = item.description.orEmpty().trim()
@@ -182,8 +181,6 @@ class FinancialPlanDetailAdapter(
     private companion object {
         const val VIEW_TYPE_HEADER = 0
         const val VIEW_TYPE_ITEM = 1
-
-        private val DATE_FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPattern("d MMM yyyy", Locale.FRENCH)
 
         val DIFF_CALLBACK = object : DiffUtil.ItemCallback<FinancialPlanDetailListRow>() {
             override fun areItemsTheSame(oldItem: FinancialPlanDetailListRow, newItem: FinancialPlanDetailListRow): Boolean =

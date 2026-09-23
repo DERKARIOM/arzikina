@@ -3,6 +3,9 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt.android)
+    // Arguments de navigation typés (voir gradle/libs.versions.toml) : remplace les
+    // `bundleOf("clé" to valeur)`, non vérifiés à la compilation.
+    alias(libs.plugins.androidx.navigation.safeargs)
 }
 
 android {
@@ -46,6 +49,16 @@ android {
     // jamais : APK plus léger, et textes des composants limités au français et à l'anglais.
     androidResources {
         localeFilters += listOf("fr", "en")
+    }
+}
+
+// `flatMapLatest` (Flow) est encore marqué @ExperimentalCoroutinesApi, alors qu'il est utilisé
+// partout dans les dépôts et ViewModels (changement d'utilisateur, filtres…). Opt-in au niveau du
+// module plutôt que ~25 annotations @OptIn identiques. À retirer quand kotlinx.coroutines le
+// stabilisera.
+kotlin {
+    compilerOptions {
+        optIn.add("kotlinx.coroutines.ExperimentalCoroutinesApi")
     }
 }
 
