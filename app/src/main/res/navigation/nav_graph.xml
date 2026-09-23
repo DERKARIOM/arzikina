@@ -282,6 +282,21 @@
         android:label="@string/profile_title"
         tools:layout="@layout/fragment_profile" />
 
+    <!--
+        Écran de recadrage de la photo de profil (voir presentation/profile/crop/
+        ProfilePhotoCropFragment). sourceUri : photo choisie dans la galerie ou prise à l'appareil
+        photo par ProfileFragment. Le résultat est renvoyé via le SavedStateHandle de profileFragment.
+    -->
+    <fragment
+        android:id="@+id/profilePhotoCropFragment"
+        android:name="com.naniger.arzikina.presentation.profile.crop.ProfilePhotoCropFragment"
+        android:label="@string/profile_photo_crop_title"
+        tools:layout="@layout/fragment_profile_photo_crop">
+        <argument
+            android:name="sourceUri"
+            app:argType="android.net.Uri" />
+    </fragment>
+
     <fragment
         android:id="@+id/changePasswordFragment"
         android:name="com.naniger.arzikina.presentation.profile.ChangePasswordFragment"

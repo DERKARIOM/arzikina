@@ -82,22 +82,6 @@
     </style>
 
     <!--
-        Thème DÉDIÉ à com.canhub.cropper.CropImageActivity (voir AndroidManifest.xml, section
-        "Photo de profil — écran de recadrage", et docs/RAPPORT-photo-profil.md). Seule différence
-        avec Theme.Arzikina : parent AVEC ActionBar (Theme.Material3.DayNight, pas ".NoActionBar")
-        — cette bibliothèque affiche son bouton de validation/rotation/miroir comme des items de
-        menu sur une ActionBar système, elle n'a pas de Toolbar propre dans son layout. Les couleurs
-        Arzikina sont reprises telles quelles pour rester visuellement cohérent avec le reste de
-        l'app malgré ce thème séparé.
-    -->
-    <style name="Theme.Arzikina.Cropper" parent="Theme.Material3.DayNight">
-        <item name="colorPrimary">@color/arzikina_primary</item>
-        <item name="colorOnPrimary">@color/arzikina_on_primary</item>
-        <item name="colorPrimaryContainer">@color/arzikina_primary_container</item>
-        <item name="colorOnPrimaryContainer">@color/arzikina_on_primary_container</item>
-    </style>
-
-    <!--
         Le style par défaut de MaterialCardView (Widget.Material3.CardView.Elevated)
         dessine un contour de 1dp dans ?attr/colorOutlineVariant : sur les cartes à
         fond sombre fixe du Dashboard (voir @color/arzikina_balance_card), ce

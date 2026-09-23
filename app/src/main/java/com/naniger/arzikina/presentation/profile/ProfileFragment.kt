@@ -3,7 +3,6 @@ package com.naniger.arzikina.presentation.profile
 import android.Manifest
 import android.content.ActivityNotFoundException
 import android.content.pm.PackageManager
-import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Bundle
 import android.view.View
@@ -25,13 +24,12 @@ import com.naniger.arzikina.R
 import com.naniger.arzikina.databinding.FragmentProfileBinding
 import com.naniger.arzikina.presentation.components.ConfirmDialogs
 import com.naniger.arzikina.presentation.components.NavAnimations
-import com.canhub.cropper.CropImageContract
-import com.canhub.cropper.CropImageContractOptions
-import com.canhub.cropper.CropImageOptions
-import com.canhub.cropper.CropImageView
+import com.naniger.arzikina.presentation.profile.crop.ProfilePhotoCropFragment
+import com.naniger.arzikina.presentation.profile.crop.ProfilePhotoCropFragmentArgs
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 
 /**
@@ -49,25 +47,6 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
 
     private val viewModel: ProfileViewModel by viewModels()
     private var binding: FragmentProfileBinding? = null
-
-    /**
-     * Lance l'écran de recadrage (voir [launchCrop]) — le résultat est TOUJOURS le fichier déjà
-     * recadré/optimisé par la bibliothèque (jamais l'URI source choisie), ouvert directement dans
-     * [ProfilePhotoPreviewDialogFragment] pour confirmation (cahier des charges "Aperçu et
-     * validation"). `result.isSuccessful == false` couvre aussi bien une annulation qu'une erreur
-     * réelle (voir [com.canhub.cropper.CropImageView.CropResult.error]) — un simple retour silencieux
-     * suffit pour une annulation, un message n'est affiché que si [com.canhub.cropper.CropImageView.CropResult.error]
-     * est non nul.
-     */
-    private val cropImage = registerForActivityResult(CropImageContract()) { result ->
-        if (result.isSuccessful) {
-            result.uriContent?.let { croppedUri ->
-                ProfilePhotoPreviewDialogFragment.show(childFragmentManager, croppedUri)
-            }
-        } else if (result.error != null) {
-            binding?.let { Snackbar.make(it.root, R.string.profile_photo_error_message, Snackbar.LENGTH_LONG).show() }
-        }
-    }
 
     /**
      * URI du fichier dans lequel l'appareil photo écrit (voir [CameraCaptureFile]). Conservée dans
@@ -160,6 +139,7 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
                 launch { viewModel.photoUiState.collect { state -> renderPhoto(state) } }
                 launch { viewModel.biometricLockState.collect { state -> renderBiometricLock(state) } }
                 launch { viewModel.events.collect { event -> handleEvent(event) } }
+                launch { observeCropResult() }
             }
         }
     }
@@ -203,67 +183,44 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
     }
 
     /**
-     * [source] : photo déjà choisie par l'utilisateur ([pickPhoto]) ou déjà prise ([takePhoto]). La
-     * bibliothèque de recadrage ne choisit plus elle-même la source : elle ne fait que recadrer.
-     *
-     * Options choisies pour une photo de profil (cahier des charges "Recadrage de la photo",
-     * "Optimisation de l'image") :
-     * - `fixAspectRatio`/`aspectRatioX`/`aspectRatioY` = carré ; `canChangeCropWindow = false` : la
-     *   zone de recadrage reste un carré FIXE au centre, seule l'image en dessous bouge/zoome
-     *   (déplacement + zoom, comme la quasi-totalité des sélecteurs de photo de profil).
-     * - `outputRequestWidth`/`outputRequestHeight` + `RESIZE_INSIDE` : redimensionnement à une
-     *   résolution raisonnable (512px) directement par la bibliothèque — inutile d'écrire un second
-     *   passage de redimensionnement manuel ensuite.
-     * - `outputCompressFormat`/`outputCompressQuality` : compression JPEG déjà appliquée à la
-     *   sortie — le fichier lu par [ProfilePhotoPreviewDialogFragment] est donc déjà optimisé.
-     * - L'orientation EXIF (photo prise à la verticale/horizontale) est corrigée par la
-     *   bibliothèque elle-même à la lecture, AVANT le recadrage — jamais géré manuellement ici
-     *   (cahier des charges "éviter les problèmes de rotation des photos prises avec la caméra").
-     * - `allowRotation`/`allowFlipping = false` : cet écran ne propose QUE ce que demande le cahier
-     *   des charges (déplacer, zoomer, aperçu en temps réel, Annuler/Valider) — pas de fonctions
-     *   supplémentaires non demandées.
+     * [source] : photo déjà choisie ([pickPhoto]) ou déjà prise ([takePhoto]). L'écran de recadrage
+     * Arzikina (voir [ProfilePhotoCropFragment]) renvoie la photo recadrée via le `SavedStateHandle`
+     * de cet écran, lu dans [observeCropResult].
      */
     private fun launchCrop(source: Uri) {
-        cropImage.launch(
-            CropImageContractOptions(
-                uri = source,
-                cropImageOptions = CropImageOptions(
-                    cropShape = CropImageView.CropShape.RECTANGLE,
-                    fixAspectRatio = true,
-                    aspectRatioX = 1,
-                    aspectRatioY = 1,
-                    // IMPORTANT : canChangeCropWindow = true est OBLIGATOIRE. La bibliothèque
-                    // mappe directement ce flag sur `View.isEnabled` du cadre de recadrage
-                    // (voir CropOverlayView.onTouchEvent, "if (isEnabled) ... else return false") :
-                    // à false, PLUS AUCUN geste n'est traité (ni déplacement, ni redimensionnement,
-                    // ni même le pinch-zoom), l'écran de recadrage devient totalement figé — c'est
-                    // le bug "bloqué, aucune interaction possible" remonté par l'utilisateur.
-                    // fixAspectRatio=true (ci-dessus) garantit à lui seul que le cadre reste carré
-                    // pendant le déplacement/redimensionnement, canChangeCropWindow=true n'a donc
-                    // aucun effet indésirable sur le format.
-                    canChangeCropWindow = true,
-                    multiTouchEnabled = true,
-                    autoZoomEnabled = true,
-                    guidelines = CropImageView.Guidelines.ON,
-                    allowRotation = false,
-                    allowFlipping = false,
-                    outputCompressFormat = Bitmap.CompressFormat.JPEG,
-                    outputCompressQuality = PROFILE_PHOTO_JPEG_QUALITY,
-                    outputRequestWidth = PROFILE_PHOTO_TARGET_SIZE_PX,
-                    outputRequestHeight = PROFILE_PHOTO_TARGET_SIZE_PX,
-                    outputRequestSizeOptions = CropImageView.RequestSizeOptions.RESIZE_INSIDE,
-                    activityTitle = getString(R.string.profile_photo_crop_title),
-                    cropMenuCropButtonTitle = getString(R.string.profile_photo_crop_confirm_action),
-                    // Filet de sécurité en plus de Theme.Arzikina.Cropper (voir AndroidManifest.xml) :
-                    // garantit un contraste correct du bouton de validation/de la flèche retour
-                    // quel que soit l'appareil/la résolution exacte du thème par la bibliothèque.
-                    toolbarColor = ContextCompat.getColor(requireContext(), R.color.arzikina_primary),
-                    toolbarTitleColor = ContextCompat.getColor(requireContext(), R.color.arzikina_on_primary),
-                    toolbarBackButtonColor = ContextCompat.getColor(requireContext(), R.color.arzikina_on_primary),
-                    toolbarTintColor = ContextCompat.getColor(requireContext(), R.color.arzikina_on_primary)
-                )
-            )
+        findNavController().navigate(
+            R.id.profilePhotoCropFragment,
+            ProfilePhotoCropFragmentArgs(sourceUri = source).toBundle(),
+            NavAnimations.push
         )
+    }
+
+    /**
+     * Résultat de [ProfilePhotoCropFragment] : aperçu de confirmation (voir
+     * [ProfilePhotoPreviewDialogFragment]) si la photo est recadrée, message si la photo source
+     * était illisible. Chaque résultat est effacé dès sa lecture pour n'être traité qu'une fois
+     * (sinon l'aperçu se rouvrirait à chaque retour sur cet écran).
+     */
+    private suspend fun observeCropResult() {
+        val handle = findNavController().currentBackStackEntry?.savedStateHandle ?: return
+        coroutineScope {
+            launch {
+                handle.getStateFlow<Uri?>(ProfilePhotoCropFragment.RESULT_CROPPED_URI, null).collect { croppedUri ->
+                    if (croppedUri != null) {
+                        handle.remove<Uri>(ProfilePhotoCropFragment.RESULT_CROPPED_URI)
+                        ProfilePhotoPreviewDialogFragment.show(childFragmentManager, croppedUri)
+                    }
+                }
+            }
+            launch {
+                handle.getStateFlow(ProfilePhotoCropFragment.RESULT_LOAD_FAILED, false).collect { failed ->
+                    if (failed) {
+                        handle.remove<Boolean>(ProfilePhotoCropFragment.RESULT_LOAD_FAILED)
+                        binding?.let { Snackbar.make(it.root, R.string.profile_photo_error_message, Snackbar.LENGTH_LONG).show() }
+                    }
+                }
+            }
+        }
     }
 
     /** Suppression = action irréversible pour l'utilisateur (retour à l'avatar par défaut, à
@@ -385,12 +342,6 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
     }
 
     private companion object {
-        /** 512px de côté : largement suffisant pour un avatar (jamais affiché en plus grand que
-         *  ~200dp dans l'app, voir dialog_profile_photo_preview.xml) tout en restant léger pour la
-         *  synchronisation (cahier des charges "Optimisation de l'image"). */
-        const val PROFILE_PHOTO_TARGET_SIZE_PX = 512
-        const val PROFILE_PHOTO_JPEG_QUALITY = 85
-
         const val STATE_PENDING_CAPTURE_URI = "pending_capture_uri"
     }
 }

@@ -187,6 +187,7 @@
     <string name="profile_photo_delete_confirm_message">You will go back to the default avatar. You can add a new photo at any time.</string>
     <string name="profile_photo_crop_title">Crop photo</string>
     <string name="profile_photo_crop_confirm_action">Confirm</string>
+    <string name="profile_photo_crop_area_description">Crop area. Move the photo with one finger, zoom with two fingers.</string>
     <string name="profile_photo_preview_title">Preview of your profile photo</string>
     <string name="profile_photo_use_this_photo_action">Use this photo</string>
     <string name="profile_photo_error_message">Unable to process this photo. Please try again.</string>
