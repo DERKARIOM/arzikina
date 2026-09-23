@@ -70,7 +70,7 @@ class BudgetFormViewModel @Inject constructor(
     categoryRepository: CategoryRepository
 ) : ViewModel() {
 
-    private val budgetId: Long = savedStateHandle.get<Long>(BUDGET_ID_ARG) ?: 0L
+    private val budgetId: Long = BudgetFormFragmentArgs.fromSavedStateHandle(savedStateHandle).budgetId
     val isEditMode: Boolean = budgetId != 0L
 
     private val _formState = MutableStateFlow(BudgetFormState())
@@ -228,8 +228,4 @@ class BudgetFormViewModel @Inject constructor(
      */
     private fun isActive(budget: Budget, today: LocalDate = LocalDate.now()): Boolean =
         BudgetPeriodStatus.of(budget.startDate, budget.endDate, today) != BudgetPeriodStatus.COMPLETED
-
-    private companion object {
-        const val BUDGET_ID_ARG = "budgetId"
-    }
 }

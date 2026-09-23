@@ -97,7 +97,7 @@ class AccountDetailViewModel @Inject constructor(
     @IoDispatcher private val ioDispatcher: CoroutineDispatcher
 ) : ViewModel() {
 
-    val accountId: Long = savedStateHandle.get<Long>(ACCOUNT_ID_ARG) ?: 0L
+    val accountId: Long = AccountDetailFragmentArgs.fromSavedStateHandle(savedStateHandle).accountId
 
     val uiState: StateFlow<AppResult<AccountDetailUiState>> = combine(
         accountRepository.observeAccounts(),
@@ -277,8 +277,6 @@ class AccountDetailViewModel @Inject constructor(
     }
 
     private companion object {
-        const val ACCOUNT_ID_ARG = "accountId"
-
         /** Délai avant remasquage automatique des informations de la carte (section sécurité). */
         const val AUTO_HIDE_DELAY_MILLIS = 10_000L
     }

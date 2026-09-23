@@ -130,7 +130,10 @@ class TransactionFormViewModel @Inject constructor(
     private val templateRepository: TransactionTemplateRepository
 ) : ViewModel() {
 
-    private val transactionId: Long = savedStateHandle.get<Long>(TRANSACTION_ID_ARG) ?: 0L
+    /** Arguments de navigation typés (Safe Args, voir `nav_graph.xml`) : les `preset*` valent leur
+     *  défaut (0L / null) lors d'une ouverture normale du formulaire. */
+    private val args = TransactionFormFragmentArgs.fromSavedStateHandle(savedStateHandle)
+    private val transactionId: Long = args.transactionId
     val isEditMode: Boolean = transactionId != 0L
 
     private val _formState = MutableStateFlow(TransactionFormState())
@@ -255,11 +258,11 @@ class TransactionFormViewModel @Inject constructor(
             // "Détail du compte" (voir AccountDetailFragment.navigateToNewTransactionForm), OU
             // depuis "Détail du reçu" (voir applyReceiptPresets ci-dessous, MÊME argument) :
             // 0L = "aucun compte présélectionné", même convention que transactionId.
-            val presetAccountId = savedStateHandle.get<Long>(PRESET_ACCOUNT_ID_ARG) ?: 0L
+            val presetAccountId = args.presetAccountId
             if (presetAccountId != 0L) {
                 _formState.update { it.copy(accountId = presetAccountId) }
             }
-            applyReceiptPresets(savedStateHandle)
+            applyReceiptPresets(args)
         }
     }
 
@@ -276,14 +279,14 @@ class TransactionFormViewModel @Inject constructor(
      * appliqué EN MÊME TEMPS que [categoryId] (voir [categories], filtrée par `state.type` —
      * appliquer l'un sans l'autre exposerait un instant une catégorie du mauvais type).
      */
-    private fun applyReceiptPresets(savedStateHandle: SavedStateHandle) {
-        val amountMinor = savedStateHandle.get<Long>(PRESET_AMOUNT_MINOR_ARG)?.takeIf { it > 0L }
-        val feeAmountMinor = savedStateHandle.get<Long>(PRESET_FEE_AMOUNT_MINOR_ARG)?.takeIf { it > 0L }
-        val dateTimeMillis = savedStateHandle.get<Long>(PRESET_DATE_TIME_MILLIS_ARG)?.takeIf { it > 0L }
-        val description = savedStateHandle.get<String>(PRESET_DESCRIPTION_ARG)?.takeIf { it.isNotBlank() }
-        val categoryId = savedStateHandle.get<Long>(PRESET_CATEGORY_ID_ARG)?.takeIf { it > 0L }
-        val receiptId = savedStateHandle.get<Long>(PRESET_RECEIPT_ID_ARG)?.takeIf { it > 0L }
-        val type = savedStateHandle.get<String>(PRESET_TYPE_ARG)
+    private fun applyReceiptPresets(args: TransactionFormFragmentArgs) {
+        val amountMinor = args.presetAmountMinor.takeIf { it > 0L }
+        val feeAmountMinor = args.presetFeeAmountMinor.takeIf { it > 0L }
+        val dateTimeMillis = args.presetDateTimeMillis.takeIf { it > 0L }
+        val description = args.presetDescription?.takeIf { it.isNotBlank() }
+        val categoryId = args.presetCategoryId.takeIf { it > 0L }
+        val receiptId = args.presetReceiptId.takeIf { it > 0L }
+        val type = args.presetType
             ?.let { raw -> TransactionType.entries.find { it.name == raw } }
 
         // Ouverture normale du formulaire (bouton "+" habituel) : tous les arguments valent leur
@@ -606,17 +609,5 @@ class TransactionFormViewModel @Inject constructor(
             transactionRepository.deleteTransaction(transactionId)
             _events.emit(TransactionFormEvent.Deleted)
         }
-    }
-
-    private companion object {
-        const val TRANSACTION_ID_ARG = "transactionId"
-        const val PRESET_ACCOUNT_ID_ARG = "presetAccountId"
-        const val PRESET_AMOUNT_MINOR_ARG = "presetAmountMinor"
-        const val PRESET_FEE_AMOUNT_MINOR_ARG = "presetFeeAmountMinor"
-        const val PRESET_DATE_TIME_MILLIS_ARG = "presetDateTimeMillis"
-        const val PRESET_DESCRIPTION_ARG = "presetDescription"
-        const val PRESET_CATEGORY_ID_ARG = "presetCategoryId"
-        const val PRESET_RECEIPT_ID_ARG = "presetReceiptId"
-        const val PRESET_TYPE_ARG = "presetType"
     }
 }

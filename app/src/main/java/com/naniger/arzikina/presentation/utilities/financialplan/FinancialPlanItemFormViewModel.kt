@@ -82,10 +82,11 @@ class FinancialPlanItemFormViewModel @Inject constructor(
     categoryRepository: CategoryRepository
 ) : ViewModel() {
 
-    private val planId: Long = savedStateHandle.get<Long>(PLAN_ID_ARG) ?: 0L
+    private val args = FinancialPlanItemFormFragmentArgs.fromSavedStateHandle(savedStateHandle)
+    private val planId: Long = args.planId
     /** Exposé (pas `private`) : [FinancialPlanItemFormFragment] en a besoin pour naviguer vers
      * [FinancialPlanItemConvertFragment] ("Enregistrer comme transaction"). */
-    val itemId: Long = savedStateHandle.get<Long>(ITEM_ID_ARG) ?: 0L
+    val itemId: Long = args.itemId
     val isEditMode: Boolean = itemId != 0L
 
     private val _formState = MutableStateFlow(FinancialPlanItemFormState())
@@ -220,10 +221,5 @@ class FinancialPlanItemFormViewModel @Inject constructor(
             _formState.update { it.copy(isSaving = false) }
             _events.emit(FinancialPlanItemFormEvent.Saved)
         }
-    }
-
-    private companion object {
-        const val PLAN_ID_ARG = "planId"
-        const val ITEM_ID_ARG = "itemId"
     }
 }

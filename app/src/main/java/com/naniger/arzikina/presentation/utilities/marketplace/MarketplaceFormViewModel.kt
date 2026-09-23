@@ -89,7 +89,7 @@ class MarketplaceFormViewModel @Inject constructor(
     transactionRepository: TransactionRepository
 ) : ViewModel() {
 
-    private val templateId: Long = savedStateHandle.get<Long>(TEMPLATE_ID_ARG) ?: 0L
+    private val templateId: Long = MarketplaceFormFragmentArgs.fromSavedStateHandle(savedStateHandle).templateId
     val isEditMode: Boolean = templateId != 0L
 
     private val _formState = MutableStateFlow(MarketplaceFormState())
@@ -232,9 +232,5 @@ class MarketplaceFormViewModel @Inject constructor(
             templateRepository.deleteTemplate(templateId)
             _events.emit(MarketplaceFormEvent.Deleted)
         }
-    }
-
-    private companion object {
-        const val TEMPLATE_ID_ARG = "templateId"
     }
 }

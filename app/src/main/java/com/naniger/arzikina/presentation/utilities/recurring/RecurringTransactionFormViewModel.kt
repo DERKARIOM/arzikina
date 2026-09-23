@@ -86,7 +86,7 @@ class RecurringTransactionFormViewModel @Inject constructor(
     transactionRepository: TransactionRepository
 ) : ViewModel() {
 
-    private val recurringTransactionId: Long = savedStateHandle.get<Long>(RECURRING_TRANSACTION_ID_ARG) ?: 0L
+    private val recurringTransactionId: Long = RecurringTransactionFormFragmentArgs.fromSavedStateHandle(savedStateHandle).recurringTransactionId
     val isEditMode: Boolean = recurringTransactionId != 0L
 
     private val _formState = MutableStateFlow(RecurringTransactionFormState())
@@ -252,8 +252,4 @@ class RecurringTransactionFormViewModel @Inject constructor(
     private fun isAfterDay(date: Long, reference: Long): Boolean = toLocalDate(date).isAfter(toLocalDate(reference))
     private fun isSameDay(date: Long, reference: Long): Boolean = toLocalDate(date) == toLocalDate(reference)
     private fun toLocalDate(epochMillis: Long) = Instant.ofEpochMilli(epochMillis).atZone(ZoneId.systemDefault()).toLocalDate()
-
-    private companion object {
-        const val RECURRING_TRANSACTION_ID_ARG = "recurringTransactionId"
-    }
 }

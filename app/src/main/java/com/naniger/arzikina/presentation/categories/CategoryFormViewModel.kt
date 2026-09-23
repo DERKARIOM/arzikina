@@ -53,7 +53,7 @@ class CategoryFormViewModel @Inject constructor(
     private val defaultNameLocalizer: DefaultNameLocalizer
 ) : ViewModel() {
 
-    private val categoryId: Long = savedStateHandle.get<Long>(CATEGORY_ID_ARG) ?: 0L
+    private val categoryId: Long = CategoryFormFragmentArgs.fromSavedStateHandle(savedStateHandle).categoryId
     val isEditMode: Boolean = categoryId != 0L
 
     private val _formState = MutableStateFlow(CategoryFormState())
@@ -129,9 +129,5 @@ class CategoryFormViewModel @Inject constructor(
                 .onSuccess { _events.emit(CategoryFormEvent.Deleted) }
                 .onFailure { _events.emit(CategoryFormEvent.DeleteBlocked) }
         }
-    }
-
-    private companion object {
-        const val CATEGORY_ID_ARG = "categoryId"
     }
 }

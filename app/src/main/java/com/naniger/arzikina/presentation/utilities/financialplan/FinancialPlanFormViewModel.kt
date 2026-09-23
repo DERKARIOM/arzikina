@@ -78,7 +78,7 @@ class FinancialPlanFormViewModel @Inject constructor(
     private val financialPlanRepository: FinancialPlanRepository
 ) : ViewModel() {
 
-    private val planId: Long = savedStateHandle.get<Long>(PLAN_ID_ARG) ?: 0L
+    private val planId: Long = FinancialPlanFormFragmentArgs.fromSavedStateHandle(savedStateHandle).planId
     val isEditMode: Boolean = planId != 0L
 
     private val _formState = MutableStateFlow(FinancialPlanFormState())
@@ -216,8 +216,4 @@ class FinancialPlanFormViewModel @Inject constructor(
      * (comparaison au jour près, pas à la milliseconde près). */
     private fun isBeforeDay(date: Long, reference: Long): Boolean = toLocalDate(date).isBefore(toLocalDate(reference))
     private fun toLocalDate(epochMillis: Long) = Instant.ofEpochMilli(epochMillis).atZone(ZoneId.systemDefault()).toLocalDate()
-
-    private companion object {
-        const val PLAN_ID_ARG = "planId"
-    }
 }

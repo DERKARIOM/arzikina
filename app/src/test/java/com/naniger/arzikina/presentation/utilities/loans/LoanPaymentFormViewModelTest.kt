@@ -1,6 +1,5 @@
 package com.naniger.arzikina.presentation.utilities.loans
 
-import androidx.lifecycle.SavedStateHandle
 import app.cash.turbine.test
 import com.naniger.arzikina.MainDispatcherRule
 import com.naniger.arzikina.domain.model.Account
@@ -79,7 +78,7 @@ class LoanPaymentFormViewModelTest {
     )
 
     private fun createViewModel(loanIdArg: Long = loan.id) = LoanPaymentFormViewModel(
-        savedStateHandle = SavedStateHandle(mapOf("loanId" to loanIdArg)),
+        savedStateHandle = LoanPaymentFormFragmentArgs(loanId = loanIdArg).toSavedStateHandle(),
         loanRepository = loanRepository,
         personRepository = personRepository,
         accountRepository = accountRepository,

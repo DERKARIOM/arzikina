@@ -84,7 +84,7 @@ class LoanPaymentFormViewModel @Inject constructor(
     transactionRepository: TransactionRepository
 ) : ViewModel() {
 
-    private val loanId: Long = savedStateHandle.get<Long>(LOAN_ID_ARG) ?: 0L
+    private val loanId: Long = LoanPaymentFormFragmentArgs.fromSavedStateHandle(savedStateHandle).loanId
 
     private val _formState = MutableStateFlow(LoanPaymentFormState())
     val formState: StateFlow<LoanPaymentFormState> = _formState.asStateFlow()
@@ -176,9 +176,5 @@ class LoanPaymentFormViewModel @Inject constructor(
             _formState.update { it.copy(isSaving = false) }
             _events.emit(LoanPaymentFormEvent.Saved)
         }
-    }
-
-    private companion object {
-        const val LOAN_ID_ARG = "loanId"
     }
 }

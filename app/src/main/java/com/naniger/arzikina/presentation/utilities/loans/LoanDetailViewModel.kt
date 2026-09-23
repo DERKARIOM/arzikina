@@ -55,7 +55,7 @@ class LoanDetailViewModel @Inject constructor(
     accountRepository: AccountRepository
 ) : ViewModel() {
 
-    val loanId: Long = savedStateHandle.get<Long>(LOAN_ID_ARG) ?: 0L
+    val loanId: Long = LoanDetailFragmentArgs.fromSavedStateHandle(savedStateHandle).loanId
 
     val uiState: StateFlow<AppResult<LoanDetailUiState>> = combine(
         loanRepository.observeLoans(),
@@ -107,9 +107,5 @@ class LoanDetailViewModel @Inject constructor(
         viewModelScope.launch {
             loanRepository.deletePayment(paymentId)
         }
-    }
-
-    private companion object {
-        const val LOAN_ID_ARG = "loanId"
     }
 }

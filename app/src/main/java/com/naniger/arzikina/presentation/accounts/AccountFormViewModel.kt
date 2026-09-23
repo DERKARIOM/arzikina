@@ -122,7 +122,8 @@ class AccountFormViewModel @Inject constructor(
     private val defaultNameLocalizer: DefaultNameLocalizer
 ) : ViewModel() {
 
-    private val accountId: Long = savedStateHandle.get<Long>(ACCOUNT_ID_ARG) ?: 0L
+    private val args = AccountFormFragmentArgs.fromSavedStateHandle(savedStateHandle)
+    private val accountId: Long = args.accountId
     val isEditMode: Boolean = accountId != 0L
 
     /** Voir `nav_graph.xml` (`initialType`) — présélection du type UNIQUEMENT à la création
@@ -130,7 +131,7 @@ class AccountFormViewModel @Inject constructor(
      * bancaires) au moment d'ouvrir ce formulaire. Lecture défensive : une valeur absente ou ne
      * correspondant à aucun [AccountType] connu retombe silencieusement sur le comportement
      * précédent (type par défaut de [AccountFormState]), plutôt que de planter. */
-    private val initialType: AccountType? = savedStateHandle.get<String>(INITIAL_TYPE_ARG)
+    private val initialType: AccountType? = args.initialType
         ?.let { raw -> AccountType.entries.find { it.name == raw } }
 
     private val _formState = MutableStateFlow(AccountFormState())
@@ -372,10 +373,5 @@ class AccountFormViewModel @Inject constructor(
             accountRepository.deleteAccount(accountId)
             _events.emit(AccountFormEvent.Deleted)
         }
-    }
-
-    private companion object {
-        const val ACCOUNT_ID_ARG = "accountId"
-        const val INITIAL_TYPE_ARG = "initialType"
     }
 }

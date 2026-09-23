@@ -47,7 +47,7 @@ class FinancialPlanDetailViewModel @Inject constructor(
     categoryRepository: CategoryRepository
 ) : ViewModel() {
 
-    val planId: Long = savedStateHandle.get<Long>(PLAN_ID_ARG) ?: 0L
+    val planId: Long = FinancialPlanDetailFragmentArgs.fromSavedStateHandle(savedStateHandle).planId
 
     /** Même raisonnement que `LoanDetailViewModel.uiState` : `AppResult.Error` si la planification
      * a été supprimée depuis un autre écran (ex. suppression rapide depuis [FinancialPlansFragment])
@@ -90,9 +90,5 @@ class FinancialPlanDetailViewModel @Inject constructor(
         viewModelScope.launch {
             financialPlanRepository.deleteItem(itemId)
         }
-    }
-
-    private companion object {
-        const val PLAN_ID_ARG = "planId"
     }
 }

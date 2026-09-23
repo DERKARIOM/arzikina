@@ -123,7 +123,7 @@ class ReceiptDetailViewModel @Inject constructor(
     @IoDispatcher private val ioDispatcher: CoroutineDispatcher
 ) : ViewModel() {
 
-    val receiptId: Long = savedStateHandle.get<Long>(RECEIPT_ID_ARG) ?: 0L
+    val receiptId: Long = ReceiptDetailFragmentArgs.fromSavedStateHandle(savedStateHandle).receiptId
 
     private val _events = MutableSharedFlow<ReceiptDetailEvent>()
     val events: SharedFlow<ReceiptDetailEvent> = _events.asSharedFlow()
@@ -397,8 +397,6 @@ class ReceiptDetailViewModel @Inject constructor(
     }
 
     private companion object {
-        const val RECEIPT_ID_ARG = "receiptId"
-
         /** Largeur cible du rendu de l'aperçu, en pixels — voir `fragment_receipt_detail.xml`
          * (`previewImage`) : suffisant pour un aperçu net sur un écran de téléphone courant sans
          * générer un bitmap inutilement volumineux (voir cahier des charges, "optimiser... la

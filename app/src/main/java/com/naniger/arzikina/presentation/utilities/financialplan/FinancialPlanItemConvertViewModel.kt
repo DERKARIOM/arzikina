@@ -78,7 +78,7 @@ class FinancialPlanItemConvertViewModel @Inject constructor(
     transactionRepository: TransactionRepository
 ) : ViewModel() {
 
-    private val itemId: Long = savedStateHandle.get<Long>(ITEM_ID_ARG) ?: 0L
+    private val itemId: Long = FinancialPlanItemConvertFragmentArgs.fromSavedStateHandle(savedStateHandle).itemId
 
     private val _formState = MutableStateFlow(FinancialPlanItemConvertState())
     val formState: StateFlow<FinancialPlanItemConvertState> = _formState.asStateFlow()
@@ -175,9 +175,5 @@ class FinancialPlanItemConvertViewModel @Inject constructor(
             _formState.update { it.copy(isSaving = false) }
             _events.emit(FinancialPlanItemConvertEvent.Saved)
         }
-    }
-
-    private companion object {
-        const val ITEM_ID_ARG = "itemId"
     }
 }
