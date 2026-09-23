@@ -1,7 +1,10 @@
 package com.naniger.arzikina.presentation.settings
 
+import androidx.annotation.StringRes
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.naniger.arzikina.R
+import com.naniger.arzikina.domain.model.BackupException
 import com.naniger.arzikina.domain.model.BackupResult
 import com.naniger.arzikina.domain.repository.BackupRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -21,7 +24,9 @@ import javax.inject.Inject
 sealed interface BackupEvent {
     data class ExportSuccess(val result: BackupResult) : BackupEvent
     data class ImportSuccess(val result: BackupResult) : BackupEvent
-    data class Error(val message: String) : BackupEvent
+    /** [messageRes] : message traduit (voir [toBackupError]). [formatArg] : valeur à insérer
+     *  (`%1$s`) — le nom d'utilisateur ou l'e-mail en conflit — ou `null`. */
+    data class Error(@StringRes val messageRes: Int, val formatArg: String? = null) : BackupEvent
 }
 
 /**
@@ -66,7 +71,7 @@ class BackupViewModel @Inject constructor(
             _uiState.update { it.copy(isExporting = true) }
             runCatching { backupRepository.exportBackup(outputStream) }
                 .onSuccess { _events.emit(BackupEvent.ExportSuccess(it)) }
-                .onFailure { _events.emit(BackupEvent.Error(it.message ?: "Erreur inconnue")) }
+                .onFailure { _events.emit(it.toBackupError()) }
             _uiState.update { it.copy(isExporting = false) }
         }
     }
@@ -76,8 +81,18 @@ class BackupViewModel @Inject constructor(
             _uiState.update { it.copy(isImporting = true) }
             runCatching { backupRepository.importBackup(inputStream) }
                 .onSuccess { _events.emit(BackupEvent.ImportSuccess(it)) }
-                .onFailure { _events.emit(BackupEvent.Error(it.message ?: "Erreur inconnue")) }
+                .onFailure { _events.emit(it.toBackupError()) }
             _uiState.update { it.copy(isImporting = false) }
         }
+    }
+
+    /** Cause typée (voir [BackupException]) → message traduit. Toute autre erreur (disque plein,
+     *  fichier inaccessible…) reçoit le message générique, jamais le détail technique. */
+    private fun Throwable.toBackupError(): BackupEvent.Error = when (this) {
+        is BackupException.NewerSchemaVersion -> BackupEvent.Error(R.string.backup_error_newer_version)
+        is BackupException.InvalidFile -> BackupEvent.Error(R.string.backup_error_invalid_file)
+        is BackupException.UsernameConflict -> BackupEvent.Error(R.string.backup_error_username_conflict, username)
+        is BackupException.EmailConflict -> BackupEvent.Error(R.string.backup_error_email_conflict, email)
+        else -> BackupEvent.Error(R.string.error_generic)
     }
 }

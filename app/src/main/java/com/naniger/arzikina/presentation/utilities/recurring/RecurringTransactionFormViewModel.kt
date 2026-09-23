@@ -1,8 +1,10 @@
 package com.naniger.arzikina.presentation.utilities.recurring
 
+import androidx.annotation.StringRes
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.naniger.arzikina.R
 import com.naniger.arzikina.domain.model.Account
 import com.naniger.arzikina.domain.model.Category
 import com.naniger.arzikina.domain.model.PaymentMethod
@@ -64,10 +66,10 @@ data class RecurringTransactionFormState(
     // (voir cahier des charges "Ajouter l'heure de déclenchement à Automatisation", section 11).
     val triggerHour: Int = RecurringTransaction.DEFAULT_TRIGGER_HOUR,
     val triggerMinute: Int = RecurringTransaction.DEFAULT_TRIGGER_MINUTE,
-    val amountError: String? = null,
-    val accountError: String? = null,
-    val categoryError: String? = null,
-    val endDateError: String? = null
+    @StringRes val amountError: Int? = null,
+    @StringRes val accountError: Int? = null,
+    @StringRes val categoryError: Int? = null,
+    @StringRes val endDateError: Int? = null
 )
 
 sealed interface RecurringTransactionFormEvent {
@@ -203,10 +205,10 @@ class RecurringTransactionFormViewModel @Inject constructor(
         if (!amountValid || !accountValid || !categoryValid || !endDateValid) {
             _formState.update {
                 it.copy(
-                    amountError = if (!amountValid) "Montant invalide" else null,
-                    accountError = if (!accountValid) "Choisis un compte" else null,
-                    categoryError = if (!categoryValid) "Choisis une catégorie" else null,
-                    endDateError = if (!endDateValid) "La date de fin doit être après la date de début" else null
+                    amountError = if (!amountValid) R.string.error_invalid_amount else null,
+                    accountError = if (!accountValid) R.string.error_select_account else null,
+                    categoryError = if (!categoryValid) R.string.error_select_category else null,
+                    endDateError = if (!endDateValid) R.string.error_end_date_before_start else null
                 )
             }
             return

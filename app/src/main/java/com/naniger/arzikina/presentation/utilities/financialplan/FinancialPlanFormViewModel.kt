@@ -1,8 +1,10 @@
 package com.naniger.arzikina.presentation.utilities.financialplan
 
+import androidx.annotation.StringRes
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.naniger.arzikina.R
 import com.naniger.arzikina.domain.model.FinancialPlan
 import com.naniger.arzikina.domain.model.FinancialPlanIcon
 import com.naniger.arzikina.domain.model.PlanPeriodType
@@ -51,10 +53,10 @@ data class FinancialPlanFormState(
     val endDate: Long = System.currentTimeMillis(),
     val icon: FinancialPlanIcon = FinancialPlanIcon.WALLET,
     val colorArgb: Long = DEFAULT_COLOR_ARGB,
-    val nameError: String? = null,
-    val availableAmountError: String? = null,
-    val targetAmountError: String? = null,
-    val dateError: String? = null
+    @StringRes val nameError: Int? = null,
+    @StringRes val availableAmountError: Int? = null,
+    @StringRes val targetAmountError: Int? = null,
+    @StringRes val dateError: Int? = null
 ) {
     companion object {
         /** Reprend la première couleur de [com.naniger.arzikina.presentation.components.ColorPalette]
@@ -144,15 +146,15 @@ class FinancialPlanFormViewModel @Inject constructor(
     fun save() {
         val state = _formState.value
 
-        val nameError = if (state.nameInput.isBlank()) "Nom requis" else null
+        val nameError = if (state.nameInput.isBlank()) R.string.error_name_required else null
         val availableAmountMinor = Money.parseToMinorUnits(state.availableAmountInput)
-        val availableAmountError = if (availableAmountMinor == null || availableAmountMinor <= 0L) "Montant invalide" else null
+        val availableAmountError = if (availableAmountMinor == null || availableAmountMinor <= 0L) R.string.error_invalid_amount else null
 
         // Objectif financier OPTIONNEL (voir la doc de FinancialPlanFormState.targetAmountInput) :
         // une saisie vide n'est jamais une erreur, seule une saisie NON VIDE mais invalide l'est.
         val targetAmountMinor = if (state.targetAmountInput.isBlank()) null else Money.parseToMinorUnits(state.targetAmountInput)
         val targetAmountError = if (state.targetAmountInput.isNotBlank() && (targetAmountMinor == null || targetAmountMinor <= 0L)) {
-            "Montant invalide"
+            R.string.error_invalid_amount
         } else {
             null
         }
@@ -161,7 +163,7 @@ class FinancialPlanFormViewModel @Inject constructor(
         // validation à faire dans ce cas, même principe que
         // RecurringTransactionFormViewModel.save/endDateValid quand hasEndDate == false.
         val dateError = if (state.periodType != PlanPeriodType.NONE && isBeforeDay(state.endDate, state.startDate)) {
-            "La date de fin doit être après la date de début"
+            R.string.error_end_date_before_start
         } else {
             null
         }

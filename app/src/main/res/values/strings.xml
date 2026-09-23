@@ -88,7 +88,14 @@
     <string name="settings_backup_import_action">Restaurer mes données</string>
     <string name="settings_backup_export_success">Export réussi : %1$d comptes, %2$d catégories, %3$d transactions, %4$d budgets, %5$d objectifs, %6$d prêts/emprunts, %7$d transactions automatiques, %8$d occurrences, %9$d planifications, %10$d dépenses prévues, %11$d reçus, %12$d modèles.</string>
     <string name="settings_backup_import_success">Importation réussie : %1$d comptes, %2$d catégories, %3$d transactions, %4$d budgets, %5$d objectifs, %6$d prêts/emprunts, %7$d transactions automatiques, %8$d occurrences, %9$d planifications, %10$d dépenses prévues, %11$d reçus, %12$d modèles.</string>
-    <string name="settings_backup_error_prefix">Échec :</string>
+    <!-- %1$s = cause traduite (backup_error_* ou error_generic, voir BackupViewModel.toBackupError). -->
+    <string name="settings_backup_error_message">Échec : %1$s</string>
+    <string name="backup_error_newer_version">ce fichier provient d\'une version plus récente d\'Arzikina. Mets l\'application à jour puis réessaie.</string>
+    <string name="backup_error_invalid_file">ce fichier n\'est pas une sauvegarde Arzikina valide.</string>
+    <!-- %1$s = nom d'utilisateur contenu dans le fichier. -->
+    <string name="backup_error_username_conflict">le nom d\'utilisateur « %1$s » est déjà utilisé par un autre compte sur cet appareil.</string>
+    <!-- %1$s = adresse e-mail contenue dans le fichier. -->
+    <string name="backup_error_email_conflict">l\'adresse e-mail « %1$s » est déjà utilisée par un autre compte sur cet appareil.</string>
     <string name="settings_backup_import_confirm_title">Remplacer toutes les données ?</string>
     <string name="settings_backup_import_confirm_message">L\'importation remplace définitivement toutes les données actuelles (comptes, catégories, transactions, frais, budgets, objectifs d\'épargne, prêts/emprunts, transactions automatiques, profil) par celles du fichier choisi. Cette action est irréversible.</string>
     <string name="settings_backup_import_confirm_action">Remplacer</string>
@@ -1196,4 +1203,32 @@
     <string name="transaction_form_template_picker_empty">Aucun modèle enregistré pour le moment. Crée-en un depuis Marketplace personnelle (Utilitaires).</string>
     <!-- %1$s = nom de la catégorie, %2$s = montant formaté (voir TemplatePickerDialog.bind). -->
     <string name="transaction_form_template_picker_subtitle">%1$s · %2$s</string>
+
+    <!-- ================================================================================
+         Messages d'erreur communs (chantier i18n, étape 2) : UN seul texte par erreur,
+         réutilisé par tous les formulaires (ViewModels → @StringRes, Fragments → getString).
+         Ne jamais réécrire l'un de ces textes en dur dans le code.
+         ================================================================================ -->
+    <string name="error_generic">Une erreur est survenue. Réessaie.</string>
+    <string name="error_name_required">Le nom est obligatoire</string>
+    <string name="error_invalid_amount">Montant invalide</string>
+    <string name="error_invalid_fee_amount">Montant des frais invalide</string>
+    <string name="error_invalid_target_amount">Montant cible invalide</string>
+    <string name="error_invalid_limit">Plafond invalide</string>
+    <string name="error_amount_exceeds_total">Ne peut pas dépasser le montant total</string>
+    <string name="error_amount_exceeds_remaining">Ne peut pas dépasser le solde restant</string>
+    <string name="error_select_account">Choisis un compte</string>
+    <string name="error_select_destination_account">Choisis un compte de destination</string>
+    <string name="error_select_fee_account">Choisis un compte pour les frais</string>
+    <string name="error_same_transfer_account">Le compte de destination doit être différent du compte source</string>
+    <string name="error_select_category">Choisis une catégorie</string>
+    <string name="error_select_person">Choisis une personne</string>
+    <string name="error_select_period">Choisis une période</string>
+    <string name="error_end_date_before_start">La date de fin doit être après la date de début</string>
+    <string name="error_end_date_before_start_inclusive">La date de fin doit être après ou égale à la date de début</string>
+    <string name="error_due_date_before_start">L\'échéance doit être après la date de début</string>
+    <string name="error_date_before_start">Ne peut pas être avant la date de début</string>
+    <string name="error_invalid_card_number">Numéro de carte invalide</string>
+    <string name="error_invalid_card_expiry">Date d\'expiration invalide</string>
+    <string name="error_invalid_card_cvv">Code de sécurité invalide</string>
 </resources>

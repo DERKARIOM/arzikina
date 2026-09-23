@@ -10,6 +10,7 @@ import com.naniger.arzikina.domain.repository.CategoryRepository
 import com.naniger.arzikina.domain.repository.TransactionRepository
 import com.naniger.arzikina.util.AppResult
 import com.naniger.arzikina.util.DatePeriods
+import com.naniger.arzikina.util.technicalMessage
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -155,7 +156,7 @@ class TransactionsViewModel @Inject constructor(
             .groupByDay()
     }
         .map<List<TransactionDaySection>, AppResult<List<TransactionDaySection>>> { AppResult.Success(it) }
-        .catch { throwable -> emit(AppResult.Error(throwable.message ?: "Erreur inconnue", throwable)) }
+        .catch { throwable -> emit(AppResult.Error(throwable.technicalMessage(), throwable)) }
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(stopTimeoutMillis = 5_000),

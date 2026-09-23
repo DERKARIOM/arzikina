@@ -434,7 +434,7 @@ class TransactionFormFragment : Fragment(R.layout.fragment_transaction_form) {
         // toute la carte disparaît plutôt que de la vider, pour ne pas laisser un bloc vide.
         binding.categoryCard.visibility = if (isTransfer) View.GONE else View.VISIBLE
         renderCategoryGrid()
-        binding.categoryErrorText.text = state.categoryError
+        binding.categoryErrorText.text = state.categoryError?.let { getString(it) }
         binding.categoryErrorText.visibility = if (!isTransfer && state.categoryError != null) View.VISIBLE else View.GONE
 
         renderAccountRow(binding, state, data.accounts, data.accountBalances)
@@ -476,7 +476,7 @@ class TransactionFormFragment : Fragment(R.layout.fragment_transaction_form) {
         if (binding.amountInput.text?.toString() != state.amountInput) {
             binding.amountInput.setText(state.amountInput)
         }
-        binding.amountErrorText.text = state.amountError
+        binding.amountErrorText.text = state.amountError?.let { getString(it) }
         binding.amountErrorText.visibility = if (state.amountError != null) View.VISIBLE else View.GONE
 
         // `when` exhaustif (pas de `else`) : le compilateur signale l'oubli si un
@@ -522,7 +522,7 @@ class TransactionFormFragment : Fragment(R.layout.fragment_transaction_form) {
         if (binding.feeAmountInput.text?.toString() != state.feeAmountInput) {
             binding.feeAmountInput.setText(state.feeAmountInput)
         }
-        binding.feeAmountErrorText.text = state.feeAmountError
+        binding.feeAmountErrorText.text = state.feeAmountError?.let { getString(it) }
         binding.feeAmountErrorText.visibility = if (state.feeAmountError != null) View.VISIBLE else View.GONE
 
         val feeTypeLabel = getString(state.feeType.displayTextRes())
@@ -535,7 +535,7 @@ class TransactionFormFragment : Fragment(R.layout.fragment_transaction_form) {
         }
 
         bindAccountField(binding.feeAccountField, accounts.firstOrNull { it.id == state.feeAccountId }, accountBalances)
-        binding.feeAccountErrorText.text = state.feeAccountError
+        binding.feeAccountErrorText.text = state.feeAccountError?.let { getString(it) }
         binding.feeAccountErrorText.visibility = if (state.feeAccountError != null) View.VISIBLE else View.GONE
 
         renderFeeSummary(binding, state, accounts)
@@ -589,7 +589,7 @@ class TransactionFormFragment : Fragment(R.layout.fragment_transaction_form) {
         accountBalances: Map<Long, Long>
     ) {
         bindAccountField(binding.accountField, accounts.firstOrNull { it.id == state.accountId }, accountBalances)
-        binding.accountErrorText.text = state.accountError
+        binding.accountErrorText.text = state.accountError?.let { getString(it) }
         binding.accountErrorText.visibility = if (state.accountError != null) View.VISIBLE else View.GONE
     }
 
@@ -607,7 +607,7 @@ class TransactionFormFragment : Fragment(R.layout.fragment_transaction_form) {
             return
         }
         bindAccountField(binding.destinationAccountField, accounts.firstOrNull { it.id == state.transferAccountId }, accountBalances)
-        binding.destinationAccountErrorText.text = state.transferAccountError
+        binding.destinationAccountErrorText.text = state.transferAccountError?.let { getString(it) }
         binding.destinationAccountErrorText.visibility = if (state.transferAccountError != null) View.VISIBLE else View.GONE
     }
 

@@ -1,8 +1,10 @@
 package com.naniger.arzikina.presentation.budget
 
+import androidx.annotation.StringRes
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.naniger.arzikina.R
 import com.naniger.arzikina.domain.model.Budget
 import com.naniger.arzikina.domain.model.BudgetPeriod
 import com.naniger.arzikina.domain.model.Category
@@ -48,12 +50,12 @@ data class BudgetFormState(
     val startDate: Long? = null,
     val endDate: Long? = null,
     val quickRange: QuickDateRange? = null,
-    val dateError: String? = null,
+    @StringRes val dateError: Int? = null,
     val limitInput: String = "",
     val currencyCode: String = Constants.DEFAULT_CURRENCY_CODE,
     val createdAt: Long? = null,
-    val categoryError: String? = null,
-    val limitError: String? = null
+    @StringRes val categoryError: Int? = null,
+    @StringRes val limitError: Int? = null
 )
 
 sealed interface BudgetFormEvent {
@@ -170,19 +172,19 @@ class BudgetFormViewModel @Inject constructor(
         val state = _formState.value
 
         if (state.categoryId == 0L) {
-            _formState.update { it.copy(categoryError = "Choisis une catégorie") }
+            _formState.update { it.copy(categoryError = R.string.error_select_category) }
             return
         }
         val limitMinor = Money.parseToMinorUnits(state.limitInput)
         if (limitMinor == null || limitMinor <= 0L) {
-            _formState.update { it.copy(limitError = "Plafond invalide") }
+            _formState.update { it.copy(limitError = R.string.error_invalid_limit) }
             return
         }
         // Récurrent (legacy) : aucune date à valider, period fait foi (voir isLegacyRecurring).
         val dateError = if (!state.isLegacyRecurring) {
             when {
-                state.startDate == null || state.endDate == null -> "Choisis une période"
-                state.endDate < state.startDate -> "La date de fin doit être après ou égale à la date de début"
+                state.startDate == null || state.endDate == null -> R.string.error_select_period
+                state.endDate < state.startDate -> R.string.error_end_date_before_start_inclusive
                 else -> null
             }
         } else {

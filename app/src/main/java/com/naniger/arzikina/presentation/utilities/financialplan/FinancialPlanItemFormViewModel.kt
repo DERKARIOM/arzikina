@@ -1,8 +1,10 @@
 package com.naniger.arzikina.presentation.utilities.financialplan
 
+import androidx.annotation.StringRes
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.naniger.arzikina.R
 import com.naniger.arzikina.domain.model.Category
 import com.naniger.arzikina.domain.model.FinancialPlanItem
 import com.naniger.arzikina.domain.model.PlanItemPriority
@@ -64,8 +66,8 @@ data class FinancialPlanItemFormState(
      * "Enregistrer comme transaction" (une dépense ne se convertit jamais deux fois, voir
      * [FinancialPlanRepository.convertItemToTransaction]). Toujours `false` en création. */
     val isAlreadyConverted: Boolean = false,
-    val nameError: String? = null,
-    val amountError: String? = null,
+    @StringRes val nameError: Int? = null,
+    @StringRes val amountError: Int? = null,
     val isSaving: Boolean = false
 )
 
@@ -186,9 +188,9 @@ class FinancialPlanItemFormViewModel @Inject constructor(
         val state = _formState.value
         if (state.isSaving) return
 
-        val nameError = if (state.nameInput.isBlank()) "Nom requis" else null
+        val nameError = if (state.nameInput.isBlank()) R.string.error_name_required else null
         val amountMinor = Money.parseToMinorUnits(state.amountInput)
-        val amountError = if (amountMinor == null || amountMinor <= 0L) "Montant invalide" else null
+        val amountError = if (amountMinor == null || amountMinor <= 0L) R.string.error_invalid_amount else null
 
         if (nameError != null || amountError != null) {
             _formState.update { it.copy(nameError = nameError, amountError = amountError) }

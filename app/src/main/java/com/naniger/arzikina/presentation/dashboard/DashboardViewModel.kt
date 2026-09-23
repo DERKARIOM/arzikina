@@ -30,6 +30,7 @@ import com.naniger.arzikina.util.BudgetPeriodStatus
 import com.naniger.arzikina.util.BudgetProgress
 import com.naniger.arzikina.util.Constants
 import com.naniger.arzikina.util.PersonalStatistics
+import com.naniger.arzikina.util.technicalMessage
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -213,7 +214,7 @@ class DashboardViewModel @Inject constructor(
         )
     }
         .map<DashboardUiState, AppResult<DashboardUiState>> { AppResult.Success(it) }
-        .catch { throwable -> emit(AppResult.Error(throwable.message ?: "Erreur inconnue", throwable)) }
+        .catch { throwable -> emit(AppResult.Error(throwable.technicalMessage(), throwable)) }
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(stopTimeoutMillis = 5_000),

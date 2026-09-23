@@ -11,6 +11,7 @@ import com.naniger.arzikina.domain.repository.LoanRepository
 import com.naniger.arzikina.domain.repository.PersonRepository
 import com.naniger.arzikina.util.AppResult
 import com.naniger.arzikina.util.Constants
+import com.naniger.arzikina.util.technicalMessage
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -82,9 +83,9 @@ class LoanDetailViewModel @Inject constructor(
         )
     }
         .map<LoanDetailUiState?, AppResult<LoanDetailUiState>> { state ->
-            state?.let { AppResult.Success(it) } ?: AppResult.Error("Prêt/emprunt introuvable")
+            state?.let { AppResult.Success(it) } ?: AppResult.Error("Loan not found")
         }
-        .catch { throwable -> emit(AppResult.Error(throwable.message ?: "Erreur inconnue", throwable)) }
+        .catch { throwable -> emit(AppResult.Error(throwable.technicalMessage(), throwable)) }
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(stopTimeoutMillis = 5_000),

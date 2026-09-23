@@ -1,8 +1,10 @@
 package com.naniger.arzikina.presentation.categories
 
+import androidx.annotation.StringRes
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.naniger.arzikina.R
 import com.naniger.arzikina.domain.model.Category
 import com.naniger.arzikina.domain.model.CategoryIcon
 import com.naniger.arzikina.domain.model.TransactionType
@@ -30,7 +32,7 @@ data class CategoryFormState(
     val colorArgb: Long = 0xFF10B981L,
     val type: TransactionType = TransactionType.EXPENSE,
     val createdAt: Long? = null,
-    val nameError: String? = null
+    @StringRes val nameError: Int? = null
 )
 
 sealed interface CategoryFormEvent {
@@ -96,7 +98,7 @@ class CategoryFormViewModel @Inject constructor(
         val state = _formState.value
         val trimmedName = state.name.trim()
         if (trimmedName.isEmpty()) {
-            _formState.update { it.copy(nameError = "Le nom est obligatoire") }
+            _formState.update { it.copy(nameError = R.string.error_name_required) }
             return
         }
 

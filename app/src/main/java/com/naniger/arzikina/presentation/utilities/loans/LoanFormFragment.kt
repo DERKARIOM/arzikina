@@ -197,24 +197,24 @@ class LoanFormFragment : Fragment(R.layout.fragment_loan_form) {
         renderTypeCard(binding.typeBorrowedCard, isSelected = state.type == LoanType.BORROWED, selectedColorRes = R.color.expense_red)
 
         binding.personFieldName.text = state.personName.ifBlank { getString(R.string.loan_form_person_placeholder) }
-        binding.personErrorText.text = state.personError
+        binding.personErrorText.text = state.personError?.let { getString(it) }
         binding.personErrorText.visibility = if (state.personError != null) View.VISIBLE else View.GONE
 
         val selectedAccount = latestAccounts.firstOrNull { it.id == state.accountId }
         bindAccountField(binding, selectedAccount)
-        binding.accountErrorText.text = state.accountError
+        binding.accountErrorText.text = state.accountError?.let { getString(it) }
         binding.accountErrorText.visibility = if (state.accountError != null) View.VISIBLE else View.GONE
 
         if (binding.amountInput.text?.toString() != state.amountInput) {
             binding.amountInput.setText(state.amountInput)
         }
-        binding.amountErrorText.text = state.amountError
+        binding.amountErrorText.text = state.amountError?.let { getString(it) }
         binding.amountErrorText.visibility = if (state.amountError != null) View.VISIBLE else View.GONE
         binding.amountCurrencyBadge.text = selectedAccount?.let { currencySymbol(it.currencyCode) }.orEmpty()
 
         binding.startDateField.dateFieldValue.text = formatDate(state.startDateMillis)
         binding.dueDateField.dateFieldValue.text = formatDate(state.dueDateMillis)
-        binding.dueDateErrorText.text = state.dueDateError
+        binding.dueDateErrorText.text = state.dueDateError?.let { getString(it) }
         binding.dueDateErrorText.visibility = if (state.dueDateError != null) View.VISIBLE else View.GONE
     }
 
@@ -244,10 +244,10 @@ class LoanFormFragment : Fragment(R.layout.fragment_loan_form) {
         if (binding.firstPaymentAmountInput.text?.toString() != state.firstPaymentAmountInput) {
             binding.firstPaymentAmountInput.setText(state.firstPaymentAmountInput)
         }
-        binding.firstPaymentAmountLayout.error = state.firstPaymentAmountError
+        binding.firstPaymentAmountLayout.error = state.firstPaymentAmountError?.let { getString(it) }
 
         binding.firstPaymentDateField.dateFieldValue.text = formatDate(state.firstPaymentDateMillis)
-        binding.firstPaymentDateErrorText.text = state.firstPaymentDateError
+        binding.firstPaymentDateErrorText.text = state.firstPaymentDateError?.let { getString(it) }
         binding.firstPaymentDateErrorText.visibility = if (state.firstPaymentDateError != null) View.VISIBLE else View.GONE
     }
 

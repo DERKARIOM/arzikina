@@ -206,12 +206,12 @@ class FinancialPlanItemFormFragment : Fragment(R.layout.fragment_financial_plan_
         if (binding.nameInput.text?.toString() != state.nameInput) {
             binding.nameInput.setText(state.nameInput)
         }
-        binding.nameLayout.error = state.nameError
+        binding.nameLayout.error = state.nameError?.let { getString(it) }
 
         if (binding.amountInput.text?.toString() != state.amountInput) {
             binding.amountInput.setText(state.amountInput)
         }
-        binding.amountLayout.error = state.amountError
+        binding.amountLayout.error = state.amountError?.let { getString(it) }
 
         bindCategoryField(binding, categories.firstOrNull { it.id == state.categoryId })
 

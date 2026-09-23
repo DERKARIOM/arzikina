@@ -194,16 +194,16 @@ class RecurringOccurrenceEditDialogFragment : DialogFragment() {
         if (binding.editCategoryField.dropdownInput.text?.toString() != categoryLabel) {
             binding.editCategoryField.dropdownInput.setText(categoryLabel, false)
         }
-        binding.editCategoryField.dropdownLayout.error = edit.categoryError
+        binding.editCategoryField.dropdownLayout.error = edit.categoryError?.let { getString(it) }
 
         if (binding.editAmountInput.text?.toString() != edit.amountInput) {
             binding.editAmountInput.setText(edit.amountInput)
         }
-        binding.editAmountLayout.error = edit.amountError
+        binding.editAmountLayout.error = edit.amountError?.let { getString(it) }
 
         val selectedAccount = latestAccounts.firstOrNull { it.id == edit.accountId }
         bindAccountField(binding, selectedAccount)
-        binding.editAccountErrorText.text = edit.accountError
+        binding.editAccountErrorText.text = edit.accountError?.let { getString(it) }
         binding.editAccountErrorText.visibility = if (edit.accountError != null) View.VISIBLE else View.GONE
 
         if (binding.editDescriptionInput.text?.toString() != edit.description) {

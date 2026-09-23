@@ -154,7 +154,7 @@ class LoanPaymentFormFragment : Fragment(R.layout.fragment_loan_payment_form) {
 
         val selectedAccount = latestAccounts.firstOrNull { it.id == state.accountId }
         bindAccountField(binding, selectedAccount)
-        binding.accountErrorText.text = state.accountError
+        binding.accountErrorText.text = state.accountError?.let { getString(it) }
         binding.accountErrorText.visibility = if (state.accountError != null) View.VISIBLE else View.GONE
         // Avertissement non bloquant (voir la doc de LoanPaymentFormState.amountInput) : le montant
         // saisi est toujours interprété dans la devise DU PRÊT, jamais convertie.
@@ -164,7 +164,7 @@ class LoanPaymentFormFragment : Fragment(R.layout.fragment_loan_payment_form) {
         if (binding.amountInput.text?.toString() != state.amountInput) {
             binding.amountInput.setText(state.amountInput)
         }
-        binding.amountErrorText.text = state.amountError
+        binding.amountErrorText.text = state.amountError?.let { getString(it) }
         binding.amountErrorText.visibility = if (state.amountError != null) View.VISIBLE else View.GONE
         binding.amountCurrencyBadge.text = currencySymbol(state.loanCurrencyCode)
 

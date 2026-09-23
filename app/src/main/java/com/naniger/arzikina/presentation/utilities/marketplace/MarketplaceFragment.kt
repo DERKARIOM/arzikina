@@ -160,7 +160,8 @@ class MarketplaceFragment : Fragment(R.layout.fragment_marketplace) {
         binding.loadingState.visibility = if (state is AppResult.Loading) View.VISIBLE else View.GONE
         binding.errorState.visibility = if (state is AppResult.Error) View.VISIBLE else View.GONE
         if (state is AppResult.Error) {
-            binding.errorMessage.text = state.message
+            // Jamais `state.message` (message technique, voir AppResult.Error) : texte traduit.
+            binding.errorMessage.setText(R.string.error_generic)
         }
         if (state !is AppResult.Success) {
             binding.templatesList.visibility = View.GONE

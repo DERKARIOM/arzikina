@@ -266,16 +266,16 @@ class RecurringTransactionFormFragment : Fragment(R.layout.fragment_recurring_tr
         if (binding.categoryField.dropdownInput.text?.toString() != categoryLabel) {
             binding.categoryField.dropdownInput.setText(categoryLabel, false)
         }
-        binding.categoryField.dropdownLayout.error = state.categoryError
+        binding.categoryField.dropdownLayout.error = state.categoryError?.let { getString(it) }
 
         if (binding.amountInput.text?.toString() != state.amountInput) {
             binding.amountInput.setText(state.amountInput)
         }
-        binding.amountLayout.error = state.amountError
+        binding.amountLayout.error = state.amountError?.let { getString(it) }
 
         val selectedAccount = data.accounts.firstOrNull { it.id == state.accountId }
         bindAccountField(binding, selectedAccount)
-        binding.accountErrorText.text = state.accountError
+        binding.accountErrorText.text = state.accountError?.let { getString(it) }
         binding.accountErrorText.visibility = if (state.accountError != null) View.VISIBLE else View.GONE
 
         if (binding.descriptionInput.text?.toString() != state.description) {
@@ -308,7 +308,7 @@ class RecurringTransactionFormFragment : Fragment(R.layout.fragment_recurring_tr
         }
         binding.endDateCard.visibility = if (state.hasEndDate) View.VISIBLE else View.GONE
         binding.endDateField.dateFieldValue.text = formatDate(state.endDate)
-        binding.endDateErrorText.text = state.endDateError
+        binding.endDateErrorText.text = state.endDateError?.let { getString(it) }
         binding.endDateErrorText.visibility = if (state.endDateError != null) View.VISIBLE else View.GONE
 
         binding.deleteButton.visibility = if (viewModel.isEditMode) View.VISIBLE else View.GONE

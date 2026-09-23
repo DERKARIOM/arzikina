@@ -182,7 +182,7 @@ class MarketplaceFormFragment : Fragment(R.layout.fragment_marketplace_form) {
         if (binding.nameInput.text?.toString() != state.name) {
             binding.nameInput.setText(state.name)
         }
-        binding.nameLayout.error = state.nameError
+        binding.nameLayout.error = state.nameError?.let { getString(it) }
 
         val expectedTypeButtonId = if (state.type == TransactionType.INCOME) R.id.typeIncomeButton else R.id.typeExpenseButton
         if (binding.typeGroup.checkedButtonId != expectedTypeButtonId) {
@@ -194,16 +194,16 @@ class MarketplaceFormFragment : Fragment(R.layout.fragment_marketplace_form) {
         if (binding.categoryField.dropdownInput.text?.toString() != categoryLabel) {
             binding.categoryField.dropdownInput.setText(categoryLabel, false)
         }
-        binding.categoryField.dropdownLayout.error = state.categoryError
+        binding.categoryField.dropdownLayout.error = state.categoryError?.let { getString(it) }
 
         if (binding.amountInput.text?.toString() != state.amountInput) {
             binding.amountInput.setText(state.amountInput)
         }
-        binding.amountLayout.error = state.amountError
+        binding.amountLayout.error = state.amountError?.let { getString(it) }
 
         val selectedAccount = data.accounts.firstOrNull { it.id == state.accountId }
         bindAccountField(binding, selectedAccount)
-        binding.accountErrorText.text = state.accountError
+        binding.accountErrorText.text = state.accountError?.let { getString(it) }
         binding.accountErrorText.visibility = if (state.accountError != null) View.VISIBLE else View.GONE
 
         if (binding.descriptionInput.text?.toString() != state.description) {

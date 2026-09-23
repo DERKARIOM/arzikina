@@ -1,8 +1,10 @@
 package com.naniger.arzikina.presentation.transactions
 
+import androidx.annotation.StringRes
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.naniger.arzikina.R
 import com.naniger.arzikina.domain.model.Account
 import com.naniger.arzikina.domain.model.Category
 import com.naniger.arzikina.domain.model.FeeCategoryNames
@@ -66,10 +68,10 @@ data class TransactionFormState(
     val isDescriptionAutoFilled: Boolean = false,
     val paymentMethod: PaymentMethod? = null,
     val createdAt: Long? = null,
-    val amountError: String? = null,
-    val accountError: String? = null,
-    val categoryError: String? = null,
-    val transferAccountError: String? = null,
+    @StringRes val amountError: Int? = null,
+    @StringRes val accountError: Int? = null,
+    @StringRes val categoryError: Int? = null,
+    @StringRes val transferAccountError: Int? = null,
     /** Voir cahier des charges "Gestion des frais supplémentaires sur les transactions" —
      * `false` par défaut, y compris pour une nouvelle transaction. Révèle [feeAmountInput]/
      * [feeType]/[feeAccountId]/[feeDescriptionInput] dans le formulaire. */
@@ -83,8 +85,8 @@ data class TransactionFormState(
     val feeAccountId: Long = 0L,
     val isFeeAccountAutoFilled: Boolean = true,
     val feeDescriptionInput: String = "",
-    val feeAmountError: String? = null,
-    val feeAccountError: String? = null,
+    @StringRes val feeAmountError: Int? = null,
+    @StringRes val feeAccountError: Int? = null,
     /**
      * Non-`null` uniquement en modification, une fois [LoanRepository.findLoanIdForTransaction]
      * résolu (voir [TransactionFormViewModel.init]) : id du prêt/emprunt dont cette transaction est
@@ -523,24 +525,24 @@ class TransactionFormViewModel @Inject constructor(
 
         val amountMinor = Money.parseToMinorUnits(state.amountInput)
         if (amountMinor == null || amountMinor <= 0L) {
-            _formState.update { it.copy(amountError = "Montant invalide") }
+            _formState.update { it.copy(amountError = R.string.error_invalid_amount) }
             return
         }
         if (state.accountId == 0L) {
-            _formState.update { it.copy(accountError = "Choisis un compte") }
+            _formState.update { it.copy(accountError = R.string.error_select_account) }
             return
         }
         if (state.type == TransactionType.TRANSFER) {
             if (state.transferAccountId == 0L) {
-                _formState.update { it.copy(transferAccountError = "Choisis un compte de destination") }
+                _formState.update { it.copy(transferAccountError = R.string.error_select_destination_account) }
                 return
             }
             if (state.transferAccountId == state.accountId) {
-                _formState.update { it.copy(transferAccountError = "Le compte de destination doit être différent du compte source") }
+                _formState.update { it.copy(transferAccountError = R.string.error_same_transfer_account) }
                 return
             }
         } else if (state.categoryId == 0L) {
-            _formState.update { it.copy(categoryError = "Choisis une catégorie") }
+            _formState.update { it.copy(categoryError = R.string.error_select_category) }
             return
         }
 
@@ -548,11 +550,11 @@ class TransactionFormViewModel @Inject constructor(
         if (state.hasFee) {
             feeAmountMinor = Money.parseToMinorUnits(state.feeAmountInput)
             if (feeAmountMinor == null || feeAmountMinor <= 0L) {
-                _formState.update { it.copy(feeAmountError = "Montant des frais invalide") }
+                _formState.update { it.copy(feeAmountError = R.string.error_invalid_fee_amount) }
                 return
             }
             if (state.feeAccountId == 0L) {
-                _formState.update { it.copy(feeAccountError = "Choisis un compte pour les frais") }
+                _formState.update { it.copy(feeAccountError = R.string.error_select_fee_account) }
                 return
             }
         }

@@ -153,17 +153,17 @@ class FinancialPlanFormFragment : Fragment(R.layout.fragment_financial_plan_form
         if (binding.nameInput.text?.toString() != state.nameInput) {
             binding.nameInput.setText(state.nameInput)
         }
-        binding.nameLayout.error = state.nameError
+        binding.nameLayout.error = state.nameError?.let { getString(it) }
 
         if (binding.availableAmountInput.text?.toString() != state.availableAmountInput) {
             binding.availableAmountInput.setText(state.availableAmountInput)
         }
-        binding.availableAmountLayout.error = state.availableAmountError
+        binding.availableAmountLayout.error = state.availableAmountError?.let { getString(it) }
 
         if (binding.targetAmountInput.text?.toString() != state.targetAmountInput) {
             binding.targetAmountInput.setText(state.targetAmountInput)
         }
-        binding.targetAmountLayout.error = state.targetAmountError
+        binding.targetAmountLayout.error = state.targetAmountError?.let { getString(it) }
 
         val periodLabel = getString(state.periodType.labelRes())
         if (binding.periodField.dropdownInput.text?.toString() != periodLabel) {
@@ -175,7 +175,7 @@ class FinancialPlanFormFragment : Fragment(R.layout.fragment_financial_plan_form
         binding.endDateRow.visibility = if (hasPeriod) View.VISIBLE else View.GONE
         binding.startDateField.dateFieldValue.text = formatDate(state.startDate)
         binding.endDateField.dateFieldValue.text = formatDate(state.endDate)
-        binding.dateErrorText.text = state.dateError
+        binding.dateErrorText.text = state.dateError?.let { getString(it) }
         binding.dateErrorText.visibility = if (state.dateError != null) View.VISIBLE else View.GONE
 
         iconPickerAdapter.setSelected(state.icon)

@@ -158,17 +158,17 @@ class FinancialPlanItemConvertFragment : Fragment(R.layout.fragment_financial_pl
 
         val selectedAccount = latestAccounts.firstOrNull { it.id == state.accountId }
         bindAccountField(binding, selectedAccount)
-        binding.accountErrorText.text = state.accountError
+        binding.accountErrorText.text = state.accountError?.let { getString(it) }
         binding.accountErrorText.visibility = if (state.accountError != null) View.VISIBLE else View.GONE
 
         bindCategoryField(binding, latestCategories.firstOrNull { it.id == state.categoryId })
-        binding.categoryErrorText.text = state.categoryError
+        binding.categoryErrorText.text = state.categoryError?.let { getString(it) }
         binding.categoryErrorText.visibility = if (state.categoryError != null) View.VISIBLE else View.GONE
 
         if (binding.amountInput.text?.toString() != state.actualAmountInput) {
             binding.amountInput.setText(state.actualAmountInput)
         }
-        binding.amountLayout.error = state.amountError
+        binding.amountLayout.error = state.amountError?.let { getString(it) }
 
         binding.dateField.dateFieldValue.text = formatDate(state.dateMillis)
 

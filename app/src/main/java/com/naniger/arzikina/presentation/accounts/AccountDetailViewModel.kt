@@ -20,6 +20,7 @@ import com.naniger.arzikina.presentation.transactions.feeTransactionIds
 import com.naniger.arzikina.presentation.transactions.groupByDay
 import com.naniger.arzikina.util.AppResult
 import com.naniger.arzikina.util.external.ExternalAppLauncher
+import com.naniger.arzikina.util.technicalMessage
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Job
@@ -149,9 +150,9 @@ class AccountDetailViewModel @Inject constructor(
         )
     }
         .map<AccountDetailUiState?, AppResult<AccountDetailUiState>> { state ->
-            state?.let { AppResult.Success(it) } ?: AppResult.Error("Compte introuvable")
+            state?.let { AppResult.Success(it) } ?: AppResult.Error("Account not found")
         }
-        .catch { throwable -> emit(AppResult.Error(throwable.message ?: "Erreur inconnue", throwable)) }
+        .catch { throwable -> emit(AppResult.Error(throwable.technicalMessage(), throwable)) }
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(stopTimeoutMillis = 5_000),

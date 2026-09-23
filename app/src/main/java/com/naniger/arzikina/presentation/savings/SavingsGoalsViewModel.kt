@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.naniger.arzikina.domain.model.SavingsGoal
 import com.naniger.arzikina.domain.repository.SavingsGoalRepository
 import com.naniger.arzikina.util.AppResult
+import com.naniger.arzikina.util.technicalMessage
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -21,7 +22,7 @@ class SavingsGoalsViewModel @Inject constructor(
 
     val uiState: StateFlow<AppResult<List<SavingsGoal>>> = savingsGoalRepository.observeSavingsGoals()
         .map<List<SavingsGoal>, AppResult<List<SavingsGoal>>> { AppResult.Success(it) }
-        .catch { throwable -> emit(AppResult.Error(throwable.message ?: "Erreur inconnue", throwable)) }
+        .catch { throwable -> emit(AppResult.Error(throwable.technicalMessage(), throwable)) }
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(stopTimeoutMillis = 5_000),

@@ -189,7 +189,7 @@ class BudgetFormFragment : Fragment(R.layout.fragment_budget_form) {
         if (binding.categoryField.dropdownInput.text?.toString() != categoryLabel) {
             binding.categoryField.dropdownInput.setText(categoryLabel, false)
         }
-        binding.categoryField.dropdownLayout.error = state.categoryError
+        binding.categoryField.dropdownLayout.error = state.categoryError?.let { getString(it) }
 
         // Les deux blocs sont mutuellement exclusifs (voir BudgetFormState.isLegacyRecurring et
         // fragment_budget_form.xml) : jamais affichés en même temps.
@@ -217,13 +217,13 @@ class BudgetFormFragment : Fragment(R.layout.fragment_budget_form) {
         }
         binding.startDateField.dateFieldValue.text = formatDate(state.startDate)
         binding.endDateField.dateFieldValue.text = formatDate(state.endDate)
-        binding.dateErrorText.text = state.dateError
+        binding.dateErrorText.text = state.dateError?.let { getString(it) }
         binding.dateErrorText.visibility = if (state.dateError != null) View.VISIBLE else View.GONE
 
         if (binding.limitInput.text?.toString() != state.limitInput) {
             binding.limitInput.setText(state.limitInput)
         }
-        binding.limitLayout.error = state.limitError
+        binding.limitLayout.error = state.limitError?.let { getString(it) }
 
         val currencyLabel = SupportedCurrency.entries.firstOrNull { it.code == state.currencyCode }
             ?.let { "${it.displayName} (${it.symbol})" }

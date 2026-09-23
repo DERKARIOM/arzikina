@@ -23,6 +23,7 @@ import com.naniger.arzikina.util.ReceiptAmountParser
 import com.naniger.arzikina.util.ReceiptTransactionInfo
 import com.naniger.arzikina.util.ReceiptTransactionInfoParser
 import com.naniger.arzikina.util.ReceiptTransactionMatcher
+import com.naniger.arzikina.util.technicalMessage
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -158,9 +159,9 @@ class ReceiptDetailViewModel @Inject constructor(
     val uiState: StateFlow<AppResult<Receipt>> = receiptRepository.observeReceipts()
         .map<List<Receipt>, AppResult<Receipt>> { receipts ->
             receipts.find { it.id == receiptId }?.let { AppResult.Success(it) }
-                ?: AppResult.Error("Reçu introuvable")
+                ?: AppResult.Error("Receipt not found")
         }
-        .catch { throwable -> emit(AppResult.Error(throwable.message ?: "Erreur inconnue", throwable)) }
+        .catch { throwable -> emit(AppResult.Error(throwable.technicalMessage(), throwable)) }
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(stopTimeoutMillis = 5_000),

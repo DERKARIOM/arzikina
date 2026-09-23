@@ -26,6 +26,7 @@ import com.naniger.arzikina.data.local.dao.UserDao
 import com.naniger.arzikina.data.local.database.ArzikinaDatabase
 import com.naniger.arzikina.data.receipts.ReceiptFileStorage
 import com.naniger.arzikina.di.IoDispatcher
+import com.naniger.arzikina.domain.model.BackupException
 import com.naniger.arzikina.domain.model.BackupResult
 import com.naniger.arzikina.domain.repository.BackupRepository
 import com.naniger.arzikina.domain.repository.SessionManager
@@ -207,11 +208,15 @@ class BackupRepositoryImpl @Inject constructor(
     override suspend fun importBackup(inputStream: InputStream): BackupResult =
         withContext(ioDispatcher) {
             val text = inputStream.use { it.readBytes().decodeToString() }
-            val payload = json.decodeFromString<BackupPayload>(text)
-
-            check(payload.schemaVersion <= BACKUP_SCHEMA_VERSION) {
-                "Ce fichier de sauvegarde provient d'une version plus récente d'Arzikina."
+            // Erreurs typées (voir BackupException) : la présentation affiche le message traduit.
+            // SerializationException hérite d'IllegalArgumentException.
+            val payload = try {
+                json.decodeFromString<BackupPayload>(text)
+            } catch (exception: IllegalArgumentException) {
+                throw BackupException.InvalidFile(exception)
             }
+
+            if (payload.schemaVersion > BACKUP_SCHEMA_VERSION) throw BackupException.NewerSchemaVersion()
             val userId = requireCurrentUserId()
 
             // Vérification préalable, AVANT toute écriture : un profil qui entrerait en collision
@@ -220,11 +225,11 @@ class BackupRepositoryImpl @Inject constructor(
             // ids" — l'utilisateur restauré, lui, n'a jamais de nouvel id : c'est toujours celui
             // actuellement connecté qui est mis à jour en place).
             payload.user?.let { userDto ->
-                check(userDao.findByUsernameExcluding(userDto.username, userId) == null) {
-                    "Le nom d'utilisateur \"${userDto.username}\" est déjà utilisé par un autre compte sur cet appareil."
+                if (userDao.findByUsernameExcluding(userDto.username, userId) != null) {
+                    throw BackupException.UsernameConflict(userDto.username)
                 }
-                check(userDao.findByEmailExcluding(userDto.email, userId) == null) {
-                    "L'adresse e-mail \"${userDto.email}\" est déjà utilisée par un autre compte sur cet appareil."
+                if (userDao.findByEmailExcluding(userDto.email, userId) != null) {
+                    throw BackupException.EmailConflict(userDto.email)
                 }
             }
 

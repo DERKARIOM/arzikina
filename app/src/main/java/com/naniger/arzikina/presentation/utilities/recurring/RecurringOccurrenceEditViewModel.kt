@@ -1,8 +1,10 @@
 package com.naniger.arzikina.presentation.utilities.recurring
 
+import androidx.annotation.StringRes
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.naniger.arzikina.R
 import com.naniger.arzikina.domain.model.Account
 import com.naniger.arzikina.domain.model.Category
 import com.naniger.arzikina.domain.model.PaymentMethod
@@ -51,9 +53,9 @@ data class OccurrenceEditState(
     val description: String,
     val paymentMethod: PaymentMethod?,
     val date: Long,
-    val amountError: String? = null,
-    val accountError: String? = null,
-    val categoryError: String? = null
+    @StringRes val amountError: Int? = null,
+    @StringRes val accountError: Int? = null,
+    @StringRes val categoryError: Int? = null
 )
 
 /**
@@ -199,9 +201,9 @@ class RecurringOccurrenceEditViewModel @Inject constructor(
         if (!amountValid || !accountValid || !categoryValid) {
             updateEdit {
                 it.copy(
-                    amountError = if (!amountValid) "Montant invalide" else null,
-                    accountError = if (!accountValid) "Choisis un compte" else null,
-                    categoryError = if (!categoryValid) "Choisis une catégorie" else null
+                    amountError = if (!amountValid) R.string.error_invalid_amount else null,
+                    accountError = if (!accountValid) R.string.error_select_account else null,
+                    categoryError = if (!categoryValid) R.string.error_select_category else null
                 )
             }
             return

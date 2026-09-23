@@ -11,6 +11,7 @@ import com.naniger.arzikina.domain.repository.TransactionRepository
 import com.naniger.arzikina.presentation.utilities.financialplan.FinancialPlanUiItem
 import com.naniger.arzikina.presentation.utilities.financialplan.buildFinancialPlanUiItems
 import com.naniger.arzikina.util.AppResult
+import com.naniger.arzikina.util.technicalMessage
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -103,7 +104,7 @@ class AccountsViewModel @Inject constructor(
         AccountsUiState(accounts = items)
     }
         .map<AccountsUiState, AppResult<AccountsUiState>> { AppResult.Success(it) }
-        .catch { throwable -> emit(AppResult.Error(throwable.message ?: "Erreur inconnue", throwable)) }
+        .catch { throwable -> emit(AppResult.Error(throwable.technicalMessage(), throwable)) }
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(stopTimeoutMillis = 5_000),
@@ -126,7 +127,7 @@ class AccountsViewModel @Inject constructor(
         buildFinancialPlanUiItems(plans, allItems)
     }
         .map<List<FinancialPlanUiItem>, AppResult<List<FinancialPlanUiItem>>> { AppResult.Success(it) }
-        .catch { throwable -> emit(AppResult.Error(throwable.message ?: "Erreur inconnue", throwable)) }
+        .catch { throwable -> emit(AppResult.Error(throwable.technicalMessage(), throwable)) }
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(stopTimeoutMillis = 5_000),

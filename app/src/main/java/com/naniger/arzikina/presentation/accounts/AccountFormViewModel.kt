@@ -1,8 +1,10 @@
 package com.naniger.arzikina.presentation.accounts
 
+import androidx.annotation.StringRes
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.naniger.arzikina.R
 import com.naniger.arzikina.di.IoDispatcher
 import com.naniger.arzikina.domain.model.Account
 import com.naniger.arzikina.domain.model.AccountIcon
@@ -76,11 +78,11 @@ data class AccountFormState(
      * maintenant).
      */
     val mobileMoneyAppLabel: String? = null,
-    val nameError: String? = null,
-    val balanceError: String? = null,
-    val cardNumberError: String? = null,
-    val cardExpiryError: String? = null,
-    val cardCvvError: String? = null
+    @StringRes val nameError: Int? = null,
+    @StringRes val balanceError: Int? = null,
+    @StringRes val cardNumberError: Int? = null,
+    @StringRes val cardExpiryError: Int? = null,
+    @StringRes val cardCvvError: Int? = null
 ) {
     /**
      * `toString()` explicite qui REDACTE [cardNumberInput]/[cardCvvInput] (voir section
@@ -273,13 +275,13 @@ class AccountFormViewModel @Inject constructor(
         val state = _formState.value
         val trimmedName = state.name.trim()
         if (trimmedName.isEmpty()) {
-            _formState.update { it.copy(nameError = "Le nom est obligatoire") }
+            _formState.update { it.copy(nameError = R.string.error_name_required) }
             return
         }
 
         val balanceMinor = Money.parseToMinorUnits(state.initialBalanceInput)
         if (balanceMinor == null) {
-            _formState.update { it.copy(balanceError = "Montant invalide") }
+            _formState.update { it.copy(balanceError = R.string.error_invalid_amount) }
             return
         }
 
@@ -298,11 +300,11 @@ class AccountFormViewModel @Inject constructor(
                 cardLastFourDigits = state.existingCardLastFourDigits
             } else {
                 if (!CardInputFormatter.isValidCardNumber(state.cardNumberInput)) {
-                    _formState.update { it.copy(cardNumberError = "Numéro de carte invalide") }
+                    _formState.update { it.copy(cardNumberError = R.string.error_invalid_card_number) }
                     return
                 }
                 if (!CardInputFormatter.isValidCvv(state.cardCvvInput)) {
-                    _formState.update { it.copy(cardCvvError = "Code de sécurité invalide") }
+                    _formState.update { it.copy(cardCvvError = R.string.error_invalid_card_cvv) }
                     return
                 }
                 cardLastFourDigits = state.cardNumberInput.takeLast(4)
@@ -311,7 +313,7 @@ class AccountFormViewModel @Inject constructor(
             val expiryDigits = state.cardExpiryInput.filter { it.isDigit() }
             val now = YearMonth.now()
             if (!CardInputFormatter.isValidExpiry(expiryDigits, now.year, now.monthValue)) {
-                _formState.update { it.copy(cardExpiryError = "Date d'expiration invalide") }
+                _formState.update { it.copy(cardExpiryError = R.string.error_invalid_card_expiry) }
                 return
             }
             cardExpiryMonth = expiryDigits.substring(0, 2).toInt()

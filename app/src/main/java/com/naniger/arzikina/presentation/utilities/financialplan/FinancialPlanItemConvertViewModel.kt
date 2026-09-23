@@ -1,8 +1,10 @@
 package com.naniger.arzikina.presentation.utilities.financialplan
 
+import androidx.annotation.StringRes
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.naniger.arzikina.R
 import com.naniger.arzikina.domain.model.Account
 import com.naniger.arzikina.domain.model.Category
 import com.naniger.arzikina.domain.model.PlanItemStatus
@@ -57,9 +59,9 @@ data class FinancialPlanItemConvertState(
     val actualAmountInput: String = "",
     val descriptionInput: String = "",
     val dateMillis: Long = System.currentTimeMillis(),
-    val accountError: String? = null,
-    val categoryError: String? = null,
-    val amountError: String? = null,
+    @StringRes val accountError: Int? = null,
+    @StringRes val categoryError: Int? = null,
+    @StringRes val amountError: Int? = null,
     val isSaving: Boolean = false
 )
 
@@ -149,10 +151,10 @@ class FinancialPlanItemConvertViewModel @Inject constructor(
         val state = _formState.value
         if (state.isSaving) return
 
-        val accountError = if (state.accountId == 0L) "Choisis un compte" else null
-        val categoryError = if (state.categoryId == 0L) "Choisis une catégorie" else null
+        val accountError = if (state.accountId == 0L) R.string.error_select_account else null
+        val categoryError = if (state.categoryId == 0L) R.string.error_select_category else null
         val amountMinor = Money.parseToMinorUnits(state.actualAmountInput)
-        val amountError = if (amountMinor == null || amountMinor <= 0L) "Montant invalide" else null
+        val amountError = if (amountMinor == null || amountMinor <= 0L) R.string.error_invalid_amount else null
 
         if (accountError != null || categoryError != null || amountError != null) {
             _formState.update { it.copy(accountError = accountError, categoryError = categoryError, amountError = amountError) }
