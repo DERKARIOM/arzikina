@@ -14,4 +14,8 @@ data class Category(
     val colorArgb: Long,
     val type: TransactionType,
     val createdAt: Long
-)
+) {
+    /** Voir [SystemCategoryKey] : `null` pour une catégorie créée ou renommée par l'utilisateur. */
+    val systemKey: SystemCategoryKey?
+        get() = SystemCategoryKey.of(name, type)
+}

@@ -19,6 +19,7 @@ import com.naniger.arzikina.domain.repository.BiometricAuthenticator
 import com.naniger.arzikina.presentation.components.ConfirmDialogs
 import com.naniger.arzikina.presentation.components.NavAnimations
 import com.naniger.arzikina.presentation.components.authenticateForSensitiveAction
+import com.naniger.arzikina.presentation.components.displayName
 import com.naniger.arzikina.presentation.transactions.GroupedTransactionsAdapter
 import com.naniger.arzikina.presentation.transactions.TransactionUiItem
 import com.naniger.arzikina.presentation.transactions.toListRows
@@ -165,7 +166,7 @@ class AccountDetailFragment : Fragment(R.layout.fragment_account_detail) {
         val account = uiState.account
         latestUiState = uiState
 
-        binding.toolbar.title = account.name
+        binding.toolbar.title = account.displayName(requireContext())
 
         val isCreditCard = account.type == AccountType.CREDIT_CARD
         binding.accountSummaryCard.accountCard.visibility = if (isCreditCard) View.GONE else View.VISIBLE
@@ -363,7 +364,7 @@ class AccountDetailFragment : Fragment(R.layout.fragment_account_detail) {
         ConfirmDialogs.confirm(
             context = requireContext(),
             title = getString(R.string.accounts_delete_title),
-            message = getString(R.string.accounts_delete_message, account.name),
+            message = getString(R.string.accounts_delete_message, account.displayName(requireContext())),
             onConfirm = {
                 viewModel.deleteAccount()
                 findNavController().navigateUp()

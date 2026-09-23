@@ -1261,4 +1261,42 @@
     <string name="file_size_bytes">%1$d o</string>
     <string name="file_size_kilobytes">%1$s Ko</string>
     <string name="file_size_megabytes">%1$s Mo</string>
+
+    <!-- ================================================================================
+         Noms créés par Arzikina (chantier i18n, étape 4) — voir DefaultNamesDisplay.kt.
+         En base, ces catégories et comptes gardent TOUJOURS leur nom canonique français
+         (SystemCategoryKey / DefaultAccountKey) : seuls ces libellés d'affichage se traduisent.
+         En français, chaque libellé doit rester IDENTIQUE au nom canonique.
+         ================================================================================ -->
+    <string name="category_default_salary">Salaire</string>
+    <string name="category_default_other_income">Divers</string>
+    <string name="category_default_food">Nourriture</string>
+    <string name="category_default_transport">Transport</string>
+    <string name="category_default_health">Santé</string>
+    <string name="category_default_shopping">Shopping</string>
+    <string name="category_default_gifts">Cadeaux</string>
+    <string name="category_default_internet">Internet</string>
+    <string name="category_default_water">Eau</string>
+    <string name="category_default_electricity">Électricité</string>
+    <string name="category_default_education">Éducation</string>
+    <string name="category_default_home">Maison</string>
+    <string name="category_default_other_expense">Divers</string>
+    <string name="category_system_loan_disbursement_lent">Prêt accordé</string>
+    <string name="category_system_loan_repayment_lent">Remboursement de prêt reçu</string>
+    <string name="category_system_loan_disbursement_borrowed">Emprunt reçu</string>
+    <string name="category_system_loan_repayment_borrowed">Remboursement d\'emprunt</string>
+    <string name="category_system_fees">Frais et commissions</string>
+    <string name="account_default_cash">Espèces</string>
+    <string name="account_default_bank">Banque</string>
+    <string name="account_default_mobile_money">Mobile Money</string>
+    <string name="account_default_savings">Épargne</string>
+    <string name="account_default_wallet">Wallet</string>
+
+    <!-- Noms des devises (voir SupportedCurrency.nameRes) : le code ISO et le symbole restent
+         dans le domaine, ils ne dépendent d'aucune langue. -->
+    <string name="currency_name_xof">Franc CFA (UEMOA)</string>
+    <string name="currency_name_ngn">Naira nigérian</string>
+    <string name="currency_name_ghs">Cedi ghanéen</string>
+    <string name="currency_name_eur">Euro</string>
+    <string name="currency_name_usd">Dollar américain</string>
 </resources>

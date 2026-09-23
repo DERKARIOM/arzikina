@@ -17,6 +17,7 @@ import com.naniger.arzikina.databinding.FragmentMarketplaceBinding
 import com.naniger.arzikina.domain.model.Category
 import com.naniger.arzikina.presentation.components.ConfirmDialogs
 import com.naniger.arzikina.presentation.components.NavAnimations
+import com.naniger.arzikina.presentation.components.displayName
 import com.naniger.arzikina.util.AppResult
 import com.google.android.material.chip.Chip
 import com.google.android.material.chip.ChipGroup
@@ -133,7 +134,7 @@ class MarketplaceFragment : Fragment(R.layout.fragment_marketplace) {
         categories.forEach { category ->
             val chip = inflateCategoryChip(chipGroup).apply {
                 id = View.generateViewId()
-                text = category.name
+                text = category.displayName(context)
                 tag = category.id
             }
             chipGroup.addView(chip)

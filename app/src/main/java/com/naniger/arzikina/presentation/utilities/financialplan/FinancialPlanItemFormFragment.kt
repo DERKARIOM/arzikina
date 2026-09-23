@@ -21,6 +21,7 @@ import com.naniger.arzikina.domain.model.PlanItemStatus
 import com.naniger.arzikina.presentation.categories.CategoryIconMapper
 import com.naniger.arzikina.presentation.components.CategoryPickerDialog
 import com.naniger.arzikina.presentation.components.NavAnimations
+import com.naniger.arzikina.presentation.components.displayName
 import com.naniger.arzikina.util.AppDateFormats
 import com.naniger.arzikina.util.Constants
 import com.naniger.arzikina.util.Money
@@ -251,7 +252,7 @@ class FinancialPlanItemFormFragment : Fragment(R.layout.fragment_financial_plan_
         if (category != null) {
             fieldBinding.categoryFieldIcon.setImageResource(CategoryIconMapper.iconFor(category.icon))
             fieldBinding.categoryFieldIcon.backgroundTintList = ColorStateList.valueOf(category.colorArgb.toInt())
-            fieldBinding.categoryFieldName.text = category.name
+            fieldBinding.categoryFieldName.text = category.displayName(requireContext())
         } else {
             fieldBinding.categoryFieldIcon.setImageResource(R.drawable.ic_category_other_24)
             fieldBinding.categoryFieldIcon.backgroundTintList =

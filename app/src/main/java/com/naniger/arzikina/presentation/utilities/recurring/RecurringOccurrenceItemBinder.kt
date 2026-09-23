@@ -9,6 +9,7 @@ import com.naniger.arzikina.databinding.ItemTransactionCompactBinding
 import com.naniger.arzikina.domain.model.OccurrenceStatus
 import com.naniger.arzikina.domain.model.TransactionType
 import com.naniger.arzikina.presentation.categories.CategoryIconMapper
+import com.naniger.arzikina.presentation.components.displayName
 import com.naniger.arzikina.presentation.transactions.TransactionAmountTone
 import com.naniger.arzikina.presentation.transactions.transactionAmountDisplay
 import com.naniger.arzikina.util.AppDateFormats
@@ -38,7 +39,7 @@ object RecurringOccurrenceItemBinder {
         val circleColor = category?.colorArgb?.toInt() ?: ContextCompat.getColor(context, R.color.arzikina_outline)
         binding.categoryIcon.backgroundTintList = ColorStateList.valueOf(circleColor)
 
-        binding.categoryName.text = category?.name ?: context.getString(R.string.transaction_uncategorized)
+        binding.categoryName.text = category?.displayName(context) ?: context.getString(R.string.transaction_uncategorized)
 
         binding.subtitle.visibility = View.VISIBLE
         binding.subtitle.text = subtitleFor(context, item, section)

@@ -6,6 +6,7 @@ import com.naniger.arzikina.databinding.ItemAccountCreditCardBinding
 import com.naniger.arzikina.domain.model.Account
 import com.naniger.arzikina.domain.model.CardSecrets
 import com.naniger.arzikina.domain.model.CurrencyAmount
+import com.naniger.arzikina.presentation.components.displayName
 import com.naniger.arzikina.util.CardInputFormatter
 import com.naniger.arzikina.util.Money
 import java.util.Locale
@@ -41,7 +42,7 @@ object AccountCardCreditBinder {
         val isRevealed = revealedSecrets != null
 
         binding.cardContent.background = AccountCardGradient.create(account.colorArgb)
-        binding.accountName.text = account.name
+        binding.accountName.text = account.displayName(binding.root.context)
         binding.accountBalance.text = Money.format(CurrencyAmount(account.currencyCode, currentBalance))
         binding.cardHolderName.text = cardHolderName.uppercase(Locale.FRENCH)
 

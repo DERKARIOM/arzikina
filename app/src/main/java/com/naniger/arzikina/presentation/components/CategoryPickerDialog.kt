@@ -66,7 +66,7 @@ object CategoryPickerDialog {
             if (category != null) {
                 binding.categoryIcon.setImageResource(CategoryIconMapper.iconFor(category.icon))
                 binding.categoryIcon.backgroundTintList = ColorStateList.valueOf(category.colorArgb.toInt())
-                binding.categoryName.text = category.name
+                binding.categoryName.text = category.displayName(context)
             } else {
                 binding.categoryIcon.setImageResource(R.drawable.ic_category_other_24)
                 binding.categoryIcon.backgroundTintList =

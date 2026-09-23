@@ -15,6 +15,7 @@ import com.naniger.arzikina.databinding.FragmentCategoriesBinding
 import com.naniger.arzikina.domain.model.Category
 import com.naniger.arzikina.presentation.components.ConfirmDialogs
 import com.naniger.arzikina.presentation.components.NavAnimations
+import com.naniger.arzikina.presentation.components.displayName
 import com.naniger.arzikina.util.AppResult
 import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
@@ -89,7 +90,7 @@ class CategoriesFragment : Fragment(R.layout.fragment_categories) {
         ConfirmDialogs.confirm(
             context = requireContext(),
             title = getString(R.string.categories_delete_title),
-            message = getString(R.string.categories_delete_message, category.name),
+            message = getString(R.string.categories_delete_message, category.displayName(requireContext())),
             onConfirm = { viewModel.deleteCategory(category.id) }
         )
     }

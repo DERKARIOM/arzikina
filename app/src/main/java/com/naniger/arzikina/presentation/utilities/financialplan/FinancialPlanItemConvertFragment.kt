@@ -20,6 +20,7 @@ import com.naniger.arzikina.presentation.accounts.AccountIconMapper
 import com.naniger.arzikina.presentation.categories.CategoryIconMapper
 import com.naniger.arzikina.presentation.components.AccountPickerDialog
 import com.naniger.arzikina.presentation.components.CategoryPickerDialog
+import com.naniger.arzikina.presentation.components.displayName
 import com.naniger.arzikina.util.AppDateFormats
 import com.naniger.arzikina.util.Constants
 import com.naniger.arzikina.util.Money
@@ -184,7 +185,7 @@ class FinancialPlanItemConvertFragment : Fragment(R.layout.fragment_financial_pl
         if (account != null) {
             fieldBinding.accountFieldIcon.setImageResource(AccountIconMapper.iconFor(account.icon))
             fieldBinding.accountFieldIcon.backgroundTintList = ColorStateList.valueOf(account.colorArgb.toInt())
-            fieldBinding.accountFieldName.text = account.name
+            fieldBinding.accountFieldName.text = account.displayName(requireContext())
             val balance = latestAccountBalances[account.id] ?: account.initialBalance
             fieldBinding.accountFieldBalance.text = getString(
                 R.string.transaction_form_account_balance,
@@ -207,7 +208,7 @@ class FinancialPlanItemConvertFragment : Fragment(R.layout.fragment_financial_pl
         if (category != null) {
             fieldBinding.categoryFieldIcon.setImageResource(CategoryIconMapper.iconFor(category.icon))
             fieldBinding.categoryFieldIcon.backgroundTintList = ColorStateList.valueOf(category.colorArgb.toInt())
-            fieldBinding.categoryFieldName.text = category.name
+            fieldBinding.categoryFieldName.text = category.displayName(requireContext())
         } else {
             fieldBinding.categoryFieldIcon.setImageResource(R.drawable.ic_category_other_24)
             fieldBinding.categoryFieldIcon.backgroundTintList =

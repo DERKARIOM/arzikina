@@ -21,6 +21,7 @@ import com.naniger.arzikina.presentation.components.ColorPickerAdapter
 import com.naniger.arzikina.presentation.components.ConfirmDialogs
 import com.naniger.arzikina.presentation.components.ExternalAppPickerDialog
 import com.naniger.arzikina.presentation.components.IconPickerAdapter
+import com.naniger.arzikina.presentation.components.pickerLabel
 import com.naniger.arzikina.util.MoneyInputFormatter
 import com.naniger.arzikina.util.external.ExternalAppInfo
 import dagger.hilt.android.AndroidEntryPoint
@@ -117,7 +118,7 @@ class AccountFormFragment : Fragment(R.layout.fragment_account_form) {
 
     private fun setUpCurrencyDropdown(binding: FragmentAccountFormBinding) {
         binding.currencyField.dropdownLayout.hint = getString(R.string.account_form_currency_label)
-        val labels = SupportedCurrency.entries.map { "${it.displayName} (${it.symbol})" }
+        val labels = SupportedCurrency.entries.map { it.pickerLabel(requireContext()) }
         binding.currencyField.dropdownInput.setSimpleItems(labels.toTypedArray())
         binding.currencyField.dropdownInput.setOnItemClickListener { _, _, position, _ ->
             viewModel.onCurrencyChange(SupportedCurrency.entries[position].code)
@@ -166,7 +167,7 @@ class AccountFormFragment : Fragment(R.layout.fragment_account_form) {
         binding.balanceLayout.error = state.balanceError?.let { getString(it) }
 
         val currencyLabel = SupportedCurrency.entries.firstOrNull { it.code == state.currencyCode }
-            ?.let { "${it.displayName} (${it.symbol})" }
+            ?.pickerLabel(requireContext())
             .orEmpty()
         if (binding.currencyField.dropdownInput.text?.toString() != currencyLabel) {
             binding.currencyField.dropdownInput.setText(currencyLabel, false)

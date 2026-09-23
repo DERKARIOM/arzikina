@@ -58,4 +58,8 @@ data class Account(
     val isExcludedFromStatistics: Boolean = false,
     val mobileMoneyPackageName: String? = null,
     val displayOrder: Long = 0L
-)
+) {
+    /** Voir [DefaultAccountKey] : `null` pour un compte créé ou renommé par l'utilisateur. */
+    val defaultKey: DefaultAccountKey?
+        get() = DefaultAccountKey.of(name)
+}

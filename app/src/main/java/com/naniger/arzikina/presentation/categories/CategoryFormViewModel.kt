@@ -9,6 +9,7 @@ import com.naniger.arzikina.domain.model.Category
 import com.naniger.arzikina.domain.model.CategoryIcon
 import com.naniger.arzikina.domain.model.TransactionType
 import com.naniger.arzikina.domain.repository.CategoryRepository
+import com.naniger.arzikina.presentation.components.DefaultNameLocalizer
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -48,7 +49,8 @@ sealed interface CategoryFormEvent {
 @HiltViewModel
 class CategoryFormViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
-    private val categoryRepository: CategoryRepository
+    private val categoryRepository: CategoryRepository,
+    private val defaultNameLocalizer: DefaultNameLocalizer
 ) : ViewModel() {
 
     private val categoryId: Long = savedStateHandle.get<Long>(CATEGORY_ID_ARG) ?: 0L
@@ -66,7 +68,8 @@ class CategoryFormViewModel @Inject constructor(
                 categoryRepository.getCategory(categoryId)?.let { category ->
                     _formState.update {
                         it.copy(
-                            name = category.name,
+                            // « Salary » en anglais : voir DefaultNameLocalizer (et save()).
+                            name = defaultNameLocalizer.displayName(category),
                             icon = category.icon,
                             colorArgb = category.colorArgb,
                             type = category.type,
@@ -106,7 +109,7 @@ class CategoryFormViewModel @Inject constructor(
             categoryRepository.saveCategory(
                 Category(
                     id = categoryId,
-                    name = trimmedName,
+                    name = defaultNameLocalizer.canonicalCategoryName(trimmedName, state.type),
                     icon = state.icon,
                     colorArgb = state.colorArgb,
                     type = state.type,

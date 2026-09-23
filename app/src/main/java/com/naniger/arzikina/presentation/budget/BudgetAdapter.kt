@@ -13,6 +13,7 @@ import com.naniger.arzikina.databinding.ItemBudgetBinding
 import com.naniger.arzikina.domain.model.BudgetPeriod
 import com.naniger.arzikina.domain.model.CurrencyAmount
 import com.naniger.arzikina.presentation.categories.CategoryIconMapper
+import com.naniger.arzikina.presentation.components.displayName
 import com.naniger.arzikina.util.AppDateFormats
 import com.naniger.arzikina.util.BudgetPace
 import com.naniger.arzikina.util.BudgetPaceState
@@ -54,7 +55,7 @@ class BudgetAdapter(
             val circleColor = category?.colorArgb?.toInt()
                 ?: ContextCompat.getColor(context, R.color.arzikina_outline)
             binding.categoryIcon.backgroundTintList = ColorStateList.valueOf(circleColor)
-            binding.categoryName.text = category?.name
+            binding.categoryName.text = category?.displayName(context)
                 ?: context.getString(R.string.transaction_uncategorized)
 
             val today = LocalDate.now()

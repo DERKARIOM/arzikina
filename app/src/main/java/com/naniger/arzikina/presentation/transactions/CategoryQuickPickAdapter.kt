@@ -9,6 +9,7 @@ import com.naniger.arzikina.R
 import com.naniger.arzikina.databinding.ItemCategoryQuickPickBinding
 import com.naniger.arzikina.domain.model.Category
 import com.naniger.arzikina.presentation.categories.CategoryIconMapper
+import com.naniger.arzikina.presentation.components.displayName
 
 /** Une case de la grille "Catégorie" : une vraie [Category], ou la case spéciale "Ajouter". */
 sealed interface CategoryPickerItem {
@@ -61,7 +62,7 @@ class CategoryQuickPickAdapter(
                     val category = item.category
                     binding.categoryIcon.setImageResource(CategoryIconMapper.iconFor(category.icon))
                     binding.categoryIcon.backgroundTintList = ColorStateList.valueOf(category.colorArgb.toInt())
-                    binding.categoryName.text = category.name
+                    binding.categoryName.text = category.displayName(binding.root.context)
                     binding.iconRing.isSelected = category.id == selectedCategoryId
                     binding.root.setOnClickListener { onSelect(category) }
                 }

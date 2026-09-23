@@ -3,6 +3,7 @@ package com.naniger.arzikina.presentation.utilities.loans
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.naniger.arzikina.domain.model.Account
 import com.naniger.arzikina.domain.model.Loan
 import com.naniger.arzikina.domain.model.LoanPayment
 import com.naniger.arzikina.domain.model.computeLoanStatus
@@ -33,7 +34,7 @@ import javax.inject.Inject
  * plan de développement Prêts/Emprunts (l'Étape "Gestion des remboursements" suit celle-ci). Cet
  * écran reste donc fidèle aux données réelles plutôt que d'inventer un versement à venir.
  *
- * @param accountNamesById TOUS les comptes (pas seulement [Loan.accountId]) : un [LoanPayment]
+ * @param accountsById TOUS les comptes (pas seulement [Loan.accountId]) : un [LoanPayment]
  * peut être réglé sur un compte différent de celui utilisé à la création du prêt/emprunt (voir la
  * doc de [LoanPayment.accountId]) — nécessaire pour afficher le bon nom de compte sur chaque ligne
  * de la section "Versements" (cahier des charges section 11).
@@ -43,7 +44,7 @@ data class LoanDetailUiState(
     val personName: String,
     val currencyCode: String,
     val payments: List<LoanPayment>,
-    val accountNamesById: Map<Long, String>
+    val accountsById: Map<Long, Account>
 )
 
 @HiltViewModel
@@ -79,7 +80,7 @@ class LoanDetailViewModel @Inject constructor(
             personName = persons.find { it.id == loan.personId }?.name.orEmpty(),
             currencyCode = accounts.find { it.id == loan.accountId }?.currencyCode ?: Constants.DEFAULT_CURRENCY_CODE,
             payments = payments,
-            accountNamesById = accounts.associate { it.id to it.name }
+            accountsById = accounts.associateBy { it.id }
         )
     }
         .map<LoanDetailUiState?, AppResult<LoanDetailUiState>> { state ->

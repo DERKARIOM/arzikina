@@ -4,6 +4,7 @@ import com.naniger.arzikina.data.local.entity.CategoryEntity
 import com.naniger.arzikina.domain.model.CategoryIcon
 import com.naniger.arzikina.domain.model.FeeCategoryNames
 import com.naniger.arzikina.domain.model.LoanCategoryNames
+import com.naniger.arzikina.domain.model.SystemCategoryKey
 import com.naniger.arzikina.domain.model.TransactionType
 
 /**
@@ -16,6 +17,9 @@ import com.naniger.arzikina.domain.model.TransactionType
  * commentaire pour le détail de [userId] dans ce cas) et [MIGRATION_12_13]
  * (backfill des 4 catégories Prêts/Emprunts pour les utilisateurs déjà
  * existants au moment de l'introduction de cette fonctionnalité).
+ *
+ * Noms canoniques issus de [SystemCategoryKey] (source unique, chantier i18n) : ils ne doivent
+ * JAMAIS être traduits ici, l'affichage traduit se fait côté présentation.
  */
 internal object DefaultCategories {
 
@@ -28,21 +32,21 @@ internal object DefaultCategories {
 
     fun seed(now: Long, userId: Long): List<CategoryEntity> = listOf(
         // Revenus
-        category("Salaire", CategoryIcon.SALARY, 0xFF006C4FL, TransactionType.INCOME, now, userId),
-        category("Divers", CategoryIcon.OTHER, 0xFF64748BL, TransactionType.INCOME, now, userId),
+        category(SystemCategoryKey.SALARY.canonicalName, CategoryIcon.SALARY, 0xFF006C4FL, TransactionType.INCOME, now, userId),
+        category(SystemCategoryKey.OTHER_INCOME.canonicalName, CategoryIcon.OTHER, 0xFF64748BL, TransactionType.INCOME, now, userId),
 
         // Dépenses
-        category("Nourriture", CategoryIcon.FOOD, 0xFFF59E0BL, TransactionType.EXPENSE, now, userId),
-        category("Transport", CategoryIcon.TRANSPORT, 0xFF2563EBL, TransactionType.EXPENSE, now, userId),
-        category("Santé", CategoryIcon.HEALTH, 0xFFDC2626L, TransactionType.EXPENSE, now, userId),
-        category("Shopping", CategoryIcon.SHOPPING, 0xFF7C3AEDL, TransactionType.EXPENSE, now, userId),
-        category("Cadeaux", CategoryIcon.GIFTS, 0xFFEC4899L, TransactionType.EXPENSE, now, userId),
-        category("Internet", CategoryIcon.INTERNET, 0xFF0EA5E9L, TransactionType.EXPENSE, now, userId),
-        category("Eau", CategoryIcon.WATER, 0xFF06B6D4L, TransactionType.EXPENSE, now, userId),
-        category("Électricité", CategoryIcon.ELECTRICITY, 0xFFF59E0BL, TransactionType.EXPENSE, now, userId),
-        category("Éducation", CategoryIcon.EDUCATION, 0xFF16A34AL, TransactionType.EXPENSE, now, userId),
-        category("Maison", CategoryIcon.HOME, 0xFF10B981L, TransactionType.EXPENSE, now, userId),
-        category("Divers", CategoryIcon.OTHER, 0xFF64748BL, TransactionType.EXPENSE, now, userId),
+        category(SystemCategoryKey.FOOD.canonicalName, CategoryIcon.FOOD, 0xFFF59E0BL, TransactionType.EXPENSE, now, userId),
+        category(SystemCategoryKey.TRANSPORT.canonicalName, CategoryIcon.TRANSPORT, 0xFF2563EBL, TransactionType.EXPENSE, now, userId),
+        category(SystemCategoryKey.HEALTH.canonicalName, CategoryIcon.HEALTH, 0xFFDC2626L, TransactionType.EXPENSE, now, userId),
+        category(SystemCategoryKey.SHOPPING.canonicalName, CategoryIcon.SHOPPING, 0xFF7C3AEDL, TransactionType.EXPENSE, now, userId),
+        category(SystemCategoryKey.GIFTS.canonicalName, CategoryIcon.GIFTS, 0xFFEC4899L, TransactionType.EXPENSE, now, userId),
+        category(SystemCategoryKey.INTERNET.canonicalName, CategoryIcon.INTERNET, 0xFF0EA5E9L, TransactionType.EXPENSE, now, userId),
+        category(SystemCategoryKey.WATER.canonicalName, CategoryIcon.WATER, 0xFF06B6D4L, TransactionType.EXPENSE, now, userId),
+        category(SystemCategoryKey.ELECTRICITY.canonicalName, CategoryIcon.ELECTRICITY, 0xFFF59E0BL, TransactionType.EXPENSE, now, userId),
+        category(SystemCategoryKey.EDUCATION.canonicalName, CategoryIcon.EDUCATION, 0xFF16A34AL, TransactionType.EXPENSE, now, userId),
+        category(SystemCategoryKey.HOME.canonicalName, CategoryIcon.HOME, 0xFF10B981L, TransactionType.EXPENSE, now, userId),
+        category(SystemCategoryKey.OTHER_EXPENSE.canonicalName, CategoryIcon.OTHER, 0xFF64748BL, TransactionType.EXPENSE, now, userId),
 
         // Prêts/Emprunts (voir domain/model/Loan — ces 4 catégories couvrent les 2 sens de
         // domain/model/LoanType, chacun ayant sa jambe dépense ET sa jambe revenu).

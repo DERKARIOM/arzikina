@@ -8,6 +8,7 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.naniger.arzikina.databinding.ItemCategoryBinding
 import com.naniger.arzikina.domain.model.Category
+import com.naniger.arzikina.presentation.components.displayName
 
 /**
  * Liste des catégories. Voir [com.naniger.arzikina.presentation.dashboard.RecentTransactionsAdapter]
@@ -31,7 +32,7 @@ class CategoriesAdapter(
         fun bind(category: Category, onClick: (Category) -> Unit, onDeleteClick: (Category) -> Unit) {
             binding.categoryIcon.setImageResource(CategoryIconMapper.iconFor(category.icon))
             binding.categoryIcon.backgroundTintList = ColorStateList.valueOf(category.colorArgb.toInt())
-            binding.categoryName.text = category.name
+            binding.categoryName.text = category.displayName(binding.root.context)
             binding.root.setOnClickListener { onClick(category) }
             binding.deleteButton.setOnClickListener { onDeleteClick(category) }
         }

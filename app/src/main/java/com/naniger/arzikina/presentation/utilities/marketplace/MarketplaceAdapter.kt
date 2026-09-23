@@ -15,6 +15,7 @@ import com.naniger.arzikina.databinding.ItemMarketplaceSectionHeaderBinding
 import com.naniger.arzikina.databinding.ItemMarketplaceTemplateBinding
 import com.naniger.arzikina.domain.model.CurrencyAmount
 import com.naniger.arzikina.presentation.categories.CategoryIconMapper
+import com.naniger.arzikina.presentation.components.categoryDisplayName
 import com.naniger.arzikina.util.Money
 
 /**
@@ -77,7 +78,7 @@ class MarketplaceAdapter(
             binding.templateIcon.setImageResource(CategoryIconMapper.iconFor(item.categoryIcon))
             binding.templateIcon.backgroundTintList = ColorStateList.valueOf(item.categoryColorArgb.toInt())
             binding.templateName.text = item.name
-            binding.templateCategory.text = item.categoryName
+            binding.templateCategory.text = binding.root.context.categoryDisplayName(item.categoryName, item.type)
             binding.templateAmount.text = Money.format(CurrencyAmount(item.currencyCode, item.amount))
             // Étoile visible UNIQUEMENT si favori (cahier des charges section 7) — contrairement au
             // menu ⋮ (voir showActionsMenu), qui propose TOUJOURS le bascule dans les deux sens.

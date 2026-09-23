@@ -23,6 +23,7 @@ import com.naniger.arzikina.domain.model.ThemeMode
 import com.naniger.arzikina.domain.model.SupportedCurrency
 import com.naniger.arzikina.presentation.components.NavAnimations
 import com.naniger.arzikina.presentation.components.SyncButtonEvent
+import com.naniger.arzikina.presentation.components.pickerLabel
 import com.naniger.arzikina.presentation.components.syncResultMessage
 import com.naniger.arzikina.presentation.components.SyncIndicatorLevel
 import com.naniger.arzikina.presentation.components.SyncIndicatorUiState
@@ -438,7 +439,7 @@ class SettingsFragment : Fragment(R.layout.fragment_settings) {
      * cohérent avec le comportement d'un réglage instantané). */
     private fun showCurrencyPicker() {
         val currencies = SupportedCurrency.entries
-        val labels = currencies.map { "${it.displayName} (${it.symbol})" }.toTypedArray()
+        val labels = currencies.map { it.pickerLabel(requireContext()) }.toTypedArray()
         val currentIndex = currencies.indexOfFirst { it.code == viewModel.uiState.value.currencyCode }.coerceAtLeast(0)
 
         MaterialAlertDialogBuilder(requireContext())

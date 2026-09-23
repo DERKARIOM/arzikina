@@ -10,6 +10,7 @@ import com.naniger.arzikina.domain.model.CurrencyAmount
 import com.naniger.arzikina.domain.model.TransactionType
 import com.naniger.arzikina.domain.model.PaymentMethod
 import com.naniger.arzikina.presentation.categories.CategoryIconMapper
+import com.naniger.arzikina.presentation.components.displayName
 import com.naniger.arzikina.util.AppDateFormats
 import com.naniger.arzikina.util.DatePeriods
 import com.naniger.arzikina.util.Money
@@ -54,7 +55,7 @@ object TransactionItemBinder {
 
         binding.categoryName.text = when {
             isTransfer -> context.getString(R.string.transaction_category_transfer)
-            else -> category?.name ?: context.getString(R.string.transaction_uncategorized)
+            else -> category?.displayName(context) ?: context.getString(R.string.transaction_uncategorized)
         }
 
         binding.subtitle.setTypeface(binding.subtitle.typeface, if (showDescriptionSubtitle) Typeface.ITALIC else Typeface.NORMAL)
@@ -65,7 +66,7 @@ object TransactionItemBinder {
         } else {
             binding.subtitle.visibility = View.VISIBLE
             val base = run {
-                val accountName = item.account?.name ?: context.getString(R.string.transaction_unknown_account)
+                val accountName = item.account?.displayName(context) ?: context.getString(R.string.transaction_unknown_account)
                 val date = DatePeriods.toLocalDate(item.transaction.date).format(AppDateFormats.dayMonth(context))
                 context.getString(R.string.dashboard_transaction_subtitle, accountName, date)
             }

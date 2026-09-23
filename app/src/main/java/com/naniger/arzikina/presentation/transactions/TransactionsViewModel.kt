@@ -8,6 +8,7 @@ import com.naniger.arzikina.domain.model.TransactionType
 import com.naniger.arzikina.domain.repository.AccountRepository
 import com.naniger.arzikina.domain.repository.CategoryRepository
 import com.naniger.arzikina.domain.repository.TransactionRepository
+import com.naniger.arzikina.presentation.components.DefaultNameLocalizer
 import com.naniger.arzikina.util.AppResult
 import com.naniger.arzikina.util.DatePeriods
 import com.naniger.arzikina.util.technicalMessage
@@ -72,7 +73,8 @@ data class TransactionFilters(
 class TransactionsViewModel @Inject constructor(
     private val transactionRepository: TransactionRepository,
     accountRepository: AccountRepository,
-    categoryRepository: CategoryRepository
+    categoryRepository: CategoryRepository,
+    private val defaultNameLocalizer: DefaultNameLocalizer
 ) : ViewModel() {
 
     private val _filters = MutableStateFlow(TransactionFilters())
@@ -204,7 +206,10 @@ class TransactionsViewModel @Inject constructor(
     private fun matchesQuery(item: TransactionUiItem, query: String): Boolean {
         if (query.isEmpty()) return true
         return item.transaction.description.contains(query, ignoreCase = true) ||
+            // Nom affiché (ex. « Salary ») ET nom enregistré (« Salaire ») : voir DefaultNameLocalizer.
+            item.category?.let { defaultNameLocalizer.displayName(it).contains(query, ignoreCase = true) } == true ||
             item.category?.name?.contains(query, ignoreCase = true) == true ||
+            item.account?.let { defaultNameLocalizer.displayName(it).contains(query, ignoreCase = true) } == true ||
             item.account?.name?.contains(query, ignoreCase = true) == true
     }
 }

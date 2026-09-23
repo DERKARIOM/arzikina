@@ -10,6 +10,7 @@ import com.naniger.arzikina.domain.model.Account
 import com.naniger.arzikina.domain.model.AccountIcon
 import com.naniger.arzikina.domain.model.AccountType
 import com.naniger.arzikina.domain.repository.AccountRepository
+import com.naniger.arzikina.presentation.components.DefaultNameLocalizer
 import com.naniger.arzikina.util.CardInputFormatter
 import com.naniger.arzikina.util.Constants
 import com.naniger.arzikina.util.Money
@@ -117,7 +118,8 @@ class AccountFormViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val accountRepository: AccountRepository,
     private val externalAppLauncher: ExternalAppLauncher,
-    @IoDispatcher private val ioDispatcher: CoroutineDispatcher
+    @IoDispatcher private val ioDispatcher: CoroutineDispatcher,
+    private val defaultNameLocalizer: DefaultNameLocalizer
 ) : ViewModel() {
 
     private val accountId: Long = savedStateHandle.get<Long>(ACCOUNT_ID_ARG) ?: 0L
@@ -143,7 +145,8 @@ class AccountFormViewModel @Inject constructor(
                 accountRepository.getAccount(accountId)?.let { account ->
                     _formState.update {
                         it.copy(
-                            name = account.name,
+                            // « Cash » en anglais : voir DefaultNameLocalizer (et save()).
+                            name = defaultNameLocalizer.displayName(account),
                             icon = account.icon,
                             colorArgb = account.colorArgb,
                             currencyCode = account.currencyCode,
@@ -340,7 +343,7 @@ class AccountFormViewModel @Inject constructor(
             val savedAccountId = accountRepository.saveAccount(
                 Account(
                     id = accountId,
-                    name = trimmedName,
+                    name = defaultNameLocalizer.canonicalAccountName(trimmedName),
                     icon = state.icon,
                     colorArgb = state.colorArgb,
                     currencyCode = state.currencyCode,

@@ -16,6 +16,7 @@ import com.naniger.arzikina.domain.model.CurrencyAmount
 import com.naniger.arzikina.domain.model.LoanPayment
 import com.naniger.arzikina.presentation.components.ConfirmDialogs
 import com.naniger.arzikina.presentation.components.NavAnimations
+import com.naniger.arzikina.presentation.components.displayName
 import com.naniger.arzikina.util.AppResult
 import com.naniger.arzikina.util.Money
 import com.google.android.material.snackbar.Snackbar
@@ -110,7 +111,7 @@ class LoanDetailFragment : Fragment(R.layout.fragment_loan_detail) {
                 uiState.payments.map { payment ->
                     LoanDetailListRow.PaymentRow(
                         payment = payment,
-                        accountName = uiState.accountNamesById[payment.accountId].orEmpty(),
+                        accountName = uiState.accountsById[payment.accountId]?.displayName(requireContext()).orEmpty(),
                         loanType = uiState.loan.type,
                         currencyCode = uiState.currencyCode
                     )

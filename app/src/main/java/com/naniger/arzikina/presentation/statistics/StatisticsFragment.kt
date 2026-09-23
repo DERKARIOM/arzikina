@@ -13,6 +13,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.naniger.arzikina.R
 import com.naniger.arzikina.databinding.FragmentStatisticsBinding
 import com.naniger.arzikina.domain.model.CurrencyAmount
+import com.naniger.arzikina.presentation.components.displayName
 import com.naniger.arzikina.util.AppDateFormats
 import com.naniger.arzikina.util.AppResult
 import com.naniger.arzikina.util.DatePeriods
@@ -284,7 +285,7 @@ class StatisticsFragment : Fragment(R.layout.fragment_statistics) {
             val color = item.category?.colorArgb?.toInt()
                 ?: ContextCompat.getColor(requireContext(), R.color.arzikina_outline)
             CategoryBarChartView.Bar(
-                label = item.category?.name ?: getString(R.string.transaction_uncategorized),
+                label = item.category?.displayName(requireContext()) ?: getString(R.string.transaction_uncategorized),
                 amountMinor = item.amountMinor,
                 color = color
             )

@@ -23,6 +23,7 @@ import com.naniger.arzikina.domain.model.TransactionType
 import com.naniger.arzikina.presentation.accounts.AccountIconMapper
 import com.naniger.arzikina.presentation.components.AccountPickerDialog
 import com.naniger.arzikina.presentation.components.ConfirmDialogs
+import com.naniger.arzikina.presentation.components.displayName
 import com.naniger.arzikina.presentation.transactions.displayTextRes
 import com.naniger.arzikina.util.AppDateFormats
 import com.naniger.arzikina.util.Money
@@ -261,8 +262,8 @@ class RecurringTransactionFormFragment : Fragment(R.layout.fragment_recurring_tr
             binding.typeGroup.check(expectedTypeButtonId)
         }
 
-        binding.categoryField.dropdownInput.setSimpleItems(data.categories.map { it.name }.toTypedArray())
-        val categoryLabel = data.categories.firstOrNull { it.id == state.categoryId }?.name.orEmpty()
+        binding.categoryField.dropdownInput.setSimpleItems(data.categories.map { it.displayName(requireContext()) }.toTypedArray())
+        val categoryLabel = data.categories.firstOrNull { it.id == state.categoryId }?.displayName(requireContext()).orEmpty()
         if (binding.categoryField.dropdownInput.text?.toString() != categoryLabel) {
             binding.categoryField.dropdownInput.setText(categoryLabel, false)
         }
@@ -322,7 +323,7 @@ class RecurringTransactionFormFragment : Fragment(R.layout.fragment_recurring_tr
         if (account != null) {
             fieldBinding.accountFieldIcon.setImageResource(AccountIconMapper.iconFor(account.icon))
             fieldBinding.accountFieldIcon.backgroundTintList = ColorStateList.valueOf(account.colorArgb.toInt())
-            fieldBinding.accountFieldName.text = account.name
+            fieldBinding.accountFieldName.text = account.displayName(requireContext())
             val balance = latestAccountBalances[account.id] ?: account.initialBalance
             fieldBinding.accountFieldBalance.text = getString(
                 R.string.transaction_form_account_balance,

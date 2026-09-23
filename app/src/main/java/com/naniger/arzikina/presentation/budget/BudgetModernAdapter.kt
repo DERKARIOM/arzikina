@@ -16,6 +16,7 @@ import com.naniger.arzikina.databinding.ItemBudgetModernBinding
 import com.naniger.arzikina.domain.model.BudgetPeriod
 import com.naniger.arzikina.domain.model.CurrencyAmount
 import com.naniger.arzikina.presentation.categories.CategoryIconMapper
+import com.naniger.arzikina.presentation.components.displayName
 import com.naniger.arzikina.util.AppDateFormats
 import com.naniger.arzikina.util.BudgetPace
 import com.naniger.arzikina.util.BudgetPaceState
@@ -116,7 +117,7 @@ class BudgetModernAdapter(
             )
             binding.categoryIcon.backgroundTintList =
                 ColorStateList.valueOf(ContextCompat.getColor(context, R.color.arzikina_chip_on_budget_card))
-            binding.categoryName.text = category?.name ?: context.getString(R.string.transaction_uncategorized)
+            binding.categoryName.text = category?.displayName(context) ?: context.getString(R.string.transaction_uncategorized)
         }
 
         /**

@@ -15,6 +15,8 @@ import com.naniger.arzikina.domain.model.BudgetPeriod
 import com.naniger.arzikina.domain.model.Category
 import com.naniger.arzikina.domain.model.SupportedCurrency
 import com.naniger.arzikina.presentation.components.ConfirmDialogs
+import com.naniger.arzikina.presentation.components.displayName
+import com.naniger.arzikina.presentation.components.pickerLabel
 import com.naniger.arzikina.util.AppDateFormats
 import com.naniger.arzikina.util.MoneyInputFormatter
 import com.naniger.arzikina.util.QuickDateRange
@@ -104,7 +106,7 @@ class BudgetFormFragment : Fragment(R.layout.fragment_budget_form) {
 
     private fun setUpCurrencyDropdown(binding: FragmentBudgetFormBinding) {
         binding.currencyField.dropdownLayout.hint = getString(R.string.account_form_currency_label)
-        val labels = SupportedCurrency.entries.map { "${it.displayName} (${it.symbol})" }
+        val labels = SupportedCurrency.entries.map { it.pickerLabel(requireContext()) }
         binding.currencyField.dropdownInput.setSimpleItems(labels.toTypedArray())
         binding.currencyField.dropdownInput.setOnItemClickListener { _, _, position, _ ->
             viewModel.onCurrencyChange(SupportedCurrency.entries[position].code)
@@ -184,8 +186,8 @@ class BudgetFormFragment : Fragment(R.layout.fragment_budget_form) {
         binding.categoryField.dropdownLayout.isEnabled = canPickCategory
         binding.noCategoriesHint.visibility = if (canPickCategory) View.GONE else View.VISIBLE
 
-        binding.categoryField.dropdownInput.setSimpleItems(categories.map { it.name }.toTypedArray())
-        val categoryLabel = categories.firstOrNull { it.id == state.categoryId }?.name.orEmpty()
+        binding.categoryField.dropdownInput.setSimpleItems(categories.map { it.displayName(requireContext()) }.toTypedArray())
+        val categoryLabel = categories.firstOrNull { it.id == state.categoryId }?.displayName(requireContext()).orEmpty()
         if (binding.categoryField.dropdownInput.text?.toString() != categoryLabel) {
             binding.categoryField.dropdownInput.setText(categoryLabel, false)
         }
@@ -226,7 +228,7 @@ class BudgetFormFragment : Fragment(R.layout.fragment_budget_form) {
         binding.limitLayout.error = state.limitError?.let { getString(it) }
 
         val currencyLabel = SupportedCurrency.entries.firstOrNull { it.code == state.currencyCode }
-            ?.let { "${it.displayName} (${it.symbol})" }
+            ?.pickerLabel(requireContext())
             .orEmpty()
         if (binding.currencyField.dropdownInput.text?.toString() != currencyLabel) {
             binding.currencyField.dropdownInput.setText(currencyLabel, false)
