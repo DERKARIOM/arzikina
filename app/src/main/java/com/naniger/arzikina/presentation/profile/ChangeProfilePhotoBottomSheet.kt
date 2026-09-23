@@ -2,7 +2,6 @@ package com.naniger.arzikina.presentation.profile
 
 import android.os.Bundle
 import android.view.View
-import androidx.core.os.bundleOf
 import androidx.fragment.app.FragmentManager
 import androidx.fragment.app.setFragmentResult
 import com.naniger.arzikina.R
@@ -35,7 +34,7 @@ class ChangeProfilePhotoBottomSheet : BottomSheetDialogFragment(R.layout.bottom_
     }
 
     private fun sendResultAndDismiss(action: String) {
-        setFragmentResult(REQUEST_KEY, bundleOf(RESULT_ACTION to action))
+        setFragmentResult(REQUEST_KEY, Bundle(1).apply { putString(RESULT_ACTION, action) })
         dismiss()
     }
 
@@ -54,7 +53,7 @@ class ChangeProfilePhotoBottomSheet : BottomSheetDialogFragment(R.layout.bottom_
         fun show(fragmentManager: FragmentManager, hasExistingPhoto: Boolean) {
             if (fragmentManager.findFragmentByTag(TAG) != null) return
             ChangeProfilePhotoBottomSheet()
-                .apply { arguments = bundleOf(ARG_HAS_EXISTING_PHOTO to hasExistingPhoto) }
+                .apply { arguments = Bundle(1).apply { putBoolean(ARG_HAS_EXISTING_PHOTO, hasExistingPhoto) } }
                 .show(fragmentManager, TAG)
         }
     }

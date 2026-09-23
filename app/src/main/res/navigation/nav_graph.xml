@@ -64,7 +64,8 @@
 
         <argument
             android:name="isResumeCheck"
-            android:defaultValue="false" />
+            android:defaultValue="false"
+            app:argType="boolean" />
 
     </fragment>
 

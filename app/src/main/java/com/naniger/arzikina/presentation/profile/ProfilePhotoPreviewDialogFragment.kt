@@ -9,7 +9,6 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.core.os.BundleCompat
-import androidx.core.os.bundleOf
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.FragmentManager
 import androidx.fragment.app.viewModels
@@ -110,7 +109,7 @@ class ProfilePhotoPreviewDialogFragment : DialogFragment() {
         fun show(fragmentManager: FragmentManager, croppedUri: Uri) {
             if (fragmentManager.findFragmentByTag(TAG) != null) return
             ProfilePhotoPreviewDialogFragment()
-                .apply { arguments = bundleOf(ARG_CROPPED_URI to croppedUri) }
+                .apply { arguments = Bundle(1).apply { putParcelable(ARG_CROPPED_URI, croppedUri) } }
                 .show(fragmentManager, TAG)
         }
     }

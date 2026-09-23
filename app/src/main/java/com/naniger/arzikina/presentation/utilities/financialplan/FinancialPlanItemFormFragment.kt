@@ -4,7 +4,6 @@ import android.content.res.ColorStateList
 import android.os.Bundle
 import android.view.View
 import androidx.core.content.ContextCompat
-import androidx.core.os.bundleOf
 import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
@@ -65,7 +64,7 @@ class FinancialPlanItemFormFragment : Fragment(R.layout.fragment_financial_plan_
         viewBinding.convertButton.setOnClickListener {
             findNavController().navigate(
                 R.id.financialPlanItemConvertFragment,
-                bundleOf("itemId" to viewModel.itemId),
+                FinancialPlanItemConvertFragmentArgs(itemId = viewModel.itemId).toBundle(),
                 NavAnimations.push
             )
         }

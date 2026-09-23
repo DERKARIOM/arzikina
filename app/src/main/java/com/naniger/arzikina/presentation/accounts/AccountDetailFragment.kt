@@ -3,7 +3,6 @@ package com.naniger.arzikina.presentation.accounts
 import android.os.Bundle
 import android.view.View
 import android.view.WindowManager
-import androidx.core.os.bundleOf
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
@@ -21,6 +20,7 @@ import com.naniger.arzikina.presentation.components.NavAnimations
 import com.naniger.arzikina.presentation.components.authenticateForSensitiveAction
 import com.naniger.arzikina.presentation.components.displayName
 import com.naniger.arzikina.presentation.transactions.GroupedTransactionsAdapter
+import com.naniger.arzikina.presentation.transactions.TransactionFormFragmentArgs
 import com.naniger.arzikina.presentation.transactions.TransactionUiItem
 import com.naniger.arzikina.presentation.transactions.toListRows
 import com.naniger.arzikina.util.AppResult
@@ -342,7 +342,7 @@ class AccountDetailFragment : Fragment(R.layout.fragment_account_detail) {
     private fun navigateToTransactionForm(item: TransactionUiItem) {
         findNavController().navigate(
             R.id.transactionFormFragment,
-            bundleOf("transactionId" to item.transaction.id),
+            TransactionFormFragmentArgs(transactionId = item.transaction.id).toBundle(),
             NavAnimations.push
         )
     }
@@ -350,13 +350,13 @@ class AccountDetailFragment : Fragment(R.layout.fragment_account_detail) {
     private fun navigateToNewTransactionForm() {
         findNavController().navigate(
             R.id.transactionFormFragment,
-            bundleOf("transactionId" to 0L, "presetAccountId" to viewModel.accountId),
+            TransactionFormFragmentArgs(presetAccountId = viewModel.accountId).toBundle(),
             NavAnimations.push
         )
     }
 
     private fun navigateToEditForm() {
-        findNavController().navigate(R.id.accountFormFragment, bundleOf("accountId" to viewModel.accountId), NavAnimations.push)
+        findNavController().navigate(R.id.accountFormFragment, AccountFormFragmentArgs(accountId = viewModel.accountId).toBundle(), NavAnimations.push)
     }
 
     private fun confirmDelete() {

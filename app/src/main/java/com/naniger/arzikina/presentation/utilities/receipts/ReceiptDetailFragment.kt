@@ -4,7 +4,6 @@ import android.graphics.Bitmap
 import android.os.Bundle
 import android.view.View
 import androidx.appcompat.app.AlertDialog
-import androidx.core.os.bundleOf
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
@@ -19,6 +18,7 @@ import com.naniger.arzikina.domain.model.Receipt
 import com.naniger.arzikina.domain.model.Transaction
 import com.naniger.arzikina.presentation.components.ConfirmDialogs
 import com.naniger.arzikina.presentation.components.NavAnimations
+import com.naniger.arzikina.presentation.transactions.TransactionFormFragmentArgs
 import com.naniger.arzikina.util.AppDateFormats
 import com.naniger.arzikina.util.AppResult
 import com.naniger.arzikina.util.DatePeriods
@@ -213,7 +213,7 @@ class ReceiptDetailFragment : Fragment(R.layout.fragment_receipt_detail) {
             is ReceiptDetailEvent.OpenLinkedTransaction ->
                 findNavController().navigate(
                     R.id.transactionFormFragment,
-                    bundleOf("transactionId" to event.transactionId),
+                    TransactionFormFragmentArgs(transactionId = event.transactionId).toBundle(),
                     NavAnimations.push
                 )
             is ReceiptDetailEvent.PrefillNewTransaction -> navigateToPrefilledTransactionForm(event.prefill)
@@ -229,17 +229,16 @@ class ReceiptDetailFragment : Fragment(R.layout.fragment_receipt_detail) {
     private fun navigateToPrefilledTransactionForm(prefill: TransactionPrefill) {
         findNavController().navigate(
             R.id.transactionFormFragment,
-            bundleOf(
-                "transactionId" to 0L,
-                "presetAmountMinor" to (prefill.amountMinor ?: 0L),
-                "presetFeeAmountMinor" to (prefill.feeAmountMinor ?: 0L),
-                "presetDateTimeMillis" to (prefill.dateTimeMillis ?: 0L),
-                "presetDescription" to prefill.counterparty?.let { requireContext().receiptDescription(it) },
-                "presetCategoryId" to (prefill.categoryId ?: 0L),
-                "presetAccountId" to (prefill.accountId ?: 0L),
-                "presetReceiptId" to prefill.receiptId,
-                "presetType" to prefill.type?.name
-            ),
+            TransactionFormFragmentArgs(
+                presetAmountMinor = prefill.amountMinor ?: 0L,
+                presetFeeAmountMinor = prefill.feeAmountMinor ?: 0L,
+                presetDateTimeMillis = prefill.dateTimeMillis ?: 0L,
+                presetDescription = prefill.counterparty?.let { requireContext().receiptDescription(it) },
+                presetCategoryId = prefill.categoryId ?: 0L,
+                presetAccountId = prefill.accountId ?: 0L,
+                presetReceiptId = prefill.receiptId,
+                presetType = prefill.type?.name
+            ).toBundle(),
             NavAnimations.push
         )
     }
@@ -327,7 +326,7 @@ class ReceiptDetailFragment : Fragment(R.layout.fragment_receipt_detail) {
         if (binding.previewImage.visibility != View.VISIBLE) return
         findNavController().navigate(
             R.id.receiptPdfViewerFragment,
-            bundleOf("receiptId" to receipt.id),
+            ReceiptPdfViewerFragmentArgs(receiptId = receipt.id).toBundle(),
             NavAnimations.push
         )
     }

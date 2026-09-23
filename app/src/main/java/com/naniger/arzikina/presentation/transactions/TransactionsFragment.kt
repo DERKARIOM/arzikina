@@ -2,7 +2,6 @@ package com.naniger.arzikina.presentation.transactions
 
 import android.os.Bundle
 import android.view.View
-import androidx.core.os.bundleOf
 import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
@@ -207,6 +206,6 @@ class TransactionsFragment : Fragment(R.layout.fragment_transactions) {
     }
 
     private fun navigateToForm(transactionId: Long) {
-        findNavController().navigate(R.id.transactionFormFragment, bundleOf("transactionId" to transactionId), NavAnimations.push)
+        findNavController().navigate(R.id.transactionFormFragment, TransactionFormFragmentArgs(transactionId = transactionId).toBundle(), NavAnimations.push)
     }
 }

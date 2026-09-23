@@ -10,7 +10,6 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.annotation.StringRes
 import androidx.core.content.ContextCompat
-import androidx.core.os.bundleOf
 import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.FragmentManager
@@ -272,7 +271,7 @@ class RecurringOccurrenceEditDialogFragment : DialogFragment() {
         fun show(fragmentManager: FragmentManager, occurrenceId: Long) {
             if (fragmentManager.findFragmentByTag(TAG) != null) return
             val fragment = RecurringOccurrenceEditDialogFragment().apply {
-                arguments = bundleOf(RecurringOccurrenceEditViewModel.ARG_OCCURRENCE_ID to occurrenceId)
+                arguments = Bundle(1).apply { putLong(RecurringOccurrenceEditViewModel.ARG_OCCURRENCE_ID, occurrenceId) }
             }
             fragment.show(fragmentManager, TAG)
         }

@@ -2,7 +2,6 @@ package com.naniger.arzikina.presentation.utilities.marketplace
 
 import android.os.Bundle
 import android.view.View
-import androidx.core.os.bundleOf
 import androidx.core.view.children
 import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.Fragment
@@ -18,6 +17,7 @@ import com.naniger.arzikina.domain.model.Category
 import com.naniger.arzikina.presentation.components.ConfirmDialogs
 import com.naniger.arzikina.presentation.components.NavAnimations
 import com.naniger.arzikina.presentation.components.displayName
+import com.naniger.arzikina.presentation.transactions.TransactionFormFragmentArgs
 import com.naniger.arzikina.util.AppResult
 import com.google.android.material.chip.Chip
 import com.google.android.material.chip.ChipGroup
@@ -225,14 +225,14 @@ class MarketplaceFragment : Fragment(R.layout.fragment_marketplace) {
     private fun onBuyClicked(item: TransactionTemplateListItem) {
         findNavController().navigate(
             R.id.transactionFormFragment,
-            bundleOf(
-                "presetAccountId" to item.accountId,
-                "presetAmountMinor" to item.amount,
-                "presetDescription" to item.description.ifBlank { null },
-                "presetCategoryId" to item.categoryId,
-                "presetType" to item.type.name,
-                "presetDateTimeMillis" to computePresetDateTimeMillis(item.defaultHour, item.defaultMinute)
-            ),
+            TransactionFormFragmentArgs(
+                presetAccountId = item.accountId,
+                presetAmountMinor = item.amount,
+                presetDescription = item.description.ifBlank { null },
+                presetCategoryId = item.categoryId,
+                presetType = item.type.name,
+                presetDateTimeMillis = computePresetDateTimeMillis(item.defaultHour, item.defaultMinute)
+            ).toBundle(),
             NavAnimations.push
         )
     }
@@ -256,7 +256,7 @@ class MarketplaceFragment : Fragment(R.layout.fragment_marketplace) {
     private fun navigateToForm(templateId: Long) {
         findNavController().navigate(
             R.id.marketplaceTemplateFormFragment,
-            bundleOf("templateId" to templateId),
+            MarketplaceFormFragmentArgs(templateId = templateId).toBundle(),
             NavAnimations.push
         )
     }

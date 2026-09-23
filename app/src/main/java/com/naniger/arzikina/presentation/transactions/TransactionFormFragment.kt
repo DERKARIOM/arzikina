@@ -7,7 +7,6 @@ import android.transition.TransitionManager
 import android.view.View
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.drawable.DrawableCompat
-import androidx.core.os.bundleOf
 import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
@@ -27,11 +26,14 @@ import com.naniger.arzikina.domain.model.PaymentMethod
 import com.naniger.arzikina.domain.model.SupportedCurrency
 import com.naniger.arzikina.domain.model.TransactionType
 import com.naniger.arzikina.presentation.accounts.AccountIconMapper
+import com.naniger.arzikina.presentation.categories.CategoryFormFragmentArgs
 import com.naniger.arzikina.presentation.components.AccountPickerDialog
 import com.naniger.arzikina.presentation.components.ConfirmDialogs
 import com.naniger.arzikina.presentation.components.NavAnimations
 import com.naniger.arzikina.presentation.components.TemplatePickerDialog
 import com.naniger.arzikina.presentation.components.displayName
+import com.naniger.arzikina.presentation.utilities.loans.LoanDetailFragmentArgs
+import com.naniger.arzikina.presentation.utilities.receipts.ReceiptDetailFragmentArgs
 import com.naniger.arzikina.util.AppDateFormats
 import com.naniger.arzikina.util.Constants
 import com.naniger.arzikina.util.Money
@@ -676,7 +678,7 @@ class TransactionFormFragment : Fragment(R.layout.fragment_transaction_form) {
     }
 
     private fun navigateToNewCategory() {
-        findNavController().navigate(R.id.categoryFormFragment, bundleOf("categoryId" to 0L), NavAnimations.push)
+        findNavController().navigate(R.id.categoryFormFragment, CategoryFormFragmentArgs().toBundle(), NavAnimations.push)
     }
 
     /** Voir `fragment_transaction_form.xml` (`linkedReceiptRow`) — cahier des charges "Créer une
@@ -687,7 +689,7 @@ class TransactionFormFragment : Fragment(R.layout.fragment_transaction_form) {
     private fun navigateToLinkedReceipt(receiptId: Long) {
         findNavController().navigate(
             R.id.receiptDetailFragment,
-            bundleOf("receiptId" to receiptId),
+            ReceiptDetailFragmentArgs(receiptId = receiptId).toBundle(),
             NavAnimations.push
         )
     }
@@ -711,7 +713,7 @@ class TransactionFormFragment : Fragment(R.layout.fragment_transaction_form) {
             .setPopExitAnim(R.anim.slide_pop_exit)
             .setPopUpTo(R.id.transactionFormFragment, inclusive = true)
             .build()
-        findNavController().navigate(R.id.loanDetailFragment, bundleOf("loanId" to loanId), options)
+        findNavController().navigate(R.id.loanDetailFragment, LoanDetailFragmentArgs(loanId = loanId).toBundle(), options)
     }
 
     /** Regroupe les 4 flux observés pour éviter un `combine` imbriqué illisible (voir [onViewCreated]). */

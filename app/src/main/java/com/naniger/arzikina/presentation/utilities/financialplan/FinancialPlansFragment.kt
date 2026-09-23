@@ -2,7 +2,6 @@ package com.naniger.arzikina.presentation.utilities.financialplan
 
 import android.os.Bundle
 import android.view.View
-import androidx.core.os.bundleOf
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
@@ -74,10 +73,10 @@ class FinancialPlansFragment : Fragment(R.layout.fragment_financial_plans) {
     }
 
     private fun navigateToForm(planId: Long) {
-        findNavController().navigate(R.id.financialPlanFormFragment, bundleOf("planId" to planId), NavAnimations.push)
+        findNavController().navigate(R.id.financialPlanFormFragment, FinancialPlanFormFragmentArgs(planId = planId).toBundle(), NavAnimations.push)
     }
 
     private fun navigateToDetail(planId: Long) {
-        findNavController().navigate(R.id.financialPlanDetailFragment, bundleOf("planId" to planId), NavAnimations.push)
+        findNavController().navigate(R.id.financialPlanDetailFragment, FinancialPlanDetailFragmentArgs(planId = planId).toBundle(), NavAnimations.push)
     }
 }

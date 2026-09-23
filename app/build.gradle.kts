@@ -3,6 +3,9 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt.android)
+    // Arguments de navigation typés (voir gradle/libs.versions.toml) : remplace les
+    // `bundleOf("clé" to valeur)`, non vérifiés à la compilation.
+    alias(libs.plugins.androidx.navigation.safeargs)
 }
 
 android {

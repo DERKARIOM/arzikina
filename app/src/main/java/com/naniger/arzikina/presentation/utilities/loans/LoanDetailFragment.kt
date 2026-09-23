@@ -2,7 +2,6 @@ package com.naniger.arzikina.presentation.utilities.loans
 
 import android.os.Bundle
 import android.view.View
-import androidx.core.os.bundleOf
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
@@ -147,6 +146,6 @@ class LoanDetailFragment : Fragment(R.layout.fragment_loan_detail) {
     }
 
     private fun navigateToPaymentForm() {
-        findNavController().navigate(R.id.loanPaymentFormFragment, bundleOf("loanId" to viewModel.loanId), NavAnimations.push)
+        findNavController().navigate(R.id.loanPaymentFormFragment, LoanPaymentFormFragmentArgs(loanId = viewModel.loanId).toBundle(), NavAnimations.push)
     }
 }

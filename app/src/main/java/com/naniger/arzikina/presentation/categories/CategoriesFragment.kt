@@ -2,7 +2,6 @@ package com.naniger.arzikina.presentation.categories
 
 import android.os.Bundle
 import android.view.View
-import androidx.core.os.bundleOf
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
@@ -96,6 +95,6 @@ class CategoriesFragment : Fragment(R.layout.fragment_categories) {
     }
 
     private fun navigateToForm(categoryId: Long) {
-        findNavController().navigate(R.id.categoryFormFragment, bundleOf("categoryId" to categoryId), NavAnimations.push)
+        findNavController().navigate(R.id.categoryFormFragment, CategoryFormFragmentArgs(categoryId = categoryId).toBundle(), NavAnimations.push)
     }
 }
