@@ -11,10 +11,9 @@ import com.naniger.arzikina.R
 import com.naniger.arzikina.databinding.ItemTransactionCompactBinding
 import com.naniger.arzikina.databinding.ItemTransactionDayHeaderBinding
 import com.naniger.arzikina.domain.model.TransactionType
+import com.naniger.arzikina.util.AppDateFormats
 import com.naniger.arzikina.util.DayLabel
 import java.time.LocalDate
-import java.time.format.DateTimeFormatter
-import java.util.Locale
 
 /**
  * Une ligne de liste groupée par jour : soit un en-tête ([Header]), soit une
@@ -96,7 +95,7 @@ class GroupedTransactionsAdapter(
                 DayLabel.Yesterday -> LocalDate.now().minusDays(1)
                 is DayLabel.Other -> label.date
             }
-            binding.dayDate.text = date.format(dateFormatter)
+            binding.dayDate.text = date.format(AppDateFormats.NUMERIC_DATE)
 
             val relativeLabelText = when (label) {
                 DayLabel.Today -> context.getString(R.string.transaction_day_today)
@@ -129,10 +128,6 @@ class GroupedTransactionsAdapter(
             }
             val tone = if (net < 0) TransactionAmountTone.EXPENSE else TransactionAmountTone.INCOME
             return transactionAmountDisplay(net, currencyCode, tone)
-        }
-
-        private companion object {
-            val dateFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy", Locale.FRENCH)
         }
     }
 

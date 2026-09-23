@@ -19,6 +19,7 @@ import com.naniger.arzikina.domain.model.Receipt
 import com.naniger.arzikina.domain.model.Transaction
 import com.naniger.arzikina.presentation.components.ConfirmDialogs
 import com.naniger.arzikina.presentation.components.NavAnimations
+import com.naniger.arzikina.util.AppDateFormats
 import com.naniger.arzikina.util.AppResult
 import com.naniger.arzikina.util.DatePeriods
 import com.naniger.arzikina.util.FileSizeFormatter
@@ -30,8 +31,6 @@ import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
-import java.time.format.DateTimeFormatter
-import java.util.Locale
 
 /**
  * Écran "Détail du reçu" (voir [ReceiptDetailViewModel]) — cahier des charges "Gestion des reçus",
@@ -123,11 +122,11 @@ class ReceiptDetailFragment : Fragment(R.layout.fragment_receipt_detail) {
         val receivedTime = DatePeriods.toLocalTime(receipt.receivedAt)
         binding.receivedValue.text = getString(
             R.string.receipt_meta_line_format,
-            receivedDate.format(dateFormatter),
+            receivedDate.format(AppDateFormats.longDate(requireContext())),
             TriggerTimeFormatter.format(requireContext(), receivedTime.hour, receivedTime.minute)
         )
 
-        binding.sizeValue.text = FileSizeFormatter.format(receipt.fileSize)
+        binding.sizeValue.text = FileSizeFormatter.format(requireContext(), receipt.fileSize)
         binding.sourceValue.text = receipt.sourceName ?: getString(R.string.receipt_source_unknown)
 
         val amountMinor = receipt.amountMinor
@@ -346,9 +345,5 @@ class ReceiptDetailFragment : Fragment(R.layout.fragment_receipt_detail) {
                 findNavController().navigateUp()
             }
         )
-    }
-
-    private companion object {
-        val dateFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("d MMMM yyyy", Locale.FRENCH)
     }
 }

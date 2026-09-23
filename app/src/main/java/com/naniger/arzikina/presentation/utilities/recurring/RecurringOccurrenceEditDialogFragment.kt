@@ -29,6 +29,7 @@ import com.naniger.arzikina.domain.model.combineDayAndTime
 import com.naniger.arzikina.presentation.accounts.AccountIconMapper
 import com.naniger.arzikina.presentation.components.AccountPickerDialog
 import com.naniger.arzikina.presentation.transactions.displayTextRes
+import com.naniger.arzikina.util.AppDateFormats
 import com.naniger.arzikina.util.Money
 import com.naniger.arzikina.util.MoneyInputFormatter
 import com.google.android.material.datepicker.MaterialDatePicker
@@ -38,7 +39,6 @@ import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.ZoneId
 import java.time.ZoneOffset
-import java.time.format.DateTimeFormatter
 
 /**
  * Formulaire d'édition d'UNE occurrence `PENDING` avant validation (voir cahier des charges
@@ -250,7 +250,7 @@ class RecurringOccurrenceEditDialogFragment : DialogFragment() {
     }
 
     private fun formatDate(millis: Long): String =
-        Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault()).toLocalDate().format(DATE_FORMATTER)
+        Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault()).toLocalDate().format(AppDateFormats.NUMERIC_DATE)
 
     /** Regroupe les 4 flux observés pour éviter un `combine` imbriqué illisible (voir
      * [onViewCreated]) — même principe que `LoanFormFragment.LoanFormRenderState`. */
@@ -262,7 +262,6 @@ class RecurringOccurrenceEditDialogFragment : DialogFragment() {
     )
 
     companion object {
-        private val DATE_FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
         private const val TAG = "recurring_occurrence_edit"
 
         /** Point d'entrée UNIQUE pour ouvrir ce dialogue (voir

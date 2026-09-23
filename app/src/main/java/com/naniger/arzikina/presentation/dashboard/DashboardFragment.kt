@@ -24,6 +24,7 @@ import com.naniger.arzikina.presentation.budget.BudgetAdapter
 import com.naniger.arzikina.presentation.budget.BudgetUiItem
 import com.naniger.arzikina.presentation.components.NavAnimations
 import com.naniger.arzikina.presentation.components.SyncButtonEvent
+import com.naniger.arzikina.presentation.components.syncResultMessage
 import com.naniger.arzikina.presentation.components.SyncIndicatorLevel
 import com.naniger.arzikina.presentation.components.SyncIndicatorUiState
 import com.naniger.arzikina.presentation.components.SyncNowUiState
@@ -217,22 +218,9 @@ class DashboardFragment : Fragment(R.layout.fragment_dashboard) {
         }
     }
 
-    /** Même message que `SettingsFragment.handleEvent` (voir `settings_sync_now_*`) : réutilisés
-     *  tels quels plutôt que dupliqués pour ce second bouton "Synchroniser maintenant". */
+    /** Même message que `SettingsFragment.handleEvent` : voir [syncResultMessage]. */
     private fun handleSyncEvent(binding: FragmentDashboardBinding, event: SyncButtonEvent) {
-        val message = when (event) {
-            is SyncButtonEvent.SyncFinished -> when {
-                event.pushResult.pushed == 0 && event.pullResult.received == 0 ->
-                    getString(R.string.settings_sync_now_nothing_pending)
-                else -> getString(
-                    R.string.settings_sync_now_result,
-                    event.pushResult.succeeded,
-                    event.pushResult.failed,
-                    event.pullResult.applied
-                )
-            }
-            is SyncButtonEvent.SyncError -> getString(R.string.settings_sync_now_error)
-        }
+        val message = requireContext().syncResultMessage(event)
         Snackbar.make(binding.root, message, Snackbar.LENGTH_LONG).show()
     }
 

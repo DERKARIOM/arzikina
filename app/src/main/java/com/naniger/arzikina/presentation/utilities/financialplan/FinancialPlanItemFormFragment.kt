@@ -21,6 +21,7 @@ import com.naniger.arzikina.domain.model.PlanItemStatus
 import com.naniger.arzikina.presentation.categories.CategoryIconMapper
 import com.naniger.arzikina.presentation.components.CategoryPickerDialog
 import com.naniger.arzikina.presentation.components.NavAnimations
+import com.naniger.arzikina.util.AppDateFormats
 import com.naniger.arzikina.util.Constants
 import com.naniger.arzikina.util.Money
 import com.naniger.arzikina.util.MoneyInputFormatter
@@ -32,7 +33,6 @@ import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.ZoneId
 import java.time.ZoneOffset
-import java.time.format.DateTimeFormatter
 
 /**
  * Ajout/modification d'une dépense prévue, atteint depuis le FAB de [FinancialPlanDetailFragment]
@@ -261,9 +261,5 @@ class FinancialPlanItemFormFragment : Fragment(R.layout.fragment_financial_plan_
     }
 
     private fun formatDate(millis: Long): String =
-        Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault()).toLocalDate().format(DATE_FORMATTER)
-
-    private companion object {
-        val DATE_FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
-    }
+        Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault()).toLocalDate().format(AppDateFormats.NUMERIC_DATE)
 }

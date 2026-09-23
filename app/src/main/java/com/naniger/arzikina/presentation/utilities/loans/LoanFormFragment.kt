@@ -22,6 +22,7 @@ import com.naniger.arzikina.domain.model.Person
 import com.naniger.arzikina.domain.model.SupportedCurrency
 import com.naniger.arzikina.presentation.accounts.AccountIconMapper
 import com.naniger.arzikina.presentation.components.AccountPickerDialog
+import com.naniger.arzikina.util.AppDateFormats
 import com.naniger.arzikina.util.Constants
 import com.naniger.arzikina.util.Money
 import com.naniger.arzikina.util.MoneyInputFormatter
@@ -34,7 +35,6 @@ import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.ZoneId
 import java.time.ZoneOffset
-import java.time.format.DateTimeFormatter
 
 /**
  * Ajout d'un prêt/emprunt, en 2 pages (voir maquette et la doc de [LoanFormViewModel]).
@@ -288,7 +288,7 @@ class LoanFormFragment : Fragment(R.layout.fragment_loan_form) {
         SupportedCurrency.entries.firstOrNull { it.code == currencyCode }?.symbol ?: currencyCode
 
     private fun formatDate(millis: Long): String =
-        Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault()).toLocalDate().format(DATE_FORMATTER)
+        Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault()).toLocalDate().format(AppDateFormats.NUMERIC_DATE)
 
     /** Regroupe les 4 flux observés pour éviter un `combine` imbriqué illisible (voir
      * [onViewCreated]) — même principe que `TransactionFormFragment.FormRenderState`. */
@@ -301,6 +301,5 @@ class LoanFormFragment : Fragment(R.layout.fragment_loan_form) {
 
     private companion object {
         const val TOTAL_STEPS = 2
-        val DATE_FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
     }
 }

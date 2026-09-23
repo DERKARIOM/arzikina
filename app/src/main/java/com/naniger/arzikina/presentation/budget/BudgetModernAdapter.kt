@@ -16,6 +16,7 @@ import com.naniger.arzikina.databinding.ItemBudgetModernBinding
 import com.naniger.arzikina.domain.model.BudgetPeriod
 import com.naniger.arzikina.domain.model.CurrencyAmount
 import com.naniger.arzikina.presentation.categories.CategoryIconMapper
+import com.naniger.arzikina.util.AppDateFormats
 import com.naniger.arzikina.util.BudgetPace
 import com.naniger.arzikina.util.BudgetPaceState
 import com.naniger.arzikina.util.BudgetPeriodStatus
@@ -23,9 +24,7 @@ import com.naniger.arzikina.util.DatePeriods
 import com.naniger.arzikina.util.Money
 import com.naniger.arzikina.util.daysRemaining
 import java.time.LocalDate
-import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
-import java.util.Locale
 import kotlin.math.roundToInt
 
 /**
@@ -219,8 +218,8 @@ class BudgetModernAdapter(
                 val end = DatePeriods.toLocalDate(item.budget.endDate!!)
                 binding.periodValue.text = context.getString(
                     R.string.budget_modern_period_range,
-                    start.format(DATE_FORMATTER),
-                    end.format(DATE_FORMATTER)
+                    start.format(AppDateFormats.NUMERIC_DATE),
+                    end.format(AppDateFormats.NUMERIC_DATE)
                 )
                 when (status) {
                     BudgetPeriodStatus.COMPLETED -> context.getString(R.string.budget_modern_completed_chip)
@@ -306,8 +305,6 @@ class BudgetModernAdapter(
             override fun areContentsTheSame(oldItem: BudgetUiItem, newItem: BudgetUiItem): Boolean =
                 oldItem == newItem
         }
-
-        val DATE_FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy", Locale.FRENCH)
 
         /** Voir [animateAppearance] — reste dans la fourchette 200-300 ms demandée. */
         const val ENTRANCE_ANIMATION_DURATION_MS = 260L

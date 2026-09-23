@@ -11,10 +11,9 @@ import com.naniger.arzikina.domain.model.TransactionType
 import com.naniger.arzikina.presentation.categories.CategoryIconMapper
 import com.naniger.arzikina.presentation.transactions.TransactionAmountTone
 import com.naniger.arzikina.presentation.transactions.transactionAmountDisplay
+import com.naniger.arzikina.util.AppDateFormats
 import com.naniger.arzikina.util.DatePeriods
 import com.naniger.arzikina.util.TriggerTimeFormatter
-import java.time.format.DateTimeFormatter
-import java.util.Locale
 
 /**
  * Remplit une ligne `item_transaction_compact.xml` à partir d'un [RecurringOccurrenceUiItem] —
@@ -27,8 +26,6 @@ import java.util.Locale
  * déjà enregistrée avec un historique de solde, voir `RunningBalance.kt`.
  */
 object RecurringOccurrenceItemBinder {
-
-    private val dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy", Locale.FRENCH)
 
     fun bind(binding: ItemTransactionCompactBinding, item: RecurringOccurrenceUiItem, section: RecurringSection) {
         val context = binding.root.context
@@ -63,7 +60,7 @@ object RecurringOccurrenceItemBinder {
     }
 
     private fun subtitleFor(context: Context, item: RecurringOccurrenceUiItem, section: RecurringSection): String {
-        val date = DatePeriods.toLocalDate(item.scheduledDate).format(dateFormatter)
+        val date = DatePeriods.toLocalDate(item.scheduledDate).format(AppDateFormats.NUMERIC_DATE)
         return when (section) {
             // Heure de déclenchement ajoutée ici (voir TriggerTimeFormatter) : c'est précisément
             // dans ces deux sections qu'elle a du sens ("à quelle heure ceci va-t-il se déclencher

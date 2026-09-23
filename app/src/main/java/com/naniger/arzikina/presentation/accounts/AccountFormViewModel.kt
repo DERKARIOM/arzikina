@@ -16,6 +16,7 @@ import com.naniger.arzikina.util.Money
 import com.naniger.arzikina.util.external.ExternalAppInfo
 import com.naniger.arzikina.util.external.ExternalAppLauncher
 import dagger.hilt.android.lifecycle.HiltViewModel
+import java.util.Locale
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -152,7 +153,7 @@ class AccountFormViewModel @Inject constructor(
                             // Expiration éditable normalement (elle EST conservée, contrairement
                             // au numéro complet/CVV) : pré-remplie au format "MM/AA" de formatExpiry.
                             cardExpiryInput = if (account.cardExpiryMonth != null && account.cardExpiryYear != null) {
-                                "%02d/%02d".format(account.cardExpiryMonth, account.cardExpiryYear % 100)
+                                String.format(Locale.ROOT, "%02d/%02d", account.cardExpiryMonth, account.cardExpiryYear % 100)
                             } else {
                                 ""
                             },

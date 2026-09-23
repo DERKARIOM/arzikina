@@ -15,6 +15,7 @@ import com.naniger.arzikina.domain.model.BudgetPeriod
 import com.naniger.arzikina.domain.model.Category
 import com.naniger.arzikina.domain.model.SupportedCurrency
 import com.naniger.arzikina.presentation.components.ConfirmDialogs
+import com.naniger.arzikina.util.AppDateFormats
 import com.naniger.arzikina.util.MoneyInputFormatter
 import com.naniger.arzikina.util.QuickDateRange
 import com.google.android.material.datepicker.MaterialDatePicker
@@ -24,7 +25,6 @@ import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.ZoneId
 import java.time.ZoneOffset
-import java.time.format.DateTimeFormatter
 
 /**
  * Formulaire d'ajout/édition d'un budget. Reconstruit en XML/Views (voir
@@ -173,7 +173,7 @@ class BudgetFormFragment : Fragment(R.layout.fragment_budget_form) {
     }
 
     private fun formatDate(millis: Long?): String =
-        millis?.let { Instant.ofEpochMilli(it).atZone(ZoneId.systemDefault()).toLocalDate().format(DATE_FORMATTER) }
+        millis?.let { Instant.ofEpochMilli(it).atZone(ZoneId.systemDefault()).toLocalDate().format(AppDateFormats.NUMERIC_DATE) }
             ?: getString(R.string.budget_form_date_placeholder)
 
     private fun render(state: BudgetFormState, categories: List<Category>) {
@@ -246,9 +246,5 @@ class BudgetFormFragment : Fragment(R.layout.fragment_budget_form) {
             message = getString(R.string.budgets_delete_message),
             onConfirm = { viewModel.delete() }
         )
-    }
-
-    private companion object {
-        val DATE_FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
     }
 }

@@ -10,10 +10,9 @@ import com.naniger.arzikina.domain.model.CurrencyAmount
 import com.naniger.arzikina.domain.model.TransactionType
 import com.naniger.arzikina.domain.model.PaymentMethod
 import com.naniger.arzikina.presentation.categories.CategoryIconMapper
+import com.naniger.arzikina.util.AppDateFormats
 import com.naniger.arzikina.util.DatePeriods
 import com.naniger.arzikina.util.Money
-import java.time.format.DateTimeFormatter
-import java.util.Locale
 
 /**
  * Remplit une ligne `item_transaction_compact.xml` à partir d'un
@@ -23,8 +22,6 @@ import java.util.Locale
  * la mise en forme du contenu est identique et ne doit pas être dupliquée.
  */
 object TransactionItemBinder {
-
-    private val dateFormatter = DateTimeFormatter.ofPattern("d MMM", Locale.FRENCH)
 
     /**
      * [showDescriptionSubtitle] bascule le sous-titre entre les deux
@@ -69,7 +66,7 @@ object TransactionItemBinder {
             binding.subtitle.visibility = View.VISIBLE
             val base = run {
                 val accountName = item.account?.name ?: context.getString(R.string.transaction_unknown_account)
-                val date = DatePeriods.toLocalDate(item.transaction.date).format(dateFormatter)
+                val date = DatePeriods.toLocalDate(item.transaction.date).format(AppDateFormats.dayMonth(context))
                 context.getString(R.string.dashboard_transaction_subtitle, accountName, date)
             }
             binding.subtitle.text = item.transaction.paymentMethod?.let { method ->

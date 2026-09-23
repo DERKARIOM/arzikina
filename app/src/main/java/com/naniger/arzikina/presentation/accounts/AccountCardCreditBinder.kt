@@ -54,7 +54,7 @@ object AccountCardCreditBinder {
         binding.cardMaskedExpiry.text = if (isRevealed) {
             val month = account.cardExpiryMonth
             val year = account.cardExpiryYear
-            if (month != null && year != null) "%02d/%02d".format(month, year % 100) else context.getString(R.string.account_card_masked_expiry)
+            if (month != null && year != null) String.format(Locale.ROOT, "%02d/%02d", month, year % 100) else context.getString(R.string.account_card_masked_expiry)
         } else {
             context.getString(R.string.account_card_masked_expiry)
         }

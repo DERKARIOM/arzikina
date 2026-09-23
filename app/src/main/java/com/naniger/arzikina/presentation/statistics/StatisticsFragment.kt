@@ -13,6 +13,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.naniger.arzikina.R
 import com.naniger.arzikina.databinding.FragmentStatisticsBinding
 import com.naniger.arzikina.domain.model.CurrencyAmount
+import com.naniger.arzikina.util.AppDateFormats
 import com.naniger.arzikina.util.AppResult
 import com.naniger.arzikina.util.DatePeriods
 import com.naniger.arzikina.util.Money
@@ -28,8 +29,6 @@ import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
-import java.time.format.DateTimeFormatter
-import java.util.Locale
 
 /** Clé pour transporter les libellés de mois (axe bas du graphique d'évolution) via les "extras" Vico. */
 private val MonthLabelsKey = ExtraStore.Key<List<String>>()
@@ -54,7 +53,6 @@ class StatisticsFragment : Fragment(R.layout.fragment_statistics) {
     private val evolutionModelProducer = CartesianChartModelProducer()
     private val breakdownAdapter = CategoryBreakdownAdapter()
 
-    private val monthFormatter = DateTimeFormatter.ofPattern("MMM", Locale.FRENCH)
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -155,7 +153,7 @@ class StatisticsFragment : Fragment(R.layout.fragment_statistics) {
     }
 
     private fun formatDate(date: LocalDate?): String =
-        date?.format(DATE_FORMATTER) ?: getString(R.string.budget_form_date_placeholder)
+        date?.format(AppDateFormats.NUMERIC_DATE) ?: getString(R.string.budget_form_date_placeholder)
 
     private fun periodErrorMessage(error: StatsPeriodError): String = when (error) {
         StatsPeriodError.MISSING_DATES -> getString(R.string.statistics_period_error_missing_dates)
@@ -251,7 +249,7 @@ class StatisticsFragment : Fragment(R.layout.fragment_statistics) {
 
     private suspend fun renderEvolution(uiState: StatisticsUiState) {
         val monthLabels = uiState.monthlyEvolution.map {
-            it.yearMonth.format(monthFormatter).replaceFirstChar(Char::uppercase)
+            it.yearMonth.format(AppDateFormats.shortMonth(requireContext())).replaceFirstChar(Char::uppercase)
         }
         val incomeValues = uiState.monthlyEvolution.map { Money.toMajorDouble(it.incomeMinor) }
         val expenseValues = uiState.monthlyEvolution.map { Money.toMajorDouble(it.expenseMinor) }
@@ -291,12 +289,5 @@ class StatisticsFragment : Fragment(R.layout.fragment_statistics) {
                 color = color
             )
         }
-    }
-
-    private companion object {
-        /** Même motif que `BudgetFormFragment.DATE_FORMATTER` (dd/MM/yyyy) — dupliqué par fichier
-         *  dans ce projet plutôt que centralisé (voir les 9 usages existants de ce même motif),
-         *  suivi ici pour rester cohérent avec la convention déjà en place. */
-        val DATE_FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
     }
 }

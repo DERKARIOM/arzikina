@@ -24,6 +24,7 @@ import com.naniger.arzikina.presentation.accounts.AccountIconMapper
 import com.naniger.arzikina.presentation.components.AccountPickerDialog
 import com.naniger.arzikina.presentation.components.ConfirmDialogs
 import com.naniger.arzikina.presentation.transactions.displayTextRes
+import com.naniger.arzikina.util.AppDateFormats
 import com.naniger.arzikina.util.Money
 import com.naniger.arzikina.util.MoneyInputFormatter
 import com.naniger.arzikina.util.TriggerTimeFormatter
@@ -36,7 +37,6 @@ import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.ZoneId
 import java.time.ZoneOffset
-import java.time.format.DateTimeFormatter
 
 /**
  * Formulaire de création/édition d'une règle récurrente (voir [RecurringTransactionFormViewModel]).
@@ -340,7 +340,7 @@ class RecurringTransactionFormFragment : Fragment(R.layout.fragment_recurring_tr
     }
 
     private fun formatDate(millis: Long): String =
-        Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault()).toLocalDate().format(DATE_FORMATTER)
+        Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault()).toLocalDate().format(AppDateFormats.NUMERIC_DATE)
 
     /** Regroupe les 4 flux observés pour éviter un `combine` imbriqué illisible (voir
      * [onViewCreated]) — même principe que `LoanFormFragment.LoanFormRenderState`. */
@@ -350,8 +350,4 @@ class RecurringTransactionFormFragment : Fragment(R.layout.fragment_recurring_tr
         val categories: List<Category>,
         val accountBalances: Map<Long, Long>
     )
-
-    private companion object {
-        val DATE_FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
-    }
 }

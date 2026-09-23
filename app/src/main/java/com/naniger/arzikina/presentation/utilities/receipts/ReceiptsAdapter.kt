@@ -10,14 +10,13 @@ import com.naniger.arzikina.R
 import com.naniger.arzikina.databinding.ItemReceiptBinding
 import com.naniger.arzikina.databinding.ItemReceiptDayHeaderBinding
 import com.naniger.arzikina.domain.model.Receipt
+import com.naniger.arzikina.util.AppDateFormats
 import com.naniger.arzikina.util.DatePeriods
 import com.naniger.arzikina.util.DayLabel
 import com.naniger.arzikina.util.FileSizeFormatter
 import com.naniger.arzikina.util.Money
 import com.naniger.arzikina.util.TriggerTimeFormatter
 import java.time.LocalDate
-import java.time.format.DateTimeFormatter
-import java.util.Locale
 
 /** Une ligne de liste groupée par jour : soit un en-tête ([Header]), soit un reçu ([Row]) — même
  * principe que `presentation.transactions.TransactionListRow`.
@@ -100,11 +99,7 @@ class ReceiptsAdapter(
                 View.GONE
             }
             binding.dayRelativeLabel.text = relativeLabelText.orEmpty()
-            binding.dayDate.text = date.format(dateFormatter)
-        }
-
-        private companion object {
-            val dateFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy", Locale.FRENCH)
+            binding.dayDate.text = date.format(AppDateFormats.NUMERIC_DATE)
         }
     }
 
@@ -117,7 +112,7 @@ class ReceiptsAdapter(
 
             val receivedTime = DatePeriods.toLocalTime(receipt.receivedAt)
             val time = TriggerTimeFormatter.format(context, receivedTime.hour, receivedTime.minute)
-            val size = FileSizeFormatter.format(receipt.fileSize)
+            val size = FileSizeFormatter.format(context, receipt.fileSize)
             binding.receiptMetaLine.text = context.getString(R.string.receipt_meta_line_format, time, size)
 
             binding.receiptSourceLine.text = receipt.sourceName

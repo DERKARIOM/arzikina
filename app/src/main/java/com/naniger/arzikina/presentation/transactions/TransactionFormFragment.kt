@@ -31,6 +31,7 @@ import com.naniger.arzikina.presentation.components.AccountPickerDialog
 import com.naniger.arzikina.presentation.components.ConfirmDialogs
 import com.naniger.arzikina.presentation.components.NavAnimations
 import com.naniger.arzikina.presentation.components.TemplatePickerDialog
+import com.naniger.arzikina.util.AppDateFormats
 import com.naniger.arzikina.util.Constants
 import com.naniger.arzikina.util.Money
 import com.naniger.arzikina.util.MoneyInputFormatter
@@ -38,17 +39,15 @@ import com.google.android.material.color.MaterialColors
 import com.google.android.material.datepicker.MaterialDatePicker
 import com.google.android.material.timepicker.MaterialTimePicker
 import com.google.android.material.timepicker.TimeFormat
+import com.naniger.arzikina.util.TriggerTimeFormatter
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
-import java.text.NumberFormat
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneId
 import java.time.ZoneOffset
-import java.time.format.DateTimeFormatter
-import java.util.Locale
 
 /**
  * Formulaire d'ajout/édition d'une transaction. Refonte visuelle (voir
@@ -232,11 +231,11 @@ class TransactionFormFragment : Fragment(R.layout.fragment_transaction_form) {
 
     /** Raccourcis "+1 000"/"+5 000"/"+10 000" : voir [TransactionFormViewModel.onQuickAmountAdd]. */
     private fun setUpQuickAmounts(binding: FragmentTransactionFormBinding) {
-        val formatter = NumberFormat.getIntegerInstance(Locale.FRENCH)
         val buttons = listOf(binding.quickAmount1Button, binding.quickAmount2Button, binding.quickAmount3Button)
         buttons.forEachIndexed { index, button ->
             val amount = QUICK_AMOUNTS[index]
-            button.text = "+${formatter.format(amount)}"
+            // Montant en unités majeures → mineures : même format que tous les montants (voir Money).
+            button.text = "+${Money.formatAmount(amount * Money.MINOR_UNITS_PER_MAJOR)}"
             button.setOnClickListener { if (!isLoanLinked()) viewModel.onQuickAmountAdd(amount) }
         }
     }
@@ -652,8 +651,8 @@ class TransactionFormFragment : Fragment(R.layout.fragment_transaction_form) {
             today.minusDays(1) -> getString(R.string.transaction_day_yesterday)
             else -> null
         }
-        val datePart = date.format(DATE_FORMATTER)
-        val timePart = zonedDateTime.toLocalTime().format(TIME_FORMATTER)
+        val datePart = date.format(AppDateFormats.NUMERIC_DATE)
+        val timePart = TriggerTimeFormatter.format(requireContext(), zonedDateTime.hour, zonedDateTime.minute)
         val dateLabel = if (relativeLabel != null) "$relativeLabel - $datePart" else datePart
         return "$dateLabel · $timePart"
     }
@@ -723,8 +722,6 @@ class TransactionFormFragment : Fragment(R.layout.fragment_transaction_form) {
     )
 
     private companion object {
-        val DATE_FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy", Locale.FRENCH)
-        val TIME_FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm", Locale.FRENCH)
         const val COLLAPSED_CATEGORY_LIMIT = 7
         val QUICK_AMOUNTS = listOf(1_000L, 5_000L, 10_000L)
 

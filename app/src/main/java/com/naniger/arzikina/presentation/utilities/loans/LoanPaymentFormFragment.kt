@@ -19,6 +19,7 @@ import com.naniger.arzikina.domain.model.LoanType
 import com.naniger.arzikina.domain.model.SupportedCurrency
 import com.naniger.arzikina.presentation.accounts.AccountIconMapper
 import com.naniger.arzikina.presentation.components.AccountPickerDialog
+import com.naniger.arzikina.util.AppDateFormats
 import com.naniger.arzikina.util.Money
 import com.naniger.arzikina.util.MoneyInputFormatter
 import com.google.android.material.datepicker.MaterialDatePicker
@@ -29,7 +30,6 @@ import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.ZoneId
 import java.time.ZoneOffset
-import java.time.format.DateTimeFormatter
 
 /**
  * Enregistrement d'un remboursement, atteint depuis le bouton "Enregistrer un remboursement" de
@@ -202,15 +202,11 @@ class LoanPaymentFormFragment : Fragment(R.layout.fragment_loan_payment_form) {
         SupportedCurrency.entries.firstOrNull { it.code == currencyCode }?.symbol ?: currencyCode
 
     private fun formatDate(millis: Long): String =
-        Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault()).toLocalDate().format(DATE_FORMATTER)
+        Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault()).toLocalDate().format(AppDateFormats.NUMERIC_DATE)
 
     private data class RenderState(
         val formState: LoanPaymentFormState,
         val accounts: List<Account>,
         val accountBalances: Map<Long, Long>
     )
-
-    private companion object {
-        val DATE_FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
-    }
 }

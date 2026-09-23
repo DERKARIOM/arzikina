@@ -20,6 +20,7 @@ import com.naniger.arzikina.presentation.accounts.AccountIconMapper
 import com.naniger.arzikina.presentation.categories.CategoryIconMapper
 import com.naniger.arzikina.presentation.components.AccountPickerDialog
 import com.naniger.arzikina.presentation.components.CategoryPickerDialog
+import com.naniger.arzikina.util.AppDateFormats
 import com.naniger.arzikina.util.Constants
 import com.naniger.arzikina.util.Money
 import com.naniger.arzikina.util.MoneyInputFormatter
@@ -31,7 +32,6 @@ import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.ZoneId
 import java.time.ZoneOffset
-import java.time.format.DateTimeFormatter
 
 /**
  * "Enregistrer comme transaction" (voir cahier des charges "Planification financière", section
@@ -217,7 +217,7 @@ class FinancialPlanItemConvertFragment : Fragment(R.layout.fragment_financial_pl
     }
 
     private fun formatDate(millis: Long): String =
-        Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault()).toLocalDate().format(DATE_FORMATTER)
+        Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault()).toLocalDate().format(AppDateFormats.NUMERIC_DATE)
 
     private data class RenderState(
         val formState: FinancialPlanItemConvertState,
@@ -225,8 +225,4 @@ class FinancialPlanItemConvertFragment : Fragment(R.layout.fragment_financial_pl
         val accountBalances: Map<Long, Long>,
         val categories: List<Category>
     )
-
-    private companion object {
-        val DATE_FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
-    }
 }

@@ -238,7 +238,22 @@
     <string name="settings_sync_now_in_progress">Synchronisation en cours…</string>
     <!-- %1$d = envoyées avec succès (push), %2$d = en erreur (push), %3$d = reçues et appliquées
          (pull) — voir SettingsViewModel.syncNow, qui enchaîne toujours push PUIS pull. -->
-    <string name="settings_sync_now_result">%1$d envoyée(s), %2$d en erreur, %3$d reçue(s)</string>
+    <!-- Chantier i18n, étape 3 : chaque compteur est un <plurals> (sync_*_count ci-dessous), ce
+         gabarit ne fait que les assembler — voir presentation/components/SyncResultMessage.kt. -->
+    <string name="settings_sync_now_result">%1$s, %2$s, %3$s</string>
+    <!-- En français, la forme "one" couvre 0 et 1 (« 0 envoyée », « 1 envoyée »). -->
+    <plurals name="sync_sent_count">
+        <item quantity="one">%d envoyée</item>
+        <item quantity="other">%d envoyées</item>
+    </plurals>
+    <plurals name="sync_failed_count">
+        <item quantity="one">%d en erreur</item>
+        <item quantity="other">%d en erreur</item>
+    </plurals>
+    <plurals name="sync_received_count">
+        <item quantity="one">%d reçue</item>
+        <item quantity="other">%d reçues</item>
+    </plurals>
     <string name="settings_sync_now_nothing_pending">Rien à synchroniser</string>
     <string name="settings_sync_now_error">Synchronisation impossible, réessaie plus tard</string>
 
@@ -839,11 +854,20 @@
         "utility_loans_title" (existante, voir plus haut) reste le titre de la barre d'outils.
     -->
     <string name="loans_summary_receivable_title">Total reçu</string>
-    <string name="loans_summary_receivable_count">%d prêt(s) accordé(s)</string>
+    <plurals name="loans_summary_receivable_count">
+        <item quantity="one">%d prêt accordé</item>
+        <item quantity="other">%d prêts accordés</item>
+    </plurals>
     <string name="loans_summary_owed_title">Total dû</string>
-    <string name="loans_summary_owed_count">%d emprunt(s)</string>
+    <plurals name="loans_summary_owed_count">
+        <item quantity="one">%d emprunt</item>
+        <item quantity="other">%d emprunts</item>
+    </plurals>
     <string name="loans_list_title">Mes prêts et emprunts</string>
-    <string name="loans_list_count">%d élément(s)</string>
+    <plurals name="loans_list_count">
+        <item quantity="one">%d élément</item>
+        <item quantity="other">%d éléments</item>
+    </plurals>
     <string name="loans_default_title_lent">Prêt</string>
     <string name="loans_default_title_borrowed">Emprunt</string>
     <string name="loans_person_prefix_lent">À %s</string>
@@ -1231,4 +1255,10 @@
     <string name="error_invalid_card_number">Numéro de carte invalide</string>
     <string name="error_invalid_card_expiry">Date d\'expiration invalide</string>
     <string name="error_invalid_card_cvv">Code de sécurité invalide</string>
+
+    <!-- Tailles de fichier (reçus), voir util/FileSizeFormatter.kt. %1$s = nombre déjà formaté
+         avec le séparateur décimal de la langue ; %1$d = nombre d'octets. -->
+    <string name="file_size_bytes">%1$d o</string>
+    <string name="file_size_kilobytes">%1$s Ko</string>
+    <string name="file_size_megabytes">%1$s Mo</string>
 </resources>
