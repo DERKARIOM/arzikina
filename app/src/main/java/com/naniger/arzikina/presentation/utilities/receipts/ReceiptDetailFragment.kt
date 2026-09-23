@@ -234,7 +234,7 @@ class ReceiptDetailFragment : Fragment(R.layout.fragment_receipt_detail) {
                 "presetAmountMinor" to (prefill.amountMinor ?: 0L),
                 "presetFeeAmountMinor" to (prefill.feeAmountMinor ?: 0L),
                 "presetDateTimeMillis" to (prefill.dateTimeMillis ?: 0L),
-                "presetDescription" to prefill.description,
+                "presetDescription" to prefill.counterparty?.let { requireContext().receiptDescription(it) },
                 "presetCategoryId" to (prefill.categoryId ?: 0L),
                 "presetAccountId" to (prefill.accountId ?: 0L),
                 "presetReceiptId" to prefill.receiptId,

@@ -1,5 +1,6 @@
 <resources>
-    <string name="app_name">Arzikina</string>
+    <!-- Nom de marque : identique dans toutes les langues. -->
+    <string name="app_name" translatable="false">Arzikina</string>
     <!-- Accroche courte sous le logo (voir item_auth_header.xml, écrans Connexion/Inscription) —
          purement cosmétique, aucune logique associée. -->
     <string name="auth_header_tagline">Gérez aujourd\'hui un meilleur demain</string>
@@ -1170,6 +1171,10 @@
          `binding.toolbar.title = ...`) — même principe que "loan_detail_title". -->
     <string name="receipt_detail_title">Détail du reçu</string>
     <string name="receipt_viewer_title">Aperçu du reçu</string>
+    <!-- Description proposée pour une transaction créée depuis un reçu (voir
+         ReceiptCounterpartyDisplay.kt). %1$s = nom lu sur le reçu, jamais traduit. -->
+    <string name="receipt_description_transfer_to">Transfert vers %1$s</string>
+    <string name="receipt_description_received_from">Reçu de %1$s</string>
 
     <!--
         Marketplace personnelle (cahier des charges du même nom) — bibliothèque personnelle de
@@ -1199,7 +1204,7 @@
     <!-- %1$s = nom du modèle (voir ConfirmDialogs.confirm). Précise explicitement que la
          suppression n'affecte AUCUNE transaction déjà créée à partir de ce modèle (cahier des
          charges section 5, "le modèle ne doit pas être modifié" — s'applique aussi après coup). -->
-    <string name="marketplace_delete_confirm_message">"%1$s" sera définitivement supprimé. Les transactions déjà créées à partir de ce modèle ne sont pas affectées.</string>
+    <string name="marketplace_delete_confirm_message">« %1$s » sera définitivement supprimé. Les transactions déjà créées à partir de ce modèle ne sont pas affectées.</string>
     <string name="marketplace_empty_title">Aucun modèle pour le moment</string>
     <string name="marketplace_empty_message">Créez vos modèles de dépenses habituelles pour enregistrer vos transactions plus rapidement.</string>
     <string name="marketplace_no_results_title">Aucun modèle trouvé</string>

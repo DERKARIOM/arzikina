@@ -20,6 +20,7 @@ import com.naniger.arzikina.domain.repository.ReceiptRepository
 import com.naniger.arzikina.domain.repository.TransactionRepository
 import com.naniger.arzikina.util.AppResult
 import com.naniger.arzikina.util.ReceiptAmountParser
+import com.naniger.arzikina.util.ReceiptCounterparty
 import com.naniger.arzikina.util.ReceiptTransactionInfo
 import com.naniger.arzikina.util.ReceiptTransactionInfoParser
 import com.naniger.arzikina.util.ReceiptTransactionMatcher
@@ -72,7 +73,7 @@ data class TransactionPrefill(
     val amountMinor: Long?,
     val feeAmountMinor: Long?,
     val dateTimeMillis: Long?,
-    val description: String?,
+    val counterparty: ReceiptCounterparty?,
     val categoryId: Long?,
     val accountId: Long?,
     val type: TransactionType?,
@@ -361,7 +362,7 @@ class ReceiptDetailViewModel @Inject constructor(
                         amountMinor = info.amountMinor,
                         feeAmountMinor = info.feeMinor,
                         dateTimeMillis = info.dateTimeMillis,
-                        description = info.description,
+                        counterparty = info.counterparty,
                         categoryId = matchedCategory?.id,
                         accountId = matchedAccount?.id,
                         type = info.transactionType,

@@ -5,6 +5,22 @@ import java.time.LocalDate
 import java.time.LocalTime
 
 /**
+ * Autre partie d'une opération détectée sur un reçu. Donnée STRUCTURÉE, jamais une phrase : le
+ * texte affiché (« Transfert vers X » / « Transfer to X ») dépend de la langue de l'interface et est
+ * donc construit par la couche présentation (voir `ReceiptDetailFragment`), pas ici.
+ * [name] est recopié tel quel depuis le reçu : c'est une donnée utilisateur, jamais traduite.
+ */
+sealed interface ReceiptCounterparty {
+    val name: String
+
+    /** Destinataire d'un envoi (libellé « Destinataire : » du reçu). */
+    data class Recipient(override val name: String) : ReceiptCounterparty
+
+    /** Expéditeur d'une réception (libellé « Expéditeur : » du reçu). */
+    data class Sender(override val name: String) : ReceiptCounterparty
+}
+
+/**
  * Résultat de [ReceiptTransactionInfoParser.parse] — voir sa doc de tête. Chaque champ est
  * INDÉPENDAMMENT `null` si non détecté avec suffisamment de confiance (jamais une valeur inventée,
  * jamais de dépendance entre champs pour décider d'en remplir un autre).
@@ -18,7 +34,7 @@ data class ReceiptTransactionInfo(
     val amountMinor: Long? = null,
     val feeMinor: Long? = null,
     val dateTimeMillis: Long? = null,
-    val description: String? = null,
+    val counterparty: ReceiptCounterparty? = null,
     val transactionType: TransactionType? = null,
     val transactionReference: String? = null
 )
@@ -52,7 +68,7 @@ object ReceiptTransactionInfoParser {
             amountMinor = ReceiptAmountParser.parseAmount(text),
             feeMinor = parseFee(text),
             dateTimeMillis = parseDateTimeMillis(text),
-            description = buildDescription(text, transactionType),
+            counterparty = parseCounterparty(text, transactionType),
             transactionType = transactionType,
             transactionReference = parseTransactionReference(text)
         )
@@ -111,21 +127,21 @@ object ReceiptTransactionInfoParser {
         REFERENCE_REGEX.find(text)?.groupValues?.get(1)?.trim()?.takeIf { it.isNotBlank() }
 
     /**
-     * Description SYNTHÉTIQUE ("Transfert vers Ari Aoua"/"Reçu de Abdoul Kader Bachir"), jamais un
-     * nom seul — voir cahier des charges section 11 ("Transfert vers Ibrahim"). `null` si ni
-     * [transactionType] ni aucun nom (destinataire/expéditeur) n'a pu être détecté : un champ vide
-     * reste préférable à une description à moitié devinée.
+     * Destinataire OU expéditeur, selon le type d'opération détecté (voir cahier des charges
+     * section 11, « Transfert vers Ibrahim ») : le destinataire pour un débit, l'expéditeur pour un
+     * crédit, sinon le premier des deux trouvé. `null` si aucun nom n'a pu être détecté : un champ
+     * vide reste préférable à une description à moitié devinée.
      */
-    private fun buildDescription(text: String, transactionType: TransactionType?): String? {
+    private fun parseCounterparty(text: String, transactionType: TransactionType?): ReceiptCounterparty? {
         val recipient = RECIPIENT_REGEX.find(text)?.groupValues?.get(1)?.trim()?.takeIf { it.isNotBlank() }
+            ?.let(ReceiptCounterparty::Recipient)
         val sender = SENDER_REGEX.find(text)?.groupValues?.get(1)?.trim()?.takeIf { it.isNotBlank() }
+            ?.let(ReceiptCounterparty::Sender)
 
-        return when {
-            transactionType == TransactionType.EXPENSE && recipient != null -> "Transfert vers $recipient"
-            transactionType == TransactionType.INCOME && sender != null -> "Reçu de $sender"
-            recipient != null -> "Transfert vers $recipient"
-            sender != null -> "Reçu de $sender"
-            else -> null
+        return when (transactionType) {
+            TransactionType.EXPENSE -> recipient ?: sender
+            TransactionType.INCOME -> sender ?: recipient
+            else -> recipient ?: sender
         }
     }
 
