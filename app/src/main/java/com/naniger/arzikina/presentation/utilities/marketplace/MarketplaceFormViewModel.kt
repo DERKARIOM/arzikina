@@ -208,7 +208,7 @@ class MarketplaceFormViewModel @Inject constructor(
                     id = templateId,
                     name = state.name.trim(),
                     type = state.type,
-                    amount = amountMinor!!,
+                    amount = amountMinor,
                     categoryId = state.categoryId,
                     accountId = state.accountId,
                     description = state.description,

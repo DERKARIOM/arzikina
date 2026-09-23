@@ -225,11 +225,11 @@ class BudgetModernAdapter(
                 when (status) {
                     BudgetPeriodStatus.COMPLETED -> context.getString(R.string.budget_modern_completed_chip)
                     BudgetPeriodStatus.UPCOMING -> {
-                        val daysUntilStart = ChronoUnit.DAYS.between(today, DatePeriods.toLocalDate(item.budget.startDate!!))
+                        val daysUntilStart = ChronoUnit.DAYS.between(today, start)
                         context.getString(R.string.budget_modern_starts_in_days, daysUntilStart)
                     }
                     BudgetPeriodStatus.ONGOING -> {
-                        val remaining = daysRemaining(item.budget.endDate!!, today)
+                        val remaining = daysRemaining(item.budget.endDate, today)
                         context.getString(R.string.budget_modern_days_remaining, remaining)
                     }
                 }

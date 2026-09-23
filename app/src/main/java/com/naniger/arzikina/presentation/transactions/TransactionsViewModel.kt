@@ -123,11 +123,10 @@ class TransactionsViewModel @Inject constructor(
                 // vue (compte affiché, sens du montant) — voir TransactionItemBinder — sans quoi
                 // le transfert resterait invisible pour ce filtre (voir point 3 ci-dessous).
                 val isTransferReceived = filters.accountId != null && transaction.transferAccountId == filters.accountId
-                // `?:` défensif : isTransferReceived garantit transferAccountId non-null en
-                // pratique (il est comparé à filters.accountId, lui-même non-null dans ce cas),
-                // mais le compilateur ne peut pas le déduire d'un `if` à deux branches typées différemment.
+                // Pas de `?:` : isTransferReceived garantit transferAccountId non-null (il est égal à
+                // filters.accountId, lui-même non-null) — le compilateur Kotlin 2 le déduit seul.
                 val perspectiveAccountId: Long = if (isTransferReceived) {
-                    transaction.transferAccountId ?: transaction.accountId
+                    transaction.transferAccountId
                 } else {
                     transaction.accountId
                 }

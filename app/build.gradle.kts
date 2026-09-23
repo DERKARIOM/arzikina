@@ -49,6 +49,16 @@ android {
     }
 }
 
+// `flatMapLatest` (Flow) est encore marqué @ExperimentalCoroutinesApi, alors qu'il est utilisé
+// partout dans les dépôts et ViewModels (changement d'utilisateur, filtres…). Opt-in au niveau du
+// module plutôt que ~25 annotations @OptIn identiques. À retirer quand kotlinx.coroutines le
+// stabilisera.
+kotlin {
+    compilerOptions {
+        optIn.add("kotlinx.coroutines.ExperimentalCoroutinesApi")
+    }
+}
+
 // Room : conserve l'historique des schémas pour sécuriser les futures migrations
 // (voir instructions projet : "Prévois les migrations de base de données dès le début").
 ksp {

@@ -219,7 +219,7 @@ class RecurringTransactionFormViewModel @Inject constructor(
                 RecurringTransaction(
                     id = recurringTransactionId,
                     type = state.type,
-                    amount = amountMinor!!,
+                    amount = amountMinor,
                     accountId = state.accountId,
                     categoryId = state.categoryId,
                     description = state.description,

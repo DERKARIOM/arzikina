@@ -215,7 +215,7 @@ class RecurringOccurrenceEditViewModel @Inject constructor(
                 recurringTransactionRepository.acceptOccurrenceWithChanges(
                     occurrenceId = occurrenceId,
                     type = edit.type,
-                    amount = amountMinor!!,
+                    amount = amountMinor,
                     accountId = edit.accountId,
                     categoryId = edit.categoryId,
                     date = edit.date,

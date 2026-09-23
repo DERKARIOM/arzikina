@@ -7,6 +7,7 @@ import android.graphics.Paint
 import android.graphics.RectF
 import android.text.TextPaint
 import android.util.AttributeSet
+import android.util.TypedValue
 import android.view.View
 import androidx.annotation.ColorInt
 import com.naniger.arzikina.util.Money
@@ -64,7 +65,9 @@ class CategoryBarChartView @JvmOverloads constructor(
     }
 
     private val axisLabelPaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
-        textSize = 11f * resources.displayMetrics.scaledDensity
+        // applyDimension(SP) plutôt que `scaledDensity` (déprécié) : respecte aussi la mise à
+        // l'échelle NON linéaire des polices d'Android 14+ (grandes tailles d'accessibilité).
+        textSize = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, 11f, resources.displayMetrics)
         textAlign = Paint.Align.RIGHT
     }
 
