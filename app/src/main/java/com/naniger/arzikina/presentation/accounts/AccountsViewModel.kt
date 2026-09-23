@@ -1,0 +1,151 @@
+package com.naniger.arzikina.presentation.accounts
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.naniger.arzikina.domain.model.AccountType
+import com.naniger.arzikina.domain.repository.AccountRepository
+import com.naniger.arzikina.domain.repository.AuthRepository
+import com.naniger.arzikina.domain.repository.FinancialPlanRepository
+import com.naniger.arzikina.domain.repository.SessionManager
+import com.naniger.arzikina.domain.repository.TransactionRepository
+import com.naniger.arzikina.presentation.utilities.financialplan.FinancialPlanUiItem
+import com.naniger.arzikina.presentation.utilities.financialplan.buildFinancialPlanUiItems
+import com.naniger.arzikina.util.AppResult
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
+import javax.inject.Inject
+
+/**
+ * État affiché par l'écran "Mes comptes". Plus de solde total agrégé ici
+ * (bloc retiré de l'écran) : chaque compte affiche déjà son propre solde sur
+ * sa carte (voir [AccountUiItem]/`item_account.xml`).
+ */
+data class AccountsUiState(
+    val accounts: List<AccountUiItem>
+)
+
+/**
+ * Bascule PUREMENT visuelle du ToggleGroup en haut de l'écran (voir `accountsTabGroup`,
+ * `fragment_accounts.xml`) — [BANK_CARDS] ne désigne aucune nouvelle entité : c'est un simple
+ * filtre d'affichage sur [AccountType.CREDIT_CARD], le seul type déjà rendu comme une carte
+ * bancaire visuelle (voir `AccountsAdapter`/`item_account_credit_card.xml`). Tous les autres
+ * types (`CASH`, `BANK`, `MOBILE_MONEY`, `SAVINGS`) restent sous [ACCOUNTS].
+ *
+ * [PLANNING] : troisième onglet, données ENTIÈREMENT différentes (planifications financières, voir
+ * [financialPlans] ci-dessous) — ne filtre PAS la liste de comptes, voir [matchesTab] qui exclut
+ * volontairement tout compte de cet onglet.
+ *
+ * ORDRE DE DÉCLARATION SIGNIFICATIF : `AccountsFragment.animateTabSwitch` utilise directement
+ * `.ordinal` (0/1/2, dans cet ordre) comme position pour choisir le sens de l'animation de
+ * transition — ne pas réordonner ces 3 valeurs sans mettre à jour cette logique en conséquence.
+ */
+enum class AccountsDisplayTab { ACCOUNTS, BANK_CARDS, PLANNING }
+
+/** Voir [AccountsDisplayTab] : un compte "correspond" à l'onglet Cartes bancaires si et
+ * seulement s'il est de type [AccountType.CREDIT_CARD], à l'onglet Comptes sinon — jamais à
+ * l'onglet Planification (aucun compte ne s'y affiche, voir sa doc). */
+fun AccountUiItem.matchesTab(tab: AccountsDisplayTab): Boolean = when (tab) {
+    AccountsDisplayTab.BANK_CARDS -> account.type == AccountType.CREDIT_CARD
+    AccountsDisplayTab.ACCOUNTS -> account.type != AccountType.CREDIT_CARD
+    AccountsDisplayTab.PLANNING -> false
+}
+
+/**
+ * État et actions de l'écran "Liste des comptes".
+ */
+@HiltViewModel
+class AccountsViewModel @Inject constructor(
+    private val accountRepository: AccountRepository,
+    transactionRepository: TransactionRepository,
+    authRepository: AuthRepository,
+    sessionManager: SessionManager,
+    financialPlanRepository: FinancialPlanRepository
+) : ViewModel() {
+
+    /**
+     * StateFlow SÉPARÉ de [uiState] (même raisonnement que `SettingsViewModel.biometricLockState`,
+     * voir sa doc) : purement de l'état d'affichage, non persisté (redémarre toujours sur
+     * [AccountsDisplayTab.ACCOUNTS] à chaque nouvelle instance de ce ViewModel), aucun lien avec le
+     * `combine` ci-dessous qui charge les données réelles.
+     */
+    private val _selectedTab = MutableStateFlow(AccountsDisplayTab.ACCOUNTS)
+    val selectedTab: StateFlow<AccountsDisplayTab> = _selectedTab.asStateFlow()
+
+    val uiState: StateFlow<AppResult<AccountsUiState>> = combine(
+        accountRepository.observeAccounts(),
+        transactionRepository.observeTransactions(),
+        // Nom du titulaire affiché sur une carte de crédit (voir AccountUiItem.cardHolderName) :
+        // même source que la carte VISA du Dashboard, pas un champ propre au compte.
+        sessionManager.observeCurrentUserId().flatMapLatest { userId ->
+            if (userId == null) flowOf(null) else authRepository.observeUser(userId)
+        }
+    ) { accounts, transactions, user ->
+        val currentBalances = computeCurrentBalances(accounts, transactions)
+        val cardHolderName = user?.fullName.orEmpty()
+        val items = accounts.map { account ->
+            AccountUiItem(
+                account = account,
+                currentBalance = currentBalances[account.id] ?: account.initialBalance,
+                cardHolderName = cardHolderName
+            )
+        }
+
+        AccountsUiState(accounts = items)
+    }
+        .map<AccountsUiState, AppResult<AccountsUiState>> { AppResult.Success(it) }
+        .catch { throwable -> emit(AppResult.Error(throwable.message ?: "Erreur inconnue", throwable)) }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(stopTimeoutMillis = 5_000),
+            initialValue = AppResult.Loading
+        )
+
+    /**
+     * Onglet "Planification" (voir [AccountsDisplayTab.PLANNING]) : flux INDÉPENDANT de [uiState]
+     * ci-dessus, sans aucun lien avec [AccountRepository]/[TransactionRepository] — mêmes
+     * planifications, même calcul que [com.naniger.arzikina.presentation.utilities.financialplan.FinancialPlansViewModel.uiState]
+     * (voir [buildFinancialPlanUiItems], partagé pour ne pas dupliquer ce calcul une troisième
+     * fois). [FinancialPlanRepository] filtre déjà par utilisateur connecté (voir sa doc) : aucune
+     * planification d'un autre utilisateur ne peut apparaître ici, même garantie que partout
+     * ailleurs dans l'app.
+     */
+    val financialPlans: StateFlow<AppResult<List<FinancialPlanUiItem>>> = combine(
+        financialPlanRepository.observePlans(),
+        financialPlanRepository.observeAllItems()
+    ) { plans, allItems ->
+        buildFinancialPlanUiItems(plans, allItems)
+    }
+        .map<List<FinancialPlanUiItem>, AppResult<List<FinancialPlanUiItem>>> { AppResult.Success(it) }
+        .catch { throwable -> emit(AppResult.Error(throwable.message ?: "Erreur inconnue", throwable)) }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(stopTimeoutMillis = 5_000),
+            initialValue = AppResult.Loading
+        )
+
+    /** Voir [AccountsDisplayTab] : appelé par `AccountsFragment` au clic sur `btnAccounts`/
+     * `btnBankCards`/`btnPlanning`. */
+    fun onTabSelected(tab: AccountsDisplayTab) {
+        _selectedTab.value = tab
+    }
+
+    /** Persistance d'un réordonnancement par glisser-déposer (voir `AccountsFragment`, onglet
+     * [AccountsDisplayTab.ACCOUNTS] uniquement) — délègue entièrement à
+     * [AccountRepository.reorderAccounts] (transaction Room + enfilage sync + déclenchement
+     * immédiat, voir sa KDoc) : ce ViewModel n'ajoute aucune logique propre. [uiState] reflète
+     * automatiquement le nouvel ordre à la prochaine émission de `observeAccounts()` (Flow Room),
+     * aucune mise à jour manuelle de l'état ici. */
+    fun reorderAccounts(orderedIds: List<Long>) {
+        viewModelScope.launch { accountRepository.reorderAccounts(orderedIds) }
+    }
+}

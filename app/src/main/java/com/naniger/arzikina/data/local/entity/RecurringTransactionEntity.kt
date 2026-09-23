@@ -1,0 +1,85 @@
+package com.naniger.arzikina.data.local.entity
+
+import androidx.room.Entity
+import androidx.room.ForeignKey
+import androidx.room.Index
+import androidx.room.PrimaryKey
+import com.naniger.arzikina.domain.model.PaymentMethod
+import com.naniger.arzikina.domain.model.RecurringFrequency
+import com.naniger.arzikina.domain.model.TransactionType
+
+/**
+ * Représentation Room d'une [com.naniger.arzikina.domain.model.RecurringTransaction] : la RÈGLE qui
+ * décrit une transaction à reconduire, pas une exécution réelle (voir
+ * [RecurringTransactionOccurrenceEntity] pour cette dernière) — même séparation modèle/occurrence
+ * que [LoanEntity]/[LoanPaymentEntity].
+ *
+ * Clés étrangères : mêmes choix que [TransactionEntity] (`accountId` en `CASCADE`, `categoryId`
+ * en `NO_ACTION` par défaut, `NULL` réservé à un futur type transfert — voir [TransactionEntity]
+ * pour le raisonnement complet, volontairement identique ici).
+ *
+ * [userId] : voir [AccountEntity] pour le raisonnement (filtrage direct sans jointure).
+ *
+ * [triggerHour]/[triggerMinute] : voir [com.naniger.arzikina.domain.model.RecurringTransaction] pour le
+ * raisonnement (deux `INTEGER NOT NULL` plutôt qu'une chaîne "HH:mm" ou une paire nullable — voir
+ * cahier des charges, section base de données : "préférer une représentation permettant facilement
+ * de comparer et programmer l'heure").
+ */
+@Entity(
+    tableName = "recurring_transactions",
+    foreignKeys = [
+        ForeignKey(
+            entity = AccountEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["accountId"],
+            onDelete = ForeignKey.CASCADE
+        ),
+        ForeignKey(
+            entity = CategoryEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["categoryId"]
+        )
+    ],
+    indices = [Index("accountId"), Index("categoryId"), Index("userId"), Index(value = ["syncId"], unique = true)]
+)
+data class RecurringTransactionEntity(
+    @PrimaryKey(autoGenerate = true)
+    val id: Long = 0L,
+    val userId: Long,
+    val type: TransactionType,
+    val amount: Long,
+    val accountId: Long,
+    /** Voir [TransactionEntity.categoryId] : `NULL` uniquement réservé à un futur type transfert,
+     * toujours renseigné pour un revenu/une dépense. */
+    val categoryId: Long?,
+    val description: String,
+    val paymentMethod: PaymentMethod?,
+    val startDate: Long,
+    /** `NULL` = pas de date de fin (se reconduit indéfiniment tant que [isActive]). */
+    val endDate: Long?,
+    val frequency: RecurringFrequency,
+    /**
+     * Date de la PROCHAINE occurrence à générer (voir
+     * `RecurringTransactionRepositoryImpl.generateMissingOccurrences`). Avancée à chaque occurrence
+     * générée — jamais recalculée depuis [startDate] à chaque lecture, pour ne pas re-parcourir tout
+     * l'historique d'une règle ancienne à chaque ouverture de l'app.
+     */
+    val nextExecutionDate: Long,
+    /** `false` = la règle ne génère plus de nouvelles occurrences (arrêtée par l'utilisateur), mais
+     * son historique reste consultable — jamais supprimée pour autant. */
+    val isActive: Boolean,
+    val createdAt: Long,
+    val updatedAt: Long,
+    val triggerHour: Int,
+    val triggerMinute: Int,
+    /** UUID partagé Android/API/MySQL pour la synchronisation multi-appareils — additif, voir
+     * `docs/sync/AUDIT-ET-ARCHITECTURE-SYNC.md` (section 6.3, option B). `null` tant que cette
+     * ligne n'a jamais été envoyée au serveur. */
+    val syncId: String? = null,
+    /** Suppression douce (section 8 du document ci-dessus) : `null` = ligne active. */
+    val deletedAt: Long? = null,
+    /** Compteur de version optimiste, pour la détection de conflit côté serveur (section 9). Le
+     * champ [updatedAt] existant ci-dessus sert désormais aussi de base à cette stratégie
+     * Last-Write-Wins. */
+    val version: Int = 1
+)

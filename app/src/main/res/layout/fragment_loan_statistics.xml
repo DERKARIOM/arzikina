@@ -226,7 +226,7 @@
                 android:textColor="?attr/colorOnSurfaceVariant"
                 android:visibility="gone" />
 
-            <com.arzikina.ne.presentation.statistics.CategoryPieView
+            <com.naniger.arzikina.presentation.statistics.CategoryPieView
                 android:id="@+id/statusChart"
                 android:layout_width="200dp"
                 android:layout_height="200dp"

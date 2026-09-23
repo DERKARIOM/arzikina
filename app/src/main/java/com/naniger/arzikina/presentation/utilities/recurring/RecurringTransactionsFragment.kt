@@ -1,0 +1,198 @@
+package com.naniger.arzikina.presentation.utilities.recurring
+
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
+import android.os.Bundle
+import android.view.View
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
+import androidx.core.os.bundleOf
+import androidx.fragment.app.Fragment
+import androidx.fragment.app.viewModels
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
+import androidx.navigation.fragment.findNavController
+import androidx.recyclerview.widget.LinearLayoutManager
+import com.naniger.arzikina.R
+import com.naniger.arzikina.databinding.FragmentRecurringTransactionsBinding
+import com.naniger.arzikina.presentation.components.ConfirmDialogs
+import com.naniger.arzikina.presentation.components.NavAnimations
+import com.naniger.arzikina.util.AppResult
+import com.google.android.material.snackbar.Snackbar
+import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.launch
+
+/**
+ * Écran "Transactions planifiées" (voir maquette de référence, adaptée au design Arzikina — voir
+ * cahier des charges "Gestion automatique des transactions planifiées"). Remplace le placeholder
+ * "en cours de développement" comme [com.naniger.arzikina.presentation.utilities.loans.LoansFragment] —
+ * id de destination `recurringTransactionsFragment` (voir nav_graph.xml).
+ *
+ * Trois sections défilant dans une seule liste ("À traiter"/"À venir"/"Historique", voir
+ * [RecurringTransactionsListRow]) : PAS de recherche/filtres pour cette première version (voir
+ * [com.naniger.arzikina.presentation.utilities.loans.LoansFragment] pour ce que ça impliquerait
+ * d'ajouter plus tard, sur le même modèle).
+ *
+ * "À traiter" (voir cahier des charges "Supprimer le dialogue au lancement") : Valider/Rejeter sont
+ * directement sur chaque ligne (voir [RecurringTransactionsAdapter.PendingOccurrenceViewHolder],
+ * [RecurringTransactionsViewModel.accept]/[RecurringTransactionsViewModel.reject]) — Rejeter demande
+ * confirmation (voir [confirmReject], action définitive). Un tap sur le RÉSUMÉ de la ligne (pas les
+ * boutons) ouvre [RecurringOccurrenceEditDialogFragment] pour "Modifier" avant validation.
+ *
+ * Un tap sur une ligne "À venir" ouvre le formulaire en mode édition pour la RÈGLE correspondante
+ * (voir [onOccurrenceRowClick]) — modifier ou supprimer (bouton dédié du formulaire, déjà géré par
+ * [RecurringTransactionFormFragment]) passent tous les deux par cet unique écran, même principe que
+ * [com.naniger.arzikina.presentation.budget.BudgetFragment]. "Historique" reste inerte au tap.
+ */
+@AndroidEntryPoint
+class RecurringTransactionsFragment : Fragment(R.layout.fragment_recurring_transactions) {
+
+    private val viewModel: RecurringTransactionsViewModel by viewModels()
+    private var binding: FragmentRecurringTransactionsBinding? = null
+    private val adapter = RecurringTransactionsAdapter(
+        onOccurrenceClick = ::onOccurrenceRowClick,
+        onAccept = { occurrenceId -> viewModel.accept(occurrenceId) },
+        onReject = ::confirmReject
+    )
+
+    /**
+     * Demande la permission `POST_NOTIFICATIONS` (Android 13+) au premier passage sur CET écran
+     * plutôt qu'au démarrage de l'app : Automatisation est la seule fonctionnalité qui en a besoin
+     * (voir `com.arzikina.ne.work.AutomationNotifier`), demander au moment où elle devient
+     * pertinente pour l'utilisateur plutôt qu'à froid, sans contexte, est la pratique recommandée
+     * par Android. Résultat volontairement ignoré : un refus ne bloque jamais la création/
+     * modification d'une automatisation (voir `RecurringTransactionFormFragment`, inchangé) — seule
+     * la notification de rappel ne s'affichera pas (voir `AutomationNotifier.notifyTrigger`, qui gère
+     * déjà silencieusement ce cas sans vérification supplémentaire de son côté).
+     */
+    private val notificationPermissionLauncher =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { /* résultat ignoré, voir doc ci-dessus */ }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        val viewBinding = FragmentRecurringTransactionsBinding.bind(view)
+        binding = viewBinding
+
+        viewBinding.toolbar.setNavigationOnClickListener { findNavController().navigateUp() }
+        viewBinding.recurringTransactionsList.layoutManager = LinearLayoutManager(requireContext())
+        viewBinding.recurringTransactionsList.adapter = adapter
+        viewBinding.addRecurringTransactionButton.setOnClickListener { navigateToForm() }
+        viewBinding.emptyAddRecurringTransactionButton.setOnClickListener { navigateToForm() }
+        requestNotificationPermissionIfNeeded()
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                launch { viewModel.uiState.collect { state -> render(state) } }
+                launch { viewModel.events.collect { event -> handleEvent(event) } }
+            }
+        }
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        binding = null
+    }
+
+    /** Voir `CategoriesFragment.handleEvent` pour le même principe (Snackbar, pas Toast). */
+    private fun handleEvent(event: RecurringTransactionsEvent) {
+        val binding = binding ?: return
+        when (event) {
+            RecurringTransactionsEvent.ActionFailed ->
+                Snackbar.make(binding.root, R.string.recurring_pending_action_failed_message, Snackbar.LENGTH_LONG).show()
+        }
+    }
+
+    private fun render(state: AppResult<RecurringTransactionsUiState>) {
+        val binding = binding ?: return
+        if (state !is AppResult.Success) return
+        val uiState = state.data
+
+        val hasAnyData = uiState.pendingItems.isNotEmpty() || uiState.upcomingItems.isNotEmpty() || uiState.historyItems.isNotEmpty()
+
+        binding.addRecurringTransactionButton.visibility = if (hasAnyData) View.VISIBLE else View.GONE
+        binding.emptyState.visibility = if (hasAnyData) View.GONE else View.VISIBLE
+        binding.recurringTransactionsList.visibility = if (hasAnyData) View.VISIBLE else View.GONE
+
+        if (!hasAnyData) {
+            adapter.submitList(emptyList())
+            return
+        }
+
+        val rows = buildList {
+            add(RecurringTransactionsListRow.Header(uiState.summary))
+            addSection(R.string.recurring_transactions_pending_title, uiState.pendingItems, RecurringSection.PENDING)
+            addSection(R.string.recurring_transactions_upcoming_title, uiState.upcomingItems, RecurringSection.UPCOMING)
+            addSection(R.string.recurring_transactions_history_title, uiState.historyItems, RecurringSection.HISTORY)
+        }
+        adapter.submitList(rows)
+    }
+
+    /** Une section VIDE n'ajoute ni titre ni ligne (voir la doc de [RecurringTransactionsListRow]). */
+    private fun MutableList<RecurringTransactionsListRow>.addSection(
+        titleRes: Int,
+        items: List<RecurringOccurrenceUiItem>,
+        section: RecurringSection
+    ) {
+        if (items.isEmpty()) return
+        add(RecurringTransactionsListRow.SectionTitle(titleRes, items.size))
+        items.forEach { add(RecurringTransactionsListRow.OccurrenceRow(it, section)) }
+    }
+
+    /** Ne fait rien avant Android 13 (`POST_NOTIFICATIONS` n'existe pas, les notifications sont
+     * autorisées par défaut) ni si déjà accordée — évite de rouvrir inutilement la boîte de dialogue
+     * système à chaque passage sur cet écran une fois la permission déjà en main. */
+    private fun requestNotificationPermissionIfNeeded() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return
+        val granted = ContextCompat.checkSelfPermission(
+            requireContext(),
+            Manifest.permission.POST_NOTIFICATIONS
+        ) == PackageManager.PERMISSION_GRANTED
+        if (!granted) notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+    }
+
+    private fun navigateToForm() {
+        // Toujours en création (recurringTransactionId par défaut = 0L, voir nav_graph.xml) — l'édition
+        // d'une règle existante passe par onOccurrenceRowClick, pas par ce bouton d'ajout.
+        findNavController().navigate(R.id.recurringTransactionFormFragment, null, NavAnimations.push)
+    }
+
+    /**
+     * "À venir" ouvre le formulaire en mode édition de la RÈGLE (voir la doc de classe) : elle y est
+     * TOUJOURS représentée par exactement une ligne tant qu'elle reste active (voir
+     * `RecurringTransactionsViewModel.upcomingItems`, basé sur `nextExecutionDate`), donc toute
+     * automatisation active reste modifiable/supprimable par ce biais, sans exception.
+     *
+     * "À traiter" ouvre [RecurringOccurrenceEditDialogFragment] pour CETTE occurrence précise
+     * (`item.occurrenceId` jamais `null` pour cette section, voir sa doc) — Valider/Rejeter SANS
+     * modification passent par les boutons de la ligne (voir [RecurringTransactionsAdapter]), pas
+     * par ce tap. "Historique" ne fait rien au tap.
+     */
+    private fun onOccurrenceRowClick(item: RecurringOccurrenceUiItem, section: RecurringSection) {
+        when (section) {
+            RecurringSection.PENDING -> item.occurrenceId?.let { occurrenceId ->
+                RecurringOccurrenceEditDialogFragment.show(childFragmentManager, occurrenceId)
+            }
+            RecurringSection.UPCOMING -> findNavController().navigate(
+                R.id.recurringTransactionFormFragment,
+                bundleOf("recurringTransactionId" to item.recurringTransaction.id),
+                NavAnimations.push
+            )
+            RecurringSection.HISTORY -> Unit
+        }
+    }
+
+    /** Confirmation avant rejet (action définitive, voir cahier des charges "Rejeter... prévoir
+     *  éventuellement une confirmation") — même dialogue/mêmes libellés que l'ancienne file
+     *  d'attente supprimée. */
+    private fun confirmReject(occurrenceId: Long) {
+        ConfirmDialogs.confirm(
+            context = requireContext(),
+            title = getString(R.string.recurring_queue_reject_confirm_title),
+            message = getString(R.string.recurring_queue_reject_confirm_message),
+            confirmLabel = getString(R.string.recurring_pending_reject_action),
+            onConfirm = { viewModel.reject(occurrenceId) }
+        )
+    }
+}

@@ -6,7 +6,7 @@ plugins {
 }
 
 android {
-    namespace = "com.arzikina.ne"
+    namespace = "com.naniger.arzikina"
     compileSdk {
         version = release(36) {
             minorApiLevel = 1
@@ -14,7 +14,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.arzikina.ne"
+        applicationId = "com.naniger.arzikina"
         minSdk = 26
         targetSdk = 36
         versionCode = 1

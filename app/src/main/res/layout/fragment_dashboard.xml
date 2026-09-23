@@ -404,7 +404,7 @@
                      des barres avec la ligne "Écart Budget", désormais la dernière ligne de la
                      colonne depuis son ajout. Un centrage vertical, correct avec 3 lignes, ne l'est
                      plus avec 4. -->
-                <com.arzikina.ne.presentation.dashboard.IncomeExpenseBarView
+                <com.naniger.arzikina.presentation.dashboard.IncomeExpenseBarView
                     android:id="@+id/incomeExpenseChart"
                     android:layout_width="56dp"
                     android:layout_height="110dp" />

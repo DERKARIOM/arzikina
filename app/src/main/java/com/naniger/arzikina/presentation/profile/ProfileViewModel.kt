@@ -1,0 +1,263 @@
+package com.naniger.arzikina.presentation.profile
+
+import androidx.annotation.StringRes
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.naniger.arzikina.R
+import com.naniger.arzikina.domain.model.AuthResult
+import com.naniger.arzikina.domain.repository.AuthRepository
+import com.naniger.arzikina.domain.repository.BiometricAuthenticator
+import com.naniger.arzikina.domain.repository.ProfilePhotoRepository
+import com.naniger.arzikina.domain.repository.SessionManager
+import com.naniger.arzikina.domain.repository.UserPreferencesRepository
+import com.naniger.arzikina.util.AuthValidator
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
+import javax.inject.Inject
+
+/**
+ * État de l'écran Profil. Chargé UNE SEULE FOIS au démarrage (comme
+ * `AccountFormViewModel`/`BudgetFormViewModel`, voir leur `init {}`) plutôt
+ * qu'observé en continu via [AuthRepository.observeUser] : une source
+ * réactive écraserait les modifications en cours de saisie dès que
+ * l'utilisateur enregistre (le flux réémettrait la nouvelle valeur pendant
+ * qu'il retape autre chose).
+ *
+ * [username] est affiché mais jamais éditable ici (voir [AuthRepository.updateProfile],
+ * qui ne l'accepte pas en paramètre) — changer d'identifiant n'est pas dans
+ * le périmètre de cette étape.
+ *
+ * PAS de `profilePhotoUri` ici (contrairement à avant le cahier des charges "Gestion de la photo
+ * de profil") : la photo est désormais enregistrée IMMÉDIATEMENT via [ProfilePhotoRepository]
+ * (voir [photoUiState]/[confirmNewPhoto]), jamais en attente du bouton "Enregistrer" de ce
+ * formulaire (nom/e-mail/téléphone) — comportements volontairement découplés, voir la KDoc de
+ * tête de [ProfilePhotoRepository].
+ */
+data class ProfileFormState(
+    val username: String = "",
+    val fullName: String = "",
+    val email: String = "",
+    val phoneNumber: String = "",
+    @StringRes val fullNameError: Int? = null,
+    @StringRes val emailError: Int? = null,
+    val isSaving: Boolean = false
+)
+
+sealed interface ProfileEvent {
+    data object Saved : ProfileEvent
+    data object LoggedOut : ProfileEvent
+    data class ShowError(@StringRes val messageRes: Int) : ProfileEvent
+}
+
+/** [photoUri] : URI `content://` prête pour Coil, ou `null` (avatar par défaut) — voir
+ *  [ProfilePhotoRepository.observeCurrentUserPhotoUri]. [isProcessing] couvre À LA FOIS
+ *  l'enregistrement d'une nouvelle photo et sa suppression (jamais simultanés, voir
+ *  [ProfileViewModel.performPhotoAction]) : l'UI se contente d'afficher un indicateur, peu importe
+ *  laquelle des deux actions est en cours. */
+data class ProfilePhotoUiState(
+    val photoUri: String? = null,
+    val isProcessing: Boolean = false
+)
+
+sealed interface ProfilePhotoEvent {
+    /** Émis une fois [ProfileViewModel.confirmNewPhoto] terminé — voir
+     *  [ProfilePhotoPreviewDialogFragment], seul collecteur prévu. */
+    data object PhotoSaved : ProfilePhotoEvent
+}
+
+/**
+ * [isAvailable] résolu UNE SEULE FOIS au chargement de l'écran (voir [init]) — contrairement à
+ * [isEnabled], qui reste observé en continu (voir [UserPreferencesRepository.observePreferences]) :
+ * le matériel biométrique de l'appareil ne change pas pendant qu'un utilisateur reste sur cet
+ * écran, alors que le réglage lui-même doit rester réactif comme le reste des préférences de l'app
+ * (voir [com.naniger.arzikina.presentation.settings.SettingsViewModel] pour le même principe).
+ */
+data class BiometricLockUiState(
+    val isAvailable: Boolean = false,
+    val isEnabled: Boolean = false
+)
+
+@HiltViewModel
+class ProfileViewModel @Inject constructor(
+    private val authRepository: AuthRepository,
+    private val sessionManager: SessionManager,
+    private val userPreferencesRepository: UserPreferencesRepository,
+    private val biometricAuthenticator: BiometricAuthenticator,
+    private val profilePhotoRepository: ProfilePhotoRepository
+) : ViewModel() {
+
+    private val _formState = MutableStateFlow(ProfileFormState())
+    val formState: StateFlow<ProfileFormState> = _formState.asStateFlow()
+
+    private val _biometricLockState = MutableStateFlow(BiometricLockUiState())
+    val biometricLockState: StateFlow<BiometricLockUiState> = _biometricLockState.asStateFlow()
+
+    private val _events = MutableSharedFlow<ProfileEvent>()
+    val events: SharedFlow<ProfileEvent> = _events.asSharedFlow()
+
+    /** `true` pendant [confirmNewPhoto] OU [deletePhoto] (jamais les deux à la fois, voir
+     *  [performPhotoAction]) — jamais lié à [ProfileFormState.isSaving], qui ne couvre que
+     *  nom/e-mail/téléphone (voir la KDoc de tête de [ProfileFormState]). */
+    private val _isProcessingPhoto = MutableStateFlow(false)
+
+    /** Combine la photo courante (peut changer depuis n'importe où : cette action elle-même, ou une
+     *  synchronisation reçue d'un autre appareil) et l'état de traitement local — voir
+     *  [ProfilePhotoUiState]. `WhileSubscribed` (même principe que le reste du projet) : reste actif
+     *  tant que [ProfileFragment] ou [ProfilePhotoPreviewDialogFragment] l'observe. */
+    val photoUiState: StateFlow<ProfilePhotoUiState> = combine(
+        profilePhotoRepository.observeCurrentUserPhotoUri(),
+        _isProcessingPhoto
+    ) { photoUri, isProcessing -> ProfilePhotoUiState(photoUri = photoUri, isProcessing = isProcessing) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(stopTimeoutMillis = 5_000), ProfilePhotoUiState())
+
+    private val _photoEvents = MutableSharedFlow<ProfilePhotoEvent>()
+    val photoEvents: SharedFlow<ProfilePhotoEvent> = _photoEvents.asSharedFlow()
+
+    /** Résolu une fois au chargement (voir [init]) — Profil n'édite jamais qu'"soi-même". */
+    private var userId: Long = 0L
+
+    init {
+        viewModelScope.launch {
+            val currentUserId = sessionManager.getCurrentUserIdOnce() ?: return@launch
+            userId = currentUserId
+            authRepository.getUser(currentUserId)?.let { user ->
+                _formState.update {
+                    it.copy(
+                        username = user.username,
+                        fullName = user.fullName,
+                        email = user.email,
+                        phoneNumber = user.phoneNumber.orEmpty()
+                    )
+                }
+            }
+        }
+        viewModelScope.launch {
+            val available = biometricAuthenticator.isAvailable()
+            _biometricLockState.update { it.copy(isAvailable = available) }
+        }
+        viewModelScope.launch {
+            userPreferencesRepository.observePreferences().collect { preferences ->
+                _biometricLockState.update { it.copy(isEnabled = preferences.biometricLockEnabled) }
+            }
+        }
+    }
+
+    /**
+     * Aucune vérification biométrique n'est demandée pour ACTIVER ou DÉSACTIVER ce réglage
+     * lui-même (contrairement à son usage une fois activé) : la session locale déjà active suffit
+     * à prouver que la personne devant l'appareil est autorisée à changer ses propres préférences
+     * — voir la doctrine de [BiometricAuthenticator], "en complément d'une session déjà active".
+     */
+    fun onBiometricLockToggle(enabled: Boolean) {
+        viewModelScope.launch {
+            userPreferencesRepository.setBiometricLockEnabled(enabled)
+        }
+    }
+
+    fun onFullNameChange(value: String) {
+        _formState.update { it.copy(fullName = value, fullNameError = null) }
+    }
+
+    fun onEmailChange(value: String) {
+        _formState.update { it.copy(email = value, emailError = null) }
+    }
+
+    fun onPhoneNumberChange(value: String) {
+        _formState.update { it.copy(phoneNumber = value) }
+    }
+
+    /**
+     * Enregistre une nouvelle photo (déjà recadrée/optimisée, voir [ProfilePhotoPreviewDialogFragment])
+     * — IMMÉDIATEMENT, sans passer par [save] : voir la KDoc de tête de [ProfileFormState].
+     * [performPhotoAction] protège contre un double-tap sur "Utiliser cette photo".
+     */
+    fun confirmNewPhoto(optimizedJpegBytes: ByteArray) = performPhotoAction {
+        profilePhotoRepository.saveNewPhoto(optimizedJpegBytes)
+        _photoEvents.emit(ProfilePhotoEvent.PhotoSaved)
+    }
+
+    /** Retour à l'avatar par défaut — confirmation déjà obtenue côté [ProfileFragment] avant cet
+     *  appel (action irréversible pour l'utilisateur, même principe que [logout]). */
+    fun deletePhoto() = performPhotoAction {
+        profilePhotoRepository.deletePhoto()
+    }
+
+    /** Garde-fou anti double-tap partagé par [confirmNewPhoto]/[deletePhoto] — même principe que
+     *  `RecurringTransactionsViewModel.performAction`. */
+    private fun performPhotoAction(action: suspend () -> Unit) {
+        if (_isProcessingPhoto.value) return
+        _isProcessingPhoto.value = true
+        viewModelScope.launch {
+            runCatching { action() }
+            _isProcessingPhoto.value = false
+        }
+    }
+
+    fun save() {
+        if (_formState.value.isSaving) return
+        if (!validateFormat()) return
+
+        val state = _formState.value
+        _formState.update { it.copy(isSaving = true) }
+        viewModelScope.launch {
+            val result = authRepository.updateProfile(
+                userId = userId,
+                fullName = state.fullName.trim(),
+                email = state.email.trim(),
+                phoneNumber = state.phoneNumber.trim().ifBlank { null },
+                // Ce formulaire n'édite jamais la photo (voir la KDoc de tête de [ProfileFormState])
+                // — on renvoie sa valeur ACTUELLE (déjà tenue à jour par ProfilePhotoRepositoryImpl,
+                // voir sa doc) pour ne jamais l'écraser silencieusement avec une valeur périmée.
+                profilePhotoUri = photoUiState.value.photoUri
+            )
+            when (result) {
+                is AuthResult.Success -> {
+                    _formState.update { it.copy(isSaving = false) }
+                    _events.emit(ProfileEvent.Saved)
+                }
+                is AuthResult.Failure -> {
+                    _formState.update { it.copy(isSaving = false) }
+                    // EmailAlreadyExists est la seule erreur plausible ici (le format est
+                    // déjà revalidé côté client) : ciblée sur le champ concerné, comme à
+                    // l'inscription.
+                    _formState.update { it.copy(emailError = R.string.register_error_email_taken) }
+                }
+            }
+        }
+    }
+
+    /**
+     * Ne fait QUE nettoyer la session locale ([SessionManager.clearSession]) :
+     * aucune donnée de l'utilisateur (comptes, transactions...) n'est
+     * touchée — voir les instructions du projet ("la déconnexion ne doit
+     * jamais effacer les données").
+     */
+    fun logout() {
+        viewModelScope.launch {
+            sessionManager.clearSession()
+            _events.emit(ProfileEvent.LoggedOut)
+        }
+    }
+
+    private fun validateFormat(): Boolean {
+        val state = _formState.value
+        val fullNameError = if (state.fullName.isBlank()) R.string.register_error_required_field else null
+        val emailError = when {
+            state.email.isBlank() -> R.string.register_error_required_field
+            !AuthValidator.isValidEmail(state.email) -> R.string.register_error_invalid_email
+            else -> null
+        }
+        _formState.update { it.copy(fullNameError = fullNameError, emailError = emailError) }
+        return fullNameError == null && emailError == null
+    }
+}
