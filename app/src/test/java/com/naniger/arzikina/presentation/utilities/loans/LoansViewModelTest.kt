@@ -113,7 +113,11 @@ class LoansViewModelTest {
 
             viewModel.onStatusFilterChange(LoanStatusFilterOption.OVERDUE)
             advanceUntilIdle()
-            val filtered = awaitItem() as AppResult.Success
+            // Le filtre OVERDUE garde exactement la même liste (le seul prêt EST en retard) : l'état
+            // est identique au précédent, et un StateFlow n'émet jamais deux fois la même valeur.
+            // `awaitItem()` attendrait donc indéfiniment : on lit la valeur courante à la place.
+            expectNoEvents()
+            val filtered = viewModel.uiState.value as AppResult.Success
             assertEquals(1, filtered.data.items.size)
 
             viewModel.onStatusFilterChange(LoanStatusFilterOption.REPAID)
