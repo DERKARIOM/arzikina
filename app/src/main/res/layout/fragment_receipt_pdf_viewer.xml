@@ -23,6 +23,7 @@
         android:layout_height="?attr/actionBarSize"
         android:background="?attr/colorSurface"
         app:layout_constraintTop_toTopOf="parent"
+        app:navigationContentDescription="@string/action_back"
         app:navigationIcon="@drawable/ic_arrow_back_24"
         app:titleTextColor="?attr/colorOnSurface"
         tools:title="Facture_electricite_aout.pdf" />
@@ -41,7 +42,7 @@
             android:id="@+id/pageImage"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:contentDescription="@null"
+            android:contentDescription="@string/receipt_viewer_title"
             android:padding="@dimen/spacing_s"
             android:scaleType="fitCenter"
             android:visibility="gone"

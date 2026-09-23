@@ -413,6 +413,8 @@
          garde le numéro déjà enregistré (seuls ses 4 derniers chiffres, %s, sont connus). -->
     <string name="account_form_card_number_helper_edit">Laisser vide pour conserver le numéro se terminant par %s</string>
     <string name="account_form_card_expiry_label">Expiration (MM/AA)</string>
+    <!-- Exemple de saisie (mois/année), voir cardExpiryInput. -->
+    <string name="account_form_card_expiry_hint">MM/AA</string>
     <string name="account_form_card_cvv_label">Code de sécurité (CVV/CVC)</string>
     <!-- Voir excludeFromStatisticsCard (fragment_account_form.xml) et Account.isExcludedFromStatistics :
          permet de détenir de l'argent pour le compte d'un tiers sans qu'il compte dans le patrimoine
@@ -430,6 +432,8 @@
          Visible uniquement pour AccountType.MOBILE_MONEY. -->
     <string name="account_form_mobile_money_section_label">Application Mobile Money</string>
     <string name="account_form_mobile_money_package_label">Package Android</string>
+    <!-- Exemple de nom de package Android, voir mobileMoneyPackageInput. -->
+    <string name="account_form_mobile_money_package_hint">com.exemple.mobilemoney</string>
     <string name="account_form_mobile_money_package_description">Entrez le nom du package Android de l\'application Mobile Money à ouvrir, ou sélectionnez-la dans la liste des applications installées.</string>
     <string name="account_form_mobile_money_select_app_action">Sélectionner une application</string>
     <!-- Nom lisible de l'application détectée pour le package actuellement saisi (voir
@@ -484,6 +488,9 @@
     <string name="category_form_name_label">Nom de la catégorie</string>
     <string name="category_form_icon_label">Icône</string>
     <string name="category_form_color_label">Couleur</string>
+    <!-- Lecteur d'écran (TalkBack) : position dans les sélecteurs d'icône et de couleur (IconPickerAdapter, ColorPickerAdapter). L'état « sélectionné » est annoncé automatiquement. -->
+    <string name="icon_picker_item_description">Icône %1$d sur %2$d</string>
+    <string name="color_picker_item_description">Couleur %1$d sur %2$d</string>
 
     <!-- Transactions -->
     <string name="transactions_add">Ajouter</string>
@@ -581,6 +588,7 @@
     <string name="dashboard_income_label_short">Revenu</string>
     <string name="dashboard_expense_label_short">Dépense</string>
     <string name="dashboard_difference_label">Différence</string>
+    <string name="dashboard_income_expense_title">Dépenses vs revenus</string>
     <string name="dashboard_budget_gap_label">Écart Budget</string>
     <string name="dashboard_budget_title">Budget</string>
     <string name="dashboard_budget_see_all">Voir tout</string>

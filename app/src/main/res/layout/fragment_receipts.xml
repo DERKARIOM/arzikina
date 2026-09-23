@@ -23,6 +23,7 @@
         android:background="?attr/colorSurface"
         app:layout_constraintTop_toTopOf="parent"
         app:menu="@menu/receipts_menu"
+        app:navigationContentDescription="@string/action_back"
         app:navigationIcon="@drawable/ic_arrow_back_24"
         app:title="@string/utility_receipts_title"
         app:titleTextColor="?attr/colorOnSurface" />

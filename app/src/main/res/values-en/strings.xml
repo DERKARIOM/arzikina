@@ -255,12 +255,14 @@
     <string name="account_form_card_number_label">Card number</string>
     <string name="account_form_card_number_helper_edit">Leave empty to keep the number ending in %s</string>
     <string name="account_form_card_expiry_label">Expiry (MM/YY)</string>
+    <string name="account_form_card_expiry_hint">MM/YY</string>
     <string name="account_form_card_cvv_label">Security code (CVV/CVC)</string>
     <string name="account_form_exclude_statistics_label">Exclude from statistics</string>
     <string name="account_form_exclude_statistics_description">This account stays visible and fully usable, but its balance and transactions will no longer count in your personal statistics (dashboard, income/expenses, budgets). Useful for money you manage on someone else\'s behalf.</string>
     <string name="accounts_excluded_from_statistics_indicator">Excluded from personal statistics</string>
     <string name="account_form_mobile_money_section_label">Mobile Money app</string>
     <string name="account_form_mobile_money_package_label">Android package</string>
+    <string name="account_form_mobile_money_package_hint">com.example.mobilemoney</string>
     <string name="account_form_mobile_money_package_description">Enter the Android package name of the Mobile Money app to open, or select it from the list of installed apps.</string>
     <string name="account_form_mobile_money_select_app_action">Select an app</string>
     <string name="account_form_mobile_money_detected_app">Detected app: %s</string>
@@ -293,6 +295,8 @@
     <string name="category_form_name_label">Category name</string>
     <string name="category_form_icon_label">Icon</string>
     <string name="category_form_color_label">Color</string>
+    <string name="icon_picker_item_description">Icon %1$d of %2$d</string>
+    <string name="color_picker_item_description">Color %1$d of %2$d</string>
     <string name="transactions_add">Add</string>
     <string name="transactions_empty_title">No transactions yet</string>
     <string name="transactions_empty_message">Add your first transaction to start tracking your finances.</string>
@@ -365,6 +369,7 @@
     <string name="dashboard_income_label_short">Income</string>
     <string name="dashboard_expense_label_short">Expense</string>
     <string name="dashboard_difference_label">Difference</string>
+    <string name="dashboard_income_expense_title">Expenses vs income</string>
     <string name="dashboard_budget_gap_label">Budget gap</string>
     <string name="dashboard_budget_title">Budget</string>
     <string name="dashboard_budget_see_all">See all</string>

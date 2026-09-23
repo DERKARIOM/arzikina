@@ -20,6 +20,7 @@
         android:layout_height="?attr/actionBarSize"
         android:background="?attr/colorSurface"
         app:layout_constraintTop_toTopOf="parent"
+        app:navigationContentDescription="@string/action_back"
         app:navigationIcon="@drawable/ic_arrow_back_24"
         app:titleCentered="true"
         app:titleTextColor="?attr/colorOnSurface" />
@@ -339,7 +340,7 @@
                                 android:id="@+id/cardExpiryInput"
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
-                                android:hint="MM/AA"
+                                android:hint="@string/account_form_card_expiry_hint"
                                 android:inputType="number"
                                 android:maxLength="5"
                                 android:maxLines="1" />
@@ -415,7 +416,7 @@
                             android:id="@+id/mobileMoneyPackageInput"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:hint="com.exemple.mobilemoney"
+                            android:hint="@string/account_form_mobile_money_package_hint"
                             android:inputType="text"
                             android:maxLines="1" />
 
