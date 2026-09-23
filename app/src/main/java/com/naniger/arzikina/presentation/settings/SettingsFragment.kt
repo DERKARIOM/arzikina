@@ -18,6 +18,7 @@ import coil3.load
 import com.naniger.arzikina.R
 import com.naniger.arzikina.databinding.FragmentSettingsBinding
 import com.naniger.arzikina.databinding.ItemSettingsRowBinding
+import com.naniger.arzikina.domain.model.AppLanguage
 import com.naniger.arzikina.domain.model.ThemeMode
 import com.naniger.arzikina.domain.model.SupportedCurrency
 import com.naniger.arzikina.presentation.components.NavAnimations
@@ -55,6 +56,7 @@ class SettingsFragment : Fragment(R.layout.fragment_settings) {
 
         setUpProfileRow(viewBinding)
         setUpGeneralSection(viewBinding)
+        viewModel.refreshLanguageState()
         setUpSecuritySection(viewBinding)
         setUpAccountsSection(viewBinding)
         setUpTransactionsSection(viewBinding)
@@ -66,6 +68,7 @@ class SettingsFragment : Fragment(R.layout.fragment_settings) {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch { viewModel.uiState.collect { state -> render(viewBinding, state) } }
+                launch { viewModel.languageState.collect { state -> renderLanguage(viewBinding, state) } }
                 launch { viewModel.biometricLockState.collect { state -> renderBiometricLock(viewBinding, state) } }
                 launch { viewModel.syncNowState.collect { state -> renderSyncNow(viewBinding, state) } }
                 launch { viewModel.syncIndicatorState.collect { state -> renderSyncIndicator(viewBinding, state) } }
@@ -87,9 +90,8 @@ class SettingsFragment : Fragment(R.layout.fragment_settings) {
     }
 
     /**
-     * `languageRow` reste sans `setOnClickListener` (voir sa doc dans fragment_settings.xml) :
-     * pas d'action tant qu'aucune langue alternative n'existe, pour ne jamais laisser croire à un
-     * réglage fantôme.
+     * `languageRow` : ouvre le sélecteur de langue (voir [showLanguagePicker]). Sa valeur affichée
+     * est remplie par [renderLanguage].
      */
     private fun setUpGeneralSection(binding: FragmentSettingsBinding) {
         binding.currencyRow.rowIcon.setImageResource(R.drawable.ic_payments_24)
@@ -106,13 +108,20 @@ class SettingsFragment : Fragment(R.layout.fragment_settings) {
 
         binding.languageRow.rowIcon.setImageResource(R.drawable.ic_language_24)
         binding.languageRow.rowTitle.setText(R.string.settings_section_language)
-        binding.languageRow.rowSubtitle.setText(R.string.settings_language_french_only)
+        binding.languageRow.rowSubtitle.setText(R.string.settings_language_description)
         binding.languageRow.rowValue.visibility = View.VISIBLE
-        binding.languageRow.rowValue.setText(R.string.settings_language_value)
-        binding.languageRow.rowChevron.visibility = View.GONE
-        binding.languageRow.root.isClickable = false
-        binding.languageRow.root.isFocusable = false
-        binding.languageRow.root.background = null
+        binding.languageRow.root.setOnClickListener {
+            showLanguagePicker(viewModel.languageState.value.selected, viewModel::onLanguageChange)
+        }
+    }
+
+    /** « Français », « English », ou « Système (English) » quand la langue suit le téléphone. */
+    private fun renderLanguage(binding: FragmentSettingsBinding, state: LanguageUiState) {
+        binding.languageRow.rowValue.text = if (state.selected == AppLanguage.SYSTEM) {
+            getString(R.string.settings_language_system_resolved, getString(state.effective.displayNameRes()))
+        } else {
+            getString(state.selected.displayNameRes())
+        }
     }
 
     /**
@@ -277,8 +286,8 @@ class SettingsFragment : Fragment(R.layout.fragment_settings) {
      * jusqu'ici sur 11 lignes distinctes (changePasswordRow, securityQuestionRow, accountsRow,
      * transactionsRow, categoriesRow, recurringRow, budgetRow, loansRow, statisticsRow,
      * backupRow, syncRow). Volontairement PAS utilisé par `biometricLockRow` (switch, pas de
-     * navigation) ni `languageRow` (ligne désactivée, voir sa doc) : ces deux-là restent des cas
-     * particuliers gérés explicitement.
+     * navigation) ni `languageRow` (sélecteur, voir [setUpGeneralSection]) : ces deux-là restent
+     * des cas particuliers gérés explicitement.
      */
     private fun bindNavigationRow(
         row: ItemSettingsRowBinding,
@@ -381,8 +390,8 @@ class SettingsFragment : Fragment(R.layout.fragment_settings) {
      *  que la connexion se fait désormais depuis l'écran de connexion de l'app — jamais un état
      *  vide, contrairement à avant D4 où cette ligne se contentait de naviguer sans rien afficher.
      *  Clic désactivé quand non connecté (voir [setUpSyncSection] : aucune action possible dans ce
-     *  cas) — même principe que `languageRow`, seule différence : dynamique ici plutôt que figé,
-     *  l'état pouvant changer en cours d'écran (connexion/déconnexion sur un autre écran). */
+     *  cas). Dynamique : l'état peut changer en cours d'écran (connexion/déconnexion sur un autre
+     *  écran). */
     private fun renderSyncAccount(binding: FragmentSettingsBinding, state: SyncAccountUiState) {
         binding.syncRow.rowSubtitle.text = if (state.isConnected) {
             getString(R.string.settings_sync_connected_as, state.fullName)

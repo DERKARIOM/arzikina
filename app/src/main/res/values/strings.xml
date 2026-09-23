@@ -33,8 +33,20 @@
     <string name="settings_currency_label">Devise</string>
     <string name="settings_dialog_currency_title">Choisir la devise</string>
     <string name="settings_section_language">Langue</string>
-    <string name="settings_language_french_only">Français uniquement</string>
-    <string name="settings_language_value">Français</string>
+    <!-- Paramètres → Langue (voir SettingsFragment.setUpGeneralSection, LanguagePickerDialog.kt). -->
+    <string name="settings_language_description">Langue de l\'interface</string>
+    <string name="settings_dialog_language_title">Choisir la langue</string>
+    <string name="settings_language_system">Langue du système</string>
+    <!-- Valeur affichée quand la langue suit le téléphone. %1$s = langue réellement utilisée
+         (language_name_french / language_name_english). Ex. : « Système (English) ». -->
+    <string name="settings_language_system_resolved">Système (%1$s)</string>
+    <string name="settings_language_option_system">🌐 Langue du système</string>
+    <!-- Noms de langue TOUJOURS écrits dans leur propre langue, quelle que soit la langue de
+         l'interface (voir AppLanguageDisplay.kt) : jamais traduits. -->
+    <string name="language_name_french" translatable="false">Français</string>
+    <string name="language_name_english" translatable="false">English</string>
+    <string name="settings_language_option_french" translatable="false">🇫🇷 Français</string>
+    <string name="settings_language_option_english" translatable="false">🇬🇧 English</string>
 
     <!-- Section Sécurité (voir securityCard, fragment_settings.xml) : réutilise volontairement
          EXACTEMENT les mêmes chaînes que fragment_profile.xml pour le verrouillage biométrique

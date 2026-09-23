@@ -1,5 +1,6 @@
 package com.naniger.arzikina.di
 
+import com.naniger.arzikina.data.locale.AppLanguageRepositoryImpl
 import com.naniger.arzikina.data.repository.AccountRepositoryImpl
 import com.naniger.arzikina.data.repository.AuthRepositoryImpl
 import com.naniger.arzikina.data.repository.BackupRepositoryImpl
@@ -24,6 +25,7 @@ import com.naniger.arzikina.data.repository.UnifiedAuthRepositoryImpl
 import com.naniger.arzikina.data.repository.UserPreferencesRepositoryImpl
 import com.naniger.arzikina.work.AutomationSchedulerImpl
 import com.naniger.arzikina.domain.repository.AccountRepository
+import com.naniger.arzikina.domain.repository.AppLanguageRepository
 import com.naniger.arzikina.domain.repository.AuthRepository
 import com.naniger.arzikina.domain.repository.AutomationScheduler
 import com.naniger.arzikina.domain.repository.BackupRepository
@@ -158,6 +160,11 @@ abstract class RepositoryModule {
 
     /** Cahier des charges "Marketplace personnelle" — voir la KDoc de [TransactionTemplateRepository]
      *  (bibliothèque personnelle de modèles de transaction, aucun lien avec une marketplace publique). */
+    /** Langue de l'interface (par appareil) — voir [AppLanguageRepositoryImpl]. */
+    @Binds
+    @Singleton
+    abstract fun bindAppLanguageRepository(impl: AppLanguageRepositoryImpl): AppLanguageRepository
+
     @Binds
     @Singleton
     abstract fun bindTransactionTemplateRepository(impl: TransactionTemplateRepositoryImpl): TransactionTemplateRepository

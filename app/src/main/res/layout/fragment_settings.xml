@@ -209,9 +209,8 @@
                         android:layout_height="1dp"
                         android:background="@drawable/divider_on_balance_card" />
 
-                    <!-- Informatif UNIQUEMENT (voir SettingsFragment.setUpGeneralSection) : aucune
-                         langue alternative n'existe encore, cette ligne n'est ni cliquable ni
-                         dotée d'un chevron pour ne pas laisser croire à une action possible. -->
+                    <!-- Ouvre le sélecteur de langue (Système / Français / English), voir
+                         SettingsFragment.setUpGeneralSection et LanguagePickerDialog.kt. -->
                     <include
                         android:id="@+id/languageRow"
                         layout="@layout/item_settings_row" />

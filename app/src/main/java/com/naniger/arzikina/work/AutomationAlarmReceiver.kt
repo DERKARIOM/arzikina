@@ -3,6 +3,7 @@ package com.naniger.arzikina.work
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import com.naniger.arzikina.data.locale.LocalizedContextProvider
 import com.naniger.arzikina.domain.repository.AutomationScheduler
 import com.naniger.arzikina.domain.repository.RecurringTransactionRepository
 import dagger.hilt.android.AndroidEntryPoint
@@ -34,6 +35,11 @@ class AutomationAlarmReceiver : BroadcastReceiver() {
 
     @Inject
     lateinit var automationScheduler: AutomationScheduler
+
+    /** Voir [LocalizedContextProvider] : sur Android 8 à 12, le [Context] reçu ici est dans la
+     *  langue du téléphone, pas dans celle choisie dans Arzikina. */
+    @Inject
+    lateinit var localizedContextProvider: LocalizedContextProvider
 
     override fun onReceive(context: Context, intent: Intent) {
         val recurringTransactionId = intent.getLongExtra(EXTRA_RECURRING_TRANSACTION_ID, NO_ID)
@@ -84,7 +90,7 @@ class AutomationAlarmReceiver : BroadcastReceiver() {
         // dernière fois sans ce test, affichant à tort un rappel pour une automatisation déjà
         // terminée alors qu'aucune occurrence n'a été générée pour elle dans ce passage.
         if (rule.isActive) {
-            AutomationNotifier.notifyTrigger(context, rule)
+            AutomationNotifier.notifyTrigger(localizedContextProvider.localize(context), rule)
         }
     }
 

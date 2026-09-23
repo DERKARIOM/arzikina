@@ -2,7 +2,9 @@ package com.naniger.arzikina.presentation.settings
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.naniger.arzikina.domain.model.AppLanguage
 import com.naniger.arzikina.domain.model.ThemeMode
+import com.naniger.arzikina.domain.repository.AppLanguageRepository
 import com.naniger.arzikina.domain.repository.AuthRepository
 import com.naniger.arzikina.domain.repository.BiometricAuthenticator
 import com.naniger.arzikina.domain.repository.SessionManager
@@ -60,6 +62,15 @@ data class SyncAccountUiState(
 )
 
 /**
+ * Ligne « Langue » (voir `SettingsFragment.renderLanguage`). [effective] est la langue réellement
+ * affichée : utile quand [selected] vaut [AppLanguage.SYSTEM], pour afficher « Système (English) ».
+ */
+data class LanguageUiState(
+    val selected: AppLanguage = AppLanguage.SYSTEM,
+    val effective: AppLanguage = AppLanguage.DEFAULT
+)
+
+/**
  * ViewModel de l'écran Paramètres. Volontairement séparé de [BackupViewModel] (préférences vs
  * sauvegarde/restauration, deux responsabilités indépendantes qui ne partagent que le même écran
  * — voir la doc de tête de [BackupViewModel]).
@@ -76,7 +87,8 @@ class SettingsViewModel @Inject constructor(
     sessionManager: SessionManager,
     private val biometricAuthenticator: BiometricAuthenticator,
     private val syncButtonController: SyncButtonController,
-    private val syncAuthRepository: SyncAuthRepository
+    private val syncAuthRepository: SyncAuthRepository,
+    private val appLanguageRepository: AppLanguageRepository
 ) : ViewModel() {
 
     /** Voir [SyncButtonController] : logique partagée avec `DashboardViewModel`, extraite de cet
@@ -122,6 +134,16 @@ class SettingsViewModel @Inject constructor(
             initialValue = SyncAccountUiState()
         )
 
+    /**
+     * StateFlow séparé de [uiState] : la langue ne vient ni de Room ni du DataStore observé, mais
+     * de l'API de langue d'Android, qui n'offre pas de flux observable. Relue par
+     * [refreshLanguageState] à chaque (re)création de la vue : ce ViewModel survit à la
+     * reconstruction de l'écran qui suit un changement de langue, y compris un changement fait
+     * depuis les réglages Android 13+.
+     */
+    private val _languageState = MutableStateFlow(readLanguageState())
+    val languageState: StateFlow<LanguageUiState> = _languageState.asStateFlow()
+
     val uiState: StateFlow<SettingsUiState> = combine(
         userPreferencesRepository.observePreferences(),
         sessionManager.observeCurrentUserId().flatMapLatest { userId ->
@@ -166,6 +188,24 @@ class SettingsViewModel @Inject constructor(
     fun onBiometricLockToggle(enabled: Boolean) {
         viewModelScope.launch { userPreferencesRepository.setBiometricLockEnabled(enabled) }
     }
+
+    fun refreshLanguageState() {
+        _languageState.value = readLanguageState()
+    }
+
+    /** L'écran est reconstruit par Android juste après l'application de la nouvelle langue : aucune
+     *  navigation ni rechargement manuel n'est nécessaire, et aucune donnée n'est touchée. */
+    fun onLanguageChange(language: AppLanguage) {
+        viewModelScope.launch {
+            appLanguageRepository.setLanguage(language)
+            refreshLanguageState()
+        }
+    }
+
+    private fun readLanguageState() = LanguageUiState(
+        selected = appLanguageRepository.getSelectedLanguage(),
+        effective = appLanguageRepository.getEffectiveLanguage()
+    )
 
     /** Voir [SyncButtonController.syncNow] pour le détail (ordre push/pull, garde de ré-entrance). */
     fun syncNow() = syncButtonController.syncNow(viewModelScope)

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Langues proposées par Android 13+ dans Réglages → Applications → Arzikina → Langue (voir
+    android:localeConfig dans AndroidManifest.xml). DOIT rester aligné sur
+    domain/model/AppLanguage.kt et sur androidResources.localeFilters (app/build.gradle.kts).
+    "fr" en premier : langue de référence d'Arzikina (dossier res/values/ sans qualificatif).
+-->
+<locale-config xmlns:android="http://schemas.android.com/apk/res/android">
+    <locale android:name="fr" />
+    <locale android:name="en" />
+</locale-config>

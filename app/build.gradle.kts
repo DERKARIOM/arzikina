@@ -39,6 +39,14 @@ android {
     buildFeatures {
         viewBinding = true
     }
+
+    // Internationalisation : ne conserve dans l'APK que les langues réellement supportées par
+    // Arzikina (voir domain/model/AppLanguage.kt et res/xml/locales_config.xml). Les bibliothèques
+    // (Material, AppCompat…) embarquent sinon des dizaines de langues que l'interface n'utilise
+    // jamais : APK plus léger, et textes des composants limités au français et à l'anglais.
+    androidResources {
+        localeFilters += listOf("fr", "en")
+    }
 }
 
 // Room : conserve l'historique des schémas pour sécuriser les futures migrations

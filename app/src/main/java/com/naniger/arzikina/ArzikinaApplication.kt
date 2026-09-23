@@ -5,6 +5,7 @@ import androidx.appcompat.app.AppCompatDelegate
 import androidx.hilt.work.HiltWorkerFactory
 import androidx.work.Configuration
 import com.naniger.arzikina.domain.model.ThemeMode
+import com.naniger.arzikina.domain.repository.AppLanguageRepository
 import com.naniger.arzikina.domain.repository.AutomationScheduler
 import com.naniger.arzikina.domain.repository.RecurringTransactionRepository
 import com.naniger.arzikina.domain.repository.UserPreferencesRepository
@@ -81,6 +82,9 @@ class ArzikinaApplication : Application(), Configuration.Provider {
     @Inject
     lateinit var userPreferencesRepository: UserPreferencesRepository
 
+    @Inject
+    lateinit var appLanguageRepository: AppLanguageRepository
+
     override val workManagerConfiguration: Configuration
         get() = Configuration.Builder()
             .setWorkerFactory(workerFactory)
@@ -89,6 +93,9 @@ class ArzikinaApplication : Application(), Configuration.Provider {
     override fun onCreate() {
         super.onCreate()
         applyStoredThemeMode()
+        // Même raison que le thème : la langue doit être appliquée AVANT la première Activity
+        // (voir AppLanguageRepositoryImpl.restoreOnStartup).
+        appLanguageRepository.restoreOnStartup()
         PDFBoxResourceLoader.init(applicationContext)
         RecurringOccurrencesScheduler.schedule(this)
         rescheduleActiveAutomations()
