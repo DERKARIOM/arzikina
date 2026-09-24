@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Fond de l'aperçu « Après ce versement » (voir bottom_sheet_savings_contribution.xml). Couleur du
+     thème : suit automatiquement le mode clair / sombre. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <corners android:radius="12dp" />
+    <solid android:color="?attr/colorSurfaceContainerHigh" />
+</shape>

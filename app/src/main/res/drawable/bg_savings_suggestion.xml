@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Encadré « ≈ X par mois pour tenir l'échéance » (voir item_savings_goal.xml). -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <corners android:radius="@dimen/spacing_s" />
+    <solid android:color="@color/savings_suggestion_bg" />
+</shape>

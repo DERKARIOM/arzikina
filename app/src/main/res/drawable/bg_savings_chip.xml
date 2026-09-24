@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Puce d'échéance d'un objectif d'épargne (voir item_savings_goal.xml). Blanche ici : la
+     couleur réelle est posée par SavingsGoalsAdapter (backgroundTintList) selon l'état. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <corners android:radius="999dp" />
+    <solid android:color="@android:color/white" />
+</shape>

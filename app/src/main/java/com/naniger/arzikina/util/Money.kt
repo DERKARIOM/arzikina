@@ -123,11 +123,13 @@ object Money {
     /** Formate un [CurrencyAmount] pour l'AFFICHAGE, avec le symbole de sa devise
      * et un séparateur de milliers (ex. "10 000 F CFA", ou "10 000,50 F CFA" si le
      * montant a réellement des centimes — voir [formatAmount]). */
-    fun format(amount: CurrencyAmount): String {
-        val symbol = SupportedCurrency.entries.firstOrNull { it.code == amount.currencyCode }?.symbol
-            ?: amount.currencyCode
-        return "${formatAmount(amount.amountMinor)} $symbol"
-    }
+    fun format(amount: CurrencyAmount): String =
+        "${formatAmount(amount.amountMinor)} ${symbolOf(amount.currencyCode)}"
+
+    /** Symbole d'affichage d'une devise (« F CFA », « € »…), ou son code ISO si elle ne fait pas
+     * partie de [SupportedCurrency]. Sert aussi de suffixe aux champs de saisie de montant. */
+    fun symbolOf(currencyCode: String): String =
+        SupportedCurrency.entries.firstOrNull { it.code == currencyCode }?.symbol ?: currencyCode
 
     /**
      * Formate un montant pour l'AFFICHAGE, sans devise : séparateur de milliers

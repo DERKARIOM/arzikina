@@ -142,4 +142,22 @@
          noire discrète), pour le distinguer visuellement de Budget total/Dépensé sans introduire une
          nouvelle teinte hors de l'identité Arsikina. -->
     <color name="arzikina_highlight_on_budget_card">#26000000</color>
+
+    <!-- Objectifs d'épargne (voir item_savings_goal.xml, SavingsGoalsAdapter). Couleurs FIXES
+         (identiques en thème clair et sombre) : chaque texte est posé sur son propre fond clair,
+         contraste ≥ 4,5:1 dans les deux thèmes. -->
+    <color name="savings_track_on_dark">#FF334155</color>
+    <color name="savings_completed">#FF177A5E</color>
+    <color name="savings_avatar_bg">#FFE3F5EF</color>
+    <color name="savings_avatar_text">#FF177A5E</color>
+    <color name="savings_chip_neutral_bg">#FFEEF2F1</color>
+    <color name="savings_chip_neutral_text">#FF3E4E55</color>
+    <color name="savings_chip_soon_bg">#FFFEF3C7</color>
+    <color name="savings_chip_soon_text">#FF8A4B00</color>
+    <color name="savings_chip_done_bg">#FFDCF3EA</color>
+    <color name="savings_chip_done_text">#FF0F5C46</color>
+    <color name="savings_chip_overdue_bg">#FFFDE2E2</color>
+    <color name="savings_chip_overdue_text">#FF9B1C1C</color>
+    <color name="savings_suggestion_bg">#FFEEF8F4</color>
+    <color name="savings_suggestion_text">#FF1E5A48</color>
 </resources>

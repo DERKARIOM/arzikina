@@ -846,12 +846,8 @@
     <string name="savings_goals_delete_title">Supprimer cet objectif ?</string>
     <string name="savings_goals_delete_message">Supprimer « %1$s » ? Cette action est irréversible.</string>
     <string name="savings_goal_completed">Objectif atteint</string>
-    <string name="savings_goal_contribute_action">Ajouter une contribution</string>
-    <string name="savings_goal_contribute_title">Ajouter à « %1$s »</string>
-    <string name="savings_goal_contribute_amount_label">Montant à ajouter</string>
     <string name="savings_goal_deadline_overdue">Échéance dépassée (%1$s)</string>
     <string name="savings_goal_deadline_today">Échéance aujourd\'hui</string>
-    <string name="savings_goal_deadline_remaining">%1$s · %2$d jours restants</string>
     <string name="savings_goal_form_title_add">Nouvel objectif</string>
     <string name="savings_goal_form_title_edit">Modifier l\'objectif</string>
     <string name="savings_goal_form_name_label">Nom de l\'objectif</string>
@@ -859,6 +855,46 @@
     <string name="savings_goal_form_current_label">Montant déjà épargné</string>
     <string name="savings_goal_form_deadline_toggle">Définir une échéance</string>
     <string name="savings_goal_form_deadline_label">Échéance</string>
+    <!-- Écran « Mes objectifs d'épargne » (voir presentation/savings/). -->
+    <string name="utility_savings_goals_title">Épargne</string>
+    <string name="savings_goals_summary_label">Total épargné</string>
+    <string name="savings_goals_summary_target">sur %1$s visés</string>
+    <string name="savings_goals_section_active">En cours</string>
+    <string name="savings_goals_section_completed">Atteints</string>
+    <string name="savings_goals_create_action">Créer un objectif</string>
+    <string name="savings_goal_amount_of">sur %1$s</string>
+    <string name="savings_goal_progress_percent">%1$d %%</string>
+    <string name="savings_goal_no_deadline">Sans échéance</string>
+    <string name="savings_goal_suggestion_monthly">≈ %1$s par mois pour tenir l\'échéance</string>
+    <string name="savings_goal_suggestion_before_deadline">%1$s à épargner d\'ici l\'échéance</string>
+    <string name="savings_goal_actions_content_description">Actions de l\'objectif</string>
+    <!-- Panneau « Ajouter / Retirer » (voir SavingsContributionBottomSheet). -->
+    <string name="savings_contribution_type_group">Type de mouvement</string>
+    <string name="savings_contribution_deposit">Ajouter</string>
+    <string name="savings_contribution_withdraw">Retirer</string>
+    <string name="savings_contribution_saved_of">%1$s épargnés sur %2$s</string>
+    <string name="savings_contribution_amount_label">Montant</string>
+    <string name="savings_contribution_preview_deposit">Après ce versement</string>
+    <string name="savings_contribution_preview_withdraw">Après ce retrait</string>
+    <string name="savings_contribution_preview_value">%1$s · %2$d %%</string>
+    <string name="savings_contribution_reaches_target">Ce versement atteint l\'objectif</string>
+    <string name="savings_contribution_exceeds_saved">Impossible de retirer plus que les %1$s épargnés</string>
+    <string name="savings_contribution_confirm">Valider</string>
+    <string name="savings_celebration_title">Objectif atteint !</string>
+    <string name="savings_celebration_message">Bravo ! Tu as épargné %1$s pour « %2$s ».</string>
+    <string name="savings_celebration_action">Super</string>
+    <plurals name="savings_goal_deadline_remaining">
+        <item quantity="one">%1$s · %2$d jour restant</item>
+        <item quantity="other">%1$s · %2$d jours restants</item>
+    </plurals>
+    <plurals name="savings_goals_summary_count">
+        <item quantity="one">%d objectif</item>
+        <item quantity="other">%d objectifs</item>
+    </plurals>
+    <plurals name="savings_goals_summary_completed">
+        <item quantity="one">%d atteint</item>
+        <item quantity="other">%d atteints</item>
+    </plurals>
 
     <!--
         Prêts / Emprunts — écran principal (voir presentation/utilities/loans/LoansFragment).

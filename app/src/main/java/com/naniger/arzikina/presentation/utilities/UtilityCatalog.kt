@@ -7,7 +7,7 @@ import com.naniger.arzikina.R
  * ([com.naniger.arzikina.presentation.dashboard.DashboardFragment]) et l'écran complet
  * ([AllUtilitiesFragment]) ne divergent en dupliquant chacun leur propre liste.
  *
- * Aujourd'hui les deux écrans affichent la totalité de [all] (7 entrées). Quand
+ * Aujourd'hui les deux écrans affichent la totalité de [all] (8 entrées). Quand
  * d'autres utilitaires seront ajoutés (calculateur d'intérêts, convertisseur de devises,
  * rappels...), il faudra probablement que le Dashboard n'en affiche plus qu'une sélection
  * restreinte (les plus utilisés) plutôt que la totalité — à ce moment-là, ajouter ici un
@@ -35,6 +35,12 @@ object UtilityCatalog {
             iconRes = R.drawable.ic_financial_plan_utility_24,
             titleRes = R.string.utility_financial_plans_title,
             destinationId = R.id.financialPlansFragment
+        ),
+        // Objectifs d'épargne — voir presentation/savings/SavingsGoalsFragment.
+        UtilityItem(
+            iconRes = R.drawable.ic_account_savings_24,
+            titleRes = R.string.utility_savings_goals_title,
+            destinationId = R.id.savingsGoalsFragment
         ),
         UtilityItem(
             iconRes = R.drawable.sauvegarde,

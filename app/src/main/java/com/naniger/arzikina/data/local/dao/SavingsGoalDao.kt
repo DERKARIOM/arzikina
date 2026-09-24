@@ -47,8 +47,11 @@ interface SavingsGoalDao {
     /** [updatedAt] désormais un paramètre explicite (plus un simple `currentAmount + delta` sans
      * horodatage) : une contribution est une écriture comme une autre pour la synchronisation (voir
      * `SavingsGoalRepositoryImpl.addContribution`), elle doit faire progresser `updatedAt` exactement
-     * comme `upsert` — sinon le serveur ne la verrait jamais lors du prochain push. */
-    @Query("UPDATE savings_goals SET currentAmount = currentAmount + :amountDelta, updatedAt = :updatedAt WHERE id = :id AND userId = :userId")
+     * comme `upsert` — sinon le serveur ne la verrait jamais lors du prochain push.
+     *
+     * `MAX(0, …)` : un retrait ne peut jamais rendre le montant négatif, même si deux retraits
+     * partent en même temps (l'interface bloque déjà ce cas, voir `SavingsContribution.preview`). */
+    @Query("UPDATE savings_goals SET currentAmount = MAX(0, currentAmount + :amountDelta), updatedAt = :updatedAt WHERE id = :id AND userId = :userId")
     suspend fun addContribution(id: Long, amountDelta: Long, userId: Long, updatedAt: Long)
 
     /** Suppression DOUCE (voir la doc de tête) : `deletedAt`/`updatedAt` seulement, même principe

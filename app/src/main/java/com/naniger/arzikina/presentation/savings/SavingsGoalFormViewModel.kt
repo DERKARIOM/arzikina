@@ -7,8 +7,12 @@ import androidx.lifecycle.viewModelScope
 import com.naniger.arzikina.R
 import com.naniger.arzikina.domain.model.SavingsGoal
 import com.naniger.arzikina.domain.repository.SavingsGoalRepository
+import com.naniger.arzikina.domain.repository.UserPreferencesRepository
 import com.naniger.arzikina.util.Constants
+import com.naniger.arzikina.util.DatePeriods
 import com.naniger.arzikina.util.Money
+import com.naniger.arzikina.util.SavingsGoalProgress
+import com.naniger.arzikina.util.SavingsSuggestion
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -16,32 +20,37 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.LocalDate
-import java.time.ZoneId
 import javax.inject.Inject
 
 /**
- * État du formulaire d'ajout/édition d'un objectif d'épargne.
+ * État du formulaire d'ajout/édition d'un objectif d'épargne. Les montants restent du texte saisi
+ * (formaté en direct par `MoneyInputFormatter`) jusqu'à l'enregistrement.
  *
- * `SavingsGoal.id == 0L` fait office de sentinelle "nouvel objectif" (même
- * convention que [SavingsGoal.id]). `hasDeadline` détermine si [deadlineMillis]
- * est réellement utilisé à l'enregistrement (voir [save]) : l'échéance est
- * optionnelle dans le domaine.
+ * [suggestion] : « ≈ X par mois » recalculé à chaque saisie (voir [SavingsGoalProgress.suggestionOf]),
+ * `null` sans échéance ou avec des montants encore invalides.
  */
 data class SavingsGoalFormState(
     val name: String = "",
     val targetInput: String = "",
-    val currentInput: String = "0",
+    val currentInput: String = "",
     val currencyCode: String = Constants.DEFAULT_CURRENCY_CODE,
     val hasDeadline: Boolean = false,
-    val deadlineMillis: Long = System.currentTimeMillis(),
+    val deadlineMillis: Long = defaultDeadlineMillis(),
     val createdAt: Long? = null,
+    val suggestion: SavingsSuggestion? = null,
     @StringRes val nameError: Int? = null,
     @StringRes val targetError: Int? = null,
     @StringRes val currentError: Int? = null
-)
+) {
+    private companion object {
+        /** Échéance proposée quand l'utilisateur active l'interrupteur : dans 3 mois. */
+        fun defaultDeadlineMillis(): Long = DatePeriods.toEpochMillis(LocalDate.now().plusMonths(3))
+    }
+}
 
 sealed interface SavingsGoalFormEvent {
     data object Saved : SavingsGoalFormEvent
@@ -51,10 +60,11 @@ sealed interface SavingsGoalFormEvent {
 @HiltViewModel
 class SavingsGoalFormViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
-    private val savingsGoalRepository: SavingsGoalRepository
+    private val savingsGoalRepository: SavingsGoalRepository,
+    private val userPreferencesRepository: UserPreferencesRepository
 ) : ViewModel() {
 
-    private val goalId: Long = savedStateHandle.get<Long>(SAVINGS_GOAL_ID_ARG) ?: 0L
+    private val goalId: Long = SavingsGoalFormFragmentArgs.fromSavedStateHandle(savedStateHandle).savingsGoalId
     val isEditMode: Boolean = goalId != 0L
 
     private val _formState = MutableStateFlow(SavingsGoalFormState())
@@ -64,69 +74,56 @@ class SavingsGoalFormViewModel @Inject constructor(
     val events: SharedFlow<SavingsGoalFormEvent> = _events.asSharedFlow()
 
     init {
-        if (isEditMode) {
-            viewModelScope.launch {
+        viewModelScope.launch {
+            if (isEditMode) {
                 savingsGoalRepository.getSavingsGoal(goalId)?.let { goal ->
-                    _formState.update {
+                    updateState {
                         it.copy(
                             name = goal.name,
-                            targetInput = Money.formatMajorUnits(goal.targetAmount),
-                            currentInput = Money.formatMajorUnits(goal.currentAmount),
+                            targetInput = Money.formatForInput(goal.targetAmount),
+                            currentInput = Money.formatForInput(goal.currentAmount),
                             currencyCode = goal.currencyCode,
                             hasDeadline = goal.deadline != null,
-                            deadlineMillis = goal.deadline ?: System.currentTimeMillis(),
+                            deadlineMillis = goal.deadline ?: it.deadlineMillis,
                             createdAt = goal.createdAt
                         )
                     }
                 }
+            } else {
+                // Nouvel objectif : la devise principale choisie dans Paramètres, pas une valeur figée.
+                val mainCurrency = userPreferencesRepository.observePreferences().first().currencyCode
+                updateState { it.copy(currencyCode = mainCurrency) }
             }
         }
     }
 
-    fun onNameChange(value: String) {
-        _formState.update { it.copy(name = value, nameError = null) }
-    }
+    fun onNameChange(value: String) = updateState { it.copy(name = value, nameError = null) }
 
-    fun onTargetChange(value: String) {
-        _formState.update { it.copy(targetInput = value, targetError = null) }
-    }
+    fun onTargetChange(value: String) = updateState { it.copy(targetInput = value, targetError = null) }
 
-    fun onCurrentChange(value: String) {
-        _formState.update { it.copy(currentInput = value, currentError = null) }
-    }
+    fun onCurrentChange(value: String) = updateState { it.copy(currentInput = value, currentError = null) }
 
-    fun onCurrencyChange(code: String) {
-        _formState.update { it.copy(currencyCode = code) }
-    }
+    fun onCurrencyChange(code: String) = updateState { it.copy(currencyCode = code) }
 
-    fun onHasDeadlineChange(hasDeadline: Boolean) {
-        _formState.update { it.copy(hasDeadline = hasDeadline) }
-    }
+    fun onHasDeadlineChange(hasDeadline: Boolean) = updateState { it.copy(hasDeadline = hasDeadline) }
 
-    /** L'échéance est une simple date, sans heure : toujours ramenée à minuit. */
-    fun onDeadlineChange(date: LocalDate) {
-        _formState.update {
-            it.copy(deadlineMillis = date.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli())
-        }
-    }
+    /** [epochMillis] : début de journée, heure locale (voir le sélecteur de date du Fragment). */
+    fun onDeadlineChange(epochMillis: Long) = updateState { it.copy(deadlineMillis = epochMillis) }
 
     fun save() {
         val state = _formState.value
         val trimmedName = state.name.trim()
-        if (trimmedName.isEmpty()) {
-            _formState.update { it.copy(nameError = R.string.error_name_required) }
-            return
-        }
+        val targetMinor = Money.parseToMinorUnits(state.targetInput)?.takeIf { it > 0L }
+        val currentMinor = parseCurrent(state.currentInput)
 
-        val targetMinor = Money.parseToMinorUnits(state.targetInput)
-        if (targetMinor == null || targetMinor <= 0L) {
-            _formState.update { it.copy(targetError = R.string.error_invalid_target_amount) }
-            return
-        }
-
-        val currentMinor = Money.parseToMinorUnits(state.currentInput)
-        if (currentMinor == null) {
-            _formState.update { it.copy(currentError = R.string.error_invalid_amount) }
+        if (trimmedName.isEmpty() || targetMinor == null || currentMinor == null) {
+            _formState.update {
+                it.copy(
+                    nameError = if (trimmedName.isEmpty()) R.string.error_name_required else null,
+                    targetError = if (targetMinor == null) R.string.error_invalid_target_amount else null,
+                    currentError = if (currentMinor == null) R.string.error_invalid_amount else null
+                )
+            }
             return
         }
 
@@ -154,7 +151,24 @@ class SavingsGoalFormViewModel @Inject constructor(
         }
     }
 
-    private companion object {
-        const val SAVINGS_GOAL_ID_ARG = "savingsGoalId"
+    /** Toute mise à jour passe par ici pour que [SavingsGoalFormState.suggestion] reste à jour. */
+    private fun updateState(transform: (SavingsGoalFormState) -> SavingsGoalFormState) {
+        _formState.update { current -> transform(current).let { it.copy(suggestion = suggestionOf(it)) } }
     }
+
+    private fun suggestionOf(state: SavingsGoalFormState): SavingsSuggestion? {
+        if (!state.hasDeadline) return null
+        val target = Money.parseToMinorUnits(state.targetInput)?.takeIf { it > 0L } ?: return null
+        val current = parseCurrent(state.currentInput) ?: return null
+        return SavingsGoalProgress.suggestionOf(
+            currentAmount = current,
+            targetAmount = target,
+            deadline = DatePeriods.toLocalDate(state.deadlineMillis),
+            today = LocalDate.now()
+        )
+    }
+
+    /** Champ « déjà épargné » laissé vide = 0 ; sinon un montant positif valide (`null` = invalide). */
+    private fun parseCurrent(input: String): Long? =
+        if (input.isBlank()) 0L else Money.parseToMinorUnits(input)
 }

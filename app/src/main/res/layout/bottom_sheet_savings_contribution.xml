@@ -1,0 +1,258 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Panneau « Ajouter / Retirer » d'un objectif d'épargne (voir SavingsContributionBottomSheet et la
+    maquette, écran 2). Deux contenus : le formulaire de versement, puis l'écran « Objectif atteint »
+    quand un versement fait franchir la cible. Couleurs issues du thème : lisible en clair et en sombre.
+-->
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingHorizontal="@dimen/spacing_m"
+        android:paddingBottom="@dimen/spacing_m">
+
+        <com.google.android.material.bottomsheet.BottomSheetDragHandleView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+
+        <!-- Formulaire de versement -->
+        <LinearLayout
+            android:id="@+id/contributionContent"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/goalName"
+                style="@style/TextAppearance.Material3.TitleLarge"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:maxLines="2"
+                android:textColor="?attr/colorOnSurface"
+                tools:text="Tabaski 2027" />
+
+            <TextView
+                android:id="@+id/savedSummary"
+                style="@style/TextAppearance.Material3.BodyMedium"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:textColor="?attr/colorOnSurfaceVariant"
+                tools:text="45 000 F CFA épargnés sur 150 000 F CFA" />
+
+            <com.google.android.material.button.MaterialButtonToggleGroup
+                android:id="@+id/typeGroup"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_m"
+                android:contentDescription="@string/savings_contribution_type_group"
+                app:checkedButton="@id/depositButton"
+                app:selectionRequired="true"
+                app:singleSelection="true">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/depositButton"
+                    style="?attr/materialButtonOutlinedStyle"
+                    android:textColor="@color/savings_selectable_text"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:minHeight="48dp"
+                    android:text="@string/savings_contribution_deposit" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/withdrawButton"
+                    style="?attr/materialButtonOutlinedStyle"
+                    android:textColor="@color/savings_selectable_text"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:minHeight="48dp"
+                    android:text="@string/savings_contribution_withdraw" />
+
+            </com.google.android.material.button.MaterialButtonToggleGroup>
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/amountLayout"
+                style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_m"
+                android:hint="@string/savings_contribution_amount_label"
+                tools:suffixText="F CFA">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/amountInput"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:imeOptions="actionDone"
+                    android:inputType="numberDecimal"
+                    android:maxLines="1"
+                    android:textSize="22sp"
+                    android:textStyle="bold" />
+
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <!-- Raccourcis (5 000 / 10 000 / 25 000 F CFA…), créés selon la devise de l'objectif. -->
+            <com.google.android.material.chip.ChipGroup
+                android:id="@+id/quickAmountsGroup"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_xs"
+                app:singleLine="true" />
+
+            <!-- Aperçu du résultat, visible dès qu'un montant valide est saisi. -->
+            <LinearLayout
+                android:id="@+id/previewBox"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_s"
+                android:background="@drawable/bg_savings_preview"
+                android:orientation="vertical"
+                android:padding="@dimen/spacing_s"
+                android:visibility="gone"
+                tools:visibility="visible">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:id="@+id/previewLabel"
+                        style="@style/TextAppearance.Material3.BodyMedium"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:textColor="?attr/colorOnSurfaceVariant"
+                        tools:text="Après ce versement" />
+
+                    <TextView
+                        android:id="@+id/previewValue"
+                        style="@style/TextAppearance.Material3.LabelLarge"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textColor="?attr/colorOnSurface"
+                        tools:text="55 000 F CFA · 36 %" />
+
+                </LinearLayout>
+
+                <com.google.android.material.progressindicator.LinearProgressIndicator
+                    android:id="@+id/previewProgress"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/spacing_s"
+                    android:importantForAccessibility="no"
+                    android:max="100"
+                    app:trackColor="?attr/colorOutlineVariant"
+                    app:trackCornerRadius="4dp"
+                    app:trackThickness="8dp"
+                    tools:progress="36" />
+
+                <TextView
+                    android:id="@+id/reachesTargetText"
+                    style="@style/TextAppearance.Material3.LabelLarge"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/spacing_s"
+                    android:drawablePadding="6dp"
+                    android:gravity="center_vertical"
+                    android:text="@string/savings_contribution_reaches_target"
+                    android:textColor="?attr/colorPrimary"
+                    android:visibility="gone"
+                    app:drawableStartCompat="@drawable/ic_check_24"
+                    app:drawableTint="?attr/colorPrimary"
+                    tools:visibility="visible" />
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_m"
+                android:gravity="end"
+                android:orientation="horizontal">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/cancelButton"
+                    style="@style/Widget.Material3.Button.TextButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:minHeight="48dp"
+                    android:text="@string/action_cancel" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/confirmButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="@dimen/spacing_s"
+                    android:enabled="false"
+                    android:minHeight="48dp"
+                    android:text="@string/savings_contribution_confirm" />
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+        <!-- Célébration « Objectif atteint » -->
+        <LinearLayout
+            android:id="@+id/celebrationContent"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_horizontal"
+            android:orientation="vertical"
+            android:paddingVertical="@dimen/spacing_l"
+            android:visibility="gone"
+            tools:visibility="visible">
+
+            <ImageView
+                android:id="@+id/celebrationIcon"
+                android:layout_width="72dp"
+                android:layout_height="72dp"
+                android:background="@drawable/bg_avatar_circle"
+                android:backgroundTint="@color/savings_completed"
+                android:contentDescription="@null"
+                android:padding="18dp"
+                android:src="@drawable/ic_check_24"
+                app:tint="@color/white" />
+
+            <TextView
+                android:id="@+id/celebrationTitle"
+                style="@style/TextAppearance.Material3.HeadlineSmall"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_m"
+                android:accessibilityLiveRegion="polite"
+                android:text="@string/savings_celebration_title"
+                android:textColor="?attr/colorOnSurface" />
+
+            <TextView
+                android:id="@+id/celebrationMessage"
+                style="@style/TextAppearance.Material3.BodyLarge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_s"
+                android:gravity="center"
+                android:textColor="?attr/colorOnSurfaceVariant"
+                tools:text="Bravo ! Tu as épargné 150 000 F CFA pour « Tabaski 2027 »." />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/celebrationDoneButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_l"
+                android:minHeight="48dp"
+                android:text="@string/savings_celebration_action" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</androidx.core.widget.NestedScrollView>
