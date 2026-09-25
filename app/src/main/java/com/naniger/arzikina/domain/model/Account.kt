@@ -42,6 +42,13 @@ package com.naniger.arzikina.domain.model
  * `AccountRepositoryImpl.saveAccount`) puis réécrite uniquement par un déplacement explicite de
  * l'utilisateur ; jamais recalculée automatiquement (voir `AccountRepositoryImpl.reorderAccounts`,
  * pas de recompactage après suppression, les trous éventuels sont sans effet sur `ORDER BY`).
+ * @param savingsTargetAmount montant cible (unités mineures, strictement positif) d'un
+ * [AccountType.SAVINGS_GOAL] ; `null` pour tout autre type — `AccountFormViewModel.save` le force
+ * à `null` dès que le type n'est plus un objectif (même principe que [mobileMoneyPackageName]).
+ * La progression n'est jamais stockée : elle se déduit du solde courant, voir
+ * `util/SavingsGoalProgress`.
+ * @param savingsDescription description facultative d'un [AccountType.SAVINGS_GOAL] ; `null`
+ * pour tout autre type (même règle que [savingsTargetAmount]).
  */
 data class Account(
     val id: Long = 0L,
@@ -57,7 +64,9 @@ data class Account(
     val cardExpiryYear: Int? = null,
     val isExcludedFromStatistics: Boolean = false,
     val mobileMoneyPackageName: String? = null,
-    val displayOrder: Long = 0L
+    val displayOrder: Long = 0L,
+    val savingsTargetAmount: Long? = null,
+    val savingsDescription: String? = null
 ) {
     /** Voir [DefaultAccountKey] : `null` pour un compte créé ou renommé par l'utilisateur. */
     val defaultKey: DefaultAccountKey?

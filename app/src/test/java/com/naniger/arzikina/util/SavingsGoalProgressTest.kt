@@ -5,92 +5,85 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import java.time.LocalDate
 
 class SavingsGoalProgressTest {
 
-    private val today = LocalDate.of(2026, 9, 24)
-
-    /** 1 F CFA = 100 unités mineures. */
-    private fun f(major: Long) = major * 100
+    private val franc = Money.MINOR_UNITS_PER_MAJOR.toLong()
 
     @Test
     fun `progression arrondie a l entier inferieur et bornee a 100`() {
-        assertEquals(30, SavingsGoalProgress.progressPercent(f(45_000), f(150_000)))
-        assertEquals(100, SavingsGoalProgress.progressPercent(f(250_000), f(200_000)))
-        assertEquals(0, SavingsGoalProgress.progressPercent(f(10_000), 0L))
+        assertEquals(30, SavingsGoalProgress.progressPercent(150_000 * franc, 500_000 * franc))
+        assertEquals(99, SavingsGoalProgress.progressPercent(499_999 * franc, 500_000 * franc))
+        assertEquals(100, SavingsGoalProgress.progressPercent(500_000 * franc, 500_000 * franc))
+        assertEquals(100, SavingsGoalProgress.progressPercent(600_000 * franc, 500_000 * franc))
+    }
+
+    @Test
+    fun `progression jamais negative et cible nulle geree`() {
+        assertEquals(0, SavingsGoalProgress.progressPercent(-10_000 * franc, 500_000 * franc))
+        assertEquals(0, SavingsGoalProgress.progressPercent(0L, 500_000 * franc))
+        assertEquals(0, SavingsGoalProgress.progressPercent(10_000 * franc, 0L))
+    }
+
+    @Test
+    fun `aucun debordement pour un solde enorme`() {
+        assertEquals(100, SavingsGoalProgress.progressPercent(Long.MAX_VALUE, 1L))
     }
 
     @Test
     fun `objectif atteint des que le montant epargne egale la cible`() {
-        assertTrue(SavingsGoalProgress.isCompleted(f(200_000), f(200_000)))
-        assertFalse(SavingsGoalProgress.isCompleted(f(199_999), f(200_000)))
+        assertFalse(SavingsGoalProgress.isCompleted(499_999 * franc, 500_000 * franc))
+        assertTrue(SavingsGoalProgress.isCompleted(500_000 * franc, 500_000 * franc))
         assertFalse(SavingsGoalProgress.isCompleted(0L, 0L))
     }
 
     @Test
     fun `reste a epargner jamais negatif`() {
-        assertEquals(f(105_000), SavingsGoalProgress.remainingAmount(f(45_000), f(150_000)))
-        assertEquals(0L, SavingsGoalProgress.remainingAmount(f(250_000), f(200_000)))
+        assertEquals(350_000 * franc, SavingsGoalProgress.remainingAmount(150_000 * franc, 500_000 * franc))
+        assertEquals(0L, SavingsGoalProgress.remainingAmount(600_000 * franc, 500_000 * franc))
+        assertEquals(500_000 * franc, SavingsGoalProgress.remainingAmount(-20_000 * franc, 500_000 * franc))
     }
 
     @Test
-    fun `echeance - aucune, atteinte, aujourd hui, depassee`() {
-        assertEquals(SavingsGoalDeadline.None, SavingsGoalProgress.deadlineOf(null, false, today))
-        assertEquals(SavingsGoalDeadline.Reached, SavingsGoalProgress.deadlineOf(today.minusDays(3), true, today))
-        assertEquals(SavingsGoalDeadline.Today(today), SavingsGoalProgress.deadlineOf(today, false, today))
-        assertEquals(
-            SavingsGoalDeadline.Overdue(today.minusDays(1)),
-            SavingsGoalProgress.deadlineOf(today.minusDays(1), false, today)
-        )
+    fun `exemple du cahier des charges - 150 000 sur 500 000 puis transfert de 50 000`() {
+        val before = SavingsGoalProgress.of(150_000 * franc, 500_000 * franc)!!
+        assertEquals(30, before.percent)
+        assertEquals(150_000 * franc, before.saved)
+        assertEquals(350_000 * franc, before.remaining)
+        assertFalse(before.isReached)
+
+        val after = SavingsGoalProgress.of(200_000 * franc, 500_000 * franc)!!
+        assertEquals(40, after.percent)
+        assertEquals(300_000 * franc, after.remaining)
     }
 
     @Test
-    fun `echeance proche signalee jusqu a 30 jours inclus`() {
-        assertEquals(
-            SavingsGoalDeadline.Remaining(today.plusDays(7), 7, isSoon = true),
-            SavingsGoalProgress.deadlineOf(today.plusDays(7), false, today)
-        )
-        assertEquals(
-            SavingsGoalDeadline.Remaining(today.plusDays(30), 30, isSoon = true),
-            SavingsGoalProgress.deadlineOf(today.plusDays(30), false, today)
-        )
-        assertEquals(
-            SavingsGoalDeadline.Remaining(today.plusDays(31), 31, isSoon = false),
-            SavingsGoalProgress.deadlineOf(today.plusDays(31), false, today)
-        )
+    fun `objectif depasse - barre plafonnee a 100 et depassement signale`() {
+        val snapshot = SavingsGoalProgress.of(600_000 * franc, 500_000 * franc)!!
+        assertEquals(100, snapshot.percent)
+        assertTrue(snapshot.isReached)
+        assertTrue(snapshot.isExceeded)
+        assertEquals(100_000 * franc, snapshot.exceededBy)
+        assertEquals(0L, snapshot.remaining)
     }
 
     @Test
-    fun `suggestion mensuelle sur les mois complets restants`() {
-        // 24/09/2026 -> 16/05/2027 : 7 mois complets, 105 000 F restants -> 15 000 F par mois.
-        assertEquals(
-            SavingsSuggestion.PerMonth(f(15_000)),
-            SavingsGoalProgress.suggestionOf(f(45_000), f(150_000), LocalDate.of(2027, 5, 16), today)
-        )
+    fun `solde nul ou negatif - rien d epargne`() {
+        val zero = SavingsGoalProgress.of(0L, 500_000 * franc)!!
+        assertEquals(0, zero.percent)
+        assertEquals(0L, zero.saved)
+
+        val negative = SavingsGoalProgress.of(-5_000 * franc, 500_000 * franc)!!
+        assertEquals(0, negative.percent)
+        assertEquals(0L, negative.saved)
+        assertEquals(-5_000 * franc, negative.balance)
+        assertFalse(negative.isExceeded)
     }
 
     @Test
-    fun `suggestion arrondie au franc superieur`() {
-        // 100 F sur 3 mois = 33,33 F -> 34 F.
-        assertEquals(
-            SavingsSuggestion.PerMonth(f(34)),
-            SavingsGoalProgress.suggestionOf(0L, f(100), today.plusMonths(3), today)
-        )
-    }
-
-    @Test
-    fun `moins d un mois avant l echeance - tout le reste d ici l echeance`() {
-        assertEquals(
-            SavingsSuggestion.BeforeDeadline(f(40_000)),
-            SavingsGoalProgress.suggestionOf(f(80_000), f(120_000), today.plusDays(7), today)
-        )
-    }
-
-    @Test
-    fun `aucune suggestion sans echeance, objectif atteint ou echeance depassee`() {
-        assertNull(SavingsGoalProgress.suggestionOf(f(10), f(100), null, today))
-        assertNull(SavingsGoalProgress.suggestionOf(f(100), f(100), today.plusMonths(2), today))
-        assertNull(SavingsGoalProgress.suggestionOf(f(10), f(100), today.minusDays(1), today))
+    fun `pas de progression sans cible valide`() {
+        assertNull(SavingsGoalProgress.of(150_000 * franc, null))
+        assertNull(SavingsGoalProgress.of(150_000 * franc, 0L))
+        assertNull(SavingsGoalProgress.of(150_000 * franc, -1L))
     }
 }

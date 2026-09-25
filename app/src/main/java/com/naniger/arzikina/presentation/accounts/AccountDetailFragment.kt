@@ -12,8 +12,10 @@ import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.naniger.arzikina.R
 import com.naniger.arzikina.databinding.FragmentAccountDetailBinding
+import com.naniger.arzikina.domain.model.Account
 import com.naniger.arzikina.domain.model.AccountType
 import com.naniger.arzikina.domain.model.CardSecrets
+import com.naniger.arzikina.domain.model.CurrencyAmount
 import com.naniger.arzikina.domain.repository.BiometricAuthenticator
 import com.naniger.arzikina.presentation.components.ConfirmDialogs
 import com.naniger.arzikina.presentation.components.NavAnimations
@@ -24,6 +26,8 @@ import com.naniger.arzikina.presentation.transactions.TransactionFormFragmentArg
 import com.naniger.arzikina.presentation.transactions.TransactionUiItem
 import com.naniger.arzikina.presentation.transactions.toListRows
 import com.naniger.arzikina.util.AppResult
+import com.naniger.arzikina.util.Money
+import com.naniger.arzikina.util.SavingsGoalProgress
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -175,7 +179,11 @@ class AccountDetailFragment : Fragment(R.layout.fragment_account_detail) {
             renderCreditCardCard()
         } else {
             AccountCardBinder.bind(binding.accountSummaryCard, account, uiState.currentBalance)
+            // La version détaillée ci-dessous (renderSavingsGoal) remplace ici la progression
+            // compacte de la carte — jamais les deux à la fois.
+            binding.accountSummaryCard.savingsGoalProgressGroup.visibility = View.GONE
         }
+        renderSavingsGoal(account, uiState.currentBalance)
 
         // Protection contre les captures d'écran/aperçu récents UNIQUEMENT pour une carte de
         // crédit (voir section sécurité) : un compte classique n'affiche rien de sensible ici.
@@ -197,6 +205,42 @@ class AccountDetailFragment : Fragment(R.layout.fragment_account_detail) {
      * nouvelle émission de [AccountDetailViewModel.uiState] (même principe que
      * `DashboardFragment.renderBalanceText`).
      */
+    /**
+     * Section « Objectif d'épargne » (voir `savingsGoalDetailCard`) : GONE pour tout autre type.
+     * Mêmes règles que la carte de la liste (voir [AccountCardBinder]) : barre plafonnée à 100 %,
+     * « Dépassé de X » à la place de « Restant » au-delà de la cible.
+     */
+    private fun renderSavingsGoal(account: Account, currentBalance: Long) {
+        val binding = binding ?: return
+        val snapshot = if (account.type == AccountType.SAVINGS_GOAL) {
+            SavingsGoalProgress.of(currentBalance, account.savingsTargetAmount)
+        } else {
+            null
+        }
+        binding.savingsGoalDetailCard.visibility = if (snapshot != null) View.VISIBLE else View.GONE
+        if (snapshot == null) return
+
+        fun format(amount: Long) = Money.format(CurrencyAmount(account.currencyCode, amount))
+
+        binding.savingsGoalTargetLabel.text = getString(R.string.account_savings_goal_target_format, format(snapshot.target))
+        binding.savingsGoalDetailPercent.text = getString(R.string.account_savings_goal_percent, snapshot.percent)
+        binding.savingsGoalDetailProgress.setProgressCompat(snapshot.percent, true)
+        binding.savingsGoalSavedValue.text = format(snapshot.saved)
+        if (snapshot.isExceeded) {
+            binding.savingsGoalRemainingLabel.text = getString(R.string.account_savings_goal_exceeded_label)
+            binding.savingsGoalRemainingValue.text = format(snapshot.exceededBy)
+        } else {
+            binding.savingsGoalRemainingLabel.text = getString(R.string.account_savings_goal_remaining_label)
+            binding.savingsGoalRemainingValue.text = format(snapshot.remaining)
+        }
+        binding.savingsGoalDetailStatus.visibility = if (snapshot.isReached) View.VISIBLE else View.GONE
+        binding.savingsGoalDetailStatus.text = getString(R.string.account_savings_goal_reached)
+
+        val description = account.savingsDescription?.takeIf { it.isNotBlank() }
+        binding.savingsGoalDescription.text = description
+        binding.savingsGoalDescription.visibility = if (description != null) View.VISIBLE else View.GONE
+    }
+
     private fun renderCreditCardCard() {
         val binding = binding ?: return
         val uiState = latestUiState ?: return

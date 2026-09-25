@@ -160,6 +160,160 @@
     </com.google.android.material.card.MaterialCardView>
 
     <!--
+        Objectif d'épargne uniquement (AccountType.SAVINGS_GOAL, voir
+        AccountDetailFragment.renderSavingsGoal) : montant cible, barre de progression,
+        pourcentage, montants épargné/restant et description. Jamais visible en même temps que
+        mobileMoneyAppCard ni accountSummaryCreditCard (types mutuellement exclusifs) : ancrée
+        directement sous accountSummaryCard, même raisonnement que mobileMoneyAppCard ci-dessus.
+        Recalculée à chaque émission de l'état (solde courant) : la progression suit toute
+        transaction/transfert sans rechargement.
+    -->
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/savingsGoalDetailCard"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/spacing_m"
+        android:layout_marginHorizontal="@dimen/spacing_m"
+        android:theme="@style/ThemeOverlay.Arzikina.OnBalanceCard"
+        android:visibility="gone"
+        app:cardBackgroundColor="@color/arzikina_postcart_background"
+        app:cardCornerRadius="@dimen/corner_radius_medium"
+        app:cardElevation="@dimen/elevation_raised"
+        app:layout_constraintTop_toBottomOf="@id/accountSummaryCard"
+        tools:visibility="visible">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="@dimen/spacing_m">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/savingsGoalTargetLabel"
+                    style="@style/TextAppearance.Material3.TitleSmall"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:ellipsize="end"
+                    android:maxLines="1"
+                    android:textColor="?attr/colorOnSurface"
+                    tools:text="Objectif : 500 000 F" />
+
+                <TextView
+                    android:id="@+id/savingsGoalDetailPercent"
+                    style="@style/TextAppearance.Material3.TitleMedium"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="@dimen/spacing_s"
+                    android:textColor="@color/arzikina_primary"
+                    android:textStyle="bold"
+                    tools:text="30 %" />
+
+            </LinearLayout>
+
+            <com.google.android.material.progressindicator.LinearProgressIndicator
+                android:id="@+id/savingsGoalDetailProgress"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_s"
+                android:importantForAccessibility="no"
+                android:max="100"
+                app:indicatorColor="@color/arzikina_primary"
+                app:trackColor="?attr/colorOutlineVariant"
+                app:trackCornerRadius="5dp"
+                app:trackThickness="10dp"
+                tools:progress="30" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_m"
+                android:orientation="horizontal">
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        style="@style/TextAppearance.Material3.BodySmall"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/account_savings_goal_saved_label"
+                        android:textColor="?attr/colorOnSurfaceVariant" />
+
+                    <TextView
+                        android:id="@+id/savingsGoalSavedValue"
+                        style="@style/TextAppearance.Material3.TitleSmall"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textColor="?attr/colorOnSurface"
+                        android:textStyle="bold"
+                        tools:text="150 000 F" />
+
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="end"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/savingsGoalRemainingLabel"
+                        style="@style/TextAppearance.Material3.BodySmall"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/account_savings_goal_remaining_label"
+                        android:textColor="?attr/colorOnSurfaceVariant" />
+
+                    <TextView
+                        android:id="@+id/savingsGoalRemainingValue"
+                        style="@style/TextAppearance.Material3.TitleSmall"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textColor="?attr/colorOnSurface"
+                        android:textStyle="bold"
+                        tools:text="350 000 F" />
+
+                </LinearLayout>
+
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/savingsGoalDetailStatus"
+                style="@style/TextAppearance.Material3.LabelLarge"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_s"
+                android:textColor="@color/arzikina_primary"
+                android:visibility="gone"
+                tools:text="Objectif atteint"
+                tools:visibility="visible" />
+
+            <TextView
+                android:id="@+id/savingsGoalDescription"
+                style="@style/TextAppearance.Material3.BodyMedium"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_s"
+                android:textColor="?attr/colorOnSurfaceVariant"
+                android:visibility="gone"
+                tools:text="Pour aller au travail sans dépendre des taxis."
+                tools:visibility="visible" />
+
+        </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
+
+    <!--
         Référence mobileMoneyAppCard EN PLUS de summaryBarrier (pas directement
         accountSummaryCard/accountSummaryCreditCard, déjà couverts par summaryBarrier).
         `barrierAllowsGoneWidgets="false"` est OBLIGATOIRE ici : son défaut (`true`) ferait quand
@@ -176,7 +330,7 @@
         android:layout_height="wrap_content"
         app:barrierAllowsGoneWidgets="false"
         app:barrierDirection="bottom"
-        app:constraint_referenced_ids="summaryBarrier,mobileMoneyAppCard" />
+        app:constraint_referenced_ids="summaryBarrier,mobileMoneyAppCard,savingsGoalDetailCard" />
 
     <TextView
         android:id="@+id/emptyState"

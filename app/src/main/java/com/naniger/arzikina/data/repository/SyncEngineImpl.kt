@@ -30,6 +30,7 @@ import com.naniger.arzikina.data.local.entity.SyncQueueEntity
 import com.naniger.arzikina.data.local.entity.TransactionEntity
 import com.naniger.arzikina.data.local.entity.TransactionTemplateEntity
 import com.naniger.arzikina.data.local.entity.UserPreferencesEntity
+import com.naniger.arzikina.data.mapper.toSyncPayload
 import com.naniger.arzikina.data.remote.api.SyncApi
 import com.naniger.arzikina.data.remote.dto.AccountServerStateDto
 import com.naniger.arzikina.data.remote.dto.AccountSyncPayload
@@ -137,6 +138,7 @@ class SyncEngineImpl @Inject constructor(
     private val transactionSyncEnqueuer: TransactionSyncEnqueuer,
     private val loanSyncEnqueuer: LoanSyncEnqueuer,
     private val sessionManager: SessionManager,
+    private val legacySavingsGoalMigrator: LegacySavingsGoalMigrator,
     private val json: Json
 ) : SyncEngine {
 
@@ -232,7 +234,7 @@ class SyncEngineImpl @Inject constructor(
                     if (entry.operation == SyncOperation.DELETE && result.errorCode == "not_found") {
                         // Idempotent : le serveur ne connaissait déjà pas cette ligne (jamais
                         // envoyée avec succès avant sa suppression, voir la KDoc de
-                        // CategoryRepositoryImpl.deleteCategory/SavingsGoalRepositoryImpl.deleteSavingsGoal)
+                        // CategoryRepositoryImpl.deleteCategory/LegacySavingsGoalMigrator)
                         // — l'état voulu (absente du serveur) est déjà atteint, ce n'est pas un échec.
                         markSynced(entry)
                         succeeded++
@@ -269,6 +271,16 @@ class SyncEngineImpl @Inject constructor(
             val (entityReceived, entityApplied) = pullEntityType(entityType)
             received += entityReceived
             applied += entityApplied
+        }
+        // Un ancien objectif d'épargne (`savings_goals`) peut encore arriver par pull depuis un
+        // appareil pas encore mis à jour : converti aussitôt en compte `SAVINGS_GOAL` (voir
+        // LegacySavingsGoalMigrator — idempotent, sans doublon), poussé au prochain push.
+        try {
+            legacySavingsGoalMigrator.migrateCurrentUser()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            // Jamais bloquant pour le pull lui-même : retenté au prochain pull/démarrage.
         }
         return SyncPullResult(received = received, applied = applied)
     }
@@ -698,6 +710,8 @@ class SyncEngineImpl @Inject constructor(
                 isExcludedFromStatistics = state.isExcludedFromStatistics != 0,
                 mobileMoneyPackageName = state.mobileMoneyPackageName,
                 displayOrder = state.displayOrder,
+                savingsTargetAmount = state.savingsTargetAmount,
+                savingsDescription = state.savingsDescription,
                 syncId = state.id,
                 updatedAt = state.updatedAt,
                 deletedAt = state.deletedAt,
@@ -712,24 +726,7 @@ class SyncEngineImpl @Inject constructor(
             val entity = account.copy(syncId = UUID.randomUUID().toString())
             accountDao.upsert(entity)
 
-            val payload = AccountSyncPayload(
-                id = requireNotNull(entity.syncId),
-                baseVersion = null,
-                name = entity.name,
-                icon = entity.icon.name,
-                colorArgb = entity.colorArgb,
-                currencyCode = entity.currencyCode,
-                initialBalanceMinor = entity.initialBalanceMinor,
-                type = entity.type.name,
-                cardLastFourDigits = entity.cardLastFourDigits,
-                cardExpiryMonth = entity.cardExpiryMonth,
-                cardExpiryYear = entity.cardExpiryYear,
-                isExcludedFromStatistics = entity.isExcludedFromStatistics,
-                mobileMoneyPackageName = entity.mobileMoneyPackageName,
-                displayOrder = entity.displayOrder,
-                createdAt = entity.createdAt,
-                updatedAt = entity.updatedAt
-            )
+            val payload = entity.toSyncPayload(baseVersion = null)
             syncQueueEnqueuer.enqueue(
                 entityType = "accounts",
                 entitySyncId = payload.id,

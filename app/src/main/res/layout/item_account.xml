@@ -131,6 +131,88 @@
             app:tint="@android:color/white"
             tools:visibility="visible" />
 
+        <!--
+            Objectif d'épargne (AccountType.SAVINGS_GOAL) uniquement — GONE sinon, la carte d'un
+            compte classique reste strictement identique. Rempli par AccountCardBinder : montant
+            actuel / montant cible, pourcentage, barre de progression (blanche, lisible sur le
+            dégradé de la couleur du compte, quelle qu'elle soit) et statut « atteint/dépassé ».
+        -->
+        <LinearLayout
+            android:id="@+id/savingsGoalProgressGroup"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/spacing_m"
+            android:orientation="vertical"
+            android:visibility="gone"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/accountIcon"
+            tools:visibility="visible">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/savingsGoalAmounts"
+                    style="@style/TextAppearance.Material3.BodyMedium"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:ellipsize="end"
+                    android:maxLines="1"
+                    android:textColor="@android:color/white"
+                    tools:text="150 000 F / 500 000 F" />
+
+                <TextView
+                    android:id="@+id/savingsGoalPercent"
+                    style="@style/TextAppearance.Material3.LabelLarge"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="@dimen/spacing_s"
+                    android:textColor="@android:color/white"
+                    android:textStyle="bold"
+                    tools:text="30 %" />
+
+            </LinearLayout>
+
+            <com.google.android.material.progressindicator.LinearProgressIndicator
+                android:id="@+id/savingsGoalProgress"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_xs"
+                android:importantForAccessibility="no"
+                android:max="100"
+                app:indicatorColor="@android:color/white"
+                app:trackColor="@color/savings_goal_track_on_card"
+                app:trackCornerRadius="4dp"
+                app:trackThickness="8dp"
+                tools:progress="30" />
+
+            <TextView
+                android:id="@+id/savingsGoalStatus"
+                style="@style/TextAppearance.Material3.LabelMedium"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_xs"
+                android:textColor="@android:color/white"
+                android:visibility="gone"
+                tools:text="Objectif atteint"
+                tools:visibility="visible" />
+
+        </LinearLayout>
+
+        <!-- Sous l'icône, OU sous la progression d'objectif quand elle est visible (une Barrier
+             ignore les vues GONE) : le badge ne chevauche jamais la barre. -->
+        <androidx.constraintlayout.widget.Barrier
+            android:id="@+id/contentBottomBarrier"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:barrierDirection="bottom"
+            app:constraint_referenced_ids="accountIcon,savingsGoalProgressGroup" />
+
         <TextView
             android:id="@+id/cardBadge"
             style="@style/TextAppearance.Material3.LabelMedium"
@@ -144,7 +226,7 @@
             android:textStyle="bold"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/accountIcon"
+            app:layout_constraintTop_toBottomOf="@id/contentBottomBarrier"
             app:layout_constraintVertical_bias="1" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>

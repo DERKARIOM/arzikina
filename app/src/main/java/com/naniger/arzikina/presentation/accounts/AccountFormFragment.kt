@@ -130,6 +130,10 @@ class AccountFormFragment : Fragment(R.layout.fragment_account_form) {
             viewModel.onNameChange(text?.toString().orEmpty())
         }
         MoneyInputFormatter.attach(binding.balanceInput) { formatted -> viewModel.onInitialBalanceChange(formatted) }
+        MoneyInputFormatter.attach(binding.savingsTargetInput) { formatted -> viewModel.onSavingsTargetChange(formatted) }
+        binding.savingsDescriptionInput.doAfterTextChanged { text ->
+            viewModel.onSavingsDescriptionChange(text?.toString().orEmpty())
+        }
         binding.cardNumberInput.doAfterTextChanged { text ->
             viewModel.onCardNumberChange(text?.toString().orEmpty())
         }
@@ -183,6 +187,23 @@ class AccountFormFragment : Fragment(R.layout.fragment_account_form) {
         val typeLabel = getString(state.type.displayTextRes())
         if (binding.typeField.dropdownInput.text?.toString() != typeLabel) {
             binding.typeField.dropdownInput.setText(typeLabel, false)
+        }
+
+        val isSavingsGoal = state.type == AccountType.SAVINGS_GOAL
+        val wasSavingsGoalFieldsVisible = binding.savingsGoalFieldsGroup.visibility == View.VISIBLE
+        if (wasSavingsGoalFieldsVisible != isSavingsGoal) {
+            TransitionManager.beginDelayedTransition(binding.formFieldsContainer, AutoTransition().setDuration(200L))
+        }
+        binding.savingsGoalFieldsGroup.visibility = if (isSavingsGoal) View.VISIBLE else View.GONE
+        if (isSavingsGoal) {
+            if (binding.savingsTargetInput.text?.toString() != state.savingsTargetInput) {
+                binding.savingsTargetInput.setText(state.savingsTargetInput)
+            }
+            binding.savingsTargetLayout.error = state.savingsTargetError?.let { getString(it) }
+            if (binding.savingsDescriptionInput.text?.toString() != state.savingsDescriptionInput) {
+                binding.savingsDescriptionInput.setText(state.savingsDescriptionInput)
+                binding.savingsDescriptionInput.setSelection(state.savingsDescriptionInput.length)
+            }
         }
 
         val isCreditCard = state.type == AccountType.CREDIT_CARD
@@ -242,6 +263,7 @@ class AccountFormFragment : Fragment(R.layout.fragment_account_form) {
         when (event) {
             AccountFormEvent.Saved, AccountFormEvent.Deleted -> findNavController().navigateUp()
             is AccountFormEvent.ShowAppPicker -> showAppPicker(event.apps)
+            AccountFormEvent.ConfirmSavingsGoalRemoval -> confirmSavingsGoalRemoval()
         }
     }
 
@@ -250,6 +272,19 @@ class AccountFormFragment : Fragment(R.layout.fragment_account_form) {
             context = requireContext(),
             apps = apps,
             onSelect = { app -> viewModel.onMobileMoneyAppSelected(app) }
+        )
+    }
+
+    /** Objectif d'épargne → compte classique : confirmation pour éviter une transformation
+     * accidentelle (le montant cible et la description sont effacés ; solde et transactions,
+     * eux, sont conservés — voir AccountFormViewModel.save). */
+    private fun confirmSavingsGoalRemoval() {
+        ConfirmDialogs.confirm(
+            context = requireContext(),
+            title = getString(R.string.account_form_savings_remove_title),
+            message = getString(R.string.account_form_savings_remove_message, viewModel.formState.value.name.trim()),
+            confirmLabel = getString(R.string.account_form_savings_remove_action),
+            onConfirm = { viewModel.save(confirmedSavingsGoalRemoval = true) }
         )
     }
 

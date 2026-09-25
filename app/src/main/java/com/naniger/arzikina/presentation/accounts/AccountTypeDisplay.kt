@@ -17,4 +17,5 @@ fun AccountType.displayTextRes(): Int = when (this) {
     AccountType.MOBILE_MONEY -> R.string.account_type_mobile_money
     AccountType.SAVINGS -> R.string.account_type_savings
     AccountType.CREDIT_CARD -> R.string.account_type_credit_card
+    AccountType.SAVINGS_GOAL -> R.string.account_type_savings_goal
 }
