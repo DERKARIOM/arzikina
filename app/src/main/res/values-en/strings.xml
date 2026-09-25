@@ -214,14 +214,13 @@
     <string name="accounts_add">Add</string>
     <string name="accounts_tab_accounts">Accounts</string>
     <string name="accounts_tab_bank_cards">Bank cards</string>
-    <string name="accounts_tab_planning">Planning</string>
+    <string name="accounts_tab_savings_goals">Savings</string>
     <string name="accounts_empty_bank_cards_title">No bank cards yet</string>
     <string name="accounts_empty_bank_cards_message">Add your first bank card to see it here.</string>
-    <string name="accounts_tab_planning_empty_title">No plans</string>
-    <string name="accounts_tab_planning_empty_subtitle">Create your first plan to organize your expenses and projects.</string>
-    <string name="accounts_tab_planning_empty_action">Create a plan</string>
     <string name="accounts_add_action_accounts">Add an account</string>
     <string name="accounts_add_action_bank_cards">Add a bank card</string>
+    <string name="accounts_add_action_savings_goals">Add a goal</string>
+    <string name="accounts_empty_savings_goals_message">No savings goals yet. Create one to track your progress toward a project.</string>
     <string name="account_type_cash">Cash</string>
     <string name="account_type_bank">Bank</string>
     <string name="account_type_mobile_money">Mobile Money</string>
