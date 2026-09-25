@@ -19,6 +19,12 @@ import kotlinx.serialization.Serializable
  * l'écriture. ⚠️ Le sens RETOUR ([AccountServerStateDto] ci-dessous) est différent : MySQL/PDO
  * renvoie cette colonne comme un entier JSON (`0`/`1`), jamais `true`/`false` — kotlinx.serialization
  * ne convertit pas silencieusement un nombre en `Boolean`, d'où le type `Int` côté [AccountServerStateDto].
+ *
+ * [savingsTargetAmount]/[savingsDescription] : objectif d'épargne (`AccountType.SAVINGS_GOAL`),
+ * TOUJOURS envoyés (sans valeur par défaut, `null` explicite compris) — un compte repassé en compte
+ * classique DOIT effacer ces colonnes côté serveur (`array_key_exists` + `null`, voir `push.php`).
+ * Un ancien client qui ne connaît pas ces champs ne les envoie pas : le serveur conserve alors la
+ * valeur actuelle au lieu de l'effacer (même mécanisme), aucune perte de montant cible.
  */
 @Serializable
 data class AccountSyncPayload(
@@ -36,6 +42,8 @@ data class AccountSyncPayload(
     val isExcludedFromStatistics: Boolean,
     val mobileMoneyPackageName: String?,
     val displayOrder: Long,
+    val savingsTargetAmount: Long?,
+    val savingsDescription: String?,
     val createdAt: Long,
     val updatedAt: Long
 )
@@ -64,6 +72,10 @@ data class AccountServerStateDto(
      * (voir `database/migrations/004_add_display_order_to_accounts.sql`), même raisonnement que
      * les autres champs à défaut de ce DTO. */
     val displayOrder: Long = 0L,
+    /** `null` par défaut : tolère une réponse serveur antérieure à
+     * `database/migrations/006_savings_goal_accounts.sql` (même raisonnement que [displayOrder]). */
+    val savingsTargetAmount: Long? = null,
+    val savingsDescription: String? = null,
     val createdAt: Long,
     val updatedAt: Long,
     val deletedAt: Long? = null,

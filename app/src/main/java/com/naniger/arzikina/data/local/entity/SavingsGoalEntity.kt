@@ -5,10 +5,16 @@ import androidx.room.Index
 import androidx.room.PrimaryKey
 
 /**
+ * ANCIEN système d'objectifs d'épargne (utilitaire « Épargne », montant épargné saisi à la main).
+ * Remplacé par les comptes `AccountType.SAVINGS_GOAL` : plus aucun écran n'écrit dans cette table,
+ * conservée uniquement pour convertir les objectifs existants sans perte (voir
+ * `data/repository/LegacySavingsGoalMigrator`), restaurer d'anciennes sauvegardes et continuer à
+ * synchroniser les suppressions douces avec le serveur. Ne jamais la supprimer physiquement.
+ *
  * Représentation Room d'un objectif d'épargne. Voir [AccountEntity] pour le
  * raisonnement (le domaine ne connaît jamais [userId], pas de contrainte SQL
  * `FOREIGN KEY` vers `users`). Aucune autre clé étrangère : un objectif est
- * autonome (voir [com.naniger.arzikina.domain.model.SavingsGoal]) — [userId] est
+ * autonome — [userId] est
  * donc ici le SEUL moyen de savoir à qui appartient un objectif (pas de
  * table intermédiaire dont l'appartenance pourrait se déduire indirectement).
  */

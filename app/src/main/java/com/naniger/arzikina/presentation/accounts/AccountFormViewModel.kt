@@ -80,11 +80,18 @@ data class AccountFormState(
      * maintenant).
      */
     val mobileMoneyAppLabel: String? = null,
+    /** Sans objet hors [AccountType.SAVINGS_GOAL] (voir [AccountFormFragment], qui masque leur
+     * section) — voir [Account.savingsTargetAmount]/[Account.savingsDescription]. Conservés tels
+     * quels si l'utilisateur change de type puis revient à « Objectif d'épargne » avant
+     * d'enregistrer (même principe que [mobileMoneyPackageNameInput]). */
+    val savingsTargetInput: String = "",
+    val savingsDescriptionInput: String = "",
     @StringRes val nameError: Int? = null,
     @StringRes val balanceError: Int? = null,
     @StringRes val cardNumberError: Int? = null,
     @StringRes val cardExpiryError: Int? = null,
-    @StringRes val cardCvvError: Int? = null
+    @StringRes val cardCvvError: Int? = null,
+    @StringRes val savingsTargetError: Int? = null
 ) {
     /**
      * `toString()` explicite qui REDACTE [cardNumberInput]/[cardCvvInput] (voir section
@@ -97,7 +104,7 @@ data class AccountFormState(
     override fun toString(): String = "AccountFormState(name=$name, type=$type, " +
         "cardNumberInput=${cardNumberInput.redactDigits()}, cardExpiryInput=$cardExpiryInput, " +
         "cardCvvInput=${cardCvvInput.redactDigits()}, existingCardLastFourDigits=$existingCardLastFourDigits, " +
-        "hasErrors=${listOfNotNull(nameError, balanceError, cardNumberError, cardExpiryError, cardCvvError).isNotEmpty()})"
+        "hasErrors=${listOfNotNull(nameError, balanceError, cardNumberError, cardExpiryError, cardCvvError, savingsTargetError).isNotEmpty()})"
 
     private fun String.redactDigits(): String = if (isEmpty()) "" else "*".repeat(length)
 }
@@ -111,6 +118,11 @@ sealed interface AccountFormEvent {
      * au moment où cet événement est émis — [AccountFormFragment] n'a plus qu'à l'afficher via
      * `ExternalAppPickerDialog`. */
     data class ShowAppPicker(val apps: List<ExternalAppInfo>) : AccountFormEvent
+
+    /** Voir [AccountFormViewModel.save] : un objectif d'épargne existant va redevenir un compte
+     * classique (son montant cible et sa description seront effacés) — [AccountFormFragment]
+     * demande confirmation puis rappelle `save(confirmedSavingsGoalRemoval = true)`. */
+    data object ConfirmSavingsGoalRemoval : AccountFormEvent
 }
 
 @HiltViewModel
@@ -134,6 +146,10 @@ class AccountFormViewModel @Inject constructor(
     private val initialType: AccountType? = args.initialType
         ?.let { raw -> AccountType.entries.find { it.name == raw } }
 
+    /** Type ENREGISTRÉ du compte édité (`null` à la création) — voir [save], qui demande une
+     * confirmation avant qu'un objectif d'épargne ne redevienne un compte classique. */
+    private var originalType: AccountType? = null
+
     private val _formState = MutableStateFlow(AccountFormState())
     val formState: StateFlow<AccountFormState> = _formState.asStateFlow()
 
@@ -144,6 +160,7 @@ class AccountFormViewModel @Inject constructor(
         if (isEditMode) {
             viewModelScope.launch {
                 accountRepository.getAccount(accountId)?.let { account ->
+                    originalType = account.type
                     _formState.update {
                         it.copy(
                             // « Cash » en anglais : voir DefaultNameLocalizer (et save()).
@@ -163,7 +180,9 @@ class AccountFormViewModel @Inject constructor(
                             },
                             existingCardLastFourDigits = account.cardLastFourDigits,
                             isExcludedFromStatistics = account.isExcludedFromStatistics,
-                            mobileMoneyPackageNameInput = account.mobileMoneyPackageName.orEmpty()
+                            mobileMoneyPackageNameInput = account.mobileMoneyPackageName.orEmpty(),
+                            savingsTargetInput = account.savingsTargetAmount?.let { target -> Money.formatForInput(target) }.orEmpty(),
+                            savingsDescriptionInput = account.savingsDescription.orEmpty()
                         )
                     }
                     account.mobileMoneyPackageName?.let { resolveMobileMoneyAppLabel(it) }
@@ -176,7 +195,7 @@ class AccountFormViewModel @Inject constructor(
             _formState.update {
                 it.copy(
                     type = initialType,
-                    icon = if (initialType == AccountType.CREDIT_CARD) AccountIcon.CREDIT_CARD else it.icon
+                    icon = defaultIconFor(initialType, it.icon)
                 )
             }
         }
@@ -208,12 +227,23 @@ class AccountFormViewModel @Inject constructor(
                 type = type,
                 // Icône par défaut cohérente avec le type choisi (voir AccountIcon.CREDIT_CARD) ;
                 // l'utilisateur reste libre d'en choisir une autre ensuite via le sélecteur existant.
-                icon = if (type == AccountType.CREDIT_CARD) AccountIcon.CREDIT_CARD else state.icon,
+                // Un compte EXISTANT transformé en objectif garde son icône (informations déjà
+                // renseignées conservées) : seule une création propose l'icône Épargne.
+                icon = if (type == AccountType.SAVINGS_GOAL && isEditMode) state.icon else defaultIconFor(type, state.icon),
                 cardNumberError = null,
                 cardExpiryError = null,
-                cardCvvError = null
+                cardCvvError = null,
+                savingsTargetError = null
             )
         }
+    }
+
+    fun onSavingsTargetChange(value: String) {
+        _formState.update { it.copy(savingsTargetInput = value, savingsTargetError = null) }
+    }
+
+    fun onSavingsDescriptionChange(value: String) {
+        _formState.update { it.copy(savingsDescriptionInput = value) }
     }
 
     fun onCardNumberChange(value: String) {
@@ -276,7 +306,14 @@ class AccountFormViewModel @Inject constructor(
         }
     }
 
-    fun save() {
+    /**
+     * @param confirmedSavingsGoalRemoval `true` une fois que l'utilisateur a confirmé qu'un objectif
+     * d'épargne existant redevient un compte classique (voir [AccountFormEvent.ConfirmSavingsGoalRemoval]).
+     * La transformation (dans un sens comme dans l'autre) n'est qu'une MISE À JOUR du même compte
+     * via [AccountRepository.saveAccount] : même id/syncId, même solde initial, mêmes transactions,
+     * même position — seuls le type et les champs propres à l'objectif changent.
+     */
+    fun save(confirmedSavingsGoalRemoval: Boolean = false) {
         val state = _formState.value
         val trimmedName = state.name.trim()
         if (trimmedName.isEmpty()) {
@@ -287,6 +324,23 @@ class AccountFormViewModel @Inject constructor(
         val balanceMinor = Money.parseToMinorUnits(state.initialBalanceInput)
         if (balanceMinor == null) {
             _formState.update { it.copy(balanceError = R.string.error_invalid_amount) }
+            return
+        }
+
+        var savingsTargetAmount: Long? = null
+        var savingsDescription: String? = null
+        if (state.type == AccountType.SAVINGS_GOAL) {
+            // Montant cible OBLIGATOIRE et strictement positif (voir Account.savingsTargetAmount) :
+            // une cible à 0 rendrait la progression indéfinie.
+            val target = Money.parseToMinorUnits(state.savingsTargetInput)
+            if (target == null || target <= 0L) {
+                _formState.update { it.copy(savingsTargetError = R.string.account_form_savings_target_error) }
+                return
+            }
+            savingsTargetAmount = target
+            savingsDescription = state.savingsDescriptionInput.trim().ifEmpty { null }
+        } else if (originalType == AccountType.SAVINGS_GOAL && !confirmedSavingsGoalRemoval) {
+            viewModelScope.launch { _events.emit(AccountFormEvent.ConfirmSavingsGoalRemoval) }
             return
         }
 
@@ -355,7 +409,11 @@ class AccountFormViewModel @Inject constructor(
                     cardExpiryMonth = cardExpiryMonth,
                     cardExpiryYear = cardExpiryYear,
                     isExcludedFromStatistics = state.isExcludedFromStatistics,
-                    mobileMoneyPackageName = mobileMoneyPackageName
+                    mobileMoneyPackageName = mobileMoneyPackageName,
+                    // Forcés à `null` hors objectif (voir plus haut) : un objectif repassé en compte
+                    // classique ne garde aucune donnée d'objectif orpheline.
+                    savingsTargetAmount = savingsTargetAmount,
+                    savingsDescription = savingsDescription
                 )
             )
             if (hasNewCardSecrets) {
@@ -365,6 +423,13 @@ class AccountFormViewModel @Inject constructor(
             }
             _events.emit(AccountFormEvent.Saved)
         }
+    }
+
+    /** Icône proposée par défaut pour [type] (l'utilisateur reste libre d'en choisir une autre). */
+    private fun defaultIconFor(type: AccountType, current: AccountIcon): AccountIcon = when (type) {
+        AccountType.CREDIT_CARD -> AccountIcon.CREDIT_CARD
+        AccountType.SAVINGS_GOAL -> AccountIcon.SAVINGS
+        else -> current
     }
 
     fun delete() {

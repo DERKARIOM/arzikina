@@ -4,6 +4,7 @@ import android.app.Application
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.hilt.work.HiltWorkerFactory
 import androidx.work.Configuration
+import com.naniger.arzikina.data.repository.LegacySavingsGoalMigrator
 import com.naniger.arzikina.domain.model.ThemeMode
 import com.naniger.arzikina.domain.repository.AppLanguageRepository
 import com.naniger.arzikina.domain.repository.AutomationScheduler
@@ -85,6 +86,9 @@ class ArzikinaApplication : Application(), Configuration.Provider {
     @Inject
     lateinit var appLanguageRepository: AppLanguageRepository
 
+    @Inject
+    lateinit var legacySavingsGoalMigrator: LegacySavingsGoalMigrator
+
     override val workManagerConfiguration: Configuration
         get() = Configuration.Builder()
             .setWorkerFactory(workerFactory)
@@ -99,6 +103,7 @@ class ArzikinaApplication : Application(), Configuration.Provider {
         PDFBoxResourceLoader.init(applicationContext)
         RecurringOccurrencesScheduler.schedule(this)
         rescheduleActiveAutomations()
+        migrateLegacySavingsGoals()
         SyncWorkScheduler.schedulePeriodic(this)
         syncConnectivityObserver.start()
     }
@@ -131,6 +136,18 @@ class ArzikinaApplication : Application(), Configuration.Provider {
         }
         if (AppCompatDelegate.getDefaultNightMode() != nightMode) {
             AppCompatDelegate.setDefaultNightMode(nightMode)
+        }
+    }
+
+    /**
+     * Anciens objectifs d'épargne (utilitaire « Épargne », table `savings_goals`) → comptes
+     * `SAVINGS_GOAL` — voir [LegacySavingsGoalMigrator]. Hors thread principal ; sans effet sans
+     * utilisateur connecté ou sans ancien objectif (cas normal après la première conversion).
+     * Aussi relancé après chaque pull et chaque restauration de sauvegarde (voir le migrateur).
+     */
+    private fun migrateLegacySavingsGoals() {
+        CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
+            runCatching { legacySavingsGoalMigrator.migrateCurrentUser() }
         }
     }
 

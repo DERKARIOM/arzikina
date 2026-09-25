@@ -97,6 +97,83 @@
             </com.google.android.material.card.MaterialCardView>
 
             <!--
+                Objectif d'épargne : visible uniquement pour AccountType.SAVINGS_GOAL (voir
+                AccountFormFragment.render, même principe que creditCardFieldsGroup plus bas).
+                Placée juste sous le type pour que la transformation d'un compte existant en
+                objectif (ou l'inverse) se fasse au même endroit que le choix du type. Le solde
+                initial reste le champ commun à tous les comptes (balanceCard).
+            -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/savingsGoalFieldsGroup"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_l"
+                android:theme="@style/ThemeOverlay.Arzikina.OnBalanceCard"
+                android:visibility="gone"
+                app:cardBackgroundColor="@color/arzikina_postcart_background"
+                app:cardCornerRadius="@dimen/corner_radius_medium"
+                app:cardElevation="@dimen/elevation_raised"
+                tools:visibility="visible">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="@dimen/spacing_m">
+
+                    <TextView
+                        style="@style/TextAppearance.Material3.TitleSmall"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/account_form_savings_section_label"
+                        android:textColor="?attr/colorOnSurface" />
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:id="@+id/savingsTargetLayout"
+                        style="@style/Widget.Arzikina.TextInputLayout.OutlinedBox.PostCard"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/spacing_m"
+                        android:hint="@string/account_form_savings_target_label">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/savingsTargetInput"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:inputType="numberDecimal"
+                            android:maxLines="1" />
+
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:id="@+id/savingsDescriptionLayout"
+                        style="@style/Widget.Arzikina.TextInputLayout.OutlinedBox.PostCard"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/spacing_m"
+                        android:hint="@string/account_form_savings_description_label">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/savingsDescriptionInput"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:inputType="textMultiLine|textCapSentences"
+                            android:maxLines="4" />
+
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <TextView
+                        style="@style/TextAppearance.Material3.BodySmall"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/spacing_xs"
+                        android:text="@string/account_form_savings_description"
+                        android:textColor="?attr/colorOnSurfaceVariant" />
+
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!--
                 Apparence (icône + couleur) : même principe que categoryCard sur
                 fragment_transaction_form.xml (label + sélecteur horizontal), les
                 deux réunis dans une seule postcard plutôt que deux cartes

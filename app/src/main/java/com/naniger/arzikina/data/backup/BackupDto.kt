@@ -119,7 +119,11 @@ data class AccountDto(
      * que le comportement avant l'introduction du glisser-déposer). Un fichier exporté APRÈS
      * cette fonctionnalité conserve l'ordre choisi par l'utilisateur à travers la restauration.
      */
-    val displayOrder: Long = 0L
+    val displayOrder: Long = 0L,
+    /** Ajoutés après coup (voir `domain/model/Account.savingsTargetAmount`, objectif d'épargne) :
+     * défaut `null` pour rester compatible avec les fichiers exportés avant leur existence. */
+    val savingsTargetAmount: Long? = null,
+    val savingsDescription: String? = null
 )
 
 @Serializable

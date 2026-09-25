@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!-- Texte des choix du panneau de versement (Ajouter / Retirer, raccourcis de montant) : le fond
-     coché du thème est le vert Arsikina, sur lequel sa couleur de texte par défaut disparaissait. -->
-<selector xmlns:android="http://schemas.android.com/apk/res/android">
-    <item android:alpha="0.38" android:color="?attr/colorOnSurface" android:state_enabled="false" />
-    <item android:color="@color/white" android:state_checked="true" />
-    <item android:color="?attr/colorOnSurface" />
-</selector>

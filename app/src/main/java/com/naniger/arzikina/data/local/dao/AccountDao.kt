@@ -43,6 +43,11 @@ interface AccountDao {
      * l'horodatage d'un compte déplacé — jamais [AccountEntity.version] (voir la KDoc de
      * `AccountRepositoryImpl.saveAccount` : la version reste un compteur serveur, réattribuée par
      * `applyAccountServerState` après confirmation de la synchronisation, jamais localement). */
+    /** Plus grande position utilisée (`null` sans aucun compte) — voir `LegacySavingsGoalMigrator`,
+     * qui ajoute les objectifs convertis APRÈS tous les comptes existants, trous compris. */
+    @Query("SELECT MAX(displayOrder) FROM accounts WHERE userId = :userId AND deletedAt IS NULL")
+    suspend fun maxDisplayOrder(userId: Long): Long?
+
     @Query("UPDATE accounts SET displayOrder = :displayOrder, updatedAt = :updatedAt WHERE id = :id AND userId = :userId")
     suspend fun updateDisplayOrder(id: Long, userId: Long, displayOrder: Long, updatedAt: Long)
 

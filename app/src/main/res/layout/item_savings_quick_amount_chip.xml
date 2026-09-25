@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!-- Raccourci de montant du panneau de versement (voir SavingsContributionBottomSheet). Coché
-     quand le montant saisi lui correspond exactement. -->
-<com.google.android.material.chip.Chip xmlns:android="http://schemas.android.com/apk/res/android"
-    style="@style/Widget.Material3.Chip.Filter"
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
-    android:checkable="true"
-    android:textColor="@color/savings_selectable_text" />

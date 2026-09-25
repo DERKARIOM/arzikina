@@ -97,6 +97,7 @@ class BackupRepositoryImpl @Inject constructor(
     private val transactionDao: TransactionDao,
     private val budgetDao: BudgetDao,
     private val savingsGoalDao: SavingsGoalDao,
+    private val legacySavingsGoalMigrator: LegacySavingsGoalMigrator,
     private val personDao: PersonDao,
     private val loanDao: LoanDao,
     private val loanPaymentDao: LoanPaymentDao,
@@ -432,6 +433,11 @@ class BackupRepositoryImpl @Inject constructor(
             val restoredPreferences = payload.preferences.toDomain()
             userPreferencesRepository.setThemeMode(restoredPreferences.themeMode)
             userPreferencesRepository.setCurrencyCode(restoredPreferences.currencyCode)
+
+            // Une sauvegarde antérieure à « l'objectif d'épargne comme type de compte » peut contenir
+            // d'anciens objectifs (`savingsGoals`) : convertis immédiatement en comptes, comme au
+            // démarrage (voir LegacySavingsGoalMigrator) — jamais laissés invisibles jusque-là.
+            legacySavingsGoalMigrator.migrateCurrentUser()
 
             BackupResult(
                 accountsCount = payload.accounts.size,

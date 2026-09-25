@@ -8,6 +8,9 @@ import com.naniger.arzikina.data.local.entity.SavingsGoalEntity
 import kotlinx.coroutines.flow.Flow
 
 /**
+ * ANCIEN système d'objectifs d'épargne — lecture seule en pratique (voir la doc de
+ * [SavingsGoalEntity] et `LegacySavingsGoalMigrator`), plus aucun écran n'y écrit.
+ *
  * Voir `data/local/dao/AccountDao` pour le raisonnement sur le filtrage systématique par `userId`.
  *
  * Suppression DOUCE (voir `CategoryDao` pour le même raisonnement complet, déjà appliqué à
@@ -20,6 +23,11 @@ interface SavingsGoalDao {
 
     @Query("SELECT * FROM savings_goals WHERE userId = :userId AND deletedAt IS NULL ORDER BY createdAt DESC")
     fun observeAllForUser(userId: Long): Flow<List<SavingsGoalEntity>>
+
+    /** Objectifs de l'ANCIEN système encore actifs — voir `LegacySavingsGoalMigrator`, qui les
+     * convertit en comptes `SAVINGS_GOAL`. */
+    @Query("SELECT * FROM savings_goals WHERE userId = :userId AND deletedAt IS NULL ORDER BY createdAt ASC, id ASC")
+    suspend fun getActiveForUser(userId: Long): List<SavingsGoalEntity>
 
     @Query("SELECT * FROM savings_goals WHERE id = :id AND userId = :userId AND deletedAt IS NULL")
     suspend fun getById(id: Long, userId: Long): SavingsGoalEntity?
@@ -43,16 +51,6 @@ interface SavingsGoalDao {
      * insertion neuve avec `id = 0L` lors d'une restauration, jamais une mise à jour). */
     @Insert
     suspend fun insertAll(goals: List<SavingsGoalEntity>): List<Long>
-
-    /** [updatedAt] désormais un paramètre explicite (plus un simple `currentAmount + delta` sans
-     * horodatage) : une contribution est une écriture comme une autre pour la synchronisation (voir
-     * `SavingsGoalRepositoryImpl.addContribution`), elle doit faire progresser `updatedAt` exactement
-     * comme `upsert` — sinon le serveur ne la verrait jamais lors du prochain push.
-     *
-     * `MAX(0, …)` : un retrait ne peut jamais rendre le montant négatif, même si deux retraits
-     * partent en même temps (l'interface bloque déjà ce cas, voir `SavingsContribution.preview`). */
-    @Query("UPDATE savings_goals SET currentAmount = MAX(0, currentAmount + :amountDelta), updatedAt = :updatedAt WHERE id = :id AND userId = :userId")
-    suspend fun addContribution(id: Long, amountDelta: Long, userId: Long, updatedAt: Long)
 
     /** Suppression DOUCE (voir la doc de tête) : `deletedAt`/`updatedAt` seulement, même principe
      * que `CategoryDao.softDeleteById`. */

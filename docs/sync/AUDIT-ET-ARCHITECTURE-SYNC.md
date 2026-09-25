@@ -51,7 +51,7 @@ Toutes dans `data/local/entity/`, déclarées dans `ArzikinaDatabase` (version 2
 | 4 | `CategoryEntity` | `categories` | Catégories de transaction |
 | 5 | `TransactionEntity` | `transactions` | Transactions (dépense/revenu/transfert), inclut les frais |
 | 6 | `BudgetEntity` | `budgets` | Budgets par catégorie |
-| 7 | `SavingsGoalEntity` | `savings_goals` | Objectifs d'épargne (⚠ écran non relié dans l'UI actuelle, code "orphelin" mais bien présent en base) |
+| 7 | `SavingsGoalEntity` | `savings_goals` | ANCIEN système d'objectifs d'épargne, remplacé par les comptes `type = SAVINGS_GOAL` — table conservée pour la migration non destructive (voir `docs/OBJECTIF-EPARGNE-COMPTE.md`) |
 | 8 | `PersonEntity` | `persons` | Personnes liées aux prêts/emprunts |
 | 9 | `LoanEntity` | `loans` | Prêts/emprunts |
 | 10 | `LoanPaymentEntity` | `loan_payments` | Remboursements |

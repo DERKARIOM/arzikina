@@ -15,6 +15,7 @@ import com.naniger.arzikina.data.local.entity.LoanPaymentEntity
 import com.naniger.arzikina.data.local.entity.TransactionEntity
 import com.naniger.arzikina.data.mapper.toDomain
 import com.naniger.arzikina.data.mapper.toEntity
+import com.naniger.arzikina.data.mapper.toSyncPayload
 import com.naniger.arzikina.data.remote.dto.AccountSyncPayload
 import com.naniger.arzikina.data.security.CardCipher
 import com.naniger.arzikina.di.IoDispatcher
@@ -348,24 +349,7 @@ class AccountRepositoryImpl @Inject constructor(
     }
 
     private suspend fun enqueueAccountSync(entity: AccountEntity, operation: SyncOperation) {
-        val payload = AccountSyncPayload(
-            id = requireNotNull(entity.syncId) { "syncId doit être généré avant l'enfilage." },
-            baseVersion = if (operation == SyncOperation.CREATE) null else entity.version,
-            name = entity.name,
-            icon = entity.icon.name,
-            colorArgb = entity.colorArgb,
-            currencyCode = entity.currencyCode,
-            initialBalanceMinor = entity.initialBalanceMinor,
-            type = entity.type.name,
-            cardLastFourDigits = entity.cardLastFourDigits,
-            cardExpiryMonth = entity.cardExpiryMonth,
-            cardExpiryYear = entity.cardExpiryYear,
-            isExcludedFromStatistics = entity.isExcludedFromStatistics,
-            mobileMoneyPackageName = entity.mobileMoneyPackageName,
-            displayOrder = entity.displayOrder,
-            createdAt = entity.createdAt,
-            updatedAt = entity.updatedAt
-        )
+        val payload = entity.toSyncPayload(baseVersion = if (operation == SyncOperation.CREATE) null else entity.version)
         syncQueueEnqueuer.enqueue(
             entityType = "accounts",
             entitySyncId = payload.id,

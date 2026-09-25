@@ -143,6 +143,10 @@ import com.naniger.arzikina.data.local.entity.UserServerLinkEntity
  *   (voir [MIGRATION_29_30]/[TransactionTemplateEntity]) — cahier des charges "Marketplace
  *   personnelle", extension : préremplit l'heure de la transaction créée par "Acheter" (sur la date
  *   du jour), `NULL` = comportement inchangé (heure actuelle).
+ * - 31 : Objectif d'épargne comme TYPE de compte (`AccountType.SAVINGS_GOAL`) — colonnes nullables
+ *   `savingsTargetAmount`/`savingsDescription` sur `accounts` (voir [MIGRATION_30_31]). Les anciens
+ *   objectifs (`savings_goals`) sont convertis à l'exécution, pas ici : voir
+ *   `data/repository/LegacySavingsGoalMigrator` (la conversion doit enfiler leur synchronisation).
  */
 @Database(
     entities = [
@@ -167,7 +171,7 @@ import com.naniger.arzikina.data.local.entity.UserServerLinkEntity
         UserProfilePhotoEntity::class,
         TransactionTemplateEntity::class
     ],
-    version = 30,
+    version = 31,
     exportSchema = true
 )
 @TypeConverters(Converters::class)

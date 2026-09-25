@@ -56,6 +56,11 @@ data class AccountEntity(
      * `MIGRATION_27_28`), qui rattrape aussi les lignes déjà existantes (comptage par utilisateur,
      * ordonné par `createdAt`) pour préserver l'ordre affiché avant l'introduction de ce champ. */
     val displayOrder: Long = 0L,
+    /** Voir [com.naniger.arzikina.domain.model.Account.savingsTargetAmount] — ajouté en v31 (voir
+     * `MIGRATION_30_31`), colonne nullable : `NULL` pour toutes les lignes existantes. */
+    val savingsTargetAmount: Long? = null,
+    /** Voir [com.naniger.arzikina.domain.model.Account.savingsDescription] — ajouté en v31. */
+    val savingsDescription: String? = null,
     /** UUID partagé Android/API/MySQL pour la synchronisation multi-appareils — additif, voir
      * `docs/sync/AUDIT-ET-ARCHITECTURE-SYNC.md` (section 6.3, option B) : l'[id] Room local
      * ci-dessus reste la clé primaire, inchangée. `null` tant que cette ligne n'a jamais été

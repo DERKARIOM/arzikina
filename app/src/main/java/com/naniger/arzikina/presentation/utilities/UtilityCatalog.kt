@@ -36,12 +36,8 @@ object UtilityCatalog {
             titleRes = R.string.utility_financial_plans_title,
             destinationId = R.id.financialPlansFragment
         ),
-        // Objectifs d'épargne — voir presentation/savings/SavingsGoalsFragment.
-        UtilityItem(
-            iconRes = R.drawable.ic_account_savings_24,
-            titleRes = R.string.utility_savings_goals_title,
-            destinationId = R.id.savingsGoalsFragment
-        ),
+        // Plus d'entrée « Épargne » : un objectif d'épargne est désormais un TYPE de compte
+        // (AccountType.SAVINGS_GOAL), créé et géré depuis l'écran Comptes comme tout compte.
         UtilityItem(
             iconRes = R.drawable.sauvegarde,
             titleRes = R.string.utility_backup_title,

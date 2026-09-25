@@ -53,13 +53,15 @@ Si `status === "conflict_resolved"` : une autre modification (faite entre-temps 
 categories                { name, icon, colorArgb, type }
 accounts                  { name, icon, colorArgb, currencyCode, initialBalanceMinor, type,
                              cardLastFourDigits?, cardExpiryMonth?, cardExpiryYear?,
-                             isExcludedFromStatistics, mobileMoneyPackageName? }
+                             isExcludedFromStatistics, mobileMoneyPackageName?, displayOrder,
+                             savingsTargetAmount?, savingsDescription? }
+                             # type = "SAVINGS_GOAL" : objectif d'épargne (voir docs/OBJECTIF-EPARGNE-COMPTE.md)
 persons                   { name, phone? }
 transactions               { amount, type, accountSyncId, transferAccountSyncId?, categorySyncId?,
                              date, description, latitude?, longitude?, paymentMethod?,
                              feeTransactionSyncId?, feeType? }
 budgets                   { categorySyncId, period, limitAmount, currencyCode, startDate?, endDate? }
-savings_goals              { name, targetAmount, currentAmount, currencyCode, deadline? }
+savings_goals              { name, targetAmount, currentAmount, currencyCode, deadline? }   # ANCIEN système, ne plus afficher
 loans                     { personSyncId, accountSyncId, type, amount, amountRepaid,
                              remainingAmount, startDate, dueDate, reason, reasonCustomText?,
                              repaymentMode, description, status, transactionSyncId }
@@ -102,7 +104,7 @@ Chaque entité, en plus de ses champs propres, porte toujours : `id` (UUID v4 g�
 UI (pages / composants)
    ↓
 Services métier (AuthService, AccountService, TransactionService, CategoryService,
-                 BudgetService, SavingsGoalService, PlanningService, AutomationService,
+                 BudgetService, PlanningService, AutomationService,
                  LoanService, StatisticsService, SyncService, SettingsService)
    ↓
 Un seul client API (gère le token, les en-têtes, le retry réseau)

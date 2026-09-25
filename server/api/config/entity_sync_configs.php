@@ -105,6 +105,11 @@ const ENTITY_CONFIGS = [
             // Position d'affichage (glisser-déposer sur l'écran "Comptes" Android) — voir
             // database/migrations/004_add_display_order_to_accounts.sql.
             ['db' => 'display_order', 'payload' => 'displayOrder', 'type' => 'int', 'nullable' => false],
+            // Objectif d'épargne (type `SAVINGS_GOAL`) — voir database/migrations/006_savings_goal_accounts.sql.
+            // NULLABLES : `null` explicite = compte repassé en compte classique (colonnes effacées),
+            // champ absent (ancien client) = valeur actuelle conservée (voir `array_key_exists`, push.php).
+            ['db' => 'savings_target_amount', 'payload' => 'savingsTargetAmount', 'type' => 'int', 'nullable' => true],
+            ['db' => 'savings_description', 'payload' => 'savingsDescription', 'type' => 'string', 'nullable' => true],
         ],
     ],
     // Étape 19 : `Loan` référence trois AUTRES lignes synchronisées (personne, compte, transaction

@@ -56,11 +56,11 @@ Clean Architecture stricte : le domaine (`domain/model/*`) ne connaît jamais Ro
 
 | # | Entity Room | Table MySQL | Statut synchronisation | Notes |
 |---|---|---|---|---|
-| 1 | `AccountEntity` | `accounts` | ✅ Synchronisée | Comptes (espèces, banque, carte, Mobile Money) |
+| 1 | `AccountEntity` | `accounts` | ✅ Synchronisée | Comptes (espèces, banque, carte, Mobile Money, **objectif d'épargne** — voir `docs/OBJECTIF-EPARGNE-COMPTE.md`) |
 | 2 | `CategoryEntity` | `categories` | ✅ Synchronisée | Catégories de transaction |
 | 3 | `TransactionEntity` | `transactions` | ✅ Synchronisée | Dépense/revenu/transfert, inclut les frais |
 | 4 | `BudgetEntity` | `budgets` | ✅ Synchronisée | Budget par catégorie |
-| 5 | `SavingsGoalEntity` | `savings_goals` | ✅ Synchronisée | Objectifs d'épargne (écran non relié côté Android actuellement) |
+| 5 | `SavingsGoalEntity` | `savings_goals` | ⚠️ Ancien système (lecture seule) | Remplacé par les comptes `type = SAVINGS_GOAL` ; table conservée pour la migration non destructive (voir `docs/OBJECTIF-EPARGNE-COMPTE.md`) |
 | 6 | `PersonEntity` | `persons` | ✅ Synchronisée | Personnes liées aux prêts/emprunts |
 | 7 | `LoanEntity` | `loans` | ✅ Synchronisée | Prêts/emprunts |
 | 8 | `LoanPaymentEntity` | `loan_payments` | ✅ Synchronisée | Remboursements |
@@ -86,7 +86,7 @@ Clean Architecture stricte : le domaine (`domain/model/*`) ne connaît jamais Ro
 | Transactions | `TransactionsFragment`, `TransactionFormFragment` | Transactions |
 | Catégories | `CategoriesFragment`, `CategoryFormFragment` | Sous-écran des Paramètres ou des Transactions |
 | Budgets | `BudgetFragment`, `BudgetFormFragment` | Budgets |
-| Épargne | `SavingsGoalsViewModel`/écran non relié dans la nav actuelle | Objectifs d'épargne (si activé) |
+| Épargne | Intégrée aux Comptes (`AccountType.SAVINGS_GOAL`, même formulaire/détail) | Aucun écran séparé : un objectif est un compte |
 | Planifications | `FinancialPlansFragment`, `FinancialPlanDetailFragment`, `FinancialPlanFormFragment`, `FinancialPlanItemFormFragment`, `FinancialPlanItemConvertFragment` | Planifications |
 | Automatisations | `RecurringTransactionsFragment`, `RecurringTransactionFormFragment`, `RecurringOccurrenceQueueDialogFragment` | Automatisations |
 | Prêts/Emprunts | `LoansFragment`, `LoanDetailFragment`, `LoanFormFragment`, `LoanPaymentFormFragment`, `LoanStatisticsFragment` | Prêts, Emprunts |
@@ -137,7 +137,7 @@ server/
 | `users` | full_name, username (UNIQUE), email (UNIQUE), phone_number, password_hash, security_question, security_answer_hash | `password_hash` calculé CÔTÉ SERVEUR (`password_hash()` PHP), sans rapport avec le PBKDF2 local Android |
 | `auth_tokens` | user_id, token_hash (SHA-256, UNIQUE), device_id, device_label, expires_at, revoked_at, last_used_at | Table technique, pas d'`id` UUID (auto-increment) |
 | `user_preferences` | user_id, theme_mode, currency_code | `UNIQUE KEY uq_user_preferences_user` — **au plus une ligne par utilisateur**, seule table de ce type |
-| `accounts` | name, icon, color_argb, currency_code, initial_balance_minor, type, card_last_four_digits, card_expiry_month, card_expiry_year, is_excluded_from_statistics, mobile_money_package_name | — |
+| `accounts` | name, icon, color_argb, currency_code, initial_balance_minor, type, card_last_four_digits, card_expiry_month, card_expiry_year, is_excluded_from_statistics, mobile_money_package_name, display_order, savings_target_amount, savings_description | `savings_target_amount`/`savings_description` : uniquement pour `type = 'SAVINGS_GOAL'` (migration 006) |
 | `categories` | name, icon, color_argb, type | — |
 | `persons` | name, phone | — |
 | `transactions` | amount, type, account_id, transfer_account_id, category_id, date, description, latitude, longitude, payment_method, fee_transaction_id, fee_type, receipt_id | `fee_transaction_id`/`receipt_id` **sans FOREIGN KEY** (cohérence applicative, pas SQL — une transaction peut arriver avant sa transaction de frais) |
@@ -398,7 +398,7 @@ Services proposés (calqués sur les repositories Android, section 1) :
 | `TransactionService` | Transactions, frais, transferts | `transactions` |
 | `CategoryService` | Catégories | `categories` |
 | `BudgetService` | Budgets | `budgets` |
-| `SavingsGoalService` | Objectifs d'épargne | `savings_goals` |
+| — (`AccountService`) | Objectifs d'épargne = comptes `SAVINGS_GOAL` | `accounts` |
 | `PlanningService` | Planifications par projet | `financial_plans`, `financial_plan_items` |
 | `AutomationService` | Automatisations (transactions récurrentes) | `recurring_transactions`, `recurring_transaction_occurrences` |
 | `LoanService` | Prêts/emprunts | `persons`, `loans`, `loan_payments` |
@@ -500,7 +500,7 @@ Ordre recommandé, cohérent avec le plan de migration déjà validé côté syn
 | Transactions (dépense/revenu/transfert + frais) | ✅ | À construire | `transactions` | ✅ |
 | Catégories | ✅ | À construire | `categories` | ✅ |
 | Budgets | ✅ | À construire | `budgets` | ✅ |
-| Objectifs d'épargne | ⚠️ Écran non relié dans la nav actuelle | À construire (si activé) | `savings_goals` | ✅ |
+| Objectifs d'épargne (type de compte) | ✅ | À construire dans l'écran Comptes | `accounts` (`type = SAVINGS_GOAL`) | ✅ |
 | Planifications | ✅ | À construire | `financial_plans`, `financial_plan_items` | ✅ |
 | Automatisations | ✅ | À construire | `recurring_transactions`, `recurring_transaction_occurrences` | ✅ |
 | Prêts/Emprunts | ✅ | À construire | `persons`, `loans`, `loan_payments` | ✅ |

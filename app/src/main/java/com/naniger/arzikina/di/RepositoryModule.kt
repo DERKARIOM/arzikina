@@ -13,7 +13,6 @@ import com.naniger.arzikina.data.repository.PersonRepositoryImpl
 import com.naniger.arzikina.data.repository.ProfilePhotoRepositoryImpl
 import com.naniger.arzikina.data.repository.ReceiptRepositoryImpl
 import com.naniger.arzikina.data.repository.RecurringTransactionRepositoryImpl
-import com.naniger.arzikina.data.repository.SavingsGoalRepositoryImpl
 import com.naniger.arzikina.data.repository.SessionManagerImpl
 import com.naniger.arzikina.data.repository.SyncAuthRepositoryImpl
 import com.naniger.arzikina.data.repository.SyncEngineImpl
@@ -38,7 +37,6 @@ import com.naniger.arzikina.domain.repository.PersonRepository
 import com.naniger.arzikina.domain.repository.ProfilePhotoRepository
 import com.naniger.arzikina.domain.repository.ReceiptRepository
 import com.naniger.arzikina.domain.repository.RecurringTransactionRepository
-import com.naniger.arzikina.domain.repository.SavingsGoalRepository
 import com.naniger.arzikina.domain.repository.SessionManager
 import com.naniger.arzikina.domain.repository.SyncAuthRepository
 import com.naniger.arzikina.domain.repository.SyncEngine
@@ -76,10 +74,6 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindBudgetRepository(impl: BudgetRepositoryImpl): BudgetRepository
-
-    @Binds
-    @Singleton
-    abstract fun bindSavingsGoalRepository(impl: SavingsGoalRepositoryImpl): SavingsGoalRepository
 
     @Binds
     @Singleton

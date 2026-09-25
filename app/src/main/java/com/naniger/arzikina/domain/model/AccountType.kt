@@ -28,5 +28,18 @@ enum class AccountType {
      * pas les stocker élimine tout risque de fuite sans nécessiter de
      * chiffrement (Keystore/Cipher).
      */
-    CREDIT_CARD
+    CREDIT_CARD,
+
+    /**
+     * Objectif d'épargne : un compte à part entière (solde = solde initial + transactions,
+     * transferts, statistiques… exactement comme les autres types), qui porte en plus un montant
+     * cible — voir [Account.savingsTargetAmount]/[Account.savingsDescription]. Remplace l'ancien
+     * utilitaire « Objectifs d'épargne » (table `savings_goals` séparée, montant épargné saisi à la
+     * main sans transaction) : voir `data/local/database/LegacySavingsGoalMigrator`.
+     *
+     * Transformer un compte existant en objectif (ou l'inverse) se fait en changeant simplement
+     * son type depuis « Modifier le compte » : même ligne `accounts` (même id/syncId), mêmes
+     * transactions, seul le montant cible est ajouté/retiré.
+     */
+    SAVINGS_GOAL
 }
