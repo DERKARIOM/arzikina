@@ -56,7 +56,10 @@ class LoansAdapter(
             binding.receivableCount.text = context.resources.getQuantityString(R.plurals.loans_summary_receivable_count, summary.lentCount, summary.lentCount)
             binding.owedAmount.text = formatCurrencyAmounts(summary.totalOwed)
             binding.owedCount.text = context.resources.getQuantityString(R.plurals.loans_summary_owed_count, summary.borrowedCount, summary.borrowedCount)
-            binding.listCount.text = context.resources.getQuantityString(R.plurals.loans_list_count, summary.totalCount, summary.totalCount)
+            // « 3 éléments trouvés » quand une recherche/un filtre est actif : signale que les
+            // totaux ci-dessus ne portent que sur les prêts/emprunts affichés.
+            val countRes = if (summary.isFiltered) R.plurals.loans_list_count_filtered else R.plurals.loans_list_count
+            binding.listCount.text = context.resources.getQuantityString(countRes, summary.totalCount, summary.totalCount)
         }
     }
 

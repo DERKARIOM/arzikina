@@ -868,6 +868,10 @@
         <item quantity="one">%d élément</item>
         <item quantity="other">%d éléments</item>
     </plurals>
+    <plurals name="loans_list_count_filtered">
+        <item quantity="one">%d élément trouvé</item>
+        <item quantity="other">%d éléments trouvés</item>
+    </plurals>
     <string name="loans_default_title_lent">Prêt</string>
     <string name="loans_default_title_borrowed">Emprunt</string>
     <string name="loans_person_prefix_lent">À %s</string>

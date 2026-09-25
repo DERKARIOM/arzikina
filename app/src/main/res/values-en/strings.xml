@@ -564,6 +564,10 @@
         <item quantity="one">%d item</item>
         <item quantity="other">%d items</item>
     </plurals>
+    <plurals name="loans_list_count_filtered">
+        <item quantity="one">%d item found</item>
+        <item quantity="other">%d items found</item>
+    </plurals>
     <string name="loans_default_title_lent">Loan</string>
     <string name="loans_default_title_borrowed">Borrowing</string>
     <string name="loans_person_prefix_lent">To %s</string>

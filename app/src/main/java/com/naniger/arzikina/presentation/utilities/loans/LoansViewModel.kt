@@ -56,15 +56,20 @@ data class LoanFilters(
      * même raisonnement que `TransactionFilters.hasActiveFilters`. */
     val hasActiveFilters: Boolean
         get() = type != LoanTypeFilterOption.ALL || status != LoanStatusFilterOption.ALL
+
+    /** Recherche OU filtre actif : la liste (et donc [LoansSummary]) ne montre qu'une partie des
+     * prêts/emprunts. */
+    val isNarrowed: Boolean
+        get() = query.isNotBlank() || hasActiveFilters
 }
 
 /**
  * État affiché par l'écran principal Prêts/Emprunts.
  *
- * [summary] reste calculé sur TOUS les prêts/emprunts, indépendamment de [LoansViewModel.filters] :
- * une recherche/un filtre ne change que la liste ci-dessous, jamais les totaux "Total reçu"/
- * "Total dû" — cohérent avec un chiffre de synthèse qui doit rester une vue d'ensemble stable,
- * pas un sous-total qui varierait à chaque frappe dans le champ de recherche.
+ * [summary] est calculé sur les SEULS prêts/emprunts affichés : "Total reçu"/"Total dû" et les
+ * compteurs suivent la recherche et les filtres (même comportement que la page Web), et
+ * [LoansSummary.isFiltered] le signale à l'écran. Sans recherche ni filtre, ce sont les totaux
+ * de tous les prêts/emprunts, comme avant.
  */
 data class LoansUiState(
     val summary: LoansSummary,
@@ -106,23 +111,27 @@ class LoansViewModel @Inject constructor(
 
         // Actifs (En cours/En retard/À venir) affichés avant les remboursés, comme sur la
         // maquette ; puis par échéance croissante — LoanDao fournit déjà cet ordre secondaire.
-        val items = loans
+        // Chaque prêt garde son élément de liste : le résumé se calcule sur les MÊMES prêts que
+        // ceux affichés, sans refaire le filtrage une seconde fois.
+        val visible = loans
             .sortedBy { liveStatusById.getValue(it.id) == LoanStatus.REPAID }
-            .map { loan -> loan.toListItem(personNamesById, accountsById, liveStatusById.getValue(loan.id)) }
-            .filter { item -> matchesType(item.type, filters.type) }
-            .filter { item -> matchesStatus(item.status, filters.status) }
-            .filter { item -> matchesQuery(item, normalizedQuery) }
+            .map { loan -> loan to loan.toListItem(personNamesById, accountsById, liveStatusById.getValue(loan.id)) }
+            .filter { (_, item) -> matchesType(item.type, filters.type) }
+            .filter { (_, item) -> matchesStatus(item.status, filters.status) }
+            .filter { (_, item) -> matchesQuery(item, normalizedQuery) }
+        val visibleLoans = visible.map { (loan, _) -> loan }
 
         LoansUiState(
-            // Voir la doc de LoansUiState.summary : `loans` (non filtré), pas `items`.
+            // Voir la doc de LoansUiState.summary : calculé sur les prêts AFFICHÉS.
             summary = LoansSummary(
-                totalReceivable = sumRemainingByCurrency(loans, LoanType.LENT, accountsById),
-                lentCount = loans.count { it.type == LoanType.LENT },
-                totalOwed = sumRemainingByCurrency(loans, LoanType.BORROWED, accountsById),
-                borrowedCount = loans.count { it.type == LoanType.BORROWED },
-                totalCount = loans.size
+                totalReceivable = sumRemainingByCurrency(visibleLoans, LoanType.LENT, accountsById),
+                lentCount = visibleLoans.count { it.type == LoanType.LENT },
+                totalOwed = sumRemainingByCurrency(visibleLoans, LoanType.BORROWED, accountsById),
+                borrowedCount = visibleLoans.count { it.type == LoanType.BORROWED },
+                totalCount = visibleLoans.size,
+                isFiltered = filters.isNarrowed
             ),
-            items = items
+            items = visible.map { (_, item) -> item }
         )
     }
         .map<LoansUiState, AppResult<LoansUiState>> { AppResult.Success(it) }

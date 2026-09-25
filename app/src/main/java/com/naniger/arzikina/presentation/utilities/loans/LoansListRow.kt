@@ -13,9 +13,8 @@ sealed interface LoansListRow {
 
     /**
      * Recherche/filtre actif ne retournant aucun prêt/emprunt — ligne affichée à la place des
-     * [LoanRow] (jamais en même temps qu'elles), TOUJOURS précédée du [Header] : les totaux
-     * "Total reçu"/"Total dû" doivent rester visibles même quand le filtre courant ne retourne
-     * rien (voir la doc de [LoansUiState.summary], "vue d'ensemble stable").
+     * [LoanRow] (jamais en même temps qu'elles), TOUJOURS précédée du [Header] (totaux alors à 0,
+     * voir la doc de [LoansUiState.summary]).
      */
     data object NoResults : LoansListRow
 }

@@ -21,5 +21,8 @@ data class LoansSummary(
     val lentCount: Int,
     val totalOwed: List<CurrencyAmount>,
     val borrowedCount: Int,
-    val totalCount: Int
+    val totalCount: Int,
+    /** `true` quand une recherche ou un filtre est actif : les montants et compteurs ci-dessus ne
+     * portent alors que sur les prêts/emprunts affichés (voir `LoansUiState.summary`). */
+    val isFiltered: Boolean = false
 )
