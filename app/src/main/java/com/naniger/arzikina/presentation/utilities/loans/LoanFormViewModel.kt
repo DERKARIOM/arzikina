@@ -17,6 +17,7 @@ import com.naniger.arzikina.domain.repository.LoanRepository
 import com.naniger.arzikina.domain.repository.PersonRepository
 import com.naniger.arzikina.domain.repository.TransactionRepository
 import com.naniger.arzikina.presentation.accounts.computeCurrentBalances
+import com.naniger.arzikina.util.LoanDateTime
 import com.naniger.arzikina.util.Money
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -56,7 +57,9 @@ data class LoanFormState(
     val personName: String = "",
     val accountId: Long = 0L,
     val amountInput: String = "",
-    val startDateMillis: Long = System.currentTimeMillis(),
+    /** Date ET heure du prêt/emprunt (voir `LoanDateTime`) — un seul instant, jamais une heure
+     * décorative séparée. Par défaut : maintenant, à la minute. */
+    val startDateMillis: Long = LoanDateTime.nowToMinute(),
     val dueDateMillis: Long = System.currentTimeMillis() + TimeUnit.DAYS.toMillis(30),
     val description: String = "",
     val firstPaymentAmountInput: String = "",
@@ -129,8 +132,22 @@ class LoanFormViewModel @Inject constructor(
         _formState.update { it.copy(amountInput = value, amountError = null) }
     }
 
+    /** [millis] : jour choisi (minuit local, voir `LoanFormFragment.showDatePicker`) — l'heure
+     * déjà choisie est CONSERVÉE (voir [onStartTimeChange]). */
     fun onStartDateChange(millis: Long) {
-        _formState.update { it.copy(startDateMillis = millis, dueDateError = null) }
+        _formState.update {
+            it.copy(
+                startDateMillis = LoanDateTime.withDate(it.startDateMillis, LoanDateTime.toLocalDate(millis)),
+                dueDateError = null,
+                firstPaymentDateError = null
+            )
+        }
+    }
+
+    fun onStartTimeChange(hour: Int, minute: Int) {
+        _formState.update {
+            it.copy(startDateMillis = LoanDateTime.withTime(it.startDateMillis, hour, minute), firstPaymentDateError = null)
+        }
     }
 
     fun onDueDateChange(millis: Long) {
@@ -158,7 +175,9 @@ class LoanFormViewModel @Inject constructor(
         val personError = if (state.personId == 0L) R.string.error_select_person else null
         val accountError = if (state.accountId == 0L) R.string.error_select_account else null
         val amountError = if (amountMinor == null || amountMinor <= 0L) R.string.error_invalid_amount else null
-        val dueDateError = if (state.dueDateMillis <= state.startDateMillis) {
+        // Par JOUR (l'échéance reste une date métier, voir LoanStatus.isPastDueDay) : l'heure du
+        // prêt ne doit pas changer cette règle — l'échéance doit tomber un jour APRÈS le début.
+        val dueDateError = if (!LoanDateTime.isBeforeDay(state.startDateMillis, state.dueDateMillis)) {
             R.string.error_due_date_before_start
         } else {
             null
@@ -204,7 +223,9 @@ class LoanFormViewModel @Inject constructor(
                 _formState.update { it.copy(firstPaymentAmountError = R.string.error_amount_exceeds_total) }
                 return
             }
-            if (state.firstPaymentDateMillis < state.startDateMillis) {
+            // Par JOUR : un versement le jour même du prêt reste accepté quelle que soit l'heure
+            // choisie (voir firstPaymentDate ci-dessous).
+            if (LoanDateTime.isBeforeDay(state.firstPaymentDateMillis, state.startDateMillis)) {
                 _formState.update { it.copy(firstPaymentDateError = R.string.error_date_before_start) }
                 return
             }
@@ -244,7 +265,9 @@ class LoanFormViewModel @Inject constructor(
                         loanId = loanId,
                         accountId = state.accountId,
                         amount = amount,
-                        date = state.firstPaymentDateMillis,
+                        // Jamais AVANT le décaissement (même jour, heure antérieure) : l'historique
+                        // et le solde courant restent dans l'ordre chronologique réel.
+                        date = maxOf(state.firstPaymentDateMillis, state.startDateMillis),
                         note = "",
                         // Recalculé par LoanRepositoryImpl.recordPayment.
                         transactionId = 0L,

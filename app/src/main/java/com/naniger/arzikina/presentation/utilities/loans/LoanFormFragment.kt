@@ -22,11 +22,14 @@ import com.naniger.arzikina.domain.model.Person
 import com.naniger.arzikina.domain.model.SupportedCurrency
 import com.naniger.arzikina.presentation.accounts.AccountIconMapper
 import com.naniger.arzikina.presentation.components.AccountPickerDialog
+import com.naniger.arzikina.presentation.components.TimePickerHelper
 import com.naniger.arzikina.presentation.components.displayName
 import com.naniger.arzikina.util.AppDateFormats
 import com.naniger.arzikina.util.Constants
 import com.naniger.arzikina.util.Money
+import com.naniger.arzikina.util.LoanDateTime
 import com.naniger.arzikina.util.MoneyInputFormatter
+import com.naniger.arzikina.util.TriggerTimeFormatter
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.datepicker.MaterialDatePicker
 import com.google.android.material.snackbar.Snackbar
@@ -148,6 +151,19 @@ class LoanFormFragment : Fragment(R.layout.fragment_loan_form) {
 
         binding.startDateField.dateFieldLabel.text = getString(R.string.loan_form_start_date_label)
         binding.startDateRow.setOnClickListener { showDatePicker(R.string.loan_form_start_date_label) { viewModel.onStartDateChange(it) } }
+        binding.startTimeField.dateFieldLabel.text = getString(R.string.loan_form_start_time_label)
+        binding.startTimeField.dateFieldIcon.setImageResource(R.drawable.ic_time_24)
+        binding.startTimeRow.setOnClickListener {
+            val current = LoanDateTime.toLocalTime(viewModel.formState.value.startDateMillis)
+            TimePickerHelper.show(
+                context = requireContext(),
+                fragmentManager = parentFragmentManager,
+                initialHour = current.hour,
+                initialMinute = current.minute,
+                titleText = getString(R.string.loan_form_start_time_label),
+                tag = "loan_form_time_picker"
+            ) { hour, minute -> viewModel.onStartTimeChange(hour, minute) }
+        }
         binding.dueDateField.dateFieldLabel.text = getString(R.string.loan_form_due_date_label)
         binding.dueDateRow.setOnClickListener { showDatePicker(R.string.loan_form_due_date_label) { viewModel.onDueDateChange(it) } }
         binding.firstPaymentDateField.dateFieldLabel.text = getString(R.string.loan_form_first_payment_date_label)
@@ -214,6 +230,7 @@ class LoanFormFragment : Fragment(R.layout.fragment_loan_form) {
         binding.amountCurrencyBadge.text = selectedAccount?.let { currencySymbol(it.currencyCode) }.orEmpty()
 
         binding.startDateField.dateFieldValue.text = formatDate(state.startDateMillis)
+        binding.startTimeField.dateFieldValue.text = formatTime(state.startDateMillis)
         binding.dueDateField.dateFieldValue.text = formatDate(state.dueDateMillis)
         binding.dueDateErrorText.text = state.dueDateError?.let { getString(it) }
         binding.dueDateErrorText.visibility = if (state.dueDateError != null) View.VISIBLE else View.GONE
@@ -235,7 +252,8 @@ class LoanFormFragment : Fragment(R.layout.fragment_loan_form) {
             ?: Constants.DEFAULT_CURRENCY_CODE
         val amountMinor = Money.parseToMinorUnits(state.amountInput) ?: 0L
         binding.summaryAmountValue.text = Money.format(CurrencyAmount(currencyCode, amountMinor))
-        binding.summaryStartDateValue.text = formatDate(state.startDateMillis)
+        binding.summaryStartDateValue.text =
+            getString(R.string.loan_date_at_time, formatDate(state.startDateMillis), formatTime(state.startDateMillis))
         binding.summaryDueDateValue.text = formatDate(state.dueDateMillis)
 
         if (binding.descriptionInput.text?.toString() != state.description) {
@@ -287,6 +305,12 @@ class LoanFormFragment : Fragment(R.layout.fragment_loan_form) {
 
     private fun currencySymbol(currencyCode: String): String =
         SupportedCurrency.entries.firstOrNull { it.code == currencyCode }?.symbol ?: currencyCode
+
+    /** Format horaire de l'appareil (24 h en français), comme partout ailleurs dans l'app. */
+    private fun formatTime(millis: Long): String {
+        val time = LoanDateTime.toLocalTime(millis)
+        return TriggerTimeFormatter.format(requireContext(), time.hour, time.minute)
+    }
 
     private fun formatDate(millis: Long): String =
         Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault()).toLocalDate().format(AppDateFormats.NUMERIC_DATE)

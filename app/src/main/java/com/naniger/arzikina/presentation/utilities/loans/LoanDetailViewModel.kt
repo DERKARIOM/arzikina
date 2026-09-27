@@ -12,9 +12,13 @@ import com.naniger.arzikina.domain.repository.LoanRepository
 import com.naniger.arzikina.domain.repository.PersonRepository
 import com.naniger.arzikina.util.AppResult
 import com.naniger.arzikina.util.Constants
+import com.naniger.arzikina.util.LoanDateTime
 import com.naniger.arzikina.util.technicalMessage
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
@@ -46,6 +50,15 @@ data class LoanDetailUiState(
     val payments: List<LoanPayment>,
     val accountsById: Map<Long, Account>
 )
+
+/** Refus de [LoanDetailViewModel.updateStartDateTime] — voir sa doc. */
+sealed interface LoanDetailEvent {
+    /** Le début doit tomber un jour AVANT l'échéance (même règle que la création). */
+    data object StartNotBeforeDue : LoanDetailEvent
+
+    /** Le début ne peut pas être postérieur (jour) à un versement déjà enregistré. */
+    data object StartAfterPayment : LoanDetailEvent
+}
 
 @HiltViewModel
 class LoanDetailViewModel @Inject constructor(
@@ -92,6 +105,36 @@ class LoanDetailViewModel @Inject constructor(
             started = SharingStarted.WhileSubscribed(stopTimeoutMillis = 5_000),
             initialValue = AppResult.Loading
         )
+
+    private val _events = MutableSharedFlow<LoanDetailEvent>()
+    val events: SharedFlow<LoanDetailEvent> = _events.asSharedFlow()
+
+    /**
+     * « Modifier la date et l'heure » : SEULE modification possible d'un prêt/emprunt existant.
+     * Ne change que [Loan.startDate] (date + heure) : montant, compte, personne, échéance,
+     * remboursements et statut financier restent identiques. Passe par
+     * [LoanRepository.saveLoan] (branche mise à jour), qui réaligne la transaction de décaissement
+     * sur la même date/heure et enfile la synchronisation des deux — même instant partout.
+     *
+     * Mêmes règles, par JOUR, qu'à la création (voir LoanFormViewModel) : début avant l'échéance,
+     * jamais après un versement déjà enregistré.
+     */
+    fun updateStartDateTime(newStartMillis: Long) {
+        viewModelScope.launch {
+            val stored = loanRepository.getLoan(loanId) ?: return@launch
+            if (!LoanDateTime.isBeforeDay(newStartMillis, stored.dueDate)) {
+                _events.emit(LoanDetailEvent.StartNotBeforeDue)
+                return@launch
+            }
+            val payments = (uiState.value as? AppResult.Success)?.data?.payments.orEmpty()
+            if (payments.any { LoanDateTime.isBeforeDay(it.date, newStartMillis) }) {
+                _events.emit(LoanDetailEvent.StartAfterPayment)
+                return@launch
+            }
+            if (stored.startDate == newStartMillis) return@launch
+            loanRepository.saveLoan(stored.copy(startDate = newStartMillis))
+        }
+    }
 
     fun deleteLoan() {
         viewModelScope.launch {

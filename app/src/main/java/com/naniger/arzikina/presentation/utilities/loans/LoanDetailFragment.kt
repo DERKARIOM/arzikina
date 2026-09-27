@@ -15,12 +15,18 @@ import com.naniger.arzikina.domain.model.CurrencyAmount
 import com.naniger.arzikina.domain.model.LoanPayment
 import com.naniger.arzikina.presentation.components.ConfirmDialogs
 import com.naniger.arzikina.presentation.components.NavAnimations
+import com.naniger.arzikina.presentation.components.TimePickerHelper
 import com.naniger.arzikina.presentation.components.displayName
 import com.naniger.arzikina.util.AppResult
+import com.naniger.arzikina.util.LoanDateTime
 import com.naniger.arzikina.util.Money
+import com.google.android.material.datepicker.MaterialDatePicker
 import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
+import java.time.Instant
+import java.time.LocalTime
+import java.time.ZoneOffset
 
 /**
  * Détail d'un prêt/emprunt (voir maquette), atteint en cliquant sur une carte de [LoansFragment].
@@ -62,7 +68,8 @@ class LoanDetailFragment : Fragment(R.layout.fragment_loan_detail) {
 
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.uiState.collect { state -> render(state) }
+                launch { viewModel.uiState.collect { state -> render(state) } }
+                launch { viewModel.events.collect { event -> handleEvent(event) } }
             }
         }
     }
@@ -74,9 +81,13 @@ class LoanDetailFragment : Fragment(R.layout.fragment_loan_detail) {
 
     private fun setUpToolbar(binding: FragmentLoanDetailBinding) {
         binding.toolbar.setNavigationOnClickListener { findNavController().navigateUp() }
-        binding.toolbar.inflateMenu(R.menu.form_delete_menu)
+        binding.toolbar.inflateMenu(R.menu.loan_detail_menu)
         binding.toolbar.setOnMenuItemClickListener { item ->
             when (item.itemId) {
+                R.id.action_edit_loan_date_time -> {
+                    editStartDateTime()
+                    true
+                }
                 R.id.action_delete_item -> {
                     confirmDelete()
                     true
@@ -118,6 +129,51 @@ class LoanDetailFragment : Fragment(R.layout.fragment_loan_detail) {
             )
         }
         adapter.submitList(rows)
+    }
+
+    /**
+     * « Modifier la date et l'heure » : sélecteur de date natif puis sélecteur d'heure natif
+     * (mêmes composants que le formulaire de création), pré-positionnés sur la valeur actuelle.
+     * Même conversion que `LoanFormFragment.showDatePicker` : le jour choisi (UTC côté
+     * MaterialDatePicker) est relu en date LOCALE — aucun décalage de fuseau.
+     */
+    private fun editStartDateTime() {
+        val loan = latestUiState?.loan ?: return
+        val currentDate = LoanDateTime.toLocalDate(loan.startDate)
+        val picker = MaterialDatePicker.Builder.datePicker()
+            .setTitleText(R.string.loan_form_start_date_label)
+            .setSelection(currentDate.atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli())
+            .build()
+        picker.addOnPositiveButtonClickListener { selectionUtcMillis ->
+            val date = Instant.ofEpochMilli(selectionUtcMillis).atZone(ZoneOffset.UTC).toLocalDate()
+            // Ancienne donnée sans heure : proposer l'heure actuelle plutôt que 00:00.
+            val initialTime = if (LoanDateTime.hasExplicitTime(loan.startDate)) {
+                LoanDateTime.toLocalTime(loan.startDate)
+            } else {
+                LocalTime.now()
+            }
+            TimePickerHelper.show(
+                context = requireContext(),
+                fragmentManager = parentFragmentManager,
+                initialHour = initialTime.hour,
+                initialMinute = initialTime.minute,
+                titleText = getString(R.string.loan_form_start_time_label),
+                tag = "loan_detail_time_picker"
+            ) { hour, minute ->
+                val dayMillis = LoanDateTime.withDate(loan.startDate, date)
+                viewModel.updateStartDateTime(LoanDateTime.withTime(dayMillis, hour, minute))
+            }
+        }
+        picker.show(parentFragmentManager, "loan_detail_date_picker")
+    }
+
+    private fun handleEvent(event: LoanDetailEvent) {
+        val binding = binding ?: return
+        val messageRes = when (event) {
+            LoanDetailEvent.StartNotBeforeDue -> R.string.error_due_date_before_start
+            LoanDetailEvent.StartAfterPayment -> R.string.loan_detail_start_after_payment_error
+        }
+        Snackbar.make(binding.root, messageRes, Snackbar.LENGTH_LONG).show()
     }
 
     private fun confirmDelete() {

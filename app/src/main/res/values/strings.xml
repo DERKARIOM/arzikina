@@ -957,6 +957,11 @@
     <string name="loan_form_amount_label">Montant</string>
     <string name="loan_form_start_date_label">Date de début</string>
     <string name="loan_form_due_date_label">Date d\'échéance</string>
+    <string name="loan_form_start_time_label">Heure</string>
+    <string name="loan_date_at_time">%1$s à %2$s</string>
+    <string name="loan_detail_time_label">Heure</string>
+    <string name="loan_detail_edit_date_time_action">Modifier la date et l\'heure</string>
+    <string name="loan_detail_start_after_payment_error">La date de début ne peut pas être après un versement déjà enregistré</string>
     <string name="loan_form_next_action">Suivant</string>
     <string name="loan_form_summary_type_label">Type</string>
     <string name="loan_form_summary_amount_label">Montant total</string>

@@ -392,6 +392,29 @@
 
                 </com.google.android.material.card.MaterialCardView>
 
+                <!-- Heure du prêt/emprunt (même ligne cliquable réutilisée, icône horloge posée
+                     par LoanFormFragment) : ouvre le MaterialTimePicker natif (TimePickerHelper),
+                     jamais de saisie clavier. Fusionnée avec la date ci-dessus en UN SEUL instant
+                     (voir LoanDateTime), l'échéance restant, elle, une date seule. -->
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/startTimeRow"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/spacing_m"
+                    android:checkable="false"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:theme="@style/ThemeOverlay.Arzikina.OnBalanceCard"
+                    app:cardBackgroundColor="@color/arzikina_postcart_background"
+                    app:cardCornerRadius="@dimen/corner_radius_medium"
+                    app:cardElevation="@dimen/elevation_raised">
+
+                    <include
+                        android:id="@+id/startTimeField"
+                        layout="@layout/item_date_field" />
+
+                </com.google.android.material.card.MaterialCardView>
+
                 <com.google.android.material.card.MaterialCardView
                     android:id="@+id/dueDateRow"
                     android:layout_width="match_parent"

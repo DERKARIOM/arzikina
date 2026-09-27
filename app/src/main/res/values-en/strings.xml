@@ -639,6 +639,11 @@
     <string name="loan_form_amount_label">Amount</string>
     <string name="loan_form_start_date_label">Start date</string>
     <string name="loan_form_due_date_label">Due date</string>
+    <string name="loan_form_start_time_label">Time</string>
+    <string name="loan_date_at_time">%1$s at %2$s</string>
+    <string name="loan_detail_time_label">Time</string>
+    <string name="loan_detail_edit_date_time_action">Edit date and time</string>
+    <string name="loan_detail_start_after_payment_error">The start date can\'t be after a payment already recorded</string>
     <string name="loan_form_next_action">Next</string>
     <string name="loan_form_summary_type_label">Type</string>
     <string name="loan_form_summary_amount_label">Total amount</string>
