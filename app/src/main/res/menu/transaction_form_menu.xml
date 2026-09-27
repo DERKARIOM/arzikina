@@ -10,6 +10,10 @@
     modèle depuis l'ajout de transaction") — visible UNIQUEMENT en création (voir
     TransactionFormFragment.setUpToolbar, masqué en modification) : ouvre TemplatePickerDialog,
     remplit montant/type/catégorie/description/heure en conservant le compte déjà sélectionné.
+
+    "Créer un modèle" / "Voir le modèle" : UNIQUEMENT en modification (menu ⋮, voir
+    TransactionFormFragment.renderTemplateAction) — l'un OU l'autre selon qu'un modèle a déjà été
+    créé à partir de cette transaction, jamais les deux (voir TemplateActionState).
 -->
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
@@ -18,6 +22,16 @@
         android:icon="@drawable/ic_storefront_24"
         android:title="@string/action_choose_template"
         app:showAsAction="ifRoom" />
+    <item
+        android:id="@+id/action_create_template_from_transaction"
+        android:title="@string/action_create_template_from_transaction"
+        android:visible="false"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/action_view_template"
+        android:title="@string/action_view_template"
+        android:visible="false"
+        app:showAsAction="never" />
     <item
         android:id="@+id/action_save_transaction"
         android:icon="@drawable/ic_check_24"

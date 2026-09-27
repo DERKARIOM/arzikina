@@ -10,7 +10,9 @@ import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.navigation.NavOptions
 import androidx.navigation.fragment.findNavController
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.naniger.arzikina.R
 import com.naniger.arzikina.databinding.FragmentMarketplaceFormBinding
 import com.naniger.arzikina.domain.model.Account
@@ -92,6 +94,11 @@ class MarketplaceFormFragment : Fragment(R.layout.fragment_marketplace_form) {
         binding.toolbar.title = getString(
             if (viewModel.isEditMode) R.string.marketplace_form_title_edit else R.string.marketplace_form_title_add
         )
+        // Prérempli depuis une transaction : rappelé sous le titre, le formulaire tenant lieu de
+        // confirmation (rien n'est créé avant « Enregistrer »).
+        if (viewModel.isFromTransaction) {
+            binding.toolbar.subtitle = getString(R.string.marketplace_form_subtitle_from_transaction)
+        }
         binding.toolbar.setNavigationOnClickListener { findNavController().navigateUp() }
     }
 
@@ -173,9 +180,52 @@ class MarketplaceFormFragment : Fragment(R.layout.fragment_marketplace_form) {
         }
     }
 
+    /** Affiché une seule fois par écran (voir [renderSourceTransactionIssues]). */
+    private var sourceIssueDialogShown = false
+
+    /**
+     * « Créer un modèle à partir d'une transaction » impossible : la transaction a déjà un modèle
+     * (aucun second modèle sans action explicite — on propose d'ouvrir l'existant), ou elle
+     * n'existe plus / ne peut pas devenir un modèle. Dans les deux cas l'écran se ferme : il ne doit
+     * jamais rester un formulaire prérempli qu'on pourrait enregistrer par erreur.
+     */
+    private fun renderSourceTransactionIssues(state: MarketplaceFormState) {
+        if (sourceIssueDialogShown) return
+        val linkedTemplateId = state.alreadyLinkedTemplateId
+        if (linkedTemplateId == null && !state.sourceTransactionUnavailable) return
+        sourceIssueDialogShown = true
+        val builder = MaterialAlertDialogBuilder(requireContext()).setCancelable(false)
+        if (linkedTemplateId != null) {
+            builder
+                .setTitle(R.string.template_from_transaction_already_linked_title)
+                .setMessage(R.string.template_from_transaction_already_linked_message)
+                .setPositiveButton(R.string.action_view_template) { _, _ -> openExistingTemplate(linkedTemplateId) }
+                .setNegativeButton(R.string.action_close) { _, _ -> findNavController().popBackStack() }
+        } else {
+            builder
+                .setTitle(R.string.template_from_transaction_unavailable_title)
+                .setMessage(R.string.template_from_transaction_unavailable_message)
+                .setPositiveButton(R.string.action_close) { _, _ -> findNavController().popBackStack() }
+        }
+        builder.show()
+    }
+
+    /** Remplace CE formulaire (prérempli) par l'édition du modèle existant : un retour arrière
+     * ramène à la transaction, jamais au formulaire de création abandonné. */
+    private fun openExistingTemplate(templateId: Long) {
+        findNavController().navigate(
+            R.id.marketplaceTemplateFormFragment,
+            MarketplaceFormFragmentArgs(templateId = templateId).toBundle(),
+            NavOptions.Builder()
+                .setPopUpTo(R.id.marketplaceTemplateFormFragment, true)
+                .build()
+        )
+    }
+
     private fun render(data: FormRenderState) {
         val binding = binding ?: return
         val state = data.formState
+        renderSourceTransactionIssues(state)
         latestAccounts = data.accounts
         latestCategories = data.categories
         latestAccountBalances = data.accountBalances

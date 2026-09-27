@@ -589,6 +589,13 @@
             android:name="templateId"
             android:defaultValue="0L"
             app:argType="long" />
+        <!-- « Créer un modèle à partir de cette transaction » (voir TransactionFormFragment,
+             menu ⋮) : id de la transaction d'origine, 0L = création classique. Ignoré en édition
+             (templateId != 0L) — voir MarketplaceFormViewModel.sourceTransactionId. -->
+        <argument
+            android:name="sourceTransactionId"
+            android:defaultValue="0L"
+            app:argType="long" />
     </fragment>
 
 </navigation>

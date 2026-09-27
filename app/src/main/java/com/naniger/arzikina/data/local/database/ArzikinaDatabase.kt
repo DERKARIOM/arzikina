@@ -147,6 +147,8 @@ import com.naniger.arzikina.data.local.entity.UserServerLinkEntity
  *   `savingsTargetAmount`/`savingsDescription` sur `accounts` (voir [MIGRATION_30_31]). Les anciens
  *   objectifs (`savings_goals`) sont convertis à l'exécution, pas ici : voir
  *   `data/repository/LegacySavingsGoalMigrator` (la conversion doit enfiler leur synchronisation).
+ * - 32 : « Créer un modèle à partir d'une transaction » — colonne nullable `sourceTransactionId` sur
+ *   `transaction_templates` (voir [MIGRATION_31_32]). Aucune modification de `transactions`.
  */
 @Database(
     entities = [
@@ -171,7 +173,7 @@ import com.naniger.arzikina.data.local.entity.UserServerLinkEntity
         UserProfilePhotoEntity::class,
         TransactionTemplateEntity::class
     ],
-    version = 31,
+    version = 32,
     exportSchema = true
 )
 @TypeConverters(Converters::class)

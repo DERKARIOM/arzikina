@@ -423,5 +423,9 @@ data class TransactionTemplateDto(
     val createdAt: Long,
     val updatedAt: Long,
     val defaultHour: Int? = null,
-    val defaultMinute: Int? = null
+    val defaultMinute: Int? = null,
+    /** Transaction d'origine (voir `TransactionTemplate.sourceTransactionId`) — id du FICHIER,
+     * remappé à la restauration via la correspondance des transactions ; `null` par défaut pour
+     * les fichiers exportés avant cette fonctionnalité. */
+    val sourceTransactionId: Long? = null
 )

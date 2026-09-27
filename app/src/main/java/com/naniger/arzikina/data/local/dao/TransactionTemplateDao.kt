@@ -32,6 +32,21 @@ interface TransactionTemplateDao {
 
     /** Réservé à `SyncEngineImpl` — voir la KDoc de `CategoryDao.getBySyncId` (même raisonnement,
      * volontairement SANS filtre `deletedAt IS NULL` ni `userId`). */
+    /** Modèle ACTIF créé à partir de la transaction [transactionId] (voir
+     * `TransactionTemplate.sourceTransactionId`), `null` si aucun — le plus récent si plusieurs
+     * (ne devrait pas arriver : `TransactionTemplateRepositoryImpl.saveTemplate` le refuse). */
+    @Query(
+        "SELECT * FROM transaction_templates WHERE sourceTransactionId = :transactionId AND userId = :userId " +
+            "AND deletedAt IS NULL ORDER BY createdAt DESC LIMIT 1"
+    )
+    fun observeActiveBySourceTransaction(transactionId: Long, userId: Long): Flow<TransactionTemplateEntity?>
+
+    @Query(
+        "SELECT * FROM transaction_templates WHERE sourceTransactionId = :transactionId AND userId = :userId " +
+            "AND deletedAt IS NULL ORDER BY createdAt DESC LIMIT 1"
+    )
+    suspend fun getActiveBySourceTransaction(transactionId: Long, userId: Long): TransactionTemplateEntity?
+
     @Query("SELECT * FROM transaction_templates WHERE syncId = :syncId LIMIT 1")
     suspend fun getBySyncId(syncId: String): TransactionTemplateEntity?
 

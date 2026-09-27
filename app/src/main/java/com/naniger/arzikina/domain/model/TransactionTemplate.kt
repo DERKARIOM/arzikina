@@ -36,6 +36,14 @@ package com.naniger.arzikina.domain.model
  * projet (voir `Converters.kt`) ; ici nullable (contrairement à `RecurringTransaction`, où l'heure
  * est obligatoire) car cette fonctionnalité est explicitement OPTIONNELLE.
  * @param defaultMinute minute par défaut (0-59), voir [defaultHour].
+ * @param sourceTransactionId transaction à partir de laquelle ce modèle a été créé (action
+ * « Créer un modèle » du formulaire de transaction), `null` sinon — SEULE relation
+ * transaction ↔ modèle du projet, portée par le MODÈLE : la transaction d'origine n'est jamais
+ * modifiée (ni montant, ni date, ni `updatedAt`/`version`). Purement informative : le modèle reste
+ * indépendant (le modifier ne touche jamais cette transaction) ; sert uniquement à ne proposer
+ * « Créer un modèle » que pour une transaction qui n'en a pas encore (voir
+ * `TransactionTemplateRepository.observeTemplateCreatedFromTransaction`). Figée à la création :
+ * une modification du modèle ne la change jamais, une duplication ne la recopie pas.
  */
 data class TransactionTemplate(
     val id: Long = 0L,
@@ -49,5 +57,6 @@ data class TransactionTemplate(
     val createdAt: Long,
     val updatedAt: Long,
     val defaultHour: Int? = null,
-    val defaultMinute: Int? = null
+    val defaultMinute: Int? = null,
+    val sourceTransactionId: Long? = null
 )
