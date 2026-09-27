@@ -1218,6 +1218,15 @@
          category_type_*, transaction_form_account_*, action_save/action_delete) plutôt que d'en
          dupliquer des équivalentes — voir leur propre doc de tête. -->
     <string name="marketplace_form_title_add">Nouveau modèle</string>
+    <!-- « Créer un modèle à partir de cette transaction » (voir TransactionFormFragment,
+         MarketplaceFormFragment, TemplateFromTransaction). -->
+    <string name="action_create_template_from_transaction">Créer un modèle</string>
+    <string name="action_view_template">Voir le modèle</string>
+    <string name="marketplace_form_subtitle_from_transaction">À partir d\'une transaction</string>
+    <string name="template_from_transaction_already_linked_title">Modèle déjà créé</string>
+    <string name="template_from_transaction_already_linked_message">Un modèle a déjà été créé à partir de cette transaction. Tu peux l\'ouvrir pour le modifier.</string>
+    <string name="template_from_transaction_unavailable_title">Impossible de créer ce modèle</string>
+    <string name="template_from_transaction_unavailable_message">Cette transaction n\'existe plus ou ne peut pas servir de modèle (transfert ou frais).</string>
     <string name="marketplace_form_title_edit">Modifier le modèle</string>
     <string name="marketplace_form_name_label">Nom du modèle</string>
     <!-- Heure par défaut optionnelle (voir MarketplaceFormViewModel.hasDefaultTime) : préremplit

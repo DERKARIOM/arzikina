@@ -25,6 +25,12 @@ import kotlinx.serialization.Serializable
  * [defaultHour]/[defaultMinute] : "Heure par défaut", extension optionnelle du cahier des charges
  * — `null` = pas d'heure par défaut, transporté tel quel (colonnes MySQL nullables, voir
  * `database/migrations/005_add_transaction_templates.sql`).
+ *
+ * [sourceTransactionSyncId] : transaction à partir de laquelle le modèle a été créé (voir
+ * `TransactionTemplate.sourceTransactionId`), référencée par son UUID comme [accountSyncId] —
+ * TOUJOURS envoyé (sans valeur par défaut, `null` compris). Un ancien client qui ne le connaît pas
+ * ne l'envoie pas : le serveur conserve alors la valeur actuelle (voir `array_key_exists`,
+ * `push.php`), la relation n'est jamais perdue par une simple mise à jour.
  */
 @Serializable
 data class TransactionTemplateSyncPayload(
@@ -39,6 +45,7 @@ data class TransactionTemplateSyncPayload(
     val isFavorite: Boolean,
     val defaultHour: Int?,
     val defaultMinute: Int?,
+    val sourceTransactionSyncId: String?,
     val createdAt: Long,
     val updatedAt: Long
 )
@@ -62,6 +69,9 @@ data class TransactionTemplateServerStateDto(
     val isFavorite: Int = 0,
     val defaultHour: Int? = null,
     val defaultMinute: Int? = null,
+    /** `null` par défaut : tolère une réponse serveur antérieure à
+     * `database/migrations/007_transaction_template_source.sql`. */
+    val sourceTransactionSyncId: String? = null,
     val createdAt: Long,
     val updatedAt: Long,
     val deletedAt: Long? = null,

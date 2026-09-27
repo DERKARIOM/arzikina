@@ -300,6 +300,11 @@ const ENTITY_CONFIGS = [
             // convention que côté Android (`TransactionTemplateEntity.defaultHour`/`defaultMinute`).
             ['db' => 'default_hour', 'payload' => 'defaultHour', 'type' => 'int', 'nullable' => true],
             ['db' => 'default_minute', 'payload' => 'defaultMinute', 'type' => 'int', 'nullable' => true],
+            // « Créer un modèle à partir d'une transaction » — voir
+            // database/migrations/007_transaction_template_source.sql. UUID de la transaction
+            // d'origine, SANS FOREIGN KEY (même raisonnement que account_id/category_id ci-dessus).
+            // NULLABLE : absent (ancien client) = valeur conservée, jamais effacée par erreur.
+            ['db' => 'source_transaction_id', 'payload' => 'sourceTransactionSyncId', 'type' => 'string', 'nullable' => true],
         ],
     ],
 ];

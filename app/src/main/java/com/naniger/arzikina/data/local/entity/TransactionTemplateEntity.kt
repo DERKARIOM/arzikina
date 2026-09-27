@@ -51,6 +51,11 @@ data class TransactionTemplateEntity(
      * toujours `null` en même temps que [defaultMinute]. */
     val defaultHour: Int? = null,
     val defaultMinute: Int? = null,
+    /** Voir [com.naniger.arzikina.domain.model.TransactionTemplate.sourceTransactionId] — ajouté en
+     * v32 (`MIGRATION_31_32`). Volontairement SANS `ForeignKey` (même raisonnement que
+     * `TransactionEntity.feeTransactionId`) : supprimer la transaction d'origine ne doit jamais
+     * supprimer ni bloquer le modèle, qui lui est indépendant. */
+    val sourceTransactionId: Long? = null,
     /** UUID partagé Android/API/MySQL pour une future synchronisation multi-appareils — additif,
      * même convention que toutes les autres entités (voir `docs/sync/AUDIT-ET-ARCHITECTURE-SYNC.md`,
      * section 6.3, option B). Posé dès maintenant, non encore activement synchronisé (voir la KDoc

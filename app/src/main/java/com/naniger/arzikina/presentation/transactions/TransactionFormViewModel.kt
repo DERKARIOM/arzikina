@@ -21,6 +21,7 @@ import com.naniger.arzikina.domain.repository.LoanRepository
 import com.naniger.arzikina.domain.repository.TransactionRepository
 import com.naniger.arzikina.domain.repository.TransactionTemplateRepository
 import com.naniger.arzikina.presentation.accounts.computeCurrentBalances
+import com.naniger.arzikina.presentation.utilities.marketplace.TemplateFromTransaction
 import com.naniger.arzikina.util.Money
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -33,6 +34,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -110,6 +112,20 @@ data class TransactionFormState(
     val receiptId: Long? = null
 )
 
+/**
+ * Action « modèle » du menu ⋮ d'une transaction ENREGISTRÉE (voir
+ * [TransactionFormViewModel.templateAction]) :
+ * - [CanCreate] : « Créer un modèle » (aucun modèle n'a encore été créé à partir d'elle) ;
+ * - [Linked] : « Voir le modèle » (un modèle actif a été créé à partir d'elle — jamais de second) ;
+ * - [Hidden] : aucune action (création d'une transaction, transfert, ligne de frais, transaction
+ *   liée à un prêt/emprunt — voir [TemplateFromTransaction.isEligible]).
+ */
+sealed interface TemplateActionState {
+    data object Hidden : TemplateActionState
+    data object CanCreate : TemplateActionState
+    data class Linked(val templateId: Long) : TemplateActionState
+}
+
 sealed interface TransactionFormEvent {
     data object Saved : TransactionFormEvent
     data object Deleted : TransactionFormEvent
@@ -135,6 +151,13 @@ class TransactionFormViewModel @Inject constructor(
     private val args = TransactionFormFragmentArgs.fromSavedStateHandle(savedStateHandle)
     private val transactionId: Long = args.transactionId
     val isEditMode: Boolean = transactionId != 0L
+
+    /** Id de la transaction éditée (0L en création) — voir [templateAction]. */
+    val editedTransactionId: Long get() = transactionId
+
+    /** Transaction telle qu'ENREGISTRÉE (jamais les modifications en cours du formulaire), chargée
+     * par [init] en modification — source unique de [templateAction]. */
+    private val savedTransaction = MutableStateFlow<Transaction?>(null)
 
     private val _formState = MutableStateFlow(TransactionFormState())
     val formState: StateFlow<TransactionFormState> = _formState.asStateFlow()
@@ -207,10 +230,34 @@ class TransactionFormViewModel @Inject constructor(
     ) { accounts, transactions -> computeCurrentBalances(accounts, transactions) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyMap())
 
+    /**
+     * « Créer un modèle » / « Voir le modèle » (voir [TemplateActionState]) : réactif au modèle
+     * créé à partir de cette transaction (création, suppression, arrivée par synchronisation). Ne
+     * dépend que de la transaction ENREGISTRÉE et de la relation portée par le modèle
+     * (`TransactionTemplate.sourceTransactionId`) — la transaction elle-même n'est jamais modifiée.
+     */
+    val templateAction: StateFlow<TemplateActionState> = if (!isEditMode) {
+        flowOf(TemplateActionState.Hidden)
+    } else {
+        combine(
+            savedTransaction,
+            _formState.map { it.linkedLoanId }.distinctUntilChanged(),
+            templateRepository.observeTemplateCreatedFromTransaction(transactionId)
+        ) { transaction, linkedLoanId, linkedTemplate ->
+            when {
+                linkedTemplate != null -> TemplateActionState.Linked(linkedTemplate.id)
+                transaction == null || linkedLoanId != null -> TemplateActionState.Hidden
+                TemplateFromTransaction.isEligible(transaction) -> TemplateActionState.CanCreate
+                else -> TemplateActionState.Hidden
+            }
+        }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), TemplateActionState.Hidden)
+
     init {
         if (isEditMode) {
             viewModelScope.launch {
                 transactionRepository.getTransaction(transactionId)?.let { transaction ->
+                    savedTransaction.value = transaction
                     _formState.update {
                         it.copy(
                             amountInput = Money.formatForInput(transaction.amount),

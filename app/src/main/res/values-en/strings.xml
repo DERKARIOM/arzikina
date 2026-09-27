@@ -772,6 +772,13 @@
     <string name="marketplace_no_results_title">No templates found</string>
     <string name="marketplace_no_results_message">Try another search or filter.</string>
     <string name="marketplace_form_title_add">New template</string>
+    <string name="action_create_template_from_transaction">Create a template</string>
+    <string name="action_view_template">View template</string>
+    <string name="marketplace_form_subtitle_from_transaction">From a transaction</string>
+    <string name="template_from_transaction_already_linked_title">Template already created</string>
+    <string name="template_from_transaction_already_linked_message">A template has already been created from this transaction. You can open it to edit it.</string>
+    <string name="template_from_transaction_unavailable_title">Can\'t create this template</string>
+    <string name="template_from_transaction_unavailable_message">This transaction no longer exists or can\'t be used as a template (transfer or fee).</string>
     <string name="marketplace_form_title_edit">Edit template</string>
     <string name="marketplace_form_name_label">Template name</string>
     <string name="marketplace_form_default_time_toggle">Set a default time</string>

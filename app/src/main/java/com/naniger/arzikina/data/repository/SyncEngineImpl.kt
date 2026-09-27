@@ -1270,6 +1270,12 @@ class SyncEngineImpl @Inject constructor(
         val userId = local?.userId ?: sessionManager.getCurrentUserIdOnce() ?: return
         val accountId = accountDao.getBySyncId(state.accountSyncId)?.id ?: return
         val categoryId = categoryDao.getBySyncId(state.categorySyncId)?.id ?: return
+        // Transaction d'origine (voir TransactionTemplate.sourceTransactionId) : `transactions` est
+        // toujours tirée AVANT `transaction_templates` (voir SUPPORTED_ENTITY_TYPES), elle est donc
+        // normalement déjà connue ici. Introuvable localement : on conserve la valeur locale plutôt
+        // que de l'effacer — jamais un motif pour ignorer le modèle lui-même.
+        val sourceTransactionId = state.sourceTransactionSyncId
+            ?.let { syncId -> transactionDao.getBySyncId(syncId)?.id ?: local?.sourceTransactionId }
 
         transactionTemplateDao.upsert(
             TransactionTemplateEntity(
@@ -1284,6 +1290,7 @@ class SyncEngineImpl @Inject constructor(
                 isFavorite = state.isFavorite != 0,
                 defaultHour = state.defaultHour,
                 defaultMinute = state.defaultMinute,
+                sourceTransactionId = sourceTransactionId,
                 createdAt = state.createdAt,
                 updatedAt = state.updatedAt,
                 syncId = state.id,
@@ -1327,6 +1334,10 @@ class SyncEngineImpl @Inject constructor(
                 isFavorite = entity.isFavorite,
                 defaultHour = entity.defaultHour,
                 defaultMinute = entity.defaultMinute,
+                // Après enqueueUnsyncedTransactions (voir enqueueUnsyncedLocalData) : la transaction
+                // d'origine a déjà son syncId à ce stade.
+                sourceTransactionSyncId = entity.sourceTransactionId
+                    ?.let { transactionDao.getByIdIncludingDeleted(it, userId)?.syncId },
                 createdAt = entity.createdAt,
                 updatedAt = entity.updatedAt
             )

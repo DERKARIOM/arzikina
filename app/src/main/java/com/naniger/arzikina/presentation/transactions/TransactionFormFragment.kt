@@ -33,6 +33,7 @@ import com.naniger.arzikina.presentation.components.NavAnimations
 import com.naniger.arzikina.presentation.components.TemplatePickerDialog
 import com.naniger.arzikina.presentation.components.displayName
 import com.naniger.arzikina.presentation.utilities.loans.LoanDetailFragmentArgs
+import com.naniger.arzikina.presentation.utilities.marketplace.MarketplaceFormFragmentArgs
 import com.naniger.arzikina.presentation.utilities.receipts.ReceiptDetailFragmentArgs
 import com.naniger.arzikina.util.AppDateFormats
 import com.naniger.arzikina.util.Constants
@@ -140,6 +141,7 @@ class TransactionFormFragment : Fragment(R.layout.fragment_transaction_form) {
                     }.collect { data -> render(data) }
                 }
                 launch { viewModel.events.collect { event -> handleEvent(event) } }
+                launch { viewModel.templateAction.collect { action -> renderTemplateAction(action) } }
             }
         }
     }
@@ -189,10 +191,38 @@ class TransactionFormFragment : Fragment(R.layout.fragment_transaction_form) {
                     showTemplatePicker()
                     true
                 }
+                R.id.action_create_template_from_transaction -> {
+                    openTemplateForm(MarketplaceFormFragmentArgs(sourceTransactionId = viewModel.editedTransactionId))
+                    true
+                }
+                R.id.action_view_template -> {
+                    (viewModel.templateAction.value as? TemplateActionState.Linked)?.let { linked ->
+                        openTemplateForm(MarketplaceFormFragmentArgs(templateId = linked.templateId))
+                    }
+                    true
+                }
                 else -> false
             }
         }
         binding.deleteButton.visibility = if (viewModel.isEditMode) View.VISIBLE else View.GONE
+    }
+
+    /**
+     * Menu ⋮ : « Créer un modèle » tant qu'aucun modèle n'a été créé à partir de cette transaction,
+     * « Voir le modèle » ensuite — jamais les deux (voir [TemplateActionState]). Se met à jour seul
+     * au retour du formulaire de modèle (flux réactif), sans rechargement.
+     */
+    private fun renderTemplateAction(action: TemplateActionState) {
+        val menu = binding?.toolbar?.menu ?: return
+        menu.findItem(R.id.action_create_template_from_transaction)?.isVisible = action == TemplateActionState.CanCreate
+        menu.findItem(R.id.action_view_template)?.isVisible = action is TemplateActionState.Linked
+    }
+
+    /** Formulaire de modèle EXISTANT (Marketplace) : prérempli depuis cette transaction
+     * (`sourceTransactionId`) ou en édition du modèle lié (`templateId`). Rien n'est enregistré
+     * avant que l'utilisateur ne valide ce formulaire. */
+    private fun openTemplateForm(args: MarketplaceFormFragmentArgs) {
+        findNavController().navigate(R.id.marketplaceTemplateFormFragment, args.toBundle(), NavAnimations.push)
     }
 
     /**

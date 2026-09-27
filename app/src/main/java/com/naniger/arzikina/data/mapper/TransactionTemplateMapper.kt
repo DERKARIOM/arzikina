@@ -15,7 +15,8 @@ fun TransactionTemplateEntity.toDomain(): TransactionTemplate = TransactionTempl
     createdAt = createdAt,
     updatedAt = updatedAt,
     defaultHour = defaultHour,
-    defaultMinute = defaultMinute
+    defaultMinute = defaultMinute,
+    sourceTransactionId = sourceTransactionId
 )
 
 /** [userId] : fourni par le repository, jamais par l'appelant. */
@@ -32,5 +33,6 @@ fun TransactionTemplate.toEntity(userId: Long): TransactionTemplateEntity = Tran
     createdAt = createdAt,
     updatedAt = updatedAt,
     defaultHour = defaultHour,
-    defaultMinute = defaultMinute
+    defaultMinute = defaultMinute,
+    sourceTransactionId = sourceTransactionId
 )

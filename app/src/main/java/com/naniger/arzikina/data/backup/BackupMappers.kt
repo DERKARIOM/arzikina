@@ -636,7 +636,8 @@ fun TransactionTemplateEntity.toDto() = TransactionTemplateDto(
     createdAt = createdAt,
     updatedAt = updatedAt,
     defaultHour = defaultHour,
-    defaultMinute = defaultMinute
+    defaultMinute = defaultMinute,
+    sourceTransactionId = sourceTransactionId
 )
 
 fun TransactionTemplateDto.toEntity(userId: Long) = TransactionTemplateEntity(
@@ -652,7 +653,8 @@ fun TransactionTemplateDto.toEntity(userId: Long) = TransactionTemplateEntity(
     createdAt = createdAt,
     updatedAt = updatedAt,
     defaultHour = defaultHour,
-    defaultMinute = defaultMinute
+    defaultMinute = defaultMinute,
+    sourceTransactionId = sourceTransactionId
 )
 
 /** Voir la doc de tête de ce fichier. `accountId`/`categoryId` tous deux obligatoires (voir
@@ -663,9 +665,13 @@ fun TransactionTemplateDto.toEntity(userId: Long) = TransactionTemplateEntity(
 fun TransactionTemplateDto.remapIds(
     newId: Long,
     accountIdMap: Map<Long, Long>,
-    categoryIdMap: Map<Long, Long>
+    categoryIdMap: Map<Long, Long>,
+    transactionIdMap: Map<Long, Long> = emptyMap()
 ): TransactionTemplateDto = copy(
     id = newId,
     accountId = accountIdMap.getValue(accountId),
-    categoryId = categoryIdMap.getValue(categoryId)
+    categoryId = categoryIdMap.getValue(categoryId),
+    // Tolérant (contrairement au compte/à la catégorie) : une transaction d'origine absente du
+    // fichier fait simplement perdre la relation, jamais échouer la restauration du modèle.
+    sourceTransactionId = sourceTransactionId?.let { transactionIdMap[it] }
 )

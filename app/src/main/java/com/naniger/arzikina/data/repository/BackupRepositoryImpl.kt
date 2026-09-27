@@ -346,14 +346,6 @@ class BackupRepositoryImpl @Inject constructor(
                     )
                     .associate { (dto, newId) -> dto.id to newId }
 
-                // Modèles de transaction (voir la doc de tête de cette classe/de
-                // TransactionTemplateDto) : comme les règles récurrentes ci-dessus, uniquement
-                // dépendants de accounts/categories, déjà connus. Aucune table de correspondance à
-                // construire (aucune ligne ne référence l'id d'un modèle) — `insertAll` suffit.
-                transactionTemplateDao.insertAll(
-                    payload.transactionTemplates.map { it.remapIds(0L, accountIdMap, categoryIdMap).toEntity(userId) }
-                )
-
                 // Transactions, 1ère passe (voir TransactionDto.remapIds) : accountId/categoryId/
                 // receiptId déjà connus (comptes, catégories et reçus tous insérés plus haut),
                 // feeTransactionId encore laissé à `null` (la transaction de frais qu'il désigne
@@ -381,6 +373,15 @@ class BackupRepositoryImpl @Inject constructor(
                         val remapped = dto.remapIds(newId, accountIdMap, categoryIdMap, transactionIdMap, receiptIdMap)
                         transactionDao.upsert(remapped.toEntity(userId))
                     }
+
+                // Modèles de transaction (voir la doc de tête de cette classe/de
+                // TransactionTemplateDto) : dépendants de accounts/categories ET, depuis « Créer un
+                // modèle à partir d'une transaction », de transactionIdMap (sourceTransactionId) —
+                // d'où leur insertion APRÈS les transactions. Aucune table ne référence l'id d'un
+                // modèle : `insertAll` suffit.
+                transactionTemplateDao.insertAll(
+                    payload.transactionTemplates.map { it.remapIds(0L, accountIdMap, categoryIdMap, transactionIdMap).toEntity(userId) }
+                )
 
                 // Occurrences : APRÈS recurring_transactions ET transactions, dont chacune dépend
                 // (recurringTransactionId obligatoire, transactionId optionnel — voir

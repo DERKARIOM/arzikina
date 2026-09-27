@@ -2,6 +2,7 @@ package com.naniger.arzikina.data.repository
 
 import com.naniger.arzikina.data.local.dao.AccountDao
 import com.naniger.arzikina.data.local.dao.CategoryDao
+import com.naniger.arzikina.data.local.dao.TransactionDao
 import com.naniger.arzikina.data.local.dao.TransactionTemplateDao
 import com.naniger.arzikina.data.local.entity.TransactionTemplateEntity
 import com.naniger.arzikina.data.mapper.toDomain
@@ -9,6 +10,7 @@ import com.naniger.arzikina.data.mapper.toEntity
 import com.naniger.arzikina.data.remote.dto.TransactionTemplateSyncPayload
 import com.naniger.arzikina.di.IoDispatcher
 import com.naniger.arzikina.domain.model.SyncOperation
+import com.naniger.arzikina.domain.model.TemplateAlreadyLinkedException
 import com.naniger.arzikina.domain.model.TransactionTemplate
 import com.naniger.arzikina.domain.repository.SessionManager
 import com.naniger.arzikina.domain.repository.TransactionTemplateRepository
@@ -41,6 +43,7 @@ class TransactionTemplateRepositoryImpl @Inject constructor(
     private val templateDao: TransactionTemplateDao,
     private val accountDao: AccountDao,
     private val categoryDao: CategoryDao,
+    private val transactionDao: TransactionDao,
     private val sessionManager: SessionManager,
     private val syncQueueEnqueuer: SyncQueueEnqueuer,
     private val json: Json,
@@ -65,10 +68,32 @@ class TransactionTemplateRepositoryImpl @Inject constructor(
      * réinitialisés par `toEntity`, qui ignore volontairement ces champs) — même raisonnement que
      * `CategoryRepositoryImpl.saveCategory`.
      */
+    override fun observeTemplateCreatedFromTransaction(transactionId: Long): Flow<TransactionTemplate?> =
+        sessionManager.observeCurrentUserId().flatMapLatest { userId ->
+            if (userId == null) {
+                flowOf(null)
+            } else {
+                templateDao.observeActiveBySourceTransaction(transactionId, userId).map { it?.toDomain() }
+            }
+        }
+
+    override suspend fun getTemplateCreatedFromTransaction(transactionId: Long): TransactionTemplate? =
+        withContext(ioDispatcher) { templateDao.getActiveBySourceTransaction(transactionId, requireCurrentUserId())?.toDomain() }
+
     override suspend fun saveTemplate(template: TransactionTemplate): Long = withContext(ioDispatcher) {
         val userId = requireCurrentUserId()
         val now = System.currentTimeMillis()
         var pendingOp: Pair<TransactionTemplateEntity, SyncOperation>? = null
+
+        // « Créer un modèle à partir d'une transaction » : une seule fois par transaction (voir
+        // TemplateAlreadyLinkedException). Vérifié ICI, au plus près de l'écriture, et pas
+        // seulement à l'ouverture du formulaire : un modèle a pu être créé entre-temps (autre
+        // onglet, double validation, synchronisation depuis le Web).
+        if (template.id == 0L && template.sourceTransactionId != null) {
+            templateDao.getActiveBySourceTransaction(template.sourceTransactionId, userId)?.let { existing ->
+                throw TemplateAlreadyLinkedException(existing.id)
+            }
+        }
 
         val id = if (template.id == 0L) {
             val entity = template.copy(createdAt = now, updatedAt = now).toEntity(userId)
@@ -79,6 +104,9 @@ class TransactionTemplateRepositoryImpl @Inject constructor(
         } else {
             val existing = templateDao.getById(template.id, userId) ?: error("Modèle introuvable.")
             val entity = template.copy(createdAt = existing.createdAt, updatedAt = now).toEntity(userId).copy(
+                // Relation figée à la création (voir TransactionTemplate.sourceTransactionId) :
+                // modifier le modèle ne la change jamais, quoi qu'envoie le formulaire.
+                sourceTransactionId = existing.sourceTransactionId,
                 syncId = existing.syncId ?: UUID.randomUUID().toString(),
                 deletedAt = existing.deletedAt,
                 version = existing.version
@@ -104,6 +132,9 @@ class TransactionTemplateRepositoryImpl @Inject constructor(
             id = 0L,
             name = "${existing.name} (copie)",
             isFavorite = false,
+            // Une copie n'est pas « créée à partir de la transaction » : sinon la transaction
+            // d'origine semblerait liée à deux modèles.
+            sourceTransactionId = null,
             createdAt = now,
             updatedAt = now,
             syncId = UUID.randomUUID().toString(),
@@ -159,6 +190,7 @@ class TransactionTemplateRepositoryImpl @Inject constructor(
             isFavorite = entity.isFavorite,
             defaultHour = entity.defaultHour,
             defaultMinute = entity.defaultMinute,
+            sourceTransactionSyncId = resolveSourceTransactionSyncId(entity.sourceTransactionId, entity.userId),
             createdAt = entity.createdAt,
             updatedAt = entity.updatedAt
         )
@@ -175,6 +207,11 @@ class TransactionTemplateRepositoryImpl @Inject constructor(
      *  à absorber silencieusement, d'où `error()`. `getByIdIncludingDeleted` (pas `getById`) : voir
      *  `RecurringTransactionRepositoryImpl.resolveAccountSyncId` pour le raisonnement complet
      *  (filet de sécurité contre une référence déjà soft-supprimée dans la même cascade). */
+    /** `syncId` de la transaction d'origine, ou `null` (aucune, ou transaction jamais synchronisée :
+     * la relation reste alors seulement locale, le modèle lui-même est synchronisé normalement). */
+    private suspend fun resolveSourceTransactionSyncId(transactionId: Long?, userId: Long): String? =
+        transactionId?.let { transactionDao.getByIdIncludingDeleted(it, userId)?.syncId }
+
     private suspend fun resolveAccountSyncId(accountId: Long, userId: Long): String {
         val account = accountDao.getByIdIncludingDeleted(accountId, userId)
             ?: error("Compte introuvable pour ce modèle (accountId=$accountId).")

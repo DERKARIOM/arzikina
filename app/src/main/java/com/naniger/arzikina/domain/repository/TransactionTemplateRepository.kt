@@ -21,12 +21,24 @@ interface TransactionTemplateRepository {
 
     suspend fun getTemplate(id: Long): TransactionTemplate?
 
+    /** Modèle actif créé à partir de la transaction [transactionId] (voir
+     * [TransactionTemplate.sourceTransactionId]), `null` si cette transaction n'en a aucun —
+     * pilote « Créer un modèle » / « Voir le modèle » dans le formulaire de transaction. */
+    fun observeTemplateCreatedFromTransaction(transactionId: Long): Flow<TransactionTemplate?>
+
+    suspend fun getTemplateCreatedFromTransaction(transactionId: Long): TransactionTemplate?
+
     /**
      * Si [TransactionTemplate.id] vaut 0 : crée le modèle. Sinon, met à jour les champs
      * modifiables — ne modifie JAMAIS une transaction déjà créée à partir de ce modèle (voir la
      * doc de [TransactionTemplate], aucun lien n'est conservé entre les deux).
      *
      * Retourne l'id définitif du modèle.
+     *
+     * [TransactionTemplate.sourceTransactionId] n'est pris en compte qu'à la CRÉATION (puis figé :
+     * une mise à jour conserve toujours la valeur enregistrée). Lève
+     * [com.naniger.arzikina.domain.model.TemplateAlreadyLinkedException] si cette transaction a
+     * déjà un modèle actif — aucun doublon, même en cas de double validation.
      */
     suspend fun saveTemplate(template: TransactionTemplate): Long
 
