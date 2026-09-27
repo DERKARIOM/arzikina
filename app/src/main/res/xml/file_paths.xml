@@ -9,7 +9,7 @@
     sont exposés, jamais l'intégralité de `filesDir` (ex. la base Room y vit aussi, voir
     Constants.DATABASE_NAME — ne doit jamais être accessible via une URI content://).
 -->
-<paths xmlns:android="http://schemas.android.com/apk/res-auto">
+<paths>
     <files-path
         name="receipts"
         path="receipts/" />
