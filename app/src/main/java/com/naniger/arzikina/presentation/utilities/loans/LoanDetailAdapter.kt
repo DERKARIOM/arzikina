@@ -124,7 +124,15 @@ class LoanDetailAdapter(
             val context = binding.root.context
             val payment = row.payment
 
-            binding.paymentDate.text = payment.date.toFormattedDate(binding.root.context)
+            // Date + heure du remboursement ; heure omise pour une ancienne donnée saisie sans heure
+            // (minuit technique, voir LoanDateTime.hasExplicitTime) — jamais « 00:00 » fictif.
+            val paymentDay = payment.date.toFormattedDate(context)
+            binding.paymentDate.text = if (LoanDateTime.hasExplicitTime(payment.date)) {
+                val time = LoanDateTime.toLocalTime(payment.date)
+                context.getString(R.string.loan_date_at_time, paymentDay, TriggerTimeFormatter.format(context, time.hour, time.minute))
+            } else {
+                paymentDay
+            }
             binding.paymentAccountName.text = row.accountName
 
             val note = payment.note.trim()

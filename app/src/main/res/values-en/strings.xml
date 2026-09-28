@@ -599,6 +599,7 @@
     <string name="loan_payment_form_remaining_label">Left to pay</string>
     <string name="loan_payment_form_amount_label">Repayment amount</string>
     <string name="loan_payment_form_date_label">Date</string>
+    <string name="loan_payment_form_time_label">Time</string>
     <string name="loan_payment_form_note_label">Note</string>
     <string name="loan_payment_form_note_placeholder">Add a note (optional)</string>
     <string name="loan_payment_form_save_action">Save</string>

@@ -5,6 +5,7 @@ import com.naniger.arzikina.MainDispatcherRule
 import com.naniger.arzikina.domain.model.Account
 import com.naniger.arzikina.domain.model.AccountIcon
 import com.naniger.arzikina.domain.model.Loan
+import com.naniger.arzikina.domain.model.LoanPayment
 import com.naniger.arzikina.domain.model.LoanReason
 import com.naniger.arzikina.domain.model.LoanStatus
 import com.naniger.arzikina.domain.model.LoanType
@@ -18,6 +19,7 @@ import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.slot
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -27,6 +29,10 @@ import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
+import java.time.Instant
+import java.time.LocalDate
+import java.time.LocalTime
+import java.time.ZoneId
 
 /**
  * Vérifie [LoanPaymentFormViewModel] (voir sa doc), en particulier deux bugs corrigés à l'Étape
@@ -181,5 +187,25 @@ class LoanPaymentFormViewModelTest {
         advanceUntilIdle()
 
         coVerify(exactly = 1) { loanRepository.recordPayment(any()) }
+    }
+
+    @Test
+    fun `date puis heure du remboursement - un seul instant enregistre, la date conserve l heure`() = runTest(testDispatcher) {
+        stubHappyPath()
+        val payment = slot<LoanPayment>()
+        coEvery { loanRepository.recordPayment(capture(payment)) } returns 1L
+        val viewModel = createViewModel()
+        advanceUntilIdle()
+        viewModel.onAmountChange("20.00")
+        viewModel.onTimeChange(18, 30)
+        val day = LocalDate.of(2026, 9, 23).atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+        viewModel.onDateChange(day)
+
+        viewModel.save()
+        advanceUntilIdle()
+
+        val saved = Instant.ofEpochMilli(payment.captured.date).atZone(ZoneId.systemDefault())
+        assertEquals(LocalDate.of(2026, 9, 23), saved.toLocalDate())
+        assertEquals(LocalTime.of(18, 30), saved.toLocalTime())
     }
 }

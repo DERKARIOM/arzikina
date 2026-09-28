@@ -273,6 +273,29 @@
 
             </com.google.android.material.card.MaterialCardView>
 
+            <!-- Heure du remboursement : même ligne cliquable que la date (icône horloge posée par
+                 LoanPaymentFormFragment), ouvre le MaterialTimePicker natif (TimePickerHelper).
+                 Fusionnée avec la date en UN SEUL instant (voir LoanDateTime), même principe que
+                 startTimeRow du formulaire de prêt. -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/timeRow"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_m"
+                android:checkable="false"
+                android:clickable="true"
+                android:focusable="true"
+                android:theme="@style/ThemeOverlay.Arzikina.OnBalanceCard"
+                app:cardBackgroundColor="@color/arzikina_postcart_background"
+                app:cardCornerRadius="@dimen/corner_radius_medium"
+                app:cardElevation="@dimen/elevation_raised">
+
+                <include
+                    android:id="@+id/timeField"
+                    layout="@layout/item_date_field" />
+
+            </com.google.android.material.card.MaterialCardView>
+
             <!-- Postcard — voir descriptionLayout de fragment_transaction_form.xml
                  ("harmonisation des champs de saisie"). -->
             <com.google.android.material.card.MaterialCardView
