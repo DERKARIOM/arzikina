@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Menu de "Détail du prêt/emprunt" (voir LoanDetailFragment.setUpToolbar) : "Supprimer" (même
+    item/icône que res/menu/form_delete_menu.xml, toujours visible) + "Modifier la date et l'heure"
+    dans le ⋮ — seule modification possible d'un prêt existant (voir
+    LoanDetailViewModel.updateStartDateTime), pas un écran d'édition complet.
+-->
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <item
+        android:id="@+id/action_edit_loan_date_time"
+        android:title="@string/loan_detail_edit_date_time_action"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/action_delete_item"
+        android:icon="@drawable/ic_delete_24"
+        android:title="@string/action_delete"
+        app:showAsAction="always" />
+</menu>

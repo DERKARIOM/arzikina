@@ -4,6 +4,8 @@ import app.cash.turbine.test
 import com.naniger.arzikina.MainDispatcherRule
 import com.naniger.arzikina.domain.model.Account
 import com.naniger.arzikina.domain.model.AccountIcon
+import com.naniger.arzikina.domain.model.Loan
+import com.naniger.arzikina.domain.model.LoanPayment
 import com.naniger.arzikina.domain.model.Person
 import com.naniger.arzikina.domain.repository.AccountRepository
 import com.naniger.arzikina.domain.repository.LoanRepository
@@ -13,6 +15,7 @@ import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.slot
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -23,6 +26,9 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import java.time.LocalDate
+import java.time.LocalTime
+import java.time.ZoneId
 
 /**
  * Vérifie la validation en 2 pages de [LoanFormViewModel] (voir sa doc), en particulier les 3 bugs
@@ -140,12 +146,12 @@ class LoanFormViewModelTest {
         viewModel.onPersonSelected(person)
         viewModel.onAccountSelected(account)
         viewModel.onAmountChange("1000")
-        val start = 10_000_000L
-        viewModel.onStartDateChange(start)
-        viewModel.onDueDateChange(start + 1_000_000L)
+        // Règles par JOUR (l'heure du prêt ne doit pas les faire basculer, voir LoanDateTime).
+        viewModel.onStartDateChange(day(2026, 9, 23))
+        viewModel.onDueDateChange(day(2026, 10, 23))
         viewModel.goToStep2()
         viewModel.onFirstPaymentAmountChange("100")
-        viewModel.onFirstPaymentDateChange(start - 1L) // avant le début du prêt
+        viewModel.onFirstPaymentDateChange(day(2026, 9, 22)) // la veille du début du prêt
 
         viewModel.save()
         advanceUntilIdle()
@@ -205,5 +211,75 @@ class LoanFormViewModelTest {
         advanceUntilIdle()
 
         coVerify(exactly = 1) { loanRepository.saveLoan(any()) }
+    }
+
+    private fun day(year: Int, month: Int, dayOfMonth: Int): Long =
+        LocalDate.of(year, month, dayOfMonth).atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+
+    @Test
+    fun `date puis heure - un seul instant enregistre (23-09-2026 18h30)`() = runTest(testDispatcher) {
+        val saved = slot<Loan>()
+        coEvery { loanRepository.saveLoan(capture(saved)) } returns 42L
+        val viewModel = createViewModel()
+        viewModel.onPersonSelected(person)
+        viewModel.onAccountSelected(account)
+        viewModel.onAmountChange("1000")
+        viewModel.onStartDateChange(day(2026, 9, 23))
+        viewModel.onStartTimeChange(18, 30)
+        viewModel.onDueDateChange(day(2026, 10, 23))
+        viewModel.goToStep2()
+        viewModel.save()
+        advanceUntilIdle()
+
+        val start = saved.captured.startDate
+        assertEquals(LocalDate.of(2026, 9, 23), java.time.Instant.ofEpochMilli(start).atZone(ZoneId.systemDefault()).toLocalDate())
+        assertEquals(LocalTime.of(18, 30), java.time.Instant.ofEpochMilli(start).atZone(ZoneId.systemDefault()).toLocalTime())
+    }
+
+    @Test
+    fun `changer la date conserve l heure deja choisie`() = runTest(testDispatcher) {
+        val viewModel = createViewModel()
+        viewModel.onStartTimeChange(8, 0)
+        viewModel.onStartDateChange(day(2026, 9, 23))
+
+        val start = viewModel.formState.value.startDateMillis
+        assertEquals(LocalTime.of(8, 0), java.time.Instant.ofEpochMilli(start).atZone(ZoneId.systemDefault()).toLocalTime())
+    }
+
+    @Test
+    fun `premier versement le jour meme a une heure anterieure - accepte et place apres le decaissement`() = runTest(testDispatcher) {
+        val payment = slot<LoanPayment>()
+        coEvery { loanRepository.recordPayment(capture(payment)) } returns 99L
+        val viewModel = createViewModel()
+        viewModel.onPersonSelected(person)
+        viewModel.onAccountSelected(account)
+        viewModel.onAmountChange("1000")
+        viewModel.onStartDateChange(day(2026, 9, 23))
+        viewModel.onStartTimeChange(18, 30)
+        viewModel.onDueDateChange(day(2026, 10, 23))
+        viewModel.goToStep2()
+        viewModel.onFirstPaymentAmountChange("100")
+        viewModel.onFirstPaymentDateChange(day(2026, 9, 23)) // même jour, minuit
+
+        viewModel.save()
+        advanceUntilIdle()
+
+        assertEquals(null, viewModel.formState.value.firstPaymentDateError)
+        assertEquals(viewModel.formState.value.startDateMillis, payment.captured.date)
+    }
+
+    @Test
+    fun `echeance le meme jour que le debut refusee, quelle que soit l heure`() = runTest(testDispatcher) {
+        val viewModel = createViewModel()
+        viewModel.onPersonSelected(person)
+        viewModel.onAccountSelected(account)
+        viewModel.onAmountChange("1000")
+        viewModel.onStartDateChange(day(2026, 9, 23))
+        viewModel.onStartTimeChange(8, 0)
+        viewModel.onDueDateChange(day(2026, 9, 23))
+
+        viewModel.goToStep2()
+
+        assertNotNull(viewModel.formState.value.dueDateError)
     }
 }

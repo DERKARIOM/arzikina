@@ -17,7 +17,9 @@ import com.naniger.arzikina.domain.model.LoanPayment
 import com.naniger.arzikina.domain.model.LoanType
 import com.naniger.arzikina.util.AppDateFormats
 import com.naniger.arzikina.util.DatePeriods
+import com.naniger.arzikina.util.LoanDateTime
 import com.naniger.arzikina.util.Money
+import com.naniger.arzikina.util.TriggerTimeFormatter
 
 /**
  * Liste de l'écran "Détail du prêt/emprunt" : une ligne [LoanDetailListRow.Header] (résumé +
@@ -94,6 +96,14 @@ class LoanDetailAdapter(
             binding.progressPercent.text = context.getString(R.string.loans_progress_percent, binding.progressBar.progress)
 
             binding.createdValue.text = loan.startDate.toFormattedDate(binding.root.context)
+            // Voir LoanDateTime.hasExplicitTime : aucune heure fictive (00:00) pour une ancienne
+            // donnée enregistrée sans heure.
+            val hasTime = LoanDateTime.hasExplicitTime(loan.startDate)
+            binding.startTimeContainer.visibility = if (hasTime) View.VISIBLE else View.GONE
+            if (hasTime) {
+                val time = LoanDateTime.toLocalTime(loan.startDate)
+                binding.startTimeValue.text = TriggerTimeFormatter.format(context, time.hour, time.minute)
+            }
             binding.dueValue.text = loan.dueDate.toFormattedDate(binding.root.context)
 
             val description = loan.description.trim()

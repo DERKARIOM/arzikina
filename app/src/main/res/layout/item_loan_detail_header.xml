@@ -228,6 +228,35 @@
 
             </LinearLayout>
 
+            <!-- Heure du prêt/emprunt (voir LoanDateTime.hasExplicitTime) : masquée pour une
+                 ancienne donnée saisie sans heure (minuit technique) — jamais « 00:00 » fictif. -->
+            <LinearLayout
+                android:id="@+id/startTimeContainer"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_s"
+                android:orientation="horizontal"
+                android:visibility="gone"
+                tools:visibility="visible">
+
+                <TextView
+                    style="@style/TextAppearance.Material3.BodyMedium"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/loan_detail_time_label"
+                    android:textColor="?attr/colorOnSurfaceVariant" />
+
+                <TextView
+                    android:id="@+id/startTimeValue"
+                    style="@style/TextAppearance.Material3.TitleSmall"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="?attr/colorOnSurface"
+                    tools:text="18:30" />
+
+            </LinearLayout>
+
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
