@@ -911,6 +911,7 @@
     <string name="loan_payment_form_remaining_label">Restant à payer</string>
     <string name="loan_payment_form_amount_label">Montant du remboursement</string>
     <string name="loan_payment_form_date_label">Date</string>
+    <string name="loan_payment_form_time_label">Heure</string>
     <string name="loan_payment_form_note_label">Note</string>
     <string name="loan_payment_form_note_placeholder">Ajoute une note (facultatif)</string>
     <string name="loan_payment_form_save_action">Enregistrer</string>

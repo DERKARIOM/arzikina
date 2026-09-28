@@ -34,6 +34,10 @@
   - À l'affichage, l'instant est converti dans le fuseau local du lecteur : même heure entre
     appareils du même fuseau. Dans un autre fuseau, on voit l'heure locale correspondante (08:00 à
     Niamey = 09:00 à Paris), comme pour les transactions.
+- **Remboursements** : le formulaire « Enregistrer un remboursement » propose aussi une heure,
+  fusionnée avec la date en un seul instant (`loan_payments.date`, déjà un `BIGINT`) et reportée
+  sur la transaction de remboursement. Le détail affiche « 24 sept. 2026 à 14:45 », sans heure
+  pour une ancienne donnée à minuit pile.
 - **Tri** :
   - Web : « Plus récent / Plus ancien » trie déjà par `startDate`, donc l'heure est prise en compte.
   - Android : la liste est triée par échéance, ce qui est inchangé.

@@ -19,10 +19,13 @@ import com.naniger.arzikina.domain.model.LoanType
 import com.naniger.arzikina.domain.model.SupportedCurrency
 import com.naniger.arzikina.presentation.accounts.AccountIconMapper
 import com.naniger.arzikina.presentation.components.AccountPickerDialog
+import com.naniger.arzikina.presentation.components.TimePickerHelper
 import com.naniger.arzikina.presentation.components.displayName
 import com.naniger.arzikina.util.AppDateFormats
+import com.naniger.arzikina.util.LoanDateTime
 import com.naniger.arzikina.util.Money
 import com.naniger.arzikina.util.MoneyInputFormatter
+import com.naniger.arzikina.util.TriggerTimeFormatter
 import com.google.android.material.datepicker.MaterialDatePicker
 import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
@@ -111,6 +114,19 @@ class LoanPaymentFormFragment : Fragment(R.layout.fragment_loan_payment_form) {
         }
         binding.dateField.dateFieldLabel.text = getString(R.string.loan_payment_form_date_label)
         binding.dateRow.setOnClickListener { showDatePicker { viewModel.onDateChange(it) } }
+        binding.timeField.dateFieldLabel.text = getString(R.string.loan_payment_form_time_label)
+        binding.timeField.dateFieldIcon.setImageResource(R.drawable.ic_time_24)
+        binding.timeRow.setOnClickListener {
+            val current = LoanDateTime.toLocalTime(viewModel.formState.value.dateMillis)
+            TimePickerHelper.show(
+                context = requireContext(),
+                fragmentManager = parentFragmentManager,
+                initialHour = current.hour,
+                initialMinute = current.minute,
+                titleText = getString(R.string.loan_payment_form_time_label),
+                tag = "loan_payment_time_picker"
+            ) { hour, minute -> viewModel.onTimeChange(hour, minute) }
+        }
     }
 
     private fun showDatePicker(onSelected: (Long) -> Unit) {
@@ -170,6 +186,8 @@ class LoanPaymentFormFragment : Fragment(R.layout.fragment_loan_payment_form) {
         binding.amountCurrencyBadge.text = currencySymbol(state.loanCurrencyCode)
 
         binding.dateField.dateFieldValue.text = formatDate(state.dateMillis)
+        val time = LoanDateTime.toLocalTime(state.dateMillis)
+        binding.timeField.dateFieldValue.text = TriggerTimeFormatter.format(requireContext(), time.hour, time.minute)
         if (binding.noteInput.text?.toString() != state.note) {
             binding.noteInput.setText(state.note)
         }

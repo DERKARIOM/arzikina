@@ -14,6 +14,7 @@ import com.naniger.arzikina.domain.repository.PersonRepository
 import com.naniger.arzikina.domain.repository.TransactionRepository
 import com.naniger.arzikina.presentation.accounts.computeCurrentBalances
 import com.naniger.arzikina.util.Constants
+import com.naniger.arzikina.util.LoanDateTime
 import com.naniger.arzikina.util.Money
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -64,7 +65,9 @@ data class LoanPaymentFormState(
     val loanCurrencyCode: String = Constants.DEFAULT_CURRENCY_CODE,
     val accountId: Long = 0L,
     val amountInput: String = "",
-    val dateMillis: Long = System.currentTimeMillis(),
+    /** Date ET heure du remboursement, un seul instant (voir `LoanDateTime`, mêmes règles que la
+     * date du prêt). Par défaut : maintenant, à la minute. */
+    val dateMillis: Long = LoanDateTime.nowToMinute(),
     val note: String = "",
     @StringRes val accountError: Int? = null,
     @StringRes val amountError: Int? = null,
@@ -133,8 +136,14 @@ class LoanPaymentFormViewModel @Inject constructor(
         _formState.update { it.copy(amountInput = value, amountError = null) }
     }
 
+    /** [millis] : jour choisi (minuit local, voir `LoanPaymentFormFragment.showDatePicker`) —
+     * l'heure déjà choisie est CONSERVÉE (voir [onTimeChange]). */
     fun onDateChange(millis: Long) {
-        _formState.update { it.copy(dateMillis = millis) }
+        _formState.update { it.copy(dateMillis = LoanDateTime.withDate(it.dateMillis, LoanDateTime.toLocalDate(millis))) }
+    }
+
+    fun onTimeChange(hour: Int, minute: Int) {
+        _formState.update { it.copy(dateMillis = LoanDateTime.withTime(it.dateMillis, hour, minute)) }
     }
 
     fun onNoteChange(value: String) {
