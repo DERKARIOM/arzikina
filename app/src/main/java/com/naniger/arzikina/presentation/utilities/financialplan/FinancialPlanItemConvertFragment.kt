@@ -20,8 +20,9 @@ import com.naniger.arzikina.presentation.accounts.AccountIconMapper
 import com.naniger.arzikina.presentation.categories.CategoryIconMapper
 import com.naniger.arzikina.presentation.components.AccountPickerDialog
 import com.naniger.arzikina.presentation.components.CategoryPickerDialog
+import com.naniger.arzikina.presentation.components.DateTimeRowFormatter
+import com.naniger.arzikina.presentation.components.TimePickerHelper
 import com.naniger.arzikina.presentation.components.displayName
-import com.naniger.arzikina.util.AppDateFormats
 import com.naniger.arzikina.util.Constants
 import com.naniger.arzikina.util.Money
 import com.naniger.arzikina.util.MoneyInputFormatter
@@ -31,6 +32,7 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import java.time.Instant
+import java.time.LocalTime
 import java.time.ZoneId
 import java.time.ZoneOffset
 
@@ -113,19 +115,39 @@ class FinancialPlanItemConvertFragment : Fragment(R.layout.fragment_financial_pl
             )
         }
 
-        binding.dateField.dateFieldLabel.text = getString(R.string.financial_plan_item_convert_date_label)
-        binding.dateRow.setOnClickListener { showDatePicker { viewModel.onDateChange(it) } }
+        // « Date et heure » sur une seule ligne, comme le formulaire de transaction : le clic
+        // enchaîne le sélecteur de date puis celui de l'heure.
+        binding.dateField.dateFieldLabel.text = getString(R.string.transaction_form_date_time_label)
+        binding.dateRow.setOnClickListener { showDatePicker() }
     }
 
-    private fun showDatePicker(onSelected: (Long) -> Unit) {
+    private fun showDatePicker() {
+        val currentDate = Instant.ofEpochMilli(viewModel.formState.value.dateMillis)
+            .atZone(ZoneId.systemDefault())
+            .toLocalDate()
         val picker = MaterialDatePicker.Builder.datePicker()
-            .setTitleText(R.string.financial_plan_item_convert_date_label)
+            .setTitleText(R.string.transaction_form_date_label)
+            .setSelection(currentDate.atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli())
             .build()
         picker.addOnPositiveButtonClickListener { selectionUtcMillis ->
-            val localDate = Instant.ofEpochMilli(selectionUtcMillis).atZone(ZoneOffset.UTC).toLocalDate()
-            onSelected(localDate.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli())
+            viewModel.onDateChange(Instant.ofEpochMilli(selectionUtcMillis).atZone(ZoneOffset.UTC).toLocalDate())
+            showTimePicker()
         }
         picker.show(parentFragmentManager, "financial_plan_item_convert_date_picker")
+    }
+
+    private fun showTimePicker() {
+        val currentTime = Instant.ofEpochMilli(viewModel.formState.value.dateMillis)
+            .atZone(ZoneId.systemDefault())
+            .toLocalTime()
+        TimePickerHelper.show(
+            context = requireContext(),
+            fragmentManager = parentFragmentManager,
+            initialHour = currentTime.hour,
+            initialMinute = currentTime.minute,
+            titleText = getString(R.string.transaction_form_time_label),
+            tag = "financial_plan_item_convert_time_picker"
+        ) { hour, minute -> viewModel.onTimeChange(LocalTime.of(hour, minute)) }
     }
 
     private fun handleEvent(event: FinancialPlanItemConvertEvent) {
@@ -171,7 +193,7 @@ class FinancialPlanItemConvertFragment : Fragment(R.layout.fragment_financial_pl
         }
         binding.amountLayout.error = state.amountError?.let { getString(it) }
 
-        binding.dateField.dateFieldValue.text = formatDate(state.dateMillis)
+        binding.dateField.dateFieldValue.text = DateTimeRowFormatter.format(requireContext(), state.dateMillis)
 
         if (binding.descriptionInput.text?.toString() != state.descriptionInput) {
             binding.descriptionInput.setText(state.descriptionInput)
@@ -216,9 +238,6 @@ class FinancialPlanItemConvertFragment : Fragment(R.layout.fragment_financial_pl
             fieldBinding.categoryFieldName.text = getString(R.string.financial_plan_item_form_category_none)
         }
     }
-
-    private fun formatDate(millis: Long): String =
-        Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault()).toLocalDate().format(AppDateFormats.NUMERIC_DATE)
 
     private data class RenderState(
         val formState: FinancialPlanItemConvertState,

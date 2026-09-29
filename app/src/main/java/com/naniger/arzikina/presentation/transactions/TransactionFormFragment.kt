@@ -29,13 +29,13 @@ import com.naniger.arzikina.presentation.accounts.AccountIconMapper
 import com.naniger.arzikina.presentation.categories.CategoryFormFragmentArgs
 import com.naniger.arzikina.presentation.components.AccountPickerDialog
 import com.naniger.arzikina.presentation.components.ConfirmDialogs
+import com.naniger.arzikina.presentation.components.DateTimeRowFormatter
 import com.naniger.arzikina.presentation.components.NavAnimations
 import com.naniger.arzikina.presentation.components.TemplatePickerDialog
 import com.naniger.arzikina.presentation.components.displayName
 import com.naniger.arzikina.presentation.utilities.loans.LoanDetailFragmentArgs
 import com.naniger.arzikina.presentation.utilities.marketplace.MarketplaceFormFragmentArgs
 import com.naniger.arzikina.presentation.utilities.receipts.ReceiptDetailFragmentArgs
-import com.naniger.arzikina.util.AppDateFormats
 import com.naniger.arzikina.util.Constants
 import com.naniger.arzikina.util.Money
 import com.naniger.arzikina.util.MoneyInputFormatter
@@ -43,12 +43,10 @@ import com.google.android.material.color.MaterialColors
 import com.google.android.material.datepicker.MaterialDatePicker
 import com.google.android.material.timepicker.MaterialTimePicker
 import com.google.android.material.timepicker.TimeFormat
-import com.naniger.arzikina.util.TriggerTimeFormatter
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import java.time.Instant
-import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneId
 import java.time.ZoneOffset
@@ -472,7 +470,7 @@ class TransactionFormFragment : Fragment(R.layout.fragment_transaction_form) {
         renderAccountRow(binding, state, data.accounts, data.accountBalances)
         renderDestinationAccountRow(binding, state, isTransfer, data.accounts, data.accountBalances)
 
-        binding.dateTimeField.dateFieldValue.text = formatDateTimeRowValue(state.dateTimeMillis)
+        binding.dateTimeField.dateFieldValue.text = DateTimeRowFormatter.format(requireContext(), state.dateTimeMillis)
 
         if (binding.descriptionInput.text?.toString() != state.description) {
             binding.descriptionInput.setText(state.description)
@@ -667,27 +665,6 @@ class TransactionFormFragment : Fragment(R.layout.fragment_transaction_form) {
             fieldBinding.accountFieldName.text = getString(R.string.transaction_form_account_placeholder)
             fieldBinding.accountFieldBalance.visibility = View.GONE
         }
-    }
-
-    /**
-     * "Aujourd'hui - 08/08/2026 · 15:41" (voir maquette) : le libellé relatif
-     * réutilise les mêmes chaînes que les en-têtes de jour des listes de
-     * transactions ([R.string.transaction_day_today]/[transaction_day_yesterday])
-     * plutôt que d'en dupliquer une variante ici.
-     */
-    private fun formatDateTimeRowValue(dateTimeMillis: Long): String {
-        val zonedDateTime = Instant.ofEpochMilli(dateTimeMillis).atZone(ZoneId.systemDefault())
-        val date = zonedDateTime.toLocalDate()
-        val today = LocalDate.now()
-        val relativeLabel = when (date) {
-            today -> getString(R.string.transaction_day_today)
-            today.minusDays(1) -> getString(R.string.transaction_day_yesterday)
-            else -> null
-        }
-        val datePart = date.format(AppDateFormats.NUMERIC_DATE)
-        val timePart = TriggerTimeFormatter.format(requireContext(), zonedDateTime.hour, zonedDateTime.minute)
-        val dateLabel = if (relativeLabel != null) "$relativeLabel - $datePart" else datePart
-        return "$dateLabel · $timePart"
     }
 
     private fun handleEvent(event: TransactionFormEvent) {

@@ -519,7 +519,6 @@
     <string name="financial_plan_item_convert_context">Planned expense: %1$s · Planned: %2$s</string>
     <string name="financial_plan_item_convert_amount_label">Actual amount</string>
     <string name="financial_plan_item_convert_description_label">Description</string>
-    <string name="financial_plan_item_convert_date_label">Date</string>
     <string name="financial_plan_item_convert_not_found_message">This planned expense no longer exists, has already been recorded, or was cancelled.</string>
     <string name="financial_plan_item_convert_action">Save as transaction</string>
     <string name="financial_plan_item_form_context_overbudget">Plan: %1$s · Over budget: %2$s</string>

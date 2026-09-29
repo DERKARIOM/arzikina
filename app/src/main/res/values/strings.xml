@@ -805,7 +805,6 @@
     <string name="financial_plan_item_convert_context">Dépense prévue : %1$s · Prévu : %2$s</string>
     <string name="financial_plan_item_convert_amount_label">Montant réel</string>
     <string name="financial_plan_item_convert_description_label">Description</string>
-    <string name="financial_plan_item_convert_date_label">Date</string>
     <string name="financial_plan_item_convert_not_found_message">Cette dépense prévue n\'existe plus, a déjà été convertie, ou a été annulée.</string>
     <string name="financial_plan_item_convert_action">Enregistrer comme transaction</string>
 

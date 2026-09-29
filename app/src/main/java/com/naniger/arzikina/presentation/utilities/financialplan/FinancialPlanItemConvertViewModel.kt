@@ -27,6 +27,10 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.time.Instant
+import java.time.LocalDate
+import java.time.LocalTime
+import java.time.ZoneId
 import javax.inject.Inject
 
 /**
@@ -58,6 +62,8 @@ data class FinancialPlanItemConvertState(
     val categoryId: Long = 0L,
     val actualAmountInput: String = "",
     val descriptionInput: String = "",
+    /** Date ET heure de la transaction à créer (heure locale) — voir [FinancialPlanItemConvertViewModel.onDateChange]/
+     * [FinancialPlanItemConvertViewModel.onTimeChange]. */
     val dateMillis: Long = System.currentTimeMillis(),
     @StringRes val accountError: Int? = null,
     @StringRes val categoryError: Int? = null,
@@ -121,7 +127,7 @@ class FinancialPlanItemConvertViewModel @Inject constructor(
                     categoryId = item.categoryId ?: 0L,
                     actualAmountInput = Money.formatForInput(item.amount),
                     descriptionInput = item.name,
-                    dateMillis = item.plannedDate ?: System.currentTimeMillis()
+                    dateMillis = initialDateTime(item.plannedDate)
                 )
             }
         }
@@ -143,9 +149,38 @@ class FinancialPlanItemConvertViewModel @Inject constructor(
         _formState.update { it.copy(descriptionInput = value) }
     }
 
-    fun onDateChange(millis: Long) {
-        _formState.update { it.copy(dateMillis = millis) }
+    /** Change le JOUR en conservant l'heure déjà choisie (même règle que
+     * `TransactionFormViewModel.onDateChange`). */
+    fun onDateChange(date: LocalDate) {
+        _formState.update { state ->
+            val time = Instant.ofEpochMilli(state.dateMillis).atZone(ZoneId.systemDefault()).toLocalTime()
+            state.copy(dateMillis = date.atTime(time).toEpochMillis())
+        }
     }
+
+    /** Change l'HEURE en conservant le jour déjà choisi. */
+    fun onTimeChange(time: LocalTime) {
+        _formState.update { state ->
+            val date = Instant.ofEpochMilli(state.dateMillis).atZone(ZoneId.systemDefault()).toLocalDate()
+            state.copy(dateMillis = date.atTime(time).toEpochMillis())
+        }
+    }
+
+    /**
+     * Date prévue (enregistrée sans heure, à minuit) + heure ACTUELLE : sans cela, la transaction
+     * serait datée de 00:00 et apparaîtrait en bas de sa journée. Sans date prévue : maintenant.
+     */
+    private fun initialDateTime(plannedDate: Long?): Long {
+        val now = System.currentTimeMillis()
+        if (plannedDate == null) return now
+        val zone = ZoneId.systemDefault()
+        val day = Instant.ofEpochMilli(plannedDate).atZone(zone).toLocalDate()
+        val time = Instant.ofEpochMilli(now).atZone(zone).toLocalTime().withSecond(0).withNano(0)
+        return day.atTime(time).toEpochMillis()
+    }
+
+    private fun java.time.LocalDateTime.toEpochMillis(): Long =
+        atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
 
     fun save() {
         val state = _formState.value
