@@ -83,6 +83,12 @@ recyclerview = "1.4.0"
 # et largement utilisé en production).
 pdfboxAndroid = "2.0.27.0"
 
+# Mises à jour depuis Google Play (In-App Updates officiel, voir presentation/update/). 2.1.0 est
+# la dernière version stable publiée par Google (bibliothèque autonome issue de l'ancienne
+# "Play Core", dépréciée) — minSdk 21, compatible avec notre minSdk 26 / compileSdk 36.1. Variante
+# Java uniquement : la variante `-ktx` n'apporte que des extensions Flow non utilisées ici.
+appUpdate = "2.1.0"
+
 # Tests (voir la section [libraries] plus bas pour le détail de chaque usage :
 # JVM pur pour les ViewModels, instrumentés pour Room)
 mockk = "1.14.11"
@@ -148,6 +154,9 @@ vico-views = { group = "com.patrykandpatrick.vico", name = "views", version.ref 
 
 # Extraction de texte des reçus PDF (voir data/receipts/ReceiptTextExtractor.kt)
 pdfbox-android = { group = "com.tom-roush", name = "pdfbox-android", version.ref = "pdfboxAndroid" }
+
+# Google Play In-App Updates (voir presentation/update/PlayStoreUpdateManager.kt)
+play-app-update = { group = "com.google.android.play", name = "app-update", version.ref = "appUpdate" }
 
 # Tests unitaires JVM (src/test) : ViewModels des prêts/emprunts (voir Étape "Tests et correction
 # des bugs" du plan de développement). kotlinx-coroutines-test pour piloter les coroutines/StateFlow

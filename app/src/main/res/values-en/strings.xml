@@ -845,4 +845,11 @@
     <string name="currency_name_ghs">Ghanaian cedi</string>
     <string name="currency_name_eur">Euro</string>
     <string name="currency_name_usd">US dollar</string>
+    <string name="in_app_update_available_title">New version available</string>
+    <string name="in_app_update_available_message">A new version of %1$s is available with improvements and new features.</string>
+    <string name="in_app_update_action_update">Update</string>
+    <string name="in_app_update_action_later">Later</string>
+    <string name="in_app_update_downloaded_message">The update is ready to be installed.</string>
+    <string name="in_app_update_action_restart">Restart</string>
+    <string name="in_app_update_failed_message">The update couldn\'t be completed. Please try again later.</string>
 </resources>

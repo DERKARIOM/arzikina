@@ -144,6 +144,11 @@ dependencies {
     // cahier des charges "Gestion des reçus" et la doc de ReceiptDetailViewModel).
     implementation(libs.pdfbox.android)
 
+    // Mises à jour de l'application via Google Play (mécanisme officiel In-App Updates, voir
+    // presentation/update/PlayStoreUpdateManager.kt) — Google Play reste la seule source de vérité,
+    // aucune comparaison de version locale ni API maison.
+    implementation(libs.play.app.update)
+
     // Tests unitaires JVM (src/test) : ViewModels des prêts/emprunts — voir le détail de chaque
     // dépendance dans gradle/libs.versions.toml.
     testImplementation(libs.junit)

@@ -15,6 +15,7 @@ import javax.inject.Singleton
 private const val PREFERENCES_DATASTORE_NAME = "arzikina_preferences"
 private const val SESSION_DATASTORE_NAME = "arzikina_session"
 private const val SYNC_AUTH_DATASTORE_NAME = "arzikina_sync_auth"
+private const val APP_UPDATE_DATASTORE_NAME = "arzikina_app_update"
 
 private val Context.preferencesDataStore: DataStore<Preferences> by preferencesDataStore(
     name = PREFERENCES_DATASTORE_NAME
@@ -26,6 +27,10 @@ private val Context.sessionDataStore: DataStore<Preferences> by preferencesDataS
 
 private val Context.syncAuthDataStore: DataStore<Preferences> by preferencesDataStore(
     name = SYNC_AUTH_DATASTORE_NAME
+)
+
+private val Context.appUpdateDataStore: DataStore<Preferences> by preferencesDataStore(
+    name = APP_UPDATE_DATASTORE_NAME
 )
 
 /**
@@ -48,6 +53,15 @@ annotation class SessionDataStore
 @Qualifier
 @Retention(AnnotationRetention.BINARY)
 annotation class SyncAuthDataStore
+
+/**
+ * DataStore des mises à jour Google Play (dernier « Plus tard », voir
+ * [com.naniger.arzikina.data.update.InAppUpdatePromptStoreImpl]) — propre à l'APPAREIL, pas à un
+ * profil : ne doit donc vivre ni avec la session ni avec les préférences utilisateur.
+ */
+@Qualifier
+@Retention(AnnotationRetention.BINARY)
+annotation class AppUpdateDataStore
 
 /**
  * Fournit les [DataStore] de préférences utilisateur (thème, devise
@@ -80,4 +94,11 @@ object DataStoreModule {
     fun provideSyncAuthDataStore(
         @ApplicationContext context: Context
     ): DataStore<Preferences> = context.syncAuthDataStore
+
+    @AppUpdateDataStore
+    @Provides
+    @Singleton
+    fun provideAppUpdateDataStore(
+        @ApplicationContext context: Context
+    ): DataStore<Preferences> = context.appUpdateDataStore
 }

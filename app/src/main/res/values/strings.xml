@@ -1321,4 +1321,14 @@
     <string name="currency_name_ghs">Cedi ghanéen</string>
     <string name="currency_name_eur">Euro</string>
     <string name="currency_name_usd">Dollar américain</string>
+
+    <!-- Mises à jour Google Play (In-App Updates, voir presentation/update/PlayStoreUpdateManager.kt).
+         %1$s = nom de l'application (app_name). -->
+    <string name="in_app_update_available_title">Nouvelle version disponible</string>
+    <string name="in_app_update_available_message">Une nouvelle version d\'%1$s est disponible avec des améliorations et de nouvelles fonctionnalités.</string>
+    <string name="in_app_update_action_update">Mettre à jour</string>
+    <string name="in_app_update_action_later">Plus tard</string>
+    <string name="in_app_update_downloaded_message">La mise à jour est prête à être installée.</string>
+    <string name="in_app_update_action_restart">Redémarrer</string>
+    <string name="in_app_update_failed_message">La mise à jour n\'a pas pu aboutir. Réessayez plus tard.</string>
 </resources>

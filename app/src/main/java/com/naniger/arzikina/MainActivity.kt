@@ -25,6 +25,7 @@ import com.naniger.arzikina.domain.repository.UserPreferencesRepository
 import com.naniger.arzikina.presentation.components.NavAnimations
 import com.naniger.arzikina.presentation.security.BiometricLockFragment
 import com.naniger.arzikina.presentation.security.BiometricLockFragmentArgs
+import com.naniger.arzikina.presentation.update.PlayStoreUpdateManager
 import com.naniger.arzikina.util.Constants
 import com.naniger.arzikina.util.SystemBars
 import com.naniger.arzikina.util.external.ExternalAppLauncher
@@ -67,6 +68,11 @@ class MainActivity : AppCompatActivity() {
 
     @Inject
     lateinit var externalAppLauncher: ExternalAppLauncher
+
+    /** Mises à jour Google Play (In-App Updates) — toute la logique vit dans ce gestionnaire, voir
+     * sa doc ; l'Activity ne fait que l'attacher et lui signaler les écrans où il peut s'afficher. */
+    @Inject
+    lateinit var playStoreUpdateManager: PlayStoreUpdateManager
 
     private lateinit var binding: ActivityMainBinding
     private lateinit var navController: NavController
@@ -132,6 +138,13 @@ class MainActivity : AppCompatActivity() {
         // forme derrière.
         binding.bottomNavigation.isItemActiveIndicatorEnabled = false
 
+        // Avant le listener de destination ci-dessous (qui appelle setPromptsAllowed dès son
+        // enregistrement) ; doit rester dans onCreate (enregistrement d'un ActivityResultLauncher).
+        playStoreUpdateManager.attach(
+            snackbarHost = binding.root,
+            snackbarAnchor = { binding.bottomNavigation.takeIf { it.visibility == View.VISIBLE } }
+        )
+
         // Connexion et Inscription n'ont pas leur place dans les onglets
         // principaux : pas d'item de menu correspondant, et visuellement
         // l'app doit s'y présenter comme un espace à part entière (voir
@@ -195,6 +208,9 @@ class MainActivity : AppCompatActivity() {
             if (destination.id !in AUTH_DESTINATION_IDS) {
                 tryProcessPendingReceiptShare()
             }
+            // Mises à jour Google Play : aucune proposition (dialogue, « Redémarrer ») par-dessus la
+            // connexion ou le verrou biométrique — reportée jusqu'à l'écran suivant.
+            playStoreUpdateManager.setPromptsAllowed(destination.id !in AUTH_DESTINATION_IDS)
         }
 
         // Partage entrant à froid (app pas encore lancée, voir cahier des charges "Gestion des
