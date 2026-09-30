@@ -4,6 +4,9 @@
 Arzikina/Info.plist
 
 # Sorties de compilation / d'empaquetage (locales ou CI)
+Packages/*/.build/
+Packages/*/.swiftpm/
+Packages/*/Package.resolved
 build/
 DerivedData/
 Payload/

@@ -20,6 +20,11 @@ options:
   developmentLanguage: fr
   createIntermediateGroups: true
 
+# Package Swift LOCAL : modèles et règles métier partagés (voir Packages/ArzikinaKit/Package.swift).
+packages:
+  ArzikinaKit:
+    path: Packages/ArzikinaKit
+
 settings:
   base:
     MARKETING_VERSION: "0.1.0"
@@ -37,6 +42,11 @@ targets:
     deploymentTarget: "17.0"
     sources:
       - path: Arzikina
+    dependencies:
+      - package: ArzikinaKit
+        product: ArzikinaDomain
+      - package: ArzikinaKit
+        product: ArzikinaData
     info:
       # Généré par XcodeGen (ignoré par Git) à partir des propriétés ci-dessous.
       path: Arzikina/Info.plist

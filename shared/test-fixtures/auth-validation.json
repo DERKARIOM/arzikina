@@ -1,0 +1,129 @@
+{
+  "description": "Règles de format de l'authentification (mêmes seuils qu'Android et register.php). Longueurs comptées en unités UTF-16, comme sur Android.",
+  "email": [
+    {
+      "input": "awa@example.com",
+      "expected": true
+    },
+    {
+      "input": "  awa@example.com ",
+      "expected": true
+    },
+    {
+      "input": "a@b.c",
+      "expected": true
+    },
+    {
+      "input": "awa@example",
+      "expected": false
+    },
+    {
+      "input": "awa example@x.com",
+      "expected": false
+    },
+    {
+      "input": "@x.com",
+      "expected": false
+    },
+    {
+      "input": "awa@@x.com",
+      "expected": false
+    },
+    {
+      "input": "",
+      "expected": false
+    }
+  ],
+  "username": [
+    {
+      "input": "awa",
+      "expected": true
+    },
+    {
+      "input": "aw",
+      "expected": false
+    },
+    {
+      "input": "awa.diallo_2026",
+      "expected": true
+    },
+    {
+      "input": "  awa  ",
+      "expected": true
+    },
+    {
+      "input": "awa-diallo",
+      "expected": false
+    },
+    {
+      "input": "a b c",
+      "expected": false
+    },
+    {
+      "input": "awà",
+      "expected": false
+    },
+    {
+      "input": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "expected": true
+    },
+    {
+      "input": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "expected": false
+    }
+  ],
+  "passwordLongEnough": [
+    {
+      "input": "12345678",
+      "expected": true
+    },
+    {
+      "input": "1234567",
+      "expected": false
+    },
+    {
+      "input": "        ",
+      "expected": true
+    },
+    {
+      "input": "😀😀😀😀",
+      "expected": true
+    },
+    {
+      "input": "😀😀😀",
+      "expected": false
+    }
+  ],
+  "securityAnswerLongEnough": [
+    {
+      "input": "ab",
+      "expected": true
+    },
+    {
+      "input": "  ab  ",
+      "expected": true
+    },
+    {
+      "input": " a ",
+      "expected": false
+    },
+    {
+      "input": "a",
+      "expected": false
+    }
+  ],
+  "normalizeSecurityAnswer": [
+    {
+      "input": "  Niamey ",
+      "expected": "niamey"
+    },
+    {
+      "input": "PARIS",
+      "expected": "paris"
+    },
+    {
+      "input": "Élodie",
+      "expected": "élodie"
+    }
+  ]
+}

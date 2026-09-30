@@ -22,4 +22,5 @@ struct MainTabView: View {
 #Preview {
     MainTabView()
         .tint(Brand.primary)
+        .environment(SessionModel(authRepository: PreviewAuthRepository()))
 }

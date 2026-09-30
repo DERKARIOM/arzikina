@@ -1,7 +1,7 @@
 import SwiftUI
 import UIKit
 
-/// Onglet Réglages. Étape 1 : apparence (Système / Clair / Sombre), langue et version.
+/// Onglet Réglages : compte (déconnexion), apparence (Système / Clair / Sombre), langue et version.
 ///
 /// Langue : l'app suit la langue de l'iPhone (français par défaut si elle n'est pas prise en
 /// charge). Le choix manuel passe par le réglage de langue PAR APP d'iOS (Réglages › Arzikina ›
@@ -13,9 +13,29 @@ struct SettingsView: View {
     private var appearance: AppearancePreference = .default
 
     @Environment(\.openURL) private var openURL
+    @Environment(SessionModel.self) private var session
+    @State private var isConfirmingLogout = false
 
     var body: some View {
         Form {
+            Section("settings.section.account") {
+                if let current = session.currentSession, !current.fullName.isEmpty {
+                    LabeledContent("settings.account.name") {
+                        Text(verbatim: current.fullName)
+                    }
+                }
+                Button("settings.account.logout", role: .destructive) {
+                    isConfirmingLogout = true
+                }
+                .confirmationDialog("settings.account.logout_confirm_title", isPresented: $isConfirmingLogout, titleVisibility: .visible) {
+                    Button("settings.account.logout", role: .destructive) {
+                        Task { await session.logout() }
+                    }
+                } message: {
+                    Text("settings.account.logout_confirm_message")
+                }
+            }
+
             Section("settings.section.appearance") {
                 Picker("settings.appearance.theme", selection: $appearance) {
                     ForEach(AppearancePreference.allCases) { option in
@@ -52,4 +72,5 @@ struct SettingsView: View {
 
 #Preview {
     NavigationStack { SettingsView() }
+        .environment(SessionModel(authRepository: PreviewAuthRepository()))
 }

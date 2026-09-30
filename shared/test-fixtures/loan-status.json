@@ -1,0 +1,78 @@
+{
+  "description": "Statut d'un prêt recalculé à l'instant 'now'. Dates locales (sans fuseau) interprétées dans timeZone.",
+  "timeZone": "Africa/Niamey",
+  "cases": [
+    {
+      "name": "remboursé même après l'échéance",
+      "amount": 1000,
+      "amountRepaid": 1000,
+      "startDate": "2026-01-01T00:00",
+      "dueDate": "2026-02-01T00:00",
+      "now": "2026-09-30T12:00",
+      "expected": "REPAID"
+    },
+    {
+      "name": "remboursé au-delà du montant",
+      "amount": 1000,
+      "amountRepaid": 1200,
+      "startDate": "2026-01-01T00:00",
+      "dueDate": "2026-12-01T00:00",
+      "now": "2026-09-30T12:00",
+      "expected": "REPAID"
+    },
+    {
+      "name": "pas encore commencé",
+      "amount": 1000,
+      "amountRepaid": 0,
+      "startDate": "2026-10-05T09:00",
+      "dueDate": "2026-12-01T00:00",
+      "now": "2026-09-30T12:00",
+      "expected": "UPCOMING"
+    },
+    {
+      "name": "commence plus tard le même jour",
+      "amount": 1000,
+      "amountRepaid": 0,
+      "startDate": "2026-09-30T18:00",
+      "dueDate": "2026-12-01T00:00",
+      "now": "2026-09-30T12:00",
+      "expected": "UPCOMING"
+    },
+    {
+      "name": "en cours",
+      "amount": 1000,
+      "amountRepaid": 400,
+      "startDate": "2026-09-01T08:00",
+      "dueDate": "2026-12-01T00:00",
+      "now": "2026-09-30T12:00",
+      "expected": "ONGOING"
+    },
+    {
+      "name": "échéance aujourd'hui : encore en cours",
+      "amount": 1000,
+      "amountRepaid": 0,
+      "startDate": "2026-09-01T08:00",
+      "dueDate": "2026-09-30T00:00",
+      "now": "2026-09-30T23:59",
+      "expected": "ONGOING"
+    },
+    {
+      "name": "échéance hier : en retard",
+      "amount": 1000,
+      "amountRepaid": 0,
+      "startDate": "2026-09-01T08:00",
+      "dueDate": "2026-09-29T00:00",
+      "now": "2026-09-30T00:01",
+      "expected": "OVERDUE"
+    },
+    {
+      "name": "échéance hier en fin de soirée : en retard dès minuit",
+      "amount": 1000,
+      "amountRepaid": 999,
+      "startDate": "2026-09-01T08:00",
+      "dueDate": "2026-09-29T23:30",
+      "now": "2026-09-30T00:10",
+      "expected": "OVERDUE"
+    }
+  ]
+}
