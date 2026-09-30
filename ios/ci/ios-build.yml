@@ -1,0 +1,189 @@
+# Arzikina iOS — build de l'IPA NON SIGNÉE (à installer ensuite avec Sideloadly depuis Windows).
+#
+# Déclencheurs :
+#   - manuel (onglet Actions › « iOS Build » › Run workflow)       → IPA en artifact
+#   - tag `ios-vX.Y.Z` poussé (ex. git tag ios-v0.1.0)             → IPA en artifact + GitHub Release
+#   - pull request modifiant ios/** ou ce fichier                  → compilation + vérifications
+#
+# Aucun certificat, profil de provisionnement, mot de passe ni clé n'est utilisé ou stocké :
+# le build est volontairement non signé. Voir docs/IOS_BUILD.md.
+
+name: iOS Build
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "ios-v*"
+  pull_request:
+    paths:
+      - "ios/**"
+      - ".github/workflows/ios-build.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ios-build-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  BUNDLE_ID: com.naniger.arzikina
+  SCHEME: Arzikina
+  # Laisser vide pour utiliser le Xcode par défaut de l'image macOS (sa version est affichée
+  # dans les logs). Pour figer une version : ex. "16.4" (doit exister dans /Applications).
+  XCODE_VERSION: ""
+
+jobs:
+  build:
+    name: Build IPA (non signée)
+    runs-on: macos-15
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: ios
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      build: ${{ steps.version.outputs.build }}
+    steps:
+      - name: Récupérer le dépôt
+        uses: actions/checkout@v4
+
+      - name: Sélectionner Xcode
+        run: |
+          echo "Xcode disponibles sur ce runner :"
+          ls -d /Applications/Xcode*.app || true
+          if [[ -n "$XCODE_VERSION" ]]; then
+            XCODE_APP="/Applications/Xcode_${XCODE_VERSION}.app"
+            [[ -d "$XCODE_APP" ]] || { echo "::error::Xcode $XCODE_VERSION introuvable sur ce runner (voir liste ci-dessus)"; exit 1; }
+            sudo xcode-select -s "$XCODE_APP/Contents/Developer"
+          fi
+          xcodebuild -version
+          MAJOR="$(xcodebuild -version | head -n 1 | awk '{print $2}' | cut -d. -f1)"
+          # Xcode 15 minimum : String Catalogs (.xcstrings) et SDK iOS 17.
+          (( MAJOR >= 15 )) || { echo "::error::Xcode $MAJOR trop ancien (15 minimum requis)"; exit 1; }
+
+      - name: Lire la version dans project.yml
+        id: version
+        run: |
+          VERSION="$(sed -nE 's/^[[:space:]]*MARKETING_VERSION:[[:space:]]*"?([^"]+)"?[[:space:]]*$/\1/p' project.yml | head -n 1)"
+          BUILD="$(sed -nE 's/^[[:space:]]*CURRENT_PROJECT_VERSION:[[:space:]]*"?([^"]+)"?[[:space:]]*$/\1/p' project.yml | head -n 1)"
+          [[ -n "$VERSION" && -n "$BUILD" ]] || { echo "::error::MARKETING_VERSION ou CURRENT_PROJECT_VERSION introuvable dans ios/project.yml"; exit 1; }
+          echo "Version $VERSION ($BUILD)"
+          if [[ "$GITHUB_REF_TYPE" == "tag" ]]; then
+            EXPECTED_TAG="ios-v$VERSION"
+            [[ "$GITHUB_REF_NAME" == "$EXPECTED_TAG" ]] || {
+              echo "::error::Le tag '$GITHUB_REF_NAME' ne correspond pas à MARKETING_VERSION ($VERSION) — attendu '$EXPECTED_TAG'. Mettre à jour ios/project.yml ou le tag."
+              exit 1
+            }
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "build=$BUILD" >> "$GITHUB_OUTPUT"
+
+      - name: Installer XcodeGen
+        run: |
+          brew install xcodegen
+          xcodegen --version
+
+      - name: Générer le projet Xcode
+        run: |
+          xcodegen generate --spec project.yml
+          xcodebuild -list -project Arzikina.xcodeproj
+
+      - name: Compiler (Release, iPhone, sans signature)
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -project Arzikina.xcodeproj \
+            -scheme "$SCHEME" \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination "generic/platform=iOS" \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            build 2>&1 | tee xcodebuild.log | grep -E "error:|warning:|\*\* BUILD" || true
+          # `grep` ne sert qu'à alléger le log : le vrai verdict est le statut de xcodebuild.
+          grep -q "\*\* BUILD SUCCEEDED \*\*" xcodebuild.log || {
+            echo "::error::Échec de compilation — dernières lignes du journal :"
+            tail -n 80 xcodebuild.log
+            exit 1
+          }
+
+      - name: Empaqueter l'IPA
+        run: |
+          APP_PATH="build/Build/Products/Release-iphoneos/Arzikina.app"
+          [[ -d "$APP_PATH" ]] || { echo "::error::Application compilée introuvable : $APP_PATH"; exit 1; }
+          rm -rf Payload Arzikina.ipa
+          mkdir Payload
+          cp -R "$APP_PATH" Payload/
+          zip -qry Arzikina.ipa Payload
+
+      - name: Vérifier l'IPA
+        run: |
+          chmod +x scripts/verify_ipa.sh
+          scripts/verify_ipa.sh Arzikina.ipa "$BUNDLE_ID" \
+            "${{ steps.version.outputs.version }}" "${{ steps.version.outputs.build }}"
+
+      - name: Résumé
+        if: always()
+        run: |
+          {
+            echo "### Arzikina iOS"
+            echo "| | |"
+            echo "|---|---|"
+            echo "| Version | ${{ steps.version.outputs.version }} (${{ steps.version.outputs.build }}) |"
+            echo "| Bundle ID | $BUNDLE_ID |"
+            echo "| Xcode | $(xcodebuild -version | head -n 1) |"
+            if [[ -f Arzikina.ipa ]]; then echo "| IPA | $(du -h Arzikina.ipa | cut -f1) — non signée |"; else echo "| IPA | ❌ non générée |"; fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Publier l'IPA (artifact)
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: Arzikina-ios-${{ steps.version.outputs.version }}-${{ steps.version.outputs.build }}
+          path: ios/Arzikina.ipa
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Journal de compilation (en cas d'échec)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: xcodebuild-log
+          path: ios/xcodebuild.log
+          if-no-files-found: ignore
+          retention-days: 7
+
+  release:
+    name: GitHub Release
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/ios-v')
+    # Runner Linux : la publication n'a pas besoin de macOS.
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Récupérer l'IPA
+        uses: actions/download-artifact@v4
+        with:
+          name: Arzikina-ios-${{ needs.build.outputs.version }}-${{ needs.build.outputs.build }}
+
+      - name: Créer la Release et joindre Arzikina.ipa
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ needs.build.outputs.version }}
+          BUILD: ${{ needs.build.outputs.build }}
+        run: |
+          [[ -s Arzikina.ipa ]] || { echo "::error::Arzikina.ipa absente ou vide"; exit 1; }
+          NOTES="Arzikina iOS $VERSION (build $BUILD) — IPA NON SIGNÉE, à installer avec Sideloadly (voir docs/IOS_BUILD.md)."
+          if gh release view "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" Arzikina.ipa --clobber --repo "$GITHUB_REPOSITORY"
+          else
+            gh release create "$GITHUB_REF_NAME" Arzikina.ipa \
+              --repo "$GITHUB_REPOSITORY" \
+              --title "Arzikina iOS v$VERSION" \
+              --notes "$NOTES"
+          fi

@@ -1,0 +1,2 @@
+# Scripts exécutés par la CI macOS : toujours en fins de ligne LF, même après un checkout Windows.
+*.sh text eol=lf

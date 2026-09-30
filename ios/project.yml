@@ -1,0 +1,94 @@
+# Arzikina iOS — description du projet Xcode (XcodeGen, https://github.com/yonaskolb/XcodeGen).
+#
+# Le fichier `Arzikina.xcodeproj` N'EST PAS versionné : il est généré à partir de ce fichier
+# (`xcodegen generate`), en CI comme sur un Mac. On ne modifie donc jamais le .xcodeproj à la main :
+# toute évolution du projet (fichiers, réglages, version) passe par ce YAML, lisible et éditable
+# depuis Windows. Voir docs/IOS_BUILD.md.
+#
+# VERSIONING — ce fichier est la SEULE source de vérité (la CI vérifie, elle n'invente rien) :
+#   - MARKETING_VERSION        : version visible (CFBundleShortVersionString), ex. 0.1.0
+#   - CURRENT_PROJECT_VERSION  : numéro de build (CFBundleVersion), à incrémenter à chaque build
+#                                publié d'une même version : 0.1.0 (1) → 0.1.0 (2) → 0.1.1 (1)
+#   Un tag de release `ios-vX.Y.Z` doit correspondre exactement à MARKETING_VERSION.
+
+name: Arzikina
+
+options:
+  bundleIdPrefix: com.naniger
+  deploymentTarget:
+    iOS: "17.0"
+  developmentLanguage: fr
+  createIntermediateGroups: true
+
+settings:
+  base:
+    MARKETING_VERSION: "0.1.0"
+    CURRENT_PROJECT_VERSION: "1"
+    # Mode de langage Swift 5 : la vérification stricte de la concurrence (Swift 6) sera activée
+    # quand la couche réseau/sync (async/await) sera en place, pour la traiter en une seule fois.
+    SWIFT_VERSION: "5.0"
+    LOCALIZATION_PREFERS_STRING_CATALOGS: YES
+    ENABLE_USER_SCRIPT_SANDBOXING: YES
+
+targets:
+  Arzikina:
+    type: application
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - path: Arzikina
+    info:
+      # Généré par XcodeGen (ignoré par Git) à partir des propriétés ci-dessous.
+      path: Arzikina/Info.plist
+      properties:
+        CFBundleDisplayName: Arzikina
+        CFBundleName: $(PRODUCT_NAME)
+        CFBundleIdentifier: $(PRODUCT_BUNDLE_IDENTIFIER)
+        CFBundleExecutable: $(EXECUTABLE_NAME)
+        CFBundlePackageType: APPL
+        CFBundleInfoDictionaryVersion: "6.0"
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        # Français = langue de référence (même choix qu'Android : res/values/ = français).
+        # CFBundleLocalizations fait apparaître le choix de langue PAR APP dans Réglages iOS.
+        CFBundleDevelopmentRegion: fr
+        CFBundleLocalizations: [fr, en]
+        LSRequiresIPhoneOS: true
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: false
+        UILaunchScreen:
+          UIColorName: LaunchBackground
+          UIImageName: BrandLogo
+        UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
+        # Aucune cryptographie propriétaire (HTTPS standard uniquement).
+        ITSAppUsesNonExemptEncryption: false
+        # URL de l'API Arzikina (pas un secret) — même serveur qu'Android (RemoteConfig.BASE_URL).
+        ArzikinaAPIBaseURL: https://api.opal-niger.com/
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.naniger.arzikina
+        PRODUCT_NAME: Arzikina
+        # iPhone uniquement pour l'instant (l'iPad viendra avec une mise en page dédiée).
+        TARGETED_DEVICE_FAMILY: "1"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        # Couleurs référencées explicitement via `Brand` (DesignSystem/Brand.swift) : pas de
+        # symboles générés automatiquement, pour éviter tout conflit de noms.
+        ASSETCATALOG_COMPILER_GENERATE_ASSET_SYMBOLS: NO
+        ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS: NO
+        SWIFT_EMIT_LOC_STRINGS: YES
+        SUPPORTS_MACCATALYST: NO
+        SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD: NO
+        # Aucune équipe ni certificat : la CI compile SANS signature, Sideloadly signe ensuite.
+        CODE_SIGN_STYLE: Automatic
+        DEVELOPMENT_TEAM: ""
+
+schemes:
+  Arzikina:
+    build:
+      targets:
+        Arzikina: all
+    run:
+      config: Debug
+    archive:
+      config: Release
