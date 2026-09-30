@@ -1,0 +1,76 @@
+{
+  "description": "Planification : total prévu (hors annulées), reste, progression 0-100 et dépassement.",
+  "cases": [
+    {
+      "name": "annulée exclue",
+      "available": 100000,
+      "items": [
+        {
+          "amount": 30000,
+          "status": "TO_PLAN"
+        },
+        {
+          "amount": 20000,
+          "status": "DONE"
+        },
+        {
+          "amount": 50000,
+          "status": "CANCELLED"
+        }
+      ],
+      "expected": {
+        "totalPlanned": 50000,
+        "remaining": 50000,
+        "progress": 50,
+        "isOverBudget": false
+      }
+    },
+    {
+      "name": "dépassement",
+      "available": 40000,
+      "items": [
+        {
+          "amount": 30000,
+          "status": "TO_PLAN"
+        },
+        {
+          "amount": 20000,
+          "status": "TO_PLAN"
+        }
+      ],
+      "expected": {
+        "totalPlanned": 50000,
+        "remaining": -10000,
+        "progress": 100,
+        "isOverBudget": true
+      }
+    },
+    {
+      "name": "budget nul avec dépense",
+      "available": 0,
+      "items": [
+        {
+          "amount": 1000,
+          "status": "TO_PLAN"
+        }
+      ],
+      "expected": {
+        "totalPlanned": 1000,
+        "remaining": -1000,
+        "progress": 100,
+        "isOverBudget": true
+      }
+    },
+    {
+      "name": "budget nul sans dépense",
+      "available": 0,
+      "items": [],
+      "expected": {
+        "totalPlanned": 0,
+        "remaining": 0,
+        "progress": 0,
+        "isOverBudget": false
+      }
+    }
+  ]
+}

@@ -2,9 +2,8 @@ import SwiftUI
 
 /// Point d'entrée de l'application iOS Arzikina.
 ///
-/// Étape 1 (« bootstrap ») : uniquement la structure de navigation, le thème et la localisation.
-/// La logique métier, le réseau, le stockage local et la synchronisation arriveront dans les étapes
-/// suivantes (voir `docs/IOS_BUILD.md` et le document d'architecture iOS), sans changer cette base.
+/// Construit une seule fois les dépendances réelles (`AppContainer.live()`) et l'état de session
+/// partagé, puis délègue l'affichage à `RootView` (connexion ou application principale).
 @main
 struct ArzikinaApp: App {
 
@@ -12,9 +11,17 @@ struct ArzikinaApp: App {
     @AppStorage(AppearancePreference.storageKey)
     private var appearance: AppearancePreference = .default
 
+    @State private var session: SessionModel
+
+    init() {
+        let container = AppContainer.live()
+        _session = State(initialValue: SessionModel(authRepository: container.authRepository))
+    }
+
     var body: some Scene {
         WindowGroup {
-            MainTabView()
+            RootView()
+                .environment(session)
                 .tint(Brand.primary)
                 .preferredColorScheme(appearance.colorScheme)
         }

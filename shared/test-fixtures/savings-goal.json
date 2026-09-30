@@ -1,0 +1,95 @@
+{
+  "description": "Objectif d'épargne : progression à partir du solde du compte et de la cible (null = pas d'objectif valide).",
+  "cases": [
+    {
+      "name": "moitié",
+      "balance": 50000,
+      "target": 100000,
+      "expected": {
+        "saved": 50000,
+        "remaining": 50000,
+        "exceededBy": 0,
+        "percent": 50,
+        "isReached": false
+      }
+    },
+    {
+      "name": "arrondi inférieur, jamais 100 % avant la cible",
+      "balance": 99999,
+      "target": 100000,
+      "expected": {
+        "saved": 99999,
+        "remaining": 1,
+        "exceededBy": 0,
+        "percent": 99,
+        "isReached": false
+      }
+    },
+    {
+      "name": "tiers",
+      "balance": 33333,
+      "target": 100000,
+      "expected": {
+        "saved": 33333,
+        "remaining": 66667,
+        "exceededBy": 0,
+        "percent": 33,
+        "isReached": false
+      }
+    },
+    {
+      "name": "atteint",
+      "balance": 100000,
+      "target": 100000,
+      "expected": {
+        "saved": 100000,
+        "remaining": 0,
+        "exceededBy": 0,
+        "percent": 100,
+        "isReached": true
+      }
+    },
+    {
+      "name": "dépassé : barre pleine, dépassement signalé",
+      "balance": 150000,
+      "target": 100000,
+      "expected": {
+        "saved": 150000,
+        "remaining": 0,
+        "exceededBy": 50000,
+        "percent": 100,
+        "isReached": true
+      }
+    },
+    {
+      "name": "solde négatif",
+      "balance": -2000,
+      "target": 100000,
+      "expected": {
+        "saved": 0,
+        "remaining": 100000,
+        "exceededBy": 0,
+        "percent": 0,
+        "isReached": false
+      }
+    },
+    {
+      "name": "pas de cible",
+      "balance": 1000,
+      "target": null,
+      "expected": null
+    },
+    {
+      "name": "cible nulle",
+      "balance": 1000,
+      "target": 0,
+      "expected": null
+    },
+    {
+      "name": "cible négative",
+      "balance": 1000,
+      "target": -5,
+      "expected": null
+    }
+  ]
+}

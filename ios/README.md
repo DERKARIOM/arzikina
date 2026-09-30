@@ -18,10 +18,29 @@ cd ios && xcodegen generate && open Arzikina.xcodeproj
 
 ```
 Arzikina/
-├── App/            Point d'entrée, onglets (TabView), infos de version
+├── App/            Point d'entrée, composition des dépendances, session, onglets (TabView)
 ├── DesignSystem/   Couleurs de marque, thème, styles de cartes
 ├── Components/     Vues réutilisables
 ├── Features/       Un dossier par fonctionnalité (Dashboard, Accounts, Reports, Settings…)
 └── Resources/      Assets (icône, couleurs), traductions
 scripts/            Scripts CI (vérification de l'IPA)
+Packages/
+└── ArzikinaKit/    Package Swift local, sans SwiftUI
+    ├── Sources/ArzikinaDomain/   Modèles et règles métier (Money, soldes, objectifs d'épargne,
+    │                             prêts, budgets, récurrences, planifications, authentification)
+    ├── Sources/ArzikinaData/     Client de l'API (URLSession), DTO, session dans le Keychain,
+    │                             implémentations des dépôts (connexion, inscription…)
+    └── Tests/                    Tests, dont les jeux partagés avec Android (shared/test-fixtures)
 ```
+
+## Tester la logique métier
+
+La logique métier ne dépend ni de SwiftUI ni d'Xcode. Ses tests tournent sur un runner Linux
+(workflow « Shared Rules Tests »), ou sur n'importe quelle machine qui a Swift installé :
+
+```bash
+cd ios/Packages/ArzikinaKit && swift test
+```
+
+Les jeux de tests de `shared/test-fixtures/` sont communs à Android et iOS : voir leur
+[README](../shared/test-fixtures/README.md).

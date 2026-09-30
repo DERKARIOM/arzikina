@@ -1,0 +1,279 @@
+{
+  "description": "Budget : dépensé, progression, statut de période (budget à dates fixes uniquement) et rythme (tolérance ±5 %).",
+  "timeZone": "Africa/Niamey",
+  "cases": [
+    {
+      "name": "mensuel récurrent, dans le rythme",
+      "today": "2026-09-16",
+      "budget": {
+        "categoryId": "food",
+        "period": "MONTHLY",
+        "limitAmount": 100000,
+        "currencyCode": "XOF"
+      },
+      "accounts": [
+        {
+          "id": "cash",
+          "currencyCode": "XOF"
+        },
+        {
+          "id": "eur",
+          "currencyCode": "EUR"
+        }
+      ],
+      "transactions": [
+        {
+          "type": "EXPENSE",
+          "amount": 30000,
+          "categoryId": "food",
+          "accountId": "cash",
+          "date": "2026-09-01T08:00"
+        },
+        {
+          "type": "EXPENSE",
+          "amount": 20000,
+          "categoryId": "food",
+          "accountId": "cash",
+          "date": "2026-09-16T21:00"
+        },
+        {
+          "type": "EXPENSE",
+          "amount": 99999,
+          "categoryId": "food",
+          "accountId": "cash",
+          "date": "2026-08-31T23:59"
+        },
+        {
+          "type": "INCOME",
+          "amount": 5000,
+          "categoryId": "food",
+          "accountId": "cash",
+          "date": "2026-09-10T10:00"
+        },
+        {
+          "type": "EXPENSE",
+          "amount": 7000,
+          "categoryId": "transport",
+          "accountId": "cash",
+          "date": "2026-09-10T10:00"
+        },
+        {
+          "type": "EXPENSE",
+          "amount": 4000,
+          "categoryId": "food",
+          "accountId": "eur",
+          "date": "2026-09-10T10:00"
+        },
+        {
+          "type": "EXPENSE",
+          "amount": 1000,
+          "categoryId": "food",
+          "accountId": "cash",
+          "date": "2026-09-30T23:59"
+        }
+      ],
+      "expected": {
+        "spent": 51000,
+        "progress": 0.51,
+        "periodStatus": null,
+        "pace": {
+          "periodStatus": "ONGOING",
+          "periodStart": "2026-09-01",
+          "periodEnd": "2026-09-30",
+          "totalDays": 30,
+          "elapsedDays": 16,
+          "daysRemaining": 14,
+          "paceState": "ON_TRACK"
+        }
+      }
+    },
+    {
+      "name": "hebdomadaire récurrent (semaine ISO lundi→dimanche), au-dessus du rythme",
+      "today": "2026-09-30",
+      "budget": {
+        "categoryId": "food",
+        "period": "WEEKLY",
+        "limitAmount": 70000,
+        "currencyCode": "XOF"
+      },
+      "accounts": [
+        {
+          "id": "cash",
+          "currencyCode": "XOF"
+        }
+      ],
+      "transactions": [
+        {
+          "type": "EXPENSE",
+          "amount": 10000,
+          "categoryId": "food",
+          "accountId": "cash",
+          "date": "2026-09-27T23:00"
+        },
+        {
+          "type": "EXPENSE",
+          "amount": 30000,
+          "categoryId": "food",
+          "accountId": "cash",
+          "date": "2026-09-28T00:00"
+        },
+        {
+          "type": "EXPENSE",
+          "amount": 5000,
+          "categoryId": "food",
+          "accountId": "cash",
+          "date": "2026-10-04T22:00"
+        }
+      ],
+      "expected": {
+        "spent": 35000,
+        "progress": 0.5,
+        "periodStatus": null,
+        "pace": {
+          "periodStatus": "ONGOING",
+          "periodStart": "2026-09-28",
+          "periodEnd": "2026-10-04",
+          "totalDays": 7,
+          "elapsedDays": 3,
+          "daysRemaining": 4,
+          "paceState": "OVER"
+        }
+      }
+    },
+    {
+      "name": "période fixe à venir",
+      "today": "2026-09-30",
+      "budget": {
+        "categoryId": "food",
+        "period": "MONTHLY",
+        "limitAmount": 50000,
+        "currencyCode": "XOF",
+        "startDate": "2026-10-01",
+        "endDate": "2026-10-10"
+      },
+      "accounts": [
+        {
+          "id": "cash",
+          "currencyCode": "XOF"
+        }
+      ],
+      "transactions": [
+        {
+          "type": "EXPENSE",
+          "amount": 5000,
+          "categoryId": "food",
+          "accountId": "cash",
+          "date": "2026-10-01T10:00"
+        },
+        {
+          "type": "EXPENSE",
+          "amount": 8000,
+          "categoryId": "food",
+          "accountId": "cash",
+          "date": "2026-09-30T10:00"
+        }
+      ],
+      "expected": {
+        "spent": 5000,
+        "progress": 0.1,
+        "periodStatus": "UPCOMING",
+        "pace": {
+          "periodStatus": "UPCOMING",
+          "periodStart": "2026-10-01",
+          "periodEnd": "2026-10-10",
+          "totalDays": 10,
+          "elapsedDays": 0,
+          "daysRemaining": 10,
+          "paceState": "OVER"
+        }
+      }
+    },
+    {
+      "name": "période fixe terminée, en dessous du rythme",
+      "today": "2026-09-30",
+      "budget": {
+        "categoryId": "food",
+        "period": "WEEKLY",
+        "limitAmount": 60000,
+        "currencyCode": "XOF",
+        "startDate": "2026-08-01",
+        "endDate": "2026-08-31"
+      },
+      "accounts": [
+        {
+          "id": "cash",
+          "currencyCode": "XOF"
+        }
+      ],
+      "transactions": [
+        {
+          "type": "EXPENSE",
+          "amount": 20000,
+          "categoryId": "food",
+          "accountId": "cash",
+          "date": "2026-08-15T12:00"
+        },
+        {
+          "type": "EXPENSE",
+          "amount": 9999,
+          "categoryId": "food",
+          "accountId": "cash",
+          "date": "2026-09-01T00:00"
+        }
+      ],
+      "expected": {
+        "spent": 20000,
+        "progress": 0.3333333333,
+        "periodStatus": "COMPLETED",
+        "pace": {
+          "periodStatus": "COMPLETED",
+          "periodStart": "2026-08-01",
+          "periodEnd": "2026-08-31",
+          "totalDays": 31,
+          "elapsedDays": 31,
+          "daysRemaining": 0,
+          "paceState": "AHEAD"
+        }
+      }
+    },
+    {
+      "name": "plafond nul",
+      "today": "2026-09-16",
+      "budget": {
+        "categoryId": "food",
+        "period": "MONTHLY",
+        "limitAmount": 0,
+        "currencyCode": "XOF"
+      },
+      "accounts": [
+        {
+          "id": "cash",
+          "currencyCode": "XOF"
+        }
+      ],
+      "transactions": [
+        {
+          "type": "EXPENSE",
+          "amount": 1000,
+          "categoryId": "food",
+          "accountId": "cash",
+          "date": "2026-09-02T10:00"
+        }
+      ],
+      "expected": {
+        "spent": 1000,
+        "progress": 0.0,
+        "periodStatus": null,
+        "pace": {
+          "periodStatus": "ONGOING",
+          "periodStart": "2026-09-01",
+          "periodEnd": "2026-09-30",
+          "totalDays": 30,
+          "elapsedDays": 16,
+          "daysRemaining": 14,
+          "paceState": "OVER"
+        }
+      }
+    }
+  ]
+}

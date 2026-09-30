@@ -1,0 +1,66 @@
+{
+  "description": "Solde courant = solde initial + revenus − dépenses et transferts sortants + transferts entrants.",
+  "accounts": [
+    {
+      "id": "cash",
+      "initialBalance": 1000000
+    },
+    {
+      "id": "bank",
+      "initialBalance": 500000
+    },
+    {
+      "id": "mobile-money",
+      "initialBalance": 0
+    },
+    {
+      "id": "goal",
+      "initialBalance": 0
+    }
+  ],
+  "transactions": [
+    {
+      "type": "INCOME",
+      "amount": 200000,
+      "accountId": "cash"
+    },
+    {
+      "type": "EXPENSE",
+      "amount": 50000,
+      "accountId": "cash"
+    },
+    {
+      "type": "TRANSFER",
+      "amount": 300000,
+      "accountId": "cash",
+      "transferAccountId": "goal"
+    },
+    {
+      "type": "EXPENSE",
+      "amount": 1000,
+      "accountId": "cash"
+    },
+    {
+      "type": "TRANSFER",
+      "amount": 20000,
+      "accountId": "bank",
+      "transferAccountId": "cash"
+    },
+    {
+      "type": "TRANSFER",
+      "amount": 10000,
+      "accountId": "bank"
+    },
+    {
+      "type": "INCOME",
+      "amount": 5000,
+      "accountId": "ghost"
+    }
+  ],
+  "expected": {
+    "cash": 869000,
+    "bank": 470000,
+    "mobile-money": 0,
+    "goal": 300000
+  }
+}
