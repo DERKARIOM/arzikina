@@ -13,6 +13,10 @@ import Observation
 /// - retour du réseau après une coupure (`NWPathMonitor`) ;
 /// - bouton « Synchroniser maintenant » des Réglages.
 ///
+/// Après chaque synchronisation (réussie ou non, l'app fonctionne hors ligne), [afterSync] crée les
+/// échéances d'automatisation dues : APRÈS la réception, pour fusionner d'abord celles qu'un autre
+/// appareil aurait déjà créées ; ce qui a été créé est aussitôt envoyé.
+///
 /// Les déclenchements AUTOMATIQUES rapprochés sont regroupés (au plus un toutes les
 /// [automaticInterval] secondes) pour ménager la batterie et le forfait data ; le bouton manuel,
 /// lui, synchronise toujours.
@@ -36,6 +40,7 @@ final class SyncCoordinator {
 
     @ObservationIgnored private let engine: SyncEngine
     @ObservationIgnored private let onSessionExpired: @MainActor () -> Void
+    @ObservationIgnored private let afterSync: @Sendable () async -> Int
     @ObservationIgnored private let automaticInterval: TimeInterval
     @ObservationIgnored private var lastAttempt: Date?
     @ObservationIgnored private var pathMonitor: NWPathMonitor?
@@ -43,9 +48,15 @@ final class SyncCoordinator {
     @ObservationIgnored private var wasOnline = true
     @ObservationIgnored private var needsFollowUpRun = false
 
-    init(engine: SyncEngine, automaticInterval: TimeInterval = 30, onSessionExpired: @escaping @MainActor () -> Void) {
+    init(
+        engine: SyncEngine,
+        automaticInterval: TimeInterval = 30,
+        afterSync: @escaping @Sendable () async -> Int = { 0 },
+        onSessionExpired: @escaping @MainActor () -> Void
+    ) {
         self.engine = engine
         self.automaticInterval = automaticInterval
+        self.afterSync = afterSync
         self.onSessionExpired = onSessionExpired
     }
 
@@ -114,6 +125,10 @@ final class SyncCoordinator {
             if error == .sessionExpired || error == .notSignedIn { onSessionExpired() }
         } catch {
             status = .failed(.server(status: nil))
+        }
+        // Échéances dues : créées même hors ligne ; envoyées tout de suite si le serveur répond.
+        if await afterSync() > 0, status == .idle {
+            _ = try? await engine.synchronize()
         }
     }
 

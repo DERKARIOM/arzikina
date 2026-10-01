@@ -56,6 +56,16 @@ struct SettingsView: View {
                 } label: {
                     SettingsRow(titleKey: "settings.budgets", subtitleKey: "settings.budgets_subtitle", systemImage: "chart.bar")
                 }
+                NavigationLink {
+                    LoansView()
+                } label: {
+                    SettingsRow(titleKey: "settings.loans", subtitleKey: "settings.loans_subtitle", systemImage: "person.2")
+                }
+                NavigationLink {
+                    AutomationsView()
+                } label: {
+                    SettingsRow(titleKey: "settings.automations", subtitleKey: "settings.automations_subtitle", systemImage: "arrow.triangle.2.circlepath")
+                }
             }
 
             if let sync = session.sync {

@@ -18,6 +18,7 @@ struct DashboardView: View {
     @State private var transactionForm: TransactionFormRoute?
     @State private var isShowingAllTransactions = false
     @State private var isShowingBudgets = false
+    @State private var isShowingAutomations = false
     @State private var budgetForm: BudgetFormRoute?
 
     var body: some View {
@@ -29,6 +30,29 @@ struct DashboardView: View {
                     showsSyncHint: model.hasLoaded && !model.hasAccounts,
                     isBalanceHidden: $isBalanceHidden
                 )
+
+                if model.pendingAutomations > 0 {
+                    Button {
+                        isShowingAutomations = true
+                    } label: {
+                        HStack(spacing: 12) {
+                            Image(systemName: "bell.badge.fill")
+                                .font(.title3)
+                                .foregroundStyle(Brand.primary)
+                                .accessibilityHidden(true)
+                            Text("dashboard.automations_pending \(model.pendingAutomations)")
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(.primary)
+                                .multilineTextAlignment(.leading)
+                            Spacer(minLength: 8)
+                            Image(systemName: "chevron.right")
+                                .font(.footnote.weight(.semibold))
+                                .foregroundStyle(.tertiary)
+                        }
+                        .arzikinaCard()
+                    }
+                    .buttonStyle(.plain)
+                }
 
                 if model.hasLoaded && model.hasAccounts {
                     let monthRows = model.monthRows
@@ -70,6 +94,9 @@ struct DashboardView: View {
         .navigationDestination(isPresented: $isShowingBudgets) {
             BudgetsView()
         }
+        .navigationDestination(isPresented: $isShowingAutomations) {
+            AutomationsView()
+        }
         .budgetFormSheet($budgetForm, session: session)
         .refreshable {
             await session.sync?.refresh()
@@ -80,6 +107,10 @@ struct DashboardView: View {
             guard let space = session.dataSpace else { return }
             let month = observationKey.month
             await model.observe(space.dashboard, monthStart: month.start, monthEnd: month.end)
+        }
+        .task(id: session.dataSpace.map(ObjectIdentifier.init)) {
+            guard let space = session.dataSpace else { return }
+            await model.observeAutomations(space.recurring)
         }
         .task(id: observationKey) {
             guard let space = session.dataSpace else { return }

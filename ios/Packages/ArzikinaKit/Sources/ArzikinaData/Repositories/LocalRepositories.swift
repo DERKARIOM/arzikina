@@ -14,10 +14,16 @@ public struct LocalAccountRepository: AccountRepository {
 
     private let database: AppDatabase
     private let store: SyncedStore<AccountRecord>
+    private let transactions: SyncedStore<TransactionRecord>
+    private let loanRepository: LocalLoanRepository
+    private let now: Clock
 
     public init(database: AppDatabase, now: @escaping Clock = Clocks.system) {
         self.database = database
         self.store = SyncedStore(database: database, entityType: .accounts, now: now)
+        self.transactions = SyncedStore(database: database, entityType: .transactions, now: now)
+        self.loanRepository = LocalLoanRepository(database: database, now: now)
+        self.now = now
     }
 
     public func observeAccounts() -> AsyncStream<[Account]> {
@@ -75,8 +81,75 @@ public struct LocalAccountRepository: AccountRepository {
         try await store.save(id: account.id, createdAt: account.createdAt) { AccountRecord(account, meta: $0) }
     }
 
+    public func deletionImpact(id: EntityID) async throws -> AccountDeletionImpact {
+        try await database.writer.read { db in
+            let arguments: StatementArguments = [id, id]
+            return AccountDeletionImpact(
+                transactions: try Int.fetchOne(db, sql: """
+                    SELECT COUNT(*) FROM transactions
+                    WHERE deletedAt IS NULL AND (accountId = ? OR transferAccountId = ?)
+                    """, arguments: arguments) ?? 0,
+                loans: try Int.fetchOne(db, sql: "SELECT COUNT(*) FROM loans WHERE deletedAt IS NULL AND accountId = ?", arguments: [id]) ?? 0,
+                automations: try Int.fetchOne(db, sql: """
+                    SELECT (SELECT COUNT(*) FROM recurring_transactions WHERE deletedAt IS NULL AND accountId = ?)
+                         + (SELECT COUNT(*) FROM transaction_templates WHERE deletedAt IS NULL AND accountId = ?)
+                    """, arguments: arguments) ?? 0
+            )
+        }
+    }
+
+    /// Suppression en cascade, en UNE transaction SQL — Android `deleteAccount` :
+    /// 1. les transactions du compte (source OU destination d'un transfert) disparaissent, avec
+    ///    leurs frais même s'ils sont sur un autre compte ; une transaction restante dont les frais
+    ///    disparaissent perd ce lien (modification ENVOYÉE au serveur, contrairement à Android) ;
+    /// 2. les prêts du compte disparaissent avec leurs remboursements et toutes leurs transactions ;
+    /// 3. les remboursements faits depuis ce compte pour un prêt d'un AUTRE compte disparaissent,
+    ///    et ce prêt est mis à jour ;
+    /// 4. le compte est supprimé.
+    /// Automatisations et modèles rattachés au compte sont laissés tels quels (comme Android,
+    /// voir `deletionImpact`).
     public func delete(id: EntityID) async throws {
-        try await store.softDelete(id: id)
+        let timestamp = now()
+        let store = self.store, transactions = self.transactions, loanRepository = self.loanRepository
+        try await database.writer.write { db in
+            guard let account = try AccountRecord.fetchOne(db, key: id), account.deletedAt == nil else { return }
+
+            let disappearing = try TransactionRecord.fetchAll(db, sql: """
+                SELECT * FROM transactions WHERE deletedAt IS NULL AND (accountId = ? OR transferAccountId = ?)
+                """, arguments: [id, id])
+            let disappearingIds = Set(disappearing.map(\.id))
+            for transaction in disappearing {
+                if let feeId = transaction.feeTransactionId, !disappearingIds.contains(feeId) {
+                    try transactions.softDelete(db, id: feeId, timestamp: timestamp)
+                }
+            }
+            // Transactions restantes dont les frais disparaissent : lien retiré (et synchronisé).
+            if !disappearingIds.isEmpty {
+                let parents = try TransactionRecord
+                    .filter(disappearingIds.contains(Column("feeTransactionId")) && Column("deletedAt") == nil)
+                    .fetchAll(db)
+                    .filter { !disappearingIds.contains($0.id) }
+                for parent in parents {
+                    var updated = parent.domain
+                    updated.feeTransactionId = nil
+                    try transactions.save(db, id: updated.id, createdAt: updated.createdAt, timestamp: timestamp) { [updated] in TransactionRecord(updated, meta: $0) }
+                }
+            }
+
+            let loanIds = try String.fetchAll(db, sql: "SELECT id FROM loans WHERE deletedAt IS NULL AND accountId = ?", arguments: [id])
+            for loanId in loanIds {
+                try loanRepository.delete(db, loanId: loanId, timestamp: timestamp)
+            }
+            let foreignPayments = try LoanPaymentRecord.filter(Column("accountId") == id && Column("deletedAt") == nil).fetchAll(db)
+            for payment in foreignPayments {
+                try loanRepository.deletePayment(db, paymentId: payment.id, timestamp: timestamp)
+            }
+
+            for transaction in disappearing {
+                try transactions.softDelete(db, id: transaction.id, timestamp: timestamp)
+            }
+            try store.softDelete(db, id: id, timestamp: timestamp)
+        }
     }
 }
 
@@ -209,7 +282,7 @@ public struct LocalTransactionRepository: TransactionRepository {
                     amount: fee.amount,
                     type: .expense,
                     accountId: fee.accountId,
-                    categoryId: try Self.feesCategoryId(db, store: categoryStore, timestamp: timestamp),
+                    categoryId: try Self.systemCategoryId(.fees, db, store: categoryStore, timestamp: timestamp),
                     date: transaction.date,
                     description: fee.description,
                     feeType: fee.type,
@@ -255,10 +328,10 @@ public struct LocalTransactionRepository: TransactionRepository {
         }
     }
 
-    /// Catégorie système « Frais et commissions » (dépense) ; recréée si elle n'existe pas,
-    /// comme Android `SystemCategoryResolver`.
-    static func feesCategoryId(_ db: Database, store: SyncedStore<CategoryRecord>, timestamp: Int64) throws -> EntityID {
-        let key = SystemCategoryKey.fees
+    /// Catégorie système [key] (« Frais et commissions », catégories des prêts…), retrouvée par son
+    /// nom de référence et son type ; recréée si elle n'existe pas, comme Android
+    /// `SystemCategoryResolver`.
+    static func systemCategoryId(_ key: SystemCategoryKey, _ db: Database, store: SyncedStore<CategoryRecord>, timestamp: Int64) throws -> EntityID {
         if let id = try String.fetchOne(db, sql: """
             SELECT id FROM categories
             WHERE name = ? AND type = ? AND deletedAt IS NULL

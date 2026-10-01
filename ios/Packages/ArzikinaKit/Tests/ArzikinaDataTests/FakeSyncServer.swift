@@ -89,6 +89,12 @@ final class FakeSyncServer: SyncRemote, @unchecked Sendable {
             if let existing = table[id] {
                 return PushResult(status: .accepted, entityId: id, serverEntity: existing, errorCode: nil)
             }
+            // Contrainte `uq_occurrences_rule_date` du serveur : une seule échéance par règle et
+            // par jour (l'INSERT lève une exception, renvoyée comme une erreur).
+            if type == .recurringTransactionOccurrences,
+               table.values.contains(where: { $0["recurringTransactionId"] == entity["recurringTransactionSyncId"] && $0["scheduledDate"] == entity["scheduledDate"] }) {
+                return PushResult(status: .error, entityId: id, serverEntity: nil, errorCode: "server_error")
+            }
             var row: [String: JSONValue] = ["id": .string(id), "userId": .string("u1")]
             for field in schema.fields {
                 let value = entity[field.payload]

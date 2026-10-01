@@ -22,8 +22,28 @@ public protocol AccountRepository: Sendable {
     func nextDisplayOrder() async throws -> Int64
     /// Crée le compte s'il n'existe pas, sinon le met à jour.
     func save(_ account: Account) async throws
-    /// Suppression douce : le compte disparaît des listes et la suppression est synchronisée.
+    /// Ce que la suppression du compte emporterait (affiché dans la confirmation).
+    func deletionImpact(id: EntityID) async throws -> AccountDeletionImpact
+    /// Supprime le compte, ses transactions (et leurs frais), ses prêts / emprunts et les
+    /// remboursements faits depuis ce compte — tout est synchronisé.
     func delete(id: EntityID) async throws
+}
+
+/// Ce que la suppression d'un compte emporterait.
+public struct AccountDeletionImpact: Equatable, Sendable {
+    /// Transactions dont le compte est la source ou la destination.
+    public var transactions: Int
+    /// Prêts / emprunts rattachés au compte (supprimés avec leurs remboursements).
+    public var loans: Int
+    /// Automatisations et modèles qui utilisent le compte : ils ne sont PAS supprimés (pas encore
+    /// gérés sur iOS) et ne fonctionneront plus.
+    public var automations: Int
+
+    public init(transactions: Int, loans: Int, automations: Int) {
+        self.transactions = transactions
+        self.loans = loans
+        self.automations = automations
+    }
 }
 
 /// Catégories de l'utilisateur connecté.
@@ -190,5 +210,95 @@ public protocol BudgetRepository: Sendable {
     /// Seules les DÉPENSES de la catégorie comptent, sur les comptes non supprimés, dans la devise
     /// du budget et inclus dans les statistiques personnelles (comme Android).
     func observeSummaries(today: CalendarDay, calendar: Calendar) -> AsyncStream<[BudgetSummary]>
+}
+
+// MARK: - Rapports
+
+/// Écran Rapports, mis à jour en continu.
+public protocol ReportsRepository: Sendable {
+    /// Totaux et répartition sur [period] (jours inclus ; `nil` = période invalide : totaux à
+    /// zéro, l'évolution reste calculée), évolution des derniers mois jusqu'à celui de [today].
+    /// Même périmètre qu'Android : comptes inclus dans les statistiques, dans la devise des
+    /// rapports (`Reports.currencyCode`).
+    func observeReport(
+        period: (start: CalendarDay, end: CalendarDay)?,
+        breakdownType: BreakdownType,
+        today: CalendarDay,
+        calendar: Calendar
+    ) -> AsyncStream<ReportSnapshot>
+}
+
+// MARK: - Prêts et emprunts
+
+/// Détail d'un prêt / emprunt et ses remboursements (du plus récent au plus ancien).
+public struct LoanDetail: Equatable, Sendable {
+    public var summary: LoanSummary
+    public var account: Account?
+    public var payments: [LoanPayment]
+
+    public init(summary: LoanSummary, account: Account?, payments: [LoanPayment]) {
+        self.summary = summary
+        self.account = account
+        self.payments = payments
+    }
+}
+
+/// Prêts, emprunts, remboursements et personnes de l'utilisateur connecté.
+///
+/// Chaque écriture se fait en UNE transaction SQL avec les transactions Arzikina qu'elle crée ou
+/// supprime (décaissement, remboursements), toutes inscrites dans la file d'envoi.
+public protocol LoanRepository: Sendable {
+    /// Personnes non supprimées, triées par nom.
+    func observePersons() -> AsyncStream<[Person]>
+    func savePerson(_ person: Person) async throws
+    /// Prêts / emprunts non supprimés, du plus récent au plus ancien ; statut calculé à [now].
+    func observeSummaries(now: EpochMillis, calendar: Calendar) -> AsyncStream<[LoanSummary]>
+    /// `nil` si le prêt n'existe pas ou a été supprimé.
+    func observeDetail(id: EntityID, now: EpochMillis, calendar: Calendar) -> AsyncStream<LoanDetail?>
+    /// Crée le prêt / emprunt, sa transaction de décaissement (dans la catégorie système du
+    /// prêt, recréée si besoin) et son premier remboursement éventuel. Retourne le prêt enregistré.
+    @discardableResult
+    func create(_ loan: Loan, firstPayment: LoanPayment?) async throws -> Loan
+    /// Met à jour un prêt existant (personne, compte, montant, dates, description) et sa
+    /// transaction de décaissement. Le type n'est jamais modifié.
+    func update(_ loan: Loan) async throws
+    /// Supprime le prêt / emprunt, ses remboursements et toutes leurs transactions.
+    func delete(id: EntityID) async throws
+    /// Enregistre un remboursement et sa transaction (sens inverse du décaissement).
+    func recordPayment(_ payment: LoanPayment) async throws
+    /// Supprime un remboursement et sa transaction.
+    func deletePayment(id: EntityID) async throws
+}
+
+/// Écriture refusée par la base (état changé entre la saisie et l'enregistrement, par exemple
+/// par une synchronisation).
+public enum LoanWriteError: Error, Equatable, Sendable {
+    case loanNotFound
+    case amountExceedsRemaining
+    case amountBelowRepaid
+}
+
+// MARK: - Automatisations
+
+/// Automatisations (transactions récurrentes) et leurs échéances.
+public protocol RecurringRepository: Sendable {
+    /// Règles, échéances à traiter, à venir et historique, mis à jour en continu.
+    func observeOverview() -> AsyncStream<AutomationOverview>
+    /// Fusionne les échéances en double reçues d'autres appareils, puis crée les échéances dues à
+    /// [now]. Retourne le nombre d'échéances créées (à envoyer au serveur).
+    @discardableResult
+    func generateDueOccurrences(now: EpochMillis, calendar: Calendar) async throws -> Int
+    /// Valide une échéance en attente : crée la transaction de la règle.
+    func accept(occurrenceId: EntityID) async throws
+    /// Rejette une échéance en attente (aucune transaction).
+    func reject(occurrenceId: EntityID) async throws
+    /// Met en pause ou réactive une règle.
+    func setActive(ruleId: EntityID, isActive: Bool) async throws
+}
+
+/// Action refusée : l'échéance a déjà été traitée (par exemple sur un autre appareil).
+public enum RecurringWriteError: Error, Equatable, Sendable {
+    case occurrenceNotPending
+    case ruleNotFound
 }
 

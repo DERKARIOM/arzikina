@@ -11,6 +11,7 @@ struct AccountDetailView: View {
     let accountId: EntityID
 
     @Environment(SessionModel.self) private var session
+    @Environment(\.dismiss) private var dismiss
     @State private var model = AccountDetailViewModel()
     @State private var editedAccount: Account?
     @State private var transactionForm: TransactionFormRoute?
@@ -35,7 +36,7 @@ struct AccountDetailView: View {
             }
             .sheet(item: $editedAccount) { account in
                 if let space = session.dataSpace {
-                    AccountFormView(mode: .edit(account), repository: space.accounts)
+                    AccountFormView(mode: .edit(account), repository: space.accounts) { dismiss() }
                 }
             }
             .transactionFormSheet($transactionForm, session: session)

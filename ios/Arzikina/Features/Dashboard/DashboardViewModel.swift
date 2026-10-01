@@ -29,6 +29,8 @@ final class DashboardViewModel {
     private(set) var snapshot: DashboardSnapshot = .empty
     /// Budget mis en avant (`BudgetSummary.featured`), `nil` sans budget.
     private(set) var featuredBudget: BudgetSummary?
+    /// Échéances d'automatisation à valider.
+    private(set) var pendingAutomations = 0
     /// `false` jusqu'au premier instantané : évite d'afficher « aucun compte » une fraction de
     /// seconde au lancement.
     private(set) var hasLoaded = false
@@ -64,6 +66,12 @@ final class DashboardViewModel {
         for await snapshot in stream {
             self.snapshot = snapshot
             hasLoaded = true
+        }
+    }
+
+    func observeAutomations(_ repository: RecurringRepository) async {
+        for await overview in repository.observeOverview() {
+            pendingAutomations = overview.pending.count
         }
     }
 

@@ -1,5 +1,6 @@
 import ArzikinaData
 import ArzikinaDomain
+import Foundation
 import Observation
 
 /// État de connexion de l'application, partagé par tous les écrans (`.environment`).
@@ -90,9 +91,20 @@ final class SessionModel {
         sessionExpired = true
     }
 
-    /// L'app revient au premier plan.
+    /// L'app revient au premier plan : synchronisation, qui crée ensuite les échéances dues ; sans
+    /// synchronisation (aperçus), les échéances sont créées directement.
     func appDidBecomeActive() {
-        sync?.requestSync(.automatic)
+        if let sync {
+            sync.requestSync(.automatic)
+        } else if let space = dataSpace {
+            Task { await Self.generateDueOccurrences(in: space) }
+        }
+    }
+
+    /// Échéances d'automatisation dues maintenant ; retourne combien ont été créées.
+    nonisolated private static func generateDueOccurrences(in space: UserDataSpace) async -> Int {
+        let now = EpochMillis((Date().timeIntervalSince1970 * 1000).rounded())
+        return (try? await space.recurring.generateDueOccurrences(now: now, calendar: ArzikinaCalendar.current)) ?? 0
     }
 
     /// Supprime la base locale de l'utilisateur connecté et en recrée une vide.
@@ -123,9 +135,14 @@ final class SessionModel {
         dataSpace = opened.space
         isDataPersistent = opened.isPersistent
         if let engine = makeSyncEngine(opened.space) {
-            let coordinator = SyncCoordinator(engine: engine) { [weak self] in
-                Task { await self?.handleSessionExpired() }
-            }
+            let space = opened.space
+            let coordinator = SyncCoordinator(
+                engine: engine,
+                afterSync: { await Self.generateDueOccurrences(in: space) },
+                onSessionExpired: { [weak self] in
+                    Task { await self?.handleSessionExpired() }
+                }
+            )
             sync = coordinator
             coordinator.start()
         }

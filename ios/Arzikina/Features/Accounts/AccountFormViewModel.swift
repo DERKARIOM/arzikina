@@ -23,6 +23,10 @@ final class AccountFormViewModel {
     private(set) var saveFailed = false
     /// Un objectif d'épargne va redevenir un compte classique : confirmation demandée.
     var isConfirmingSavingsGoalRemoval = false
+    /// Suppression demandée : ce qu'elle emporterait (affiché dans la confirmation).
+    var pendingDeletion: AccountDeletionImpact?
+    private(set) var isDeleting = false
+    private(set) var deleteFailed = false
 
     let isEditing: Bool
     /// Nom du compte édité, pour le message de confirmation.
@@ -118,6 +122,33 @@ final class AccountFormViewModel {
                 saveFailed = true
                 return false
             }
+        }
+    }
+
+    // MARK: - Suppression
+
+    /// Calcule ce que la suppression emporterait, puis demande confirmation.
+    func requestDeletion() async {
+        guard let existing else { return }
+        deleteFailed = false
+        do {
+            pendingDeletion = try await repository.deletionImpact(id: existing.id)
+        } catch {
+            deleteFailed = true
+        }
+    }
+
+    /// Supprime le compte et tout ce qui en dépend ; `true` si l'écran peut se fermer.
+    func delete() async -> Bool {
+        guard let existing, !isDeleting else { return false }
+        isDeleting = true
+        defer { isDeleting = false }
+        do {
+            try await repository.delete(id: existing.id)
+            return true
+        } catch {
+            deleteFailed = true
+            return false
         }
     }
 }

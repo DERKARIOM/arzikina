@@ -16,8 +16,12 @@ struct AccountFormView: View {
 
     private enum Field { case name, balance, target, description, lastFour, expiry }
 
-    init(mode: AccountFormViewModel.Mode, repository: AccountRepository) {
+    /// Appelé après la suppression du compte (ex. pour quitter son détail, qui n'existe plus).
+    private let onDeleted: @MainActor () -> Void
+
+    init(mode: AccountFormViewModel.Mode, repository: AccountRepository, onDeleted: @escaping @MainActor () -> Void = {}) {
         _model = State(initialValue: AccountFormViewModel(mode: mode, repository: repository))
+        self.onDeleted = onDeleted
     }
 
     var body: some View {
@@ -32,6 +36,19 @@ struct AccountFormView: View {
                 if model.saveFailed {
                     Section {
                         FormErrorText(key: "account.form.save_failed")
+                    }
+                }
+                if model.isEditing {
+                    Section {
+                        Button(role: .destructive) {
+                            focusedField = nil
+                            Task { await model.requestDeletion() }
+                        } label: {
+                            Text("account.delete.action").frame(maxWidth: .infinity)
+                        }
+                        .disabled(model.isSaving || model.isDeleting)
+                    } footer: {
+                        if model.deleteFailed { FormErrorText(key: "account.delete.failed") }
                     }
                 }
             }
@@ -57,7 +74,17 @@ struct AccountFormView: View {
             } message: {
                 Text("account.form.savings_remove.message \(model.originalName)")
             }
-            .interactiveDismissDisabled(model.isSaving)
+            .confirmationDialog(
+                "account.delete.title",
+                isPresented: Binding(get: { model.pendingDeletion != nil }, set: { if !$0 { model.pendingDeletion = nil } }),
+                titleVisibility: .visible,
+                presenting: model.pendingDeletion
+            ) { _ in
+                Button("account.delete.confirm", role: .destructive) { deleteAccount() }
+            } message: { impact in
+                deletionMessage(impact)
+            }
+            .interactiveDismissDisabled(model.isSaving || model.isDeleting)
         }
     }
 
@@ -159,6 +186,31 @@ struct AccountFormView: View {
     }
 
     // MARK: - Enregistrement
+
+    private func deleteAccount() {
+        Task {
+            if await model.delete() {
+                session.sync?.requestSync(.localChange)
+                dismiss()
+                onDeleted()
+            }
+        }
+    }
+
+    /// « Supprimer « Espèces » ? » puis ce qui disparaît avec le compte.
+    private func deletionMessage(_ impact: AccountDeletionImpact) -> Text {
+        var text = Text("account.delete.message \(model.originalName)")
+        if impact.transactions > 0 {
+            text = text + Text(verbatim: "\n\n") + Text("account.delete.transactions \(impact.transactions)")
+        }
+        if impact.loans > 0 {
+            text = text + Text(verbatim: "\n") + Text("account.delete.loans \(impact.loans)")
+        }
+        if impact.automations > 0 {
+            text = text + Text(verbatim: "\n\n") + Text("account.delete.automations \(impact.automations)")
+        }
+        return text
+    }
 
     private func submit(confirmedSavingsGoalRemoval: Bool = false) {
         focusedField = nil
