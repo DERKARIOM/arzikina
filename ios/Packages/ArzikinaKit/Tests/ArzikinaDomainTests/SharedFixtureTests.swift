@@ -117,6 +117,23 @@ final class SharedFixtureTests: XCTestCase {
         }
     }
 
+    func testCardExpiry() throws {
+        let fixture = try SharedFixtures.load("card-expiry.json")
+        for testCase in try fixture.objects("format") {
+            let input = try testCase.string("input")
+            XCTAssertEqual(AccountForm.formatExpiryInput(input), try testCase.string("expected"), "« \(input) »")
+        }
+        for testCase in try fixture.objects("validity") {
+            let digits = try testCase.string("digits")
+            let year = try testCase.int("year")
+            let month = try testCase.int("month")
+            let isValid = AccountForm.parseExpiry(digits).map {
+                AccountForm.isValidExpiry(month: $0.month, year: $0.year, currentYear: year, currentMonth: month)
+            } ?? false
+            XCTAssertEqual(isValid, try testCase.bool("expected"), digits)
+        }
+    }
+
     func testBudgets() throws {
         let fixture = try SharedFixtures.load("budget.json")
         let calendar = try SharedFixtures.calendar(try fixture.string("timeZone"))

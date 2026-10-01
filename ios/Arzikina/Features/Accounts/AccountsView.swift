@@ -5,12 +5,13 @@ import SwiftUI
 /// son solde courant, et le détail d'un compte au toucher. Mis à jour en continu (saisies locales
 /// et synchronisation) ; « tirer pour actualiser » lance une synchronisation.
 ///
-/// La création et la modification des comptes arrivent à l'étape suivante.
+/// Bouton « + » : nouveau compte, avec le type présélectionné selon le groupe affiché.
 struct AccountsView: View {
 
     @Environment(SessionModel.self) private var session
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var model = AccountsViewModel()
+    @State private var isCreating = false
 
     var body: some View {
         ScrollView {
@@ -39,6 +40,21 @@ struct AccountsView: View {
         }
         .background(Color(.systemGroupedBackground))
         .navigationTitle("tab.accounts")
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Button {
+                    isCreating = true
+                } label: {
+                    Label("accounts.add", systemImage: "plus")
+                }
+                .disabled(session.dataSpace == nil)
+            }
+        }
+        .sheet(isPresented: $isCreating) {
+            if let space = session.dataSpace {
+                AccountFormView(mode: .create(initialType: model.selectedGroup.defaultType), repository: space.accounts)
+            }
+        }
         .navigationDestination(for: AccountRoute.self) { route in
             AccountDetailView(accountId: route.id)
         }
@@ -88,6 +104,15 @@ struct PressableCardStyle: ButtonStyle {
 }
 
 private extension AccountGroup {
+    /// Type présélectionné pour un compte créé depuis ce groupe.
+    var defaultType: AccountType {
+        switch self {
+        case .accounts: return .cash
+        case .bankCards: return .creditCard
+        case .savingsGoals: return .savingsGoal
+        }
+    }
+
     var titleKey: LocalizedStringKey {
         switch self {
         case .accounts: return "accounts.group.accounts"

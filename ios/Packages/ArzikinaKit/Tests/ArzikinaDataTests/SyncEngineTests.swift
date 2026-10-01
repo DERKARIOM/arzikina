@@ -186,6 +186,38 @@ final class SyncEngineTests: XCTestCase {
         XCTAssertEqual(entry?.lastError, "server_error")
     }
 
+    /// Parcours complet : formulaire → enregistrement local → envoi. Un objectif d'épargne repassé
+    /// en compte classique envoie EXPLICITEMENT `null` pour sa cible (effacée sur le serveur).
+    func testAccountFormChangesReachTheServer() async throws {
+        let draft = AccountDraft(name: "Moto", initialBalanceInput: "5 000", type: .savingsGoal, savingsTargetInput: "400 000", savingsDescriptionInput: "Yamaha")
+        guard case .valid(let goal) = AccountForm.validate(draft, existing: nil, newId: "goal-1", newDisplayOrder: 2, currentYear: 2026, currentMonth: 10) else {
+            return XCTFail("Formulaire valide attendu")
+        }
+        try await space.accounts.save(goal)
+        _ = try await engine.synchronize()
+        XCTAssertEqual(server.row(.accounts, "goal-1")?["savingsTargetAmount"], .int(40_000_000))
+        XCTAssertEqual(server.row(.accounts, "goal-1")?["initialBalanceMinor"], .int(500_000))
+        XCTAssertEqual(server.row(.accounts, "goal-1")?["type"], .string("SAVINGS_GOAL"))
+
+        let saved = try await space.accounts.account(id: "goal-1")
+        let existing = try XCTUnwrap(saved)
+        let back = AccountDraft(editing: existing, displayName: existing.name)
+        var asSavings = back
+        asSavings.type = .savings
+        guard case .valid(let regular) = AccountForm.validate(asSavings, existing: existing, newId: "unused", newDisplayOrder: 0, currentYear: 2026, currentMonth: 10, confirmedSavingsGoalRemoval: true) else {
+            return XCTFail("Conversion confirmée attendue")
+        }
+        try await space.accounts.save(regular)
+        _ = try await engine.synchronize()
+
+        let update = try XCTUnwrap(server.pushedBodies.last?.1.first)
+        XCTAssertEqual(update.operation, .update)
+        XCTAssertEqual(update.entity["savingsTargetAmount"], .null)
+        XCTAssertEqual(server.row(.accounts, "goal-1")?["savingsTargetAmount"], .null)
+        XCTAssertEqual(server.row(.accounts, "goal-1")?["type"], .string("SAVINGS"))
+        XCTAssertEqual(server.row(.accounts, "goal-1")?["displayOrder"], .int(2))
+    }
+
     // MARK: - Réception
 
     func testPullMapsServerRowsToLocalColumns() async throws {

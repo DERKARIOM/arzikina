@@ -149,3 +149,55 @@ extension Account {
         type == .savingsGoal ? type.displayName : icon.displayName
     }
 }
+
+extension SupportedCurrency {
+    /// « Franc CFA (UEMOA) (F CFA) » — Android `pickerLabel`.
+    var pickerLabel: String {
+        let name: String
+        switch self {
+        case .xof: name = DomainDisplay.localized("currency.name.xof")
+        case .ngn: name = DomainDisplay.localized("currency.name.ngn")
+        case .ghs: name = DomainDisplay.localized("currency.name.ghs")
+        case .eur: name = DomainDisplay.localized("currency.name.eur")
+        case .usd: name = DomainDisplay.localized("currency.name.usd")
+        }
+        return "\(name) (\(symbol))"
+    }
+}
+
+extension DomainDisplay {
+
+    /// Langues de l'app (voir `CFBundleLocalizations`).
+    static let supportedLanguages = ["fr", "en"]
+
+    /// Traduction de [key] dans CHAQUE langue de l'app, quelle que soit la langue courante — pour
+    /// reconnaître un nom par défaut saisi dans une autre langue (« Cash » → « Espèces »).
+    static func labelsInAllLanguages(_ key: String) -> [String] {
+        supportedLanguages.compactMap { language in
+            guard let path = Bundle.main.path(forResource: language, ofType: "lproj"),
+                  let bundle = Bundle(path: path)
+            else { return nil }
+            let value = bundle.localizedString(forKey: key, value: nil, table: nil)
+            return value == key ? nil : value
+        }
+    }
+
+    /// Nom de référence d'un compte : « Cash » ou « Espèces » → « Espèces » ; tout autre nom est
+    /// conservé tel quel (Android `DefaultNameLocalizer.canonicalAccountName`).
+    static func canonicalAccountName(_ input: String) -> String {
+        DefaultAccountKey.canonicalName(for: input) { labelsInAllLanguages($0.localizationKey) }
+    }
+}
+
+extension FeeType {
+    /// Libellés Android `fee_type_*`.
+    var displayName: String {
+        switch self {
+        case .transfer: return DomainDisplay.localized("fee_type.transfer")
+        case .bank: return DomainDisplay.localized("fee_type.bank")
+        case .commission: return DomainDisplay.localized("fee_type.commission")
+        case .service: return DomainDisplay.localized("fee_type.service")
+        case .other: return DomainDisplay.localized("fee_type.other")
+        }
+    }
+}

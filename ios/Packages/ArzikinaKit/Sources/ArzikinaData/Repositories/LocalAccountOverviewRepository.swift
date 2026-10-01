@@ -34,11 +34,13 @@ public struct LocalAccountOverviewRepository: AccountOverviewRepository {
         let account = record.domain
 
         // Toutes les transactions du compte (frais compris) : nécessaires au solde après chaque
-        // ligne. Index sur accountId et transferAccountId.
+        // ligne. Index sur accountId et transferAccountId. `id` départage deux transactions de même
+        // date ET même création (ex. un transfert et son frais, enregistrés ensemble) : sans lui,
+        // leur ordre — donc le solde affiché après chacune — pourrait changer d'un affichage à l'autre.
         let transactions = try TransactionRecord.fetchAll(db, sql: """
             SELECT * FROM transactions
             WHERE deletedAt IS NULL AND (accountId = ? OR transferAccountId = ?)
-            ORDER BY date DESC, createdAt DESC
+            ORDER BY date DESC, createdAt DESC, id DESC
             """, arguments: [accountId, accountId]).map(\.domain)
 
         let running = RunningBalances.compute(account: account, transactions: transactions)

@@ -18,6 +18,8 @@ public protocol AccountRepository: Sendable {
     /// Solde courant de chaque compte non supprimé (même formule que `AccountBalances`).
     func observeBalances() -> AsyncStream<[EntityID: MinorUnits]>
     func account(id: EntityID) async throws -> Account?
+    /// Position d'un nouveau compte : après tous les comptes existants.
+    func nextDisplayOrder() async throws -> Int64
     /// Crée le compte s'il n'existe pas, sinon le met à jour.
     func save(_ account: Account) async throws
     /// Suppression douce : le compte disparaît des listes et la suppression est synchronisée.
@@ -41,8 +43,16 @@ public protocol TransactionRepository: Sendable {
     /// Les [limit] transactions les plus récentes.
     func observeRecentTransactions(limit: Int) -> AsyncStream<[Transaction]>
     func transaction(id: EntityID) async throws -> Transaction?
+    /// Enregistre [transaction] telle quelle (`feeTransactionId` compris).
     func save(_ transaction: Transaction) async throws
+    /// Enregistre [transaction] avec ses frais : créés, mis à jour ou supprimés (`fee == nil`)
+    /// en même temps que la transaction. Seule écriture utilisée par le formulaire.
+    func save(_ transaction: Transaction, fee: TransactionFee?) async throws
+    /// Supprime la transaction et sa transaction de frais.
     func delete(id: EntityID) async throws
+    /// `true` si la transaction fait partie d'un prêt ou d'un remboursement : elle se gère alors
+    /// depuis le prêt (comme sur Android), jamais depuis le formulaire de transaction.
+    func isLinkedToLoan(id: EntityID) async throws -> Bool
 }
 
 // MARK: - Tableau de bord

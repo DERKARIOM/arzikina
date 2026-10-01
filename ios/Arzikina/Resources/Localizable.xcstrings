@@ -86,6 +86,23 @@
         }
       }
     },
+    "account.detail.edit": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Edit"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Modifier"
+          }
+        }
+      }
+    },
     "account.detail.empty": {
       "extractionState": "manual",
       "localizations": {
@@ -133,6 +150,465 @@
           "stringUnit": {
             "state": "translated",
             "value": "Compte introuvable"
+          }
+        }
+      }
+    },
+    "account.form.appearance": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Appearance"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apparence"
+          }
+        }
+      }
+    },
+    "account.form.card_expiry": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Expiry (MM/YY)"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Expiration (MM/AA)"
+          }
+        }
+      }
+    },
+    "account.form.card_help": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Only the last 4 digits and the expiry date are saved. The full number and security code are never requested."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seuls les 4 derniers chiffres et la date d'expiration sont enregistrés. Le numéro complet et le code de sécurité ne sont jamais demandés."
+          }
+        }
+      }
+    },
+    "account.form.card_last_four": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Last 4 digits"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "4 derniers chiffres"
+          }
+        }
+      }
+    },
+    "account.form.card_section": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Card details"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Informations de la carte"
+          }
+        }
+      }
+    },
+    "account.form.color": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Color"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couleur"
+          }
+        }
+      }
+    },
+    "account.form.currency": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Currency"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Devise"
+          }
+        }
+      }
+    },
+    "account.form.error.card_expiry": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Invalid expiry date"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Date d'expiration invalide"
+          }
+        }
+      }
+    },
+    "account.form.error.card_last_four": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter the last 4 digits of the card"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saisissez les 4 derniers chiffres de la carte"
+          }
+        }
+      }
+    },
+    "account.form.error.invalid_amount": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Invalid amount"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Montant invalide"
+          }
+        }
+      }
+    },
+    "account.form.error.name_required": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Name is required"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Le nom est obligatoire"
+          }
+        }
+      }
+    },
+    "account.form.error.savings_target": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter a target amount greater than 0"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saisissez un montant cible supérieur à 0"
+          }
+        }
+      }
+    },
+    "account.form.exclude_statistics": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Exclude from statistics"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Exclure des statistiques"
+          }
+        }
+      }
+    },
+    "account.form.exclude_statistics_help": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This account stays visible and fully usable, but its balance and transactions will no longer count in your personal statistics (dashboard, income/expenses, budgets). Useful for money you manage on someone else's behalf."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ce compte reste visible et pleinement utilisable, mais son solde et ses transactions ne compteront plus dans vos statistiques personnelles (tableau de bord, revenus/dépenses, budgets). Utile pour de l'argent géré pour le compte de quelqu'un d'autre."
+          }
+        }
+      }
+    },
+    "account.form.initial_balance": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opening balance"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Solde initial"
+          }
+        }
+      }
+    },
+    "account.form.name": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Account name"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nom du compte"
+          }
+        }
+      }
+    },
+    "account.form.save_failed": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saving failed. Please try again."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "L'enregistrement a échoué. Réessayez."
+          }
+        }
+      }
+    },
+    "account.form.savings_description": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Description (optional)"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Description (facultative)"
+          }
+        }
+      }
+    },
+    "account.form.savings_help": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Progress is calculated automatically from the account balance: every transaction or transfer to this goal moves it forward."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La progression est calculée automatiquement à partir du solde du compte : chaque transaction ou transfert vers cet objectif la fait avancer."
+          }
+        }
+      }
+    },
+    "account.form.savings_remove.confirm": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Confirm"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Confirmer"
+          }
+        }
+      }
+    },
+    "account.form.savings_remove.message %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "“%@” will no longer be a savings goal: its target amount and description will be removed. The balance and all transactions are kept."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "« %@ » ne sera plus un objectif d'épargne : son montant cible et sa description seront supprimés. Le solde et toutes les transactions sont conservés."
+          }
+        }
+      }
+    },
+    "account.form.savings_remove.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Convert to a regular account?"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Repasser en compte classique ?"
+          }
+        }
+      }
+    },
+    "account.form.savings_section": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Savings goal"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Objectif d'épargne"
+          }
+        }
+      }
+    },
+    "account.form.savings_target": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Target amount"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Montant cible"
+          }
+        }
+      }
+    },
+    "account.form.title.add": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New account"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nouveau compte"
+          }
+        }
+      }
+    },
+    "account.form.title.edit": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Edit account"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Modifier le compte"
+          }
+        }
+      }
+    },
+    "account.form.type": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Account type"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Type de compte"
           }
         }
       }
@@ -307,6 +783,23 @@
         }
       }
     },
+    "accounts.add": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New account"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nouveau compte"
+          }
+        }
+      }
+    },
     "accounts.card.last_digits %@": {
       "extractionState": "manual",
       "localizations": {
@@ -330,13 +823,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Your credit cards will appear here."
+            "value": "Tap + to add your first bank card."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Vos cartes de crédit s'afficheront ici."
+            "value": "Touchez + pour ajouter votre première carte bancaire."
           }
         }
       }
@@ -364,13 +857,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Your accounts, cards, Mobile Money and savings goals will appear here."
+            "value": "Tap + to add your first account and start tracking your finances."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Vos comptes, cartes, Mobile Money et objectifs d'épargne s'afficheront ici."
+            "value": "Touchez + pour ajouter votre premier compte et suivre vos finances."
           }
         }
       }
@@ -381,13 +874,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Your savings goals and their progress will appear here."
+            "value": "Tap + to create a goal and track your progress toward a project."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Vos objectifs d'épargne et leur progression s'afficheront ici."
+            "value": "Touchez + pour créer un objectif et suivre votre progression vers un projet."
           }
         }
       }
@@ -1021,6 +1514,125 @@
         }
       }
     },
+    "common.cancel": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancel"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Annuler"
+          }
+        }
+      }
+    },
+    "common.save": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enregistrer"
+          }
+        }
+      }
+    },
+    "currency.name.eur": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Euro"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Euro"
+          }
+        }
+      }
+    },
+    "currency.name.ghs": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ghanaian cedi"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cedi ghanéen"
+          }
+        }
+      }
+    },
+    "currency.name.ngn": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nigerian naira"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Naira nigérian"
+          }
+        }
+      }
+    },
+    "currency.name.usd": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "US dollar"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dollar américain"
+          }
+        }
+      }
+    },
+    "currency.name.xof": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "CFA franc (WAEMU)"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Franc CFA (UEMOA)"
+          }
+        }
+      }
+    },
     "dashboard.balance.hidden": {
       "extractionState": "manual",
       "localizations": {
@@ -1306,6 +1918,91 @@
           "stringUnit": {
             "state": "translated",
             "value": "Hier"
+          }
+        }
+      }
+    },
+    "fee_type.bank": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bank fees"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Frais bancaires"
+          }
+        }
+      }
+    },
+    "fee_type.commission": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Commission"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Commission"
+          }
+        }
+      }
+    },
+    "fee_type.other": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Other"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Autre"
+          }
+        }
+      }
+    },
+    "fee_type.service": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Service fee"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Frais de service"
+          }
+        }
+      }
+    },
+    "fee_type.transfer": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Transfer fee"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Frais de transfert"
           }
         }
       }
@@ -2619,6 +3316,23 @@
         }
       }
     },
+    "transaction.add": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New transaction"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nouvelle transaction"
+          }
+        }
+      }
+    },
     "transaction.balance_after %@": {
       "extractionState": "manual",
       "localizations": {
@@ -2666,6 +3380,533 @@
           "stringUnit": {
             "state": "translated",
             "value": "+ Frais %@"
+          }
+        }
+      }
+    },
+    "transaction.form.account": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Account"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Compte"
+          }
+        }
+      }
+    },
+    "transaction.form.account.choose": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose an account"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choisir un compte"
+          }
+        }
+      }
+    },
+    "transaction.form.amount": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Amount"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Montant"
+          }
+        }
+      }
+    },
+    "transaction.form.category": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Category"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Catégorie"
+          }
+        }
+      }
+    },
+    "transaction.form.date_time": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Date and time"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Date et heure"
+          }
+        }
+      }
+    },
+    "transaction.form.description": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Description (optional)"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Description (optionnel)"
+          }
+        }
+      }
+    },
+    "transaction.form.destination_account": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Destination account"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Compte destination"
+          }
+        }
+      }
+    },
+    "transaction.form.error.account": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose an account"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choisis un compte"
+          }
+        }
+      }
+    },
+    "transaction.form.error.amount": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Invalid amount"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Montant invalide"
+          }
+        }
+      }
+    },
+    "transaction.form.error.category": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose a category"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choisis une catégorie"
+          }
+        }
+      }
+    },
+    "transaction.form.error.destination": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose a destination account"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choisis un compte de destination"
+          }
+        }
+      }
+    },
+    "transaction.form.error.fee_account": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose an account for the fees"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choisis un compte pour les frais"
+          }
+        }
+      }
+    },
+    "transaction.form.error.fee_amount": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Invalid fee amount"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Montant des frais invalide"
+          }
+        }
+      }
+    },
+    "transaction.form.error.same_account": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The destination account must differ from the source account"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Le compte de destination doit être différent du compte source"
+          }
+        }
+      }
+    },
+    "transaction.form.fee.account": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Account for fees"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Compte pour les frais"
+          }
+        }
+      }
+    },
+    "transaction.form.fee.amount": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fee amount"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Montant des frais"
+          }
+        }
+      }
+    },
+    "transaction.form.fee.description": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fee description (optional)"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Description des frais (facultatif)"
+          }
+        }
+      }
+    },
+    "transaction.form.fee.toggle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add fees"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ajouter des frais"
+          }
+        }
+      }
+    },
+    "transaction.form.fee.type": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fee type"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Type de frais"
+          }
+        }
+      }
+    },
+    "transaction.form.loan_linked": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This transaction is part of a loan or borrowing: edit it from the loan, on Android or the Web for now."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cette transaction fait partie d'un prêt ou d'un emprunt : elle se modifie depuis le prêt, sur Android ou le Web pour l'instant."
+          }
+        }
+      }
+    },
+    "transaction.form.no_category": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No categories of this type yet. They will appear here once synced with Android or the Web."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aucune catégorie de ce type pour l'instant. Elles apparaîtront ici après la synchronisation avec Android ou le Web."
+          }
+        }
+      }
+    },
+    "transaction.form.payment_method": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Payment method"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Moyen de paiement"
+          }
+        }
+      }
+    },
+    "transaction.form.payment_method.none": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not specified"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Non précisé"
+          }
+        }
+      }
+    },
+    "transaction.form.save_failed": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saving failed. Please try again."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "L'enregistrement a échoué. Réessaie."
+          }
+        }
+      }
+    },
+    "transaction.form.source_account": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Source account"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Compte source"
+          }
+        }
+      }
+    },
+    "transaction.form.title.add": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New transaction"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nouvelle transaction"
+          }
+        }
+      }
+    },
+    "transaction.form.title.edit": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Edit transaction"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Modifier la transaction"
+          }
+        }
+      }
+    },
+    "transaction.form.type": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Type"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Type"
+          }
+        }
+      }
+    },
+    "transaction.type.expense": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Expense"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dépense"
+          }
+        }
+      }
+    },
+    "transaction.type.income": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Income"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Revenu"
+          }
+        }
+      }
+    },
+    "transaction.type.transfer": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Transfer"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Transfert"
           }
         }
       }

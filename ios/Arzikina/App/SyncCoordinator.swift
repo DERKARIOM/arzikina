@@ -41,6 +41,7 @@ final class SyncCoordinator {
     @ObservationIgnored private var pathMonitor: NWPathMonitor?
     @ObservationIgnored private var observationTask: Task<Void, Never>?
     @ObservationIgnored private var wasOnline = true
+    @ObservationIgnored private var needsFollowUpRun = false
 
     init(engine: SyncEngine, automaticInterval: TimeInterval = 30, onSessionExpired: @escaping @MainActor () -> Void) {
         self.engine = engine
@@ -70,10 +71,18 @@ final class SyncCoordinator {
     enum Trigger {
         case automatic
         case manual
+        /// L'utilisateur vient d'enregistrer une modification : envoi immédiat, sans attendre le
+        /// délai entre deux synchronisations automatiques. Si une synchronisation est déjà en
+        /// cours, une passe de plus est faite juste après (sinon la modification attendrait le
+        /// prochain déclencheur).
+        case localChange
     }
 
     func requestSync(_ trigger: Trigger) {
-        guard !isSyncing else { return }
+        guard !isSyncing else {
+            if trigger == .localChange { needsFollowUpRun = true }
+            return
+        }
         if trigger == .automatic, let lastAttempt, Date().timeIntervalSince(lastAttempt) < automaticInterval {
             return
         }
@@ -92,7 +101,11 @@ final class SyncCoordinator {
 
     private func run() async {
         do {
-            let report = try await engine.synchronize()
+            var report = try await engine.synchronize()
+            while needsFollowUpRun {
+                needsFollowUpRun = false
+                report = try await engine.synchronize()
+            }
             rejectedChanges = report.failed
             status = .idle
         } catch let error as SyncError {

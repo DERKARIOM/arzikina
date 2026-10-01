@@ -12,11 +12,33 @@ struct AccountDetailView: View {
 
     @Environment(SessionModel.self) private var session
     @State private var model = AccountDetailViewModel()
+    @State private var editedAccount: Account?
+    @State private var transactionForm: TransactionFormRoute?
 
     var body: some View {
         content
             .navigationTitle(title)
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                if case .loaded(let detail) = model.state {
+                    ToolbarItem(placement: .primaryAction) {
+                        Button("account.detail.edit") { editedAccount = detail.summary.account }
+                    }
+                    ToolbarItem(placement: .primaryAction) {
+                        Button {
+                            transactionForm = .create(presetAccountId: detail.summary.account.id)
+                        } label: {
+                            Label("transaction.add", systemImage: "plus")
+                        }
+                    }
+                }
+            }
+            .sheet(item: $editedAccount) { account in
+                if let space = session.dataSpace {
+                    AccountFormView(mode: .edit(account), repository: space.accounts)
+                }
+            }
+            .transactionFormSheet($transactionForm, session: session)
             .refreshable {
                 await session.sync?.refresh()
             }
@@ -56,7 +78,12 @@ struct AccountDetailView: View {
                     ForEach(model.sections, id: \.day) { section in
                         Section {
                             ForEach(section.items) { item in
-                                TransactionRow(item: item, style: .inAccount)
+                                Button {
+                                    transactionForm = .edit(item.transaction)
+                                } label: {
+                                    TransactionRow(item: item, style: .inAccount)
+                                }
+                                .buttonStyle(.plain)
                             }
                         } header: {
                             DayHeader(day: section.day)

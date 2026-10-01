@@ -17,6 +17,7 @@ import com.naniger.arzikina.domain.model.generateMissingScheduledDates
 import com.naniger.arzikina.presentation.accounts.computeCurrentBalances
 import com.naniger.arzikina.presentation.transactions.computeRunningBalances
 import com.naniger.arzikina.util.AuthValidator
+import com.naniger.arzikina.util.CardInputFormatter
 import com.naniger.arzikina.util.BudgetPace
 import com.naniger.arzikina.util.BudgetPeriodStatus
 import com.naniger.arzikina.util.BudgetProgress
@@ -190,6 +191,21 @@ class SharedFixturesTest {
         assertEquals("Aucun solde pour une transaction d'un autre compte", expected.size, balances.size)
         expected.forEach { (id, value) ->
             assertEquals(id, value.jsonPrimitive.long, balances[transactionIds.of(id) to account.id])
+        }
+    }
+
+    @Test
+    fun cardExpiry() {
+        val fixture = fixture("card-expiry.json")
+        fixture.objects("format").forEach {
+            assertEquals("« ${it.string("input")} »", it.string("expected"), CardInputFormatter.formatExpiry(it.string("input")))
+        }
+        fixture.objects("validity").forEach {
+            assertEquals(
+                it.string("digits"),
+                it.getValue("expected").jsonPrimitive.boolean,
+                CardInputFormatter.isValidExpiry(it.string("digits"), it.long("year").toInt(), it.long("month").toInt())
+            )
         }
     }
 

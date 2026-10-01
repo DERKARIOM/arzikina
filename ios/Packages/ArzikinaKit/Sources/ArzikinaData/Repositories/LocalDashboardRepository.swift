@@ -70,7 +70,7 @@ public struct LocalDashboardRepository: DashboardRepository {
             WHERE deletedAt IS NULL
               AND id NOT IN (SELECT feeTransactionId FROM transactions
                              WHERE feeTransactionId IS NOT NULL AND deletedAt IS NULL)
-            ORDER BY date DESC, createdAt DESC
+            ORDER BY date DESC, createdAt DESC, id DESC
             LIMIT ?
             """, arguments: [max(limit, 0)])
         let transactions = records.map(\.domain)

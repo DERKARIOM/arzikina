@@ -1,0 +1,22 @@
+{
+  "description": "Date d'expiration d'une carte : mise en forme de la saisie (MM/AA, 4 chiffres au plus) et validité (mois 1 à 12, pas avant le mois de référence ; le mois en cours est encore valable).",
+  "format": [
+    { "input": "", "expected": "" },
+    { "input": "1", "expected": "1" },
+    { "input": "12", "expected": "12" },
+    { "input": "123", "expected": "12/3" },
+    { "input": "1228", "expected": "12/28" },
+    { "input": "12/28", "expected": "12/28" },
+    { "input": "12/289", "expected": "12/28" },
+    { "input": "a1 b2", "expected": "12" }
+  ],
+  "validity": [
+    { "digits": "1026", "year": 2026, "month": 10, "expected": true },
+    { "digits": "0926", "year": 2026, "month": 10, "expected": false },
+    { "digits": "0127", "year": 2026, "month": 10, "expected": true },
+    { "digits": "1325", "year": 2020, "month": 1, "expected": false },
+    { "digits": "0027", "year": 2026, "month": 10, "expected": false },
+    { "digits": "102", "year": 2026, "month": 10, "expected": false },
+    { "digits": "1299", "year": 2026, "month": 10, "expected": true }
+  ]
+}

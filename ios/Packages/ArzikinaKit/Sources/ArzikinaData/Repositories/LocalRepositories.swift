@@ -65,6 +65,12 @@ public struct LocalAccountRepository: AccountRepository {
         try await store.fetchActive(id: id)?.domain
     }
 
+    public func nextDisplayOrder() async throws -> Int64 {
+        try await database.writer.read { db in
+            try Int64.fetchOne(db, sql: "SELECT COALESCE(MAX(displayOrder), -1) + 1 FROM accounts WHERE deletedAt IS NULL") ?? 0
+        }
+    }
+
     public func save(_ account: Account) async throws {
         try await store.save(id: account.id, createdAt: account.createdAt) { AccountRecord(account, meta: $0) }
     }
@@ -117,10 +123,14 @@ public struct LocalTransactionRepository: TransactionRepository {
 
     private let database: AppDatabase
     private let store: SyncedStore<TransactionRecord>
+    private let categoryStore: SyncedStore<CategoryRecord>
+    private let now: Clock
 
     public init(database: AppDatabase, now: @escaping Clock = Clocks.system) {
         self.database = database
+        self.now = now
         self.store = SyncedStore(database: database, entityType: .transactions, now: now)
+        self.categoryStore = SyncedStore(database: database, entityType: .categories, now: now)
     }
 
     public func observeTransactions(from: EpochMillis?, to: EpochMillis?) -> AsyncStream<[Transaction]> {
@@ -129,7 +139,7 @@ public struct LocalTransactionRepository: TransactionRepository {
             if let from { request = request.filter(Column("date") >= from) }
             if let to { request = request.filter(Column("date") < to) }
             return try request
-                .order(Column("date").desc, Column("createdAt").desc)
+                .order(Column("date").desc, Column("createdAt").desc, Column("id").desc)
                 .fetchAll(db)
                 .map(\.domain)
         }
@@ -139,7 +149,7 @@ public struct LocalTransactionRepository: TransactionRepository {
         database.observe { db in
             try TransactionRecord
                 .filter(Column("deletedAt") == nil)
-                .order(Column("date").desc, Column("createdAt").desc)
+                .order(Column("date").desc, Column("createdAt").desc, Column("id").desc)
                 .limit(max(limit, 0))
                 .fetchAll(db)
                 .map(\.domain)
@@ -154,7 +164,94 @@ public struct LocalTransactionRepository: TransactionRepository {
         try await store.save(id: transaction.id, createdAt: transaction.createdAt) { TransactionRecord(transaction, meta: $0) }
     }
 
+    /// Android `TransactionRepositoryImpl.saveTransaction` : les frais deviennent une transaction
+    /// de dépense liée (catégorie « Frais et commissions », créée si besoin), mise à jour EN PLACE
+    /// d'une modification à l'autre ; des frais retirés suppriment cette transaction. Le tout dans
+    /// UNE transaction SQL : jamais de transaction principale sans ses frais, ni de frais orphelins.
+    public func save(_ transaction: Transaction, fee: TransactionFee?) async throws {
+        let timestamp = now()
+        let store = self.store
+        let categoryStore = self.categoryStore
+        try await database.writer.write { db in
+            let existing = try TransactionRecord.fetchOne(db, key: transaction.id)
+            let previousFeeId = existing?.feeTransactionId
+
+            var feeTransactionId: EntityID?
+            if let fee {
+                // Réutilise la transaction de frais existante si elle est toujours active.
+                let previousFee = try previousFeeId.flatMap { try TransactionRecord.fetchOne(db, key: $0) }
+                let feeId = previousFee?.deletedAt == nil ? (previousFee?.id ?? EntityIDs.generate()) : EntityIDs.generate()
+                let feeTransaction = Transaction(
+                    id: feeId,
+                    amount: fee.amount,
+                    type: .expense,
+                    accountId: fee.accountId,
+                    categoryId: try Self.feesCategoryId(db, store: categoryStore, timestamp: timestamp),
+                    date: transaction.date,
+                    description: fee.description,
+                    feeType: fee.type,
+                    createdAt: previousFee?.createdAt ?? timestamp
+                )
+                try store.save(db, id: feeId, createdAt: feeTransaction.createdAt, timestamp: timestamp) {
+                    TransactionRecord(feeTransaction, meta: $0)
+                }
+                if let previousFeeId, previousFeeId != feeId {
+                    try store.softDelete(db, id: previousFeeId, timestamp: timestamp)
+                }
+                feeTransactionId = feeId
+            } else if let previousFeeId {
+                try store.softDelete(db, id: previousFeeId, timestamp: timestamp)
+            }
+
+            var main = transaction
+            main.feeTransactionId = feeTransactionId
+            main.feeType = nil
+            try store.save(db, id: main.id, createdAt: main.createdAt, timestamp: timestamp) { TransactionRecord(main, meta: $0) }
+        }
+    }
+
+    /// Supprime la transaction ET sa transaction de frais (Android `deleteTransaction`).
     public func delete(id: EntityID) async throws {
-        try await store.softDelete(id: id)
+        let timestamp = now()
+        let store = self.store
+        try await database.writer.write { db in
+            guard let existing = try TransactionRecord.fetchOne(db, key: id), existing.deletedAt == nil else { return }
+            if let feeId = existing.feeTransactionId {
+                try store.softDelete(db, id: feeId, timestamp: timestamp)
+            }
+            try store.softDelete(db, id: id, timestamp: timestamp)
+        }
+    }
+
+    public func isLinkedToLoan(id: EntityID) async throws -> Bool {
+        try await database.writer.read { db in
+            try Bool.fetchOne(db, sql: """
+                SELECT EXISTS (SELECT 1 FROM loans WHERE transactionId = ? AND deletedAt IS NULL)
+                    OR EXISTS (SELECT 1 FROM loan_payments WHERE transactionId = ? AND deletedAt IS NULL)
+                """, arguments: [id, id]) ?? false
+        }
+    }
+
+    /// Catégorie système « Frais et commissions » (dépense) ; recréée si elle n'existe pas,
+    /// comme Android `SystemCategoryResolver`.
+    static func feesCategoryId(_ db: Database, store: SyncedStore<CategoryRecord>, timestamp: Int64) throws -> EntityID {
+        let key = SystemCategoryKey.fees
+        if let id = try String.fetchOne(db, sql: """
+            SELECT id FROM categories
+            WHERE name = ? AND type = ? AND deletedAt IS NULL
+            ORDER BY createdAt, id LIMIT 1
+            """, arguments: [key.canonicalName, key.type.rawValue]) {
+            return id
+        }
+        let category = ArzikinaDomain.Category(
+            id: EntityIDs.generate(),
+            name: key.canonicalName,
+            icon: key.defaultIcon,
+            colorArgb: key.defaultColorArgb,
+            type: key.type,
+            createdAt: timestamp
+        )
+        try store.save(db, id: category.id, createdAt: timestamp, timestamp: timestamp) { CategoryRecord(category, meta: $0) }
+        return category.id
     }
 }

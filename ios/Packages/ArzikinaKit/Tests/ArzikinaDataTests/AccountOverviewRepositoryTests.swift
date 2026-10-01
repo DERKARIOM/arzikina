@@ -62,6 +62,16 @@ final class AccountOverviewRepositoryTests: XCTestCase {
         XCTAssertEqual(detail.transactions[0].transferAccount?.id, "bank", "Transfert reçu : l'autre compte est la source")
     }
 
+    func testNextDisplayOrderFollowsExistingAccounts() async throws {
+        let empty = try await space.accounts.nextDisplayOrder()
+        XCTAssertEqual(empty, 0)
+        try await space.accounts.save(Account(id: "a", name: "A", displayOrder: 4))
+        try await space.accounts.save(Account(id: "b", name: "B", displayOrder: 9))
+        try await space.accounts.delete(id: "b")
+        let next = try await space.accounts.nextDisplayOrder()
+        XCTAssertEqual(next, 5, "Les comptes supprimés ne comptent pas")
+    }
+
     func testDetailOfDeletedOrUnknownAccountIsNil() async throws {
         try await space.accounts.save(Account(id: "a", name: "A"))
         try await space.accounts.delete(id: "a")

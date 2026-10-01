@@ -4,7 +4,7 @@ import GRDB
 /// douce, chacune inscrite dans la file d'envoi DANS la même transaction SQL.
 ///
 /// Évite de répéter cette logique (métadonnées + file d'envoi) dans chaque dépôt.
-struct SyncedStore<Record: SyncedRecord & FetchableRecord & PersistableRecord> {
+struct SyncedStore<Record: SyncedRecord & FetchableRecord & PersistableRecord>: Sendable {
 
     let database: AppDatabase
     let entityType: SyncEntityType
@@ -15,28 +15,39 @@ struct SyncedStore<Record: SyncedRecord & FetchableRecord & PersistableRecord> {
     /// fournit une, sinon « maintenant »), conservées et datées pour une mise à jour.
     func save(id: String, createdAt: Int64, _ makeRecord: @escaping @Sendable (SyncMetadata) -> Record) async throws {
         let timestamp = now()
-        let type = entityType
         try await database.writer.write { db in
-            if let existing = try Record.fetchOne(db, key: id) {
-                try makeRecord(existing.meta.touched(now: timestamp)).update(db)
-                try SyncQueue.enqueue(db, type: type, entityId: id, operation: .update, now: timestamp)
-            } else {
-                try makeRecord(.new(createdAt: createdAt, now: timestamp)).insert(db)
-                try SyncQueue.enqueue(db, type: type, entityId: id, operation: .create, now: timestamp)
-            }
+            try save(db, id: id, createdAt: createdAt, timestamp: timestamp, makeRecord)
         }
     }
 
     /// Suppression douce. Sans effet si la ligne n'existe pas ou est déjà supprimée.
     func softDelete(id: String) async throws {
         let timestamp = now()
-        let type = entityType
         try await database.writer.write { db in
-            guard var record = try Record.fetchOne(db, key: id), record.meta.deletedAt == nil else { return }
-            record.meta = record.meta.deleted(now: timestamp)
-            try record.update(db)
-            try SyncQueue.enqueue(db, type: type, entityId: id, operation: .delete, now: timestamp)
+            try softDelete(db, id: id, timestamp: timestamp)
         }
+    }
+
+    // MARK: Dans une transaction SQL ouverte par l'appelant
+    //
+    // Pour les écritures qui touchent PLUSIEURS lignes d'un coup (une transaction et ses frais,
+    // par exemple) : tout est enregistré, ou rien.
+
+    func save(_ db: Database, id: String, createdAt: Int64, timestamp: Int64, _ makeRecord: (SyncMetadata) -> Record) throws {
+        if let existing = try Record.fetchOne(db, key: id) {
+            try makeRecord(existing.meta.touched(now: timestamp)).update(db)
+            try SyncQueue.enqueue(db, type: entityType, entityId: id, operation: .update, now: timestamp)
+        } else {
+            try makeRecord(.new(createdAt: createdAt, now: timestamp)).insert(db)
+            try SyncQueue.enqueue(db, type: entityType, entityId: id, operation: .create, now: timestamp)
+        }
+    }
+
+    func softDelete(_ db: Database, id: String, timestamp: Int64) throws {
+        guard var record = try Record.fetchOne(db, key: id), record.meta.deletedAt == nil else { return }
+        record.meta = record.meta.deleted(now: timestamp)
+        try record.update(db)
+        try SyncQueue.enqueue(db, type: entityType, entityId: id, operation: .delete, now: timestamp)
     }
 
     /// Ligne non supprimée d'identifiant [id].

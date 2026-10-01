@@ -15,6 +15,7 @@ struct DashboardView: View {
     /// Préférence d'affichage NON sensible (aucun montant stocké) → UserDefaults.
     @AppStorage("dashboard.isBalanceHidden") private var isBalanceHidden = false
     @State private var model = DashboardViewModel()
+    @State private var transactionForm: TransactionFormRoute?
 
     var body: some View {
         ScrollView {
@@ -31,7 +32,9 @@ struct DashboardView: View {
                     if !monthRows.isEmpty {
                         MonthSummaryCard(rows: monthRows, isAmountHidden: isBalanceHidden)
                     }
-                    RecentTransactionsCard(items: model.recentTransactions)
+                    RecentTransactionsCard(items: model.recentTransactions) { item in
+                        transactionForm = .edit(item.transaction)
+                    }
                 }
 
                 UpcomingSectionCard(titleKey: "dashboard.budgets", systemImage: "chart.bar.fill")
@@ -41,6 +44,17 @@ struct DashboardView: View {
         }
         .background(Color(.systemGroupedBackground))
         .navigationTitle("tab.home")
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Button {
+                    transactionForm = .create(presetAccountId: nil)
+                } label: {
+                    Label("transaction.add", systemImage: "plus")
+                }
+                .disabled(!model.hasAccounts)
+            }
+        }
+        .transactionFormSheet($transactionForm, session: session)
         .refreshable {
             await session.sync?.refresh()
         }
