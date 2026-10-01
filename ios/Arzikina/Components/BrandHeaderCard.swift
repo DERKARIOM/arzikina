@@ -1,44 +1,27 @@
+import ArzikinaDomain
 import SwiftUI
 
-/// Carte d'en-tête du tableau de bord : logo, nom et accroche Arzikina, puis l'emplacement du
-/// solde total. Tant que la synchronisation n'existe pas, le solde affiche un tiret et un message
-/// explicatif — jamais un montant inventé.
+/// Carte d'en-tête du tableau de bord, aux couleurs de la marque : salutation, solde total et
+/// bouton pour masquer le solde (utile en public).
+///
+/// Le solde est affiché PAR DEVISE (aucune conversion : les devises ne sont jamais additionnées) :
+/// la première en grand, les autres en dessous. Sans solde à afficher, un tiret (et, s'il n'y a
+/// encore aucun compte, un message explicatif) — jamais un montant inventé.
 struct BrandHeaderCard: View {
+
+    let firstName: String?
+    let balances: [CurrencyAmount]
+    /// Affiche « Vos comptes apparaîtront ici après la synchronisation » sous le tiret.
+    let showsSyncHint: Bool
+    @Binding var isBalanceHidden: Bool
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var isVisible = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            HStack(spacing: 12) {
-                Image("BrandLogo")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 40, height: 40)
-                    .padding(8)
-                    .background(.white, in: RoundedRectangle(cornerRadius: Brand.Radius.icon, style: .continuous))
-                    .accessibilityHidden(true)
-
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(verbatim: "Arzikina")
-                        .font(.title2.bold())
-                    Text("brand.tagline")
-                        .font(.subheadline)
-                        .opacity(0.9)
-                }
-            }
-
-            VStack(alignment: .leading, spacing: 4) {
-                Text("dashboard.total_balance")
-                    .font(.footnote.weight(.medium))
-                    .opacity(0.85)
-                Text(verbatim: "—")
-                    .font(.system(size: 34, weight: .bold, design: .rounded))
-                    .accessibilityLabel(Text("dashboard.balance_unavailable"))
-                Text("dashboard.sync_pending")
-                    .font(.footnote)
-                    .opacity(0.85)
-            }
+            header
+            balance
         }
         .foregroundStyle(.white)
         .padding(20)
@@ -53,9 +36,92 @@ struct BrandHeaderCard: View {
             }
         }
     }
+
+    private var header: some View {
+        HStack(spacing: 12) {
+            Image("BrandLogo")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 32, height: 32)
+                .padding(6)
+                .background(.white, in: RoundedRectangle(cornerRadius: Brand.Radius.icon - 4, style: .continuous))
+                .accessibilityHidden(true)
+
+            Group {
+                if let firstName, !firstName.isEmpty {
+                    Text("dashboard.greeting_name \(firstName)")
+                } else {
+                    Text("dashboard.greeting")
+                }
+            }
+            .font(.headline)
+
+            Spacer()
+
+            if !balances.isEmpty {
+                Button {
+                    withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.2)) {
+                        isBalanceHidden.toggle()
+                    }
+                } label: {
+                    Image(systemName: isBalanceHidden ? "eye.slash" : "eye")
+                        .font(.body.weight(.semibold))
+                        .frame(width: 44, height: 44)
+                        .contentShape(Rectangle())
+                }
+                .accessibilityLabel(Text(isBalanceHidden ? LocalizedStringKey("dashboard.balance.show") : LocalizedStringKey("dashboard.balance.hide")))
+            }
+        }
+    }
+
+    private var balance: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text("dashboard.total_balance")
+                .font(.footnote.weight(.medium))
+                .opacity(0.85)
+
+            if let main = balances.first {
+                amountText(main)
+                    .font(.system(size: 34, weight: .bold, design: .rounded))
+                    .minimumScaleFactor(0.5)
+                    .lineLimit(1)
+                    .contentTransition(.numericText())
+                ForEach(balances.dropFirst(), id: \.currencyCode) { other in
+                    amountText(other)
+                        .font(.headline.monospacedDigit())
+                        .opacity(0.9)
+                }
+            } else {
+                Text(verbatim: "—")
+                    .font(.system(size: 34, weight: .bold, design: .rounded))
+                    .accessibilityLabel(Text("dashboard.balance_unavailable"))
+                if showsSyncHint {
+                    Text("dashboard.sync_pending")
+                        .font(.footnote)
+                        .opacity(0.85)
+                }
+            }
+        }
+    }
+
+    private func amountText(_ amount: CurrencyAmount) -> some View {
+        Group {
+            if isBalanceHidden {
+                Text(verbatim: "•••••• \(Money.symbol(of: amount.currencyCode))")
+                    .accessibilityLabel(Text("dashboard.balance.hidden"))
+            } else {
+                Text(verbatim: Money.format(amount))
+            }
+        }
+    }
 }
 
 #Preview {
-    BrandHeaderCard()
-        .padding()
+    BrandHeaderCard(
+        firstName: "Awa",
+        balances: [CurrencyAmount(currencyCode: "XOF", amountMinor: 125_050_000), CurrencyAmount(currencyCode: "EUR", amountMinor: 32_000)],
+        showsSyncHint: false,
+        isBalanceHidden: .constant(false)
+    )
+    .padding()
 }

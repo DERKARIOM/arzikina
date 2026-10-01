@@ -10,9 +10,37 @@ import UIKit
 final class AppContainer {
 
     let authRepository: AuthRepository
+    private let databaseLocator: UserDatabaseLocator?
+    private let syncAPI: APIClient?
+    private let accessToken: @Sendable () -> String?
 
-    init(authRepository: AuthRepository) {
+    init(
+        authRepository: AuthRepository,
+        databaseLocator: UserDatabaseLocator?,
+        syncAPI: APIClient? = nil,
+        accessToken: @escaping @Sendable () -> String? = { nil }
+    ) {
         self.authRepository = authRepository
+        self.databaseLocator = databaseLocator
+        self.syncAPI = syncAPI
+        self.accessToken = accessToken
+    }
+
+    /// Ouvre la base locale de l'utilisateur connecté. Si le stockage est inutilisable (espace
+    /// disque plein, fichier corrompu…), repli sur une base en mémoire : l'app reste utilisable,
+    /// et Réglages signale que rien ne sera conservé.
+    func openDataSpace(for session: AuthSession) -> (space: UserDataSpace, isPersistent: Bool) {
+        if let databaseLocator, let space = try? UserDataSpace.open(userId: session.userId, locator: databaseLocator) {
+            return (space, true)
+        }
+        // `inMemory` ne touche pas au disque : seul un manque de mémoire pourrait le faire échouer.
+        return (try! UserDataSpace.inMemory(userId: session.userId), false)
+    }
+
+    /// Moteur de synchronisation de [space] avec l'API (`nil` sans API configurée).
+    func makeSyncEngine(for space: UserDataSpace) -> SyncEngine? {
+        guard let syncAPI else { return nil }
+        return SyncEngine(space: space, api: syncAPI, accessToken: accessToken)
     }
 
     /// Dépendances réelles de l'application.
@@ -21,7 +49,12 @@ final class AppContainer {
         clearKeychainAfterReinstall(sessionStore)
         let api = APIClient(configuration: apiConfiguration(), http: URLSessionHTTPClient())
         let repository = RemoteAuthRepository(api: api, sessionStore: sessionStore, device: deviceIdentity())
-        return AppContainer(authRepository: repository)
+        return AppContainer(
+            authRepository: repository,
+            databaseLocator: try? UserDatabaseLocator.standard(),
+            syncAPI: api,
+            accessToken: { repository.accessToken() }
+        )
     }
 
     // MARK: - Configuration

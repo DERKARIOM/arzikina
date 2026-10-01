@@ -14,6 +14,15 @@ struct LoginView<RegisterDestination: View>: View {
             VStack(spacing: 24) {
                 AuthHeaderView(titleKey: "login.title", subtitleKey: "login.subtitle")
 
+                if model.showsSessionExpiredNotice {
+                    Label("login.session_expired", systemImage: "clock.badge.exclamationmark")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(12)
+                        .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: Brand.Radius.icon, style: .continuous))
+                }
+
                 VStack(alignment: .leading, spacing: 12) {
                     TextField("login.identifier", text: $model.identifier)
                         .textContentType(.username)

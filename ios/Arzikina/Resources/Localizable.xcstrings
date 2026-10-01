@@ -1,6 +1,91 @@
 {
   "sourceLanguage": "fr",
   "strings": {
+    "account.default.bank": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bank"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Banque"
+          }
+        }
+      }
+    },
+    "account.default.cash": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cash"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Espèces"
+          }
+        }
+      }
+    },
+    "account.default.mobile_money": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mobile Money"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mobile Money"
+          }
+        }
+      }
+    },
+    "account.default.savings": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Savings"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Épargne"
+          }
+        }
+      }
+    },
+    "account.default.wallet": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wallet"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wallet"
+          }
+        }
+      }
+    },
     "accounts.empty.message": {
       "extractionState": "manual",
       "localizations": {
@@ -239,6 +324,363 @@
         }
       }
     },
+    "category.default.education": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Education"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Éducation"
+          }
+        }
+      }
+    },
+    "category.default.electricity": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Electricity"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Électricité"
+          }
+        }
+      }
+    },
+    "category.default.food": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Food"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nourriture"
+          }
+        }
+      }
+    },
+    "category.default.gifts": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gifts"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cadeaux"
+          }
+        }
+      }
+    },
+    "category.default.health": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Health"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Santé"
+          }
+        }
+      }
+    },
+    "category.default.home": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Home"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Maison"
+          }
+        }
+      }
+    },
+    "category.default.internet": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Internet"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Internet"
+          }
+        }
+      }
+    },
+    "category.default.other_expense": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Other"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Divers"
+          }
+        }
+      }
+    },
+    "category.default.other_income": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Other"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Divers"
+          }
+        }
+      }
+    },
+    "category.default.salary": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Salary"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Salaire"
+          }
+        }
+      }
+    },
+    "category.default.shopping": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Shopping"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Shopping"
+          }
+        }
+      }
+    },
+    "category.default.transport": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Transport"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Transport"
+          }
+        }
+      }
+    },
+    "category.default.water": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Water"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eau"
+          }
+        }
+      }
+    },
+    "category.system.fees": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fees and commissions"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Frais et commissions"
+          }
+        }
+      }
+    },
+    "category.system.loan_disbursement_borrowed": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Loan received"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Emprunt reçu"
+          }
+        }
+      }
+    },
+    "category.system.loan_disbursement_lent": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Loan given"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prêt accordé"
+          }
+        }
+      }
+    },
+    "category.system.loan_repayment_borrowed": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Loan repayment"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remboursement d'emprunt"
+          }
+        }
+      }
+    },
+    "category.system.loan_repayment_lent": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Loan repayment received"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remboursement de prêt reçu"
+          }
+        }
+      }
+    },
+    "dashboard.balance.hidden": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Balance hidden"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Solde masqué"
+          }
+        }
+      }
+    },
+    "dashboard.balance.hide": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hide balance"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Masquer le solde"
+          }
+        }
+      }
+    },
+    "dashboard.balance.show": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show balance"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Afficher le solde"
+          }
+        }
+      }
+    },
     "dashboard.balance_unavailable": {
       "extractionState": "manual",
       "localizations": {
@@ -273,6 +715,108 @@
         }
       }
     },
+    "dashboard.greeting": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hi!"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Salut !"
+          }
+        }
+      }
+    },
+    "dashboard.greeting_name %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hi, %@!"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Salut, %@ !"
+          }
+        }
+      }
+    },
+    "dashboard.month.difference": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Difference"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Différence"
+          }
+        }
+      }
+    },
+    "dashboard.month.expense": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Expenses (this month)"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dépenses (ce mois)"
+          }
+        }
+      }
+    },
+    "dashboard.month.income": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Income (this month)"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Revenus (ce mois)"
+          }
+        }
+      }
+    },
+    "dashboard.month.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Expenses vs income"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dépenses vs revenus"
+          }
+        }
+      }
+    },
     "dashboard.recent_transactions": {
       "extractionState": "manual",
       "localizations": {
@@ -286,6 +830,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "Dernières transactions"
+          }
+        }
+      }
+    },
+    "dashboard.recent_transactions.empty": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No transactions yet."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aucune transaction pour l'instant."
           }
         }
       }
@@ -392,6 +953,23 @@
         }
       }
     },
+    "login.session_expired": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your session has expired. Sign in again: your data and unsent changes are kept on this iPhone."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Votre session a expiré. Reconnectez-vous : vos données et les modifications pas encore envoyées sont conservées sur cet iPhone."
+          }
+        }
+      }
+    },
     "login.submit": {
       "extractionState": "manual",
       "localizations": {
@@ -439,6 +1017,91 @@
           "stringUnit": {
             "state": "translated",
             "value": "Bon retour !"
+          }
+        }
+      }
+    },
+    "payment_method.bank_transfer": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bank transfer"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Virement bancaire"
+          }
+        }
+      }
+    },
+    "payment_method.card": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bank card"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Carte bancaire"
+          }
+        }
+      }
+    },
+    "payment_method.cash": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cash"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Espèces"
+          }
+        }
+      }
+    },
+    "payment_method.mobile_money": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mobile Money"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mobile Money"
+          }
+        }
+      }
+    },
+    "payment_method.other": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Other"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Autre"
           }
         }
       }
@@ -1055,6 +1718,142 @@
         }
       }
     },
+    "settings.local_data.clear": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clear local data"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vider les données locales"
+          }
+        }
+      }
+    },
+    "settings.local_data.clear_confirm_message": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your data will be downloaded again from your account at the next sync."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vos données seront à nouveau téléchargées depuis votre compte lors de la prochaine synchronisation."
+          }
+        }
+      }
+    },
+    "settings.local_data.clear_confirm_pending %lld": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Changes not sent yet: %lld. They will be permanently lost."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Modifications pas encore envoyées : %lld. Elles seront définitivement perdues."
+          }
+        }
+      }
+    },
+    "settings.local_data.clear_confirm_title": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clear the data on this iPhone?"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vider les données de cet iPhone ?"
+          }
+        }
+      }
+    },
+    "settings.local_data.clear_failed": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not clear local data. Please try again."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Impossible de vider les données locales. Réessayez."
+          }
+        }
+      }
+    },
+    "settings.local_data.pending": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Changes waiting to be sent"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Modifications à envoyer"
+          }
+        }
+      }
+    },
+    "settings.local_data.size": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Storage used"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Espace utilisé"
+          }
+        }
+      }
+    },
+    "settings.local_data.temporary": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Local storage unavailable: data from this session will not be kept."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stockage local indisponible : les données de cette session ne seront pas conservées."
+          }
+        }
+      }
+    },
     "settings.section.about": {
       "extractionState": "manual",
       "localizations": {
@@ -1119,6 +1918,193 @@
           "stringUnit": {
             "state": "translated",
             "value": "Langue"
+          }
+        }
+      }
+    },
+    "settings.section.local_data": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Data on this iPhone"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Données sur cet iPhone"
+          }
+        }
+      }
+    },
+    "settings.section.sync": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sync"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Synchronisation"
+          }
+        }
+      }
+    },
+    "settings.sync.error.offline": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No connection. Sync will resume automatically when the network is back."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pas de connexion. La synchronisation reprendra automatiquement au retour du réseau."
+          }
+        }
+      }
+    },
+    "settings.sync.error.server": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The server could not be reached properly. Try again later; your data stays on this iPhone."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Le serveur n'a pas pu être joint correctement. Réessayez plus tard ; vos données restent sur cet iPhone."
+          }
+        }
+      }
+    },
+    "settings.sync.error.session": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your session has expired. Sign in again to resume syncing."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Votre session a expiré. Reconnectez-vous pour reprendre la synchronisation."
+          }
+        }
+      }
+    },
+    "settings.sync.footer": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your data syncs automatically with your Arzikina account (Android, Web)."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vos données sont synchronisées automatiquement avec votre compte Arzikina (Android, Web)."
+          }
+        }
+      }
+    },
+    "settings.sync.in_progress": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Syncing…"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Synchronisation…"
+          }
+        }
+      }
+    },
+    "settings.sync.last": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Last sync"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dernière synchronisation"
+          }
+        }
+      }
+    },
+    "settings.sync.never": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Never"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jamais"
+          }
+        }
+      }
+    },
+    "settings.sync.now": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sync now"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Synchroniser maintenant"
+          }
+        }
+      }
+    },
+    "settings.sync.rejected %lld": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Changes rejected by the server: %lld. They will be sent again at the next sync."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Modifications refusées par le serveur : %lld. Elles seront renvoyées à la prochaine synchronisation."
           }
         }
       }
@@ -1204,6 +2190,74 @@
           "stringUnit": {
             "state": "translated",
             "value": "Réglages"
+          }
+        }
+      }
+    },
+    "transaction.category.transfer": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Money transfer"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Transfert d'argent"
+          }
+        }
+      }
+    },
+    "transaction.fee_indicator %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "+ Fees %@"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "+ Frais %@"
+          }
+        }
+      }
+    },
+    "transaction.uncategorized": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uncategorized"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sans catégorie"
+          }
+        }
+      }
+    },
+    "transaction.unknown_account": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unknown account"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Compte inconnu"
           }
         }
       }

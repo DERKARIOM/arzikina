@@ -1,3 +1,4 @@
+import ArzikinaData
 import ArzikinaDomain
 
 /// Dépôt factice pour les aperçus SwiftUI (Xcode sur Mac) : aucune requête réseau. Volontairement
@@ -10,4 +11,13 @@ struct PreviewAuthRepository: AuthRepository {
     func login(identifier: String, password: String) async throws -> AuthSession { session }
     func register(_ form: RegistrationForm) async throws -> AuthSession { session }
     func logout() async {}
+}
+
+extension SessionModel {
+    /// Session factice pour les aperçus SwiftUI : base en mémoire, aucun réseau.
+    static func preview() -> SessionModel {
+        SessionModel(authRepository: PreviewAuthRepository()) { session in
+            (try! UserDataSpace.inMemory(userId: session.userId), true)
+        }
+    }
 }

@@ -1,7 +1,8 @@
 import SwiftUI
 import UIKit
 
-/// Onglet Réglages : compte (déconnexion), apparence (Système / Clair / Sombre), langue et version.
+/// Onglet Réglages : compte (déconnexion), données locales, apparence (Système / Clair / Sombre),
+/// langue et version.
 ///
 /// Langue : l'app suit la langue de l'iPhone (français par défaut si elle n'est pas prise en
 /// charge). Le choix manuel passe par le réglage de langue PAR APP d'iOS (Réglages › Arzikina ›
@@ -35,6 +36,12 @@ struct SettingsView: View {
                     Text("settings.account.logout_confirm_message")
                 }
             }
+
+            if let sync = session.sync {
+                SyncSection(sync: sync)
+            }
+
+            LocalDataSection()
 
             Section("settings.section.appearance") {
                 Picker("settings.appearance.theme", selection: $appearance) {
@@ -72,5 +79,5 @@ struct SettingsView: View {
 
 #Preview {
     NavigationStack { SettingsView() }
-        .environment(SessionModel(authRepository: PreviewAuthRepository()))
+        .environment(SessionModel.preview())
 }

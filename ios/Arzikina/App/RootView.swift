@@ -12,7 +12,7 @@ struct RootView: View {
             case .restoring:
                 LaunchView()
             case .signedOut:
-                AuthFlowView(repository: session.authRepository) { authenticated in
+                AuthFlowView(repository: session.authRepository, sessionExpired: session.sessionExpired) { authenticated in
                     session.didAuthenticate(authenticated)
                 }
             case .signedIn:

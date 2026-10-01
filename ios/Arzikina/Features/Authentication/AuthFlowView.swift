@@ -8,10 +8,10 @@ struct AuthFlowView: View {
     private let repository: AuthRepository
     private let onAuthenticated: (AuthSession) -> Void
 
-    init(repository: AuthRepository, onAuthenticated: @escaping (AuthSession) -> Void) {
+    init(repository: AuthRepository, sessionExpired: Bool = false, onAuthenticated: @escaping (AuthSession) -> Void) {
         self.repository = repository
         self.onAuthenticated = onAuthenticated
-        _loginModel = State(initialValue: LoginViewModel(repository: repository, onAuthenticated: onAuthenticated))
+        _loginModel = State(initialValue: LoginViewModel(repository: repository, sessionExpired: sessionExpired, onAuthenticated: onAuthenticated))
     }
 
     var body: some View {

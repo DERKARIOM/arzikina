@@ -15,6 +15,13 @@ enum Brand {
     static let primary = Color("BrandPrimary")
     static let primaryDeep = Color("BrandPrimaryDeep")
 
+    /// Montants : revenu (couleur de marque), dépense (rouge), transfert (couleur de marque) —
+    /// mêmes teintes qu'Android (`income_green` #42B998, `expense_red` #DC2626). Aucun signe +/-
+    /// n'est affiché : le sens se lit à la couleur et au libellé, comme sur Android.
+    static let income = primary
+    static let expense = Color(argb: 0xFFDC_2626)
+    static let transfer = primary
+
     /// Dégradé des cartes « héros » (solde, objectifs…).
     static let heroGradient = LinearGradient(
         colors: [primary, primaryDeep],

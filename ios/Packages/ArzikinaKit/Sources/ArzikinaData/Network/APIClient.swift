@@ -62,6 +62,30 @@ public struct APIClient: Sendable {
         return try await send(request, as: responseType)
     }
 
+    /// `GET <baseURL><path>?<query>` ; décode la réponse en [Response].
+    public func get<Response: Decodable>(
+        _ path: String,
+        query: [String: String] = [:],
+        bearerToken: String? = nil,
+        as responseType: Response.Type = Response.self
+    ) async throws -> Response {
+        guard var components = URLComponents(url: configuration.baseURL.appendingPathComponent(path), resolvingAgainstBaseURL: false) else {
+            throw APIError.invalidResponse
+        }
+        if !query.isEmpty {
+            // Ordre stable (lisibilité des journaux, tests déterministes).
+            components.queryItems = query.sorted { $0.key < $1.key }.map { URLQueryItem(name: $0.key, value: $0.value) }
+        }
+        guard let url = components.url else { throw APIError.invalidResponse }
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        if let bearerToken {
+            request.setValue("Bearer \(bearerToken)", forHTTPHeaderField: "Authorization")
+        }
+        return try await send(request, as: responseType)
+    }
+
     private func send<Response: Decodable>(_ request: URLRequest, as responseType: Response.Type) async throws -> Response {
         let data: Data
         let response: HTTPURLResponse

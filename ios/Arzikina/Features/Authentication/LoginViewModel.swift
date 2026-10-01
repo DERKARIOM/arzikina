@@ -11,12 +11,15 @@ final class LoginViewModel {
     var password = ""
     private(set) var isSubmitting = false
     private(set) var error: AuthError?
+    /// Explique à l'utilisateur pourquoi il doit se reconnecter (session expirée).
+    private(set) var showsSessionExpiredNotice: Bool
 
     @ObservationIgnored private let repository: AuthRepository
     @ObservationIgnored private let onAuthenticated: (AuthSession) -> Void
 
-    init(repository: AuthRepository, onAuthenticated: @escaping (AuthSession) -> Void) {
+    init(repository: AuthRepository, sessionExpired: Bool = false, onAuthenticated: @escaping (AuthSession) -> Void) {
         self.repository = repository
+        self.showsSessionExpiredNotice = sessionExpired
         self.onAuthenticated = onAuthenticated
     }
 
@@ -29,6 +32,7 @@ final class LoginViewModel {
     func submit() async {
         guard !isSubmitting else { return }
         error = nil
+        showsSessionExpiredNotice = false
         isSubmitting = true
         defer { isSubmitting = false }
         do {

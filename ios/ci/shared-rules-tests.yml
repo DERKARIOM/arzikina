@@ -38,15 +38,19 @@ jobs:
     name: Swift (ArzikinaKit, Linux)
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    container: swift:6.0-noble
+    # Swift 6.1 minimum : exigé par GRDB 7 (base locale).
+    container: swift:6.1-noble
     steps:
       - name: Récupérer le dépôt
         uses: actions/checkout@v4
 
+      - name: Installer SQLite (requis par GRDB sous Linux)
+        run: apt-get update -qq && apt-get install -y -qq libsqlite3-dev
+
       - name: Version de Swift
         run: swift --version
 
-      - name: Tests du domaine
+      - name: Tests du domaine et des données
         working-directory: ios/Packages/ArzikinaKit
         run: swift test
 

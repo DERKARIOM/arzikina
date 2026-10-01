@@ -12,10 +12,15 @@ struct ArzikinaApp: App {
     private var appearance: AppearancePreference = .default
 
     @State private var session: SessionModel
+    @Environment(\.scenePhase) private var scenePhase
 
     init() {
         let container = AppContainer.live()
-        _session = State(initialValue: SessionModel(authRepository: container.authRepository))
+        _session = State(initialValue: SessionModel(
+            authRepository: container.authRepository,
+            openDataSpace: container.openDataSpace(for:),
+            makeSyncEngine: container.makeSyncEngine(for:)
+        ))
     }
 
     var body: some Scene {
@@ -24,6 +29,9 @@ struct ArzikinaApp: App {
                 .environment(session)
                 .tint(Brand.primary)
                 .preferredColorScheme(appearance.colorScheme)
+        }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active { session.appDidBecomeActive() }
         }
     }
 }
