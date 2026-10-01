@@ -1,0 +1,81 @@
+# Règles métier partagées Android ↔ iOS.
+#
+# Les mêmes jeux de tests (shared/test-fixtures/*.json) sont exécutés :
+#   - contre le code Swift (ios/Packages/ArzikinaKit), sur un runner LINUX : bien moins coûteux
+#     qu'un runner macOS, et aucune dépendance à Xcode ;
+#   - contre le code Kotlin d'Android (SharedFixturesTest).
+# Si une règle diverge entre les deux plateformes, au moins un des deux jobs échoue.
+
+name: Shared Rules Tests
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "shared/test-fixtures/**"
+      - "ios/Packages/**"
+      - "app/src/main/java/**"
+      - "app/src/test/**"
+      - ".github/workflows/shared-rules-tests.yml"
+  pull_request:
+    paths:
+      - "shared/test-fixtures/**"
+      - "ios/Packages/**"
+      - "app/src/main/java/**"
+      - "app/src/test/**"
+      - ".github/workflows/shared-rules-tests.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: shared-rules-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  swift:
+    name: Swift (ArzikinaKit, Linux)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    # Swift 6.1 minimum : exigé par GRDB 7 (base locale).
+    container: swift:6.1-noble
+    steps:
+      - name: Récupérer le dépôt
+        uses: actions/checkout@v4
+
+      - name: Installer SQLite (requis par GRDB sous Linux)
+        run: apt-get update -qq && apt-get install -y -qq libsqlite3-dev
+
+      - name: Version de Swift
+        run: swift --version
+
+      - name: Tests du domaine et des données
+        working-directory: ios/Packages/ArzikinaKit
+        run: swift test
+
+  android:
+    name: Android (SharedFixturesTest)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Récupérer le dépôt
+        uses: actions/checkout@v4
+
+      - name: Installer Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Tests des fixtures partagées
+        run: bash ./gradlew --no-daemon :app:testDebugUnitTest --tests "com.naniger.arzikina.SharedFixturesTest"
+
+      - name: Rapport de tests (en cas d'échec)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-test-report
+          path: app/build/reports/tests/
+          if-no-files-found: ignore
+          retention-days: 7
