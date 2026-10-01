@@ -174,3 +174,21 @@ public protocol TransactionLedgerRepository: Sendable {
     /// Lu en UNE transaction SQL : soldes et lignes toujours cohérents entre eux.
     func observeLedger() -> AsyncStream<[TransactionLedgerEntry]>
 }
+
+// MARK: - Budgets
+
+/// Budgets de l'utilisateur connecté.
+public protocol BudgetRepository: Sendable {
+    /// Budgets non supprimés.
+    func observeBudgets() -> AsyncStream<[Budget]>
+    func save(_ budget: Budget) async throws
+    func delete(id: EntityID) async throws
+    /// Chaque budget avec ce qui a été dépensé sur sa période (voir `BudgetSummary`), mis à jour à
+    /// chaque modification. [today] fixe les périodes récurrentes et les statuts : l'appelant se
+    /// réabonne quand le jour change.
+    ///
+    /// Seules les DÉPENSES de la catégorie comptent, sur les comptes non supprimés, dans la devise
+    /// du budget et inclus dans les statistiques personnelles (comme Android).
+    func observeSummaries(today: CalendarDay, calendar: Calendar) -> AsyncStream<[BudgetSummary]>
+}
+

@@ -1,4 +1,5 @@
 import ArzikinaDomain
+import Foundation
 import Observation
 
 /// État du tableau de bord : suit en continu l'instantané de la base locale (saisies locales et
@@ -26,6 +27,8 @@ final class DashboardViewModel {
     }
 
     private(set) var snapshot: DashboardSnapshot = .empty
+    /// Budget mis en avant (`BudgetSummary.featured`), `nil` sans budget.
+    private(set) var featuredBudget: BudgetSummary?
     /// `false` jusqu'au premier instantané : évite d'afficher « aucun compte » une fraction de
     /// seconde au lancement.
     private(set) var hasLoaded = false
@@ -61,6 +64,13 @@ final class DashboardViewModel {
         for await snapshot in stream {
             self.snapshot = snapshot
             hasLoaded = true
+        }
+    }
+
+    /// Suit les budgets pour le jour [today] (relancé par la vue au changement de jour).
+    func observeBudgets(_ repository: BudgetRepository, today: CalendarDay, calendar: Calendar) async {
+        for await summaries in repository.observeSummaries(today: today, calendar: calendar) {
+            featuredBudget = BudgetSummary.featured(in: summaries)
         }
     }
 }

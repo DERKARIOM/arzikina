@@ -44,20 +44,24 @@ public final class UserDataSpace: Sendable {
     public let dashboard: DashboardRepository
     public let accountOverview: AccountOverviewRepository
     public let ledger: TransactionLedgerRepository
+    public let budgets: BudgetRepository
 
     let database: AppDatabase
     private let locator: UserDatabaseLocator?
+    private let now: Clock
 
     init(userId: String, database: AppDatabase, locator: UserDatabaseLocator?, now: @escaping Clock) {
         self.userId = userId
         self.database = database
         self.locator = locator
+        self.now = now
         self.accounts = LocalAccountRepository(database: database, now: now)
         self.categories = LocalCategoryRepository(database: database, now: now)
         self.transactions = LocalTransactionRepository(database: database, now: now)
         self.dashboard = LocalDashboardRepository(database: database)
         self.accountOverview = LocalAccountOverviewRepository(database: database)
         self.ledger = LocalTransactionLedgerRepository(database: database)
+        self.budgets = LocalBudgetRepository(database: database, now: now)
     }
 
     /// Ouvre (ou crée) la base de [userId].
@@ -71,6 +75,15 @@ public final class UserDataSpace: Sendable {
     /// Espace en mémoire, sans fichier (tests, aperçus).
     public static func inMemory(userId: String = "preview", now: @escaping Clock = Clocks.system) throws -> UserDataSpace {
         UserDataSpace(userId: userId, database: try AppDatabase.inMemory(), locator: nil, now: now)
+    }
+
+    /// Crée les comptes et catégories par défaut d'un compte qui VIENT d'être inscrit (jamais à
+    /// la connexion à un compte existant, voir `DefaultData`). Écriture courte et synchrone, faite
+    /// avant le démarrage de la synchronisation pour que le premier envoi les contienne.
+    /// Retourne `false` si la base n'était pas vide (rien n'est écrit).
+    @discardableResult
+    public func seedDefaultDataForNewAccount() throws -> Bool {
+        try DefaultDataSeeder(database: database, now: now, newId: EntityIDs.generate).seedIfEmpty()
     }
 
     public func observePendingChangesCount() -> AsyncStream<Int> {

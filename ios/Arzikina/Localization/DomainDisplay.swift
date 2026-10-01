@@ -227,3 +227,13 @@ extension FeeType {
         }
     }
 }
+
+extension BudgetPeriod {
+    /// Budgets récurrents (créés avant les périodes fixes) — Android `budget_period_*`.
+    var displayName: String {
+        switch self {
+        case .weekly: return DomainDisplay.localized("budget.period.weekly")
+        case .monthly: return DomainDisplay.localized("budget.period.monthly")
+        }
+    }
+}

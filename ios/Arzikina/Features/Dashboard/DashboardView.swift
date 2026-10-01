@@ -5,7 +5,7 @@ import SwiftUI
 /// continu à partir de la base locale (saisies et synchronisation). « Tirer pour actualiser »
 /// lance une synchronisation.
 ///
-/// Les budgets arriveront avec leur propre étape ; la carte reste annoncée en attendant.
+/// La carte Budget met en avant le budget le plus urgent et mène à la liste des budgets.
 struct DashboardView: View {
 
     @Environment(SessionModel.self) private var session
@@ -17,6 +17,8 @@ struct DashboardView: View {
     @State private var model = DashboardViewModel()
     @State private var transactionForm: TransactionFormRoute?
     @State private var isShowingAllTransactions = false
+    @State private var isShowingBudgets = false
+    @State private var budgetForm: BudgetFormRoute?
 
     var body: some View {
         ScrollView {
@@ -38,9 +40,13 @@ struct DashboardView: View {
                         onSelect: { item in transactionForm = .edit(item.transaction) },
                         onSeeAll: { isShowingAllTransactions = true }
                     )
-                }
 
-                UpcomingSectionCard(titleKey: "dashboard.budgets", systemImage: "chart.bar.fill")
+                    BudgetPreviewCard(
+                        featured: model.featuredBudget,
+                        onSeeAll: { isShowingBudgets = true },
+                        onCreate: { budgetForm = .create }
+                    )
+                }
             }
             .padding()
             .animation(reduceMotion ? nil : .easeInOut(duration: 0.25), value: model.snapshot)
@@ -61,6 +67,10 @@ struct DashboardView: View {
         .navigationDestination(isPresented: $isShowingAllTransactions) {
             TransactionsView()
         }
+        .navigationDestination(isPresented: $isShowingBudgets) {
+            BudgetsView()
+        }
+        .budgetFormSheet($budgetForm, session: session)
         .refreshable {
             await session.sync?.refresh()
         }
@@ -71,6 +81,10 @@ struct DashboardView: View {
             let month = observationKey.month
             await model.observe(space.dashboard, monthStart: month.start, monthEnd: month.end)
         }
+        .task(id: observationKey) {
+            guard let space = session.dataSpace else { return }
+            await model.observeBudgets(space.budgets, today: observationKey.today, calendar: ArzikinaCalendar.current)
+        }
     }
 
     private var firstName: String? {
@@ -80,6 +94,7 @@ struct DashboardView: View {
     private struct ObservationKey: Equatable {
         let space: ObjectIdentifier?
         let month: Month
+        let today: CalendarDay
         struct Month: Equatable {
             let start: EpochMillis
             let end: EpochMillis
@@ -94,7 +109,8 @@ struct DashboardView: View {
         )
         return ObservationKey(
             space: session.dataSpace.map(ObjectIdentifier.init),
-            month: .init(start: interval.start, end: interval.end)
+            month: .init(start: interval.start, end: interval.end),
+            today: .today()
         )
     }
 }

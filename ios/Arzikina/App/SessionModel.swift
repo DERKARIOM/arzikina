@@ -62,9 +62,16 @@ final class SessionModel {
         }
     }
 
-    /// Appelé par les écrans de connexion/inscription une fois le compte authentifié.
+    /// Appelé par l'écran de connexion une fois le compte authentifié.
     func didAuthenticate(_ session: AuthSession) {
         signIn(session)
+    }
+
+    /// Appelé par l'écran d'inscription : le compte serveur est NEUF, ses comptes et catégories
+    /// par défaut sont créés (comme Android). Jamais à la connexion, où ils viendraient en double
+    /// de la synchronisation.
+    func didRegister(_ session: AuthSession) {
+        signIn(session, isNewAccount: true)
     }
 
     /// Ferme la base locale (le fichier reste sur l'iPhone) et oublie la session.
@@ -97,17 +104,22 @@ final class SessionModel {
         openSpace(for: session)
     }
 
-    private func signIn(_ session: AuthSession) {
+    private func signIn(_ session: AuthSession, isNewAccount: Bool = false) {
         sessionExpired = false
         if dataSpace?.userId != session.userId {
             closeSpace()
-            openSpace(for: session)
+            openSpace(for: session, seedingDefaults: isNewAccount)
         }
         state = .signedIn(session)
     }
 
-    private func openSpace(for session: AuthSession) {
+    private func openSpace(for session: AuthSession, seedingDefaults: Bool = false) {
         let opened = openDataSpace(session)
+        if seedingDefaults {
+            // Avant le démarrage de la synchronisation : le premier envoi les contient. Un échec
+            // n'empêche pas d'utiliser l'app (l'utilisateur peut créer ses comptes lui-même).
+            _ = try? opened.space.seedDefaultDataForNewAccount()
+        }
         dataSpace = opened.space
         isDataPersistent = opened.isPersistent
         if let engine = makeSyncEngine(opened.space) {

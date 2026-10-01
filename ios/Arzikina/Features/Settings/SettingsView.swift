@@ -50,6 +50,14 @@ struct SettingsView: View {
                 }
             }
 
+            Section("settings.section.budget_finance") {
+                NavigationLink {
+                    BudgetsView()
+                } label: {
+                    SettingsRow(titleKey: "settings.budgets", subtitleKey: "settings.budgets_subtitle", systemImage: "chart.bar")
+                }
+            }
+
             if let sync = session.sync {
                 SyncSection(sync: sync)
             }

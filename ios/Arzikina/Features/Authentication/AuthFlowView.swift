@@ -6,18 +6,25 @@ struct AuthFlowView: View {
 
     @State private var loginModel: LoginViewModel
     private let repository: AuthRepository
-    private let onAuthenticated: (AuthSession) -> Void
+    private let onRegistered: (AuthSession) -> Void
 
-    init(repository: AuthRepository, sessionExpired: Bool = false, onAuthenticated: @escaping (AuthSession) -> Void) {
+    /// [onAuthenticated] : connexion à un compte existant ; [onRegistered] : compte créé à
+    /// l'instant (ses données par défaut sont alors créées, voir `SessionModel.didRegister`).
+    init(
+        repository: AuthRepository,
+        sessionExpired: Bool = false,
+        onAuthenticated: @escaping (AuthSession) -> Void,
+        onRegistered: @escaping (AuthSession) -> Void
+    ) {
         self.repository = repository
-        self.onAuthenticated = onAuthenticated
+        self.onRegistered = onRegistered
         _loginModel = State(initialValue: LoginViewModel(repository: repository, sessionExpired: sessionExpired, onAuthenticated: onAuthenticated))
     }
 
     var body: some View {
         NavigationStack {
             LoginView(model: loginModel) {
-                RegisterView(model: RegisterViewModel(repository: repository, onAuthenticated: onAuthenticated))
+                RegisterView(model: RegisterViewModel(repository: repository, onAuthenticated: onRegistered))
             }
         }
     }
