@@ -34,6 +34,9 @@ internal object DefaultCategories {
         // Revenus
         category(SystemCategoryKey.SALARY.canonicalName, CategoryIcon.SALARY, 0xFF006C4FL, TransactionType.INCOME, now, userId),
         category(SystemCategoryKey.OTHER_INCOME.canonicalName, CategoryIcon.OTHER, 0xFF64748BL, TransactionType.INCOME, now, userId),
+        // Cadeaux reçus (ex. emprunt transformé en cadeau) : même nom/icône/couleur que « Cadeaux »
+        // côté dépenses, voir SystemCategoryKey.GIFTS_RECEIVED.
+        category(SystemCategoryKey.GIFTS_RECEIVED.canonicalName, CategoryIcon.GIFTS, 0xFFEC4899L, TransactionType.INCOME, now, userId),
 
         // Dépenses
         category(SystemCategoryKey.FOOD.canonicalName, CategoryIcon.FOOD, 0xFFF59E0BL, TransactionType.EXPENSE, now, userId),

@@ -136,6 +136,14 @@ const ENTITY_CONFIGS = [
             ['db' => 'description', 'payload' => 'description', 'type' => 'string', 'nullable' => false],
             ['db' => 'status', 'payload' => 'status', 'type' => 'string', 'nullable' => false],
             ['db' => 'transaction_id', 'payload' => 'transactionSyncId', 'type' => 'string', 'nullable' => false],
+            // « Transformer en cadeau » (migration 008) : part du reste offerte, transaction cadeau
+            // liée (UUID, SANS FOREIGN KEY — même raisonnement que `transaction_id`) et date de la
+            // transformation. Non nullable avec défaut 0 pour `gifted_amount` : un client qui
+            // n'envoie pas encore ce champ (ancienne version) conserve la valeur actuelle en
+            // UPDATE (voir `push.php`) et obtient 0 en CREATE.
+            ['db' => 'gifted_amount', 'payload' => 'giftedAmount', 'type' => 'int', 'nullable' => false],
+            ['db' => 'gift_transaction_id', 'payload' => 'giftTransactionSyncId', 'type' => 'string', 'nullable' => true],
+            ['db' => 'gifted_at', 'payload' => 'giftedAt', 'type' => 'int', 'nullable' => true],
         ],
     ],
     // Étape 19 : `LoanPayment` référence trois AUTRES lignes synchronisées (prêt/emprunt parent,

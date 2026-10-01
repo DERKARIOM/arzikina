@@ -231,7 +231,13 @@ data class LoanDto(
     /** Voir `LoanEntity.transactionId` : id de la transaction de décaissement. Réécrit vers le
      * nouvel id de cette transaction à l'import (voir `LoanDto.remapIds`/`BackupRepositoryImpl`,
      * qui insèrent les transactions avant les prêts précisément pour connaître cette correspondance). */
-    val transactionId: Long
+    val transactionId: Long,
+    /** « Transformer en cadeau » : valeurs par défaut pour rester compatible avec les sauvegardes
+     * créées avant cette fonctionnalité (prêt/emprunt jamais transformé). [giftTransactionId] est
+     * réécrit comme [transactionId] à l'import. */
+    val giftedAmount: Long = 0L,
+    val giftTransactionId: Long? = null,
+    val giftedAt: Long? = null
 )
 
 @Serializable

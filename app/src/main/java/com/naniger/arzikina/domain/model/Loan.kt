@@ -37,6 +37,16 @@ package com.naniger.arzikina.domain.model
  * TOUJOURS renseigné, un [Loan] n'existe que si sa transaction a été créée avec succès dans la même
  * opération (voir `LoanRepository.saveLoan`). Distinct des transactions de remboursement (voir
  * [LoanPayment.transactionId]), qui ont chacune leur propre transaction.
+ * @param giftedAmount part du solde restant transformée en cadeau (voir « Transformer en cadeau ») —
+ * 0 tant que le prêt/emprunt n'a pas été transformé. Après transformation :
+ * `amountRepaid + giftedAmount == amount`, [remainingAmount] vaut 0 et [status] vaut
+ * [LoanStatus.GIFTED]. Le montant historique [amount] n'est JAMAIS modifié (traçabilité).
+ * @param giftTransactionId id de la [Transaction] « Cadeaux » qui porte [giftedAmount] — `null` tant
+ * que le prêt/emprunt n'a pas été transformé. Égal à [transactionId] quand rien n'avait été
+ * remboursé (la transaction de décaissement est alors reclassée sur place, sans nouvelle ligne).
+ * Comme [transactionId], pas de contrainte de clé étrangère SQL.
+ * @param giftedAt instant de la transformation en cadeau (`null` sinon) — distinct de la date de la
+ * transaction cadeau, qui conserve la date d'origine du prêt/emprunt ([startDate]).
  * @param id 0L tant que le prêt/emprunt n'a pas encore été enregistré en base.
  */
 data class Loan(
@@ -56,5 +66,16 @@ data class Loan(
     val status: LoanStatus,
     val createdAt: Long,
     val updatedAt: Long,
-    val transactionId: Long
+    val transactionId: Long,
+    val giftedAmount: Long = 0L,
+    val giftTransactionId: Long? = null,
+    val giftedAt: Long? = null
 )
+
+/**
+ * Statut réel à l'instant [nowEpochMillis] (voir [computeLoanStatus]) — point d'entrée à privilégier
+ * partout dans l'application : il transmet TOUJOURS [Loan.giftedAmount], qu'un appel direct à
+ * [computeLoanStatus] pourrait oublier.
+ */
+fun Loan.liveStatus(nowEpochMillis: Long): LoanStatus =
+    computeLoanStatus(amount, amountRepaid, startDate, dueDate, nowEpochMillis, giftedAmount)

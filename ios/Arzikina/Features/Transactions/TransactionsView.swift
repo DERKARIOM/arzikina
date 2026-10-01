@@ -14,7 +14,7 @@ struct TransactionsView: View {
     @State private var model = TransactionsViewModel()
     @State private var transactionForm: TransactionFormRoute?
     @State private var isShowingFilters = false
-    @State private var pendingDeletion: Transaction?
+    @State private var pendingDeletion: ArzikinaDomain.Transaction?
     @State private var deletionAlert: DeletionAlert?
 
     private enum DeletionAlert {
@@ -29,8 +29,48 @@ struct TransactionsView: View {
     }
 
     var body: some View {
+        navigationContent
+            .confirmationDialog(
+                "transactions.delete.title",
+                isPresented: Binding(get: { pendingDeletion != nil }, set: { if !$0 { pendingDeletion = nil } }),
+                titleVisibility: .visible,
+                presenting: pendingDeletion
+            ) { transaction in
+                Button("transactions.delete", role: .destructive) { delete(transaction) }
+            } message: { _ in
+                Text("transactions.delete.message")
+            }
+            .alert(
+                deletionAlertTitle,
+                isPresented: Binding(get: { deletionAlert != nil }, set: { if !$0 { deletionAlert = nil } })
+            ) {
+                Button("common.ok", role: .cancel) {}
+            }
+            .refreshable {
+                await session.sync?.refresh()
+            }
+            .task(id: spaceId) {
+                guard let space = session.dataSpace else { return }
+                await model.observeLedger(space.ledger)
+            }
+            .task(id: spaceId) {
+                guard let space = session.dataSpace else { return }
+                await model.observeAccounts(space.accounts)
+            }
+            .task(id: spaceId) {
+                guard let space = session.dataSpace else { return }
+                await model.observeCategories(space.categories)
+            }
+            .onChange(of: scenePhase) { _, phase in
+                if phase == .active { model.refreshPeriod() }
+            }
+    }
+
+    /// Liste, titre, recherche, barre d'outils et feuilles. Séparé de `body` pour que le
+    /// compilateur vérifie deux expressions courtes plutôt qu'une très longue.
+    private var navigationContent: some View {
         @Bindable var model = model
-        content
+        return content
             .navigationTitle("transactions.title")
             .searchable(text: $model.filters.query, prompt: Text("transactions.search_placeholder"))
             .toolbar {
@@ -57,40 +97,10 @@ struct TransactionsView: View {
                     .presentationDetents([.medium, .large])
             }
             .transactionFormSheet($transactionForm, session: session)
-            .confirmationDialog(
-                "transactions.delete.title",
-                isPresented: Binding(get: { pendingDeletion != nil }, set: { if !$0 { pendingDeletion = nil } }),
-                titleVisibility: .visible,
-                presenting: pendingDeletion
-            ) { transaction in
-                Button("transactions.delete", role: .destructive) { delete(transaction) }
-            } message: { _ in
-                Text("transactions.delete.message")
-            }
-            .alert(
-                deletionAlert?.titleKey ?? "",
-                isPresented: Binding(get: { deletionAlert != nil }, set: { if !$0 { deletionAlert = nil } })
-            ) {
-                Button("common.ok", role: .cancel) {}
-            }
-            .refreshable {
-                await session.sync?.refresh()
-            }
-            .task(id: spaceId) {
-                guard let space = session.dataSpace else { return }
-                await model.observeLedger(space.ledger)
-            }
-            .task(id: spaceId) {
-                guard let space = session.dataSpace else { return }
-                await model.observeAccounts(space.accounts)
-            }
-            .task(id: spaceId) {
-                guard let space = session.dataSpace else { return }
-                await model.observeCategories(space.categories)
-            }
-            .onChange(of: scenePhase) { _, phase in
-                if phase == .active { model.refreshPeriod() }
-            }
+    }
+
+    private var deletionAlertTitle: LocalizedStringKey {
+        deletionAlert?.titleKey ?? "transactions.delete.failed"
     }
 
     private var spaceId: ObjectIdentifier? {
@@ -179,7 +189,7 @@ struct TransactionsView: View {
     // MARK: - Suppression
 
     /// Une transaction de prêt n'est jamais proposée à la suppression (elle se gère depuis le prêt).
-    private func requestDeletion(_ transaction: Transaction) {
+    private func requestDeletion(_ transaction: ArzikinaDomain.Transaction) {
         guard let space = session.dataSpace else { return }
         Task {
             let isLinked = (try? await space.transactions.isLinkedToLoan(id: transaction.id)) ?? false
@@ -191,7 +201,7 @@ struct TransactionsView: View {
         }
     }
 
-    private func delete(_ transaction: Transaction) {
+    private func delete(_ transaction: ArzikinaDomain.Transaction) {
         guard let space = session.dataSpace else { return }
         Task {
             switch await model.delete(transaction, using: space.transactions) {

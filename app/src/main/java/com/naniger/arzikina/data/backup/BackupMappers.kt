@@ -291,7 +291,10 @@ fun LoanEntity.toDto() = LoanDto(
     status = status.name,
     createdAt = createdAt,
     updatedAt = updatedAt,
-    transactionId = transactionId
+    transactionId = transactionId,
+    giftedAmount = giftedAmount,
+    giftTransactionId = giftTransactionId,
+    giftedAt = giftedAt
 )
 
 fun LoanDto.toEntity(userId: Long) = LoanEntity(
@@ -312,7 +315,10 @@ fun LoanDto.toEntity(userId: Long) = LoanEntity(
     status = runCatching { LoanStatus.valueOf(status) }.getOrDefault(LoanStatus.ONGOING),
     createdAt = createdAt,
     updatedAt = updatedAt,
-    transactionId = transactionId
+    transactionId = transactionId,
+    giftedAmount = giftedAmount,
+    giftTransactionId = giftTransactionId,
+    giftedAt = giftedAt
 )
 
 /** Voir la doc de tête de ce fichier. `personId`/`accountId`/`transactionId` tous obligatoires
@@ -327,7 +333,8 @@ fun LoanDto.remapIds(
     id = newId,
     personId = personIdMap.getValue(personId),
     accountId = accountIdMap.getValue(accountId),
-    transactionId = transactionIdMap.getValue(transactionId)
+    transactionId = transactionIdMap.getValue(transactionId),
+    giftTransactionId = giftTransactionId?.let { transactionIdMap.getValue(it) }
 )
 
 fun LoanPaymentEntity.toDto() = LoanPaymentDto(

@@ -20,7 +20,10 @@ fun LoanEntity.toDomain(): Loan = Loan(
     status = status,
     createdAt = createdAt,
     updatedAt = updatedAt,
-    transactionId = transactionId
+    transactionId = transactionId,
+    giftedAmount = giftedAmount,
+    giftTransactionId = giftTransactionId,
+    giftedAt = giftedAt
 )
 
 /** [userId] : fourni par le repository, jamais par l'appelant. */
@@ -42,5 +45,8 @@ fun Loan.toEntity(userId: Long): LoanEntity = LoanEntity(
     status = status,
     createdAt = createdAt,
     updatedAt = updatedAt,
-    transactionId = transactionId
+    transactionId = transactionId,
+    giftedAmount = giftedAmount,
+    giftTransactionId = giftTransactionId,
+    giftedAt = giftedAt
 )

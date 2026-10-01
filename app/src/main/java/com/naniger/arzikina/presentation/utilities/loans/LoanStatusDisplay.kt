@@ -34,4 +34,5 @@ fun loanStatusDisplay(status: LoanStatus, type: LoanType): LoanStatusDisplay = w
     }
     LoanStatus.OVERDUE -> LoanStatusDisplay(R.string.loans_status_overdue, R.color.expense_red)
     LoanStatus.UPCOMING -> LoanStatusDisplay(R.string.loans_status_upcoming, R.color.arzikina_outline)
+    LoanStatus.GIFTED -> LoanStatusDisplay(R.string.loans_status_gifted, R.color.loan_gifted_color)
 }

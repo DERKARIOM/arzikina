@@ -101,6 +101,7 @@ class LoanStatisticsFragment : Fragment(R.layout.fragment_loan_statistics) {
             LoanStatus.REPAID -> R.color.loan_lent_color
             LoanStatus.OVERDUE -> R.color.expense_red
             LoanStatus.UPCOMING -> R.color.arzikina_outline
+            LoanStatus.GIFTED -> R.color.loan_gifted_color
         }
         return ContextCompat.getColor(requireContext(), colorRes)
     }

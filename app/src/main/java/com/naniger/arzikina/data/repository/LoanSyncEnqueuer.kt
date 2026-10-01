@@ -63,7 +63,10 @@ class LoanSyncEnqueuer @Inject constructor(
             status = entity.status.name,
             transactionSyncId = resolveTransactionSyncId(entity.transactionId, userId),
             createdAt = entity.createdAt,
-            updatedAt = entity.updatedAt
+            updatedAt = entity.updatedAt,
+            giftedAmount = entity.giftedAmount,
+            giftTransactionSyncId = entity.giftTransactionId?.let { resolveTransactionSyncId(it, userId) },
+            giftedAt = entity.giftedAt
         )
         syncQueueEnqueuer.enqueue(
             entityType = "loans",

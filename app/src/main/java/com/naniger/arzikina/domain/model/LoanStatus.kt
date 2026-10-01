@@ -26,8 +26,18 @@ enum class LoanStatus {
     OVERDUE,
 
     /** [Loan.startDate] pas encore atteinte (prêt/emprunt convenu mais pas encore débuté). */
-    UPCOMING
+    UPCOMING,
+
+    /**
+     * Le solde restant a été transformé en cadeau (voir [Loan.giftedAmount]) — statut FINAL, comme
+     * [REPAID] : la dette est éteinte, plus aucun remboursement n'est attendu.
+     */
+    GIFTED
 }
+
+/** `true` pour un statut final ([LoanStatus.REPAID]/[LoanStatus.GIFTED]) : la dette est éteinte. */
+val LoanStatus.isSettled: Boolean
+    get() = this == LoanStatus.REPAID || this == LoanStatus.GIFTED
 
 /**
  * Calcule le statut réel d'un prêt/emprunt à l'instant [nowEpochMillis], à partir de ses seules
@@ -35,6 +45,13 @@ enum class LoanStatus {
  * [com.naniger.arzikina.util.CardInputFormatter]. [REPAID] est vérifié EN PREMIER : un prêt totalement
  * remboursé reste [REPAID] même si sa date d'échéance est dépassée (le retard n'a plus de sens
  * une fois la dette éteinte).
+ *
+ * [LoanStatus.GIFTED] est vérifié AVANT [REPAID] : un prêt dont le reste a été offert
+ * ([giftedAmount] > 0) reste « transformé en cadeau », même si `amountRepaid + giftedAmount`
+ * égale [amount] (ce qui est toujours le cas après une transformation).
+ *
+ * [giftedAmount] a une valeur par défaut (0) pour ne pas casser les appelants historiques ; dans
+ * le code applicatif, préférer [Loan.liveStatus], qui ne peut pas l'oublier.
  *
  * Recalculée à CHAQUE affichage (voir les écrans `presentation/utilities/loans`), pas seulement à
  * l'écriture : sinon un prêt qui franchit son échéance sans aucune action utilisateur resterait
@@ -46,8 +63,10 @@ fun computeLoanStatus(
     amountRepaid: Long,
     startDate: Long,
     dueDate: Long,
-    nowEpochMillis: Long
+    nowEpochMillis: Long,
+    giftedAmount: Long = 0L
 ): LoanStatus = when {
+    giftedAmount > 0L -> LoanStatus.GIFTED
     amountRepaid >= amount -> LoanStatus.REPAID
     nowEpochMillis < startDate -> LoanStatus.UPCOMING
     isPastDueDay(dueDate, nowEpochMillis) -> LoanStatus.OVERDUE

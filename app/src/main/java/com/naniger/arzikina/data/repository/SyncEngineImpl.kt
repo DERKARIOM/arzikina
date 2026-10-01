@@ -926,6 +926,12 @@ class SyncEngineImpl @Inject constructor(
         val personId = personDao.getBySyncId(state.personSyncId)?.id ?: return
         val accountId = accountDao.getBySyncId(state.accountSyncId)?.id ?: return
         val transactionId = transactionDao.getBySyncId(state.transactionSyncId)?.id ?: return
+        // Transaction cadeau (« Transformer en cadeau ») : même règle que les autres références —
+        // annoncée mais pas encore connue sur cet appareil → ligne ignorée pour ce pull, elle sera
+        // réappliquée au suivant (`transactions` est toujours traité AVANT `loans`).
+        val giftTransactionId = state.giftTransactionSyncId?.let { giftSyncId ->
+            transactionDao.getBySyncId(giftSyncId)?.id ?: return
+        }
 
         loanDao.upsert(
             LoanEntity(
@@ -947,6 +953,9 @@ class SyncEngineImpl @Inject constructor(
                 createdAt = state.createdAt,
                 updatedAt = state.updatedAt,
                 transactionId = transactionId,
+                giftedAmount = state.giftedAmount,
+                giftTransactionId = giftTransactionId,
+                giftedAt = state.giftedAt,
                 syncId = state.id,
                 deletedAt = state.deletedAt,
                 version = state.version

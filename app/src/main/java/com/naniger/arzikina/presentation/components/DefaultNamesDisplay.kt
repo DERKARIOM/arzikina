@@ -45,6 +45,7 @@ val SystemCategoryKey.labelRes: Int
         SystemCategoryKey.HEALTH -> R.string.category_default_health
         SystemCategoryKey.SHOPPING -> R.string.category_default_shopping
         SystemCategoryKey.GIFTS -> R.string.category_default_gifts
+        SystemCategoryKey.GIFTS_RECEIVED -> R.string.category_default_gifts_received
         SystemCategoryKey.INTERNET -> R.string.category_default_internet
         SystemCategoryKey.WATER -> R.string.category_default_water
         SystemCategoryKey.ELECTRICITY -> R.string.category_default_electricity

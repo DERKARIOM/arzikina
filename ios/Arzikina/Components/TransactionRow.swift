@@ -20,7 +20,7 @@ struct TransactionRow: View {
     let item: TransactionListItem
     var style: Style = .compact
 
-    private var transaction: Transaction { item.transaction }
+    private var transaction: ArzikinaDomain.Transaction { item.transaction }
     private var isTransfer: Bool { transaction.type == .transfer }
 
     var body: some View {
@@ -112,13 +112,13 @@ struct TransactionRow: View {
 #Preview {
     List {
         TransactionRow(item: TransactionListItem(
-            transaction: Transaction(id: "1", amount: 250_000, type: .expense, accountId: "a", categoryId: "c", date: 1_727_000_000_000, paymentMethod: .mobileMoney, feeTransactionId: "f"),
+            transaction: ArzikinaDomain.Transaction(id: "1", amount: 250_000, type: .expense, accountId: "a", categoryId: "c", date: 1_727_000_000_000, paymentMethod: .mobileMoney, feeTransactionId: "f"),
             account: Account(id: "a", name: "Mobile Money", currencyCode: "XOF"),
             category: ArzikinaDomain.Category(id: "c", name: "Nourriture", icon: .food, colorArgb: 0xFFF5_9E0B, type: .expense),
             feeAmount: 5_000
         ))
         TransactionRow(item: TransactionListItem(
-            transaction: Transaction(id: "2", amount: 1_000_000, type: .transfer, accountId: "a", transferAccountId: "b", date: 1_727_000_000_000),
+            transaction: ArzikinaDomain.Transaction(id: "2", amount: 1_000_000, type: .transfer, accountId: "a", transferAccountId: "b", date: 1_727_000_000_000),
             account: Account(id: "a", name: "Espèces", currencyCode: "XOF")
         ))
     }

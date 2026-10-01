@@ -63,37 +63,47 @@ struct AccountDetailView: View {
                 Text("account.detail.missing.message")
             }
         case .loaded(let detail):
-            List {
-                Section {
-                    header(detail.summary)
-                        .listRowInsets(EdgeInsets())
-                        .listRowBackground(Color.clear)
-                }
+            transactionsList(detail)
+        }
+    }
 
-                if model.sections.isEmpty {
+    /// Carte du compte puis ses transactions par jour (fonction séparée pour garder `content`
+    /// simple à vérifier pour le compilateur).
+    private func transactionsList(_ detail: AccountDetail) -> some View {
+        List {
+            Section {
+                header(detail.summary)
+                    .listRowInsets(EdgeInsets())
+                    .listRowBackground(Color.clear)
+            }
+
+            if model.sections.isEmpty {
+                Section {
+                    Text("account.detail.empty")
+                        .foregroundStyle(.secondary)
+                }
+            } else {
+                ForEach(model.sections, id: \.day) { section in
                     Section {
-                        Text("account.detail.empty")
-                            .foregroundStyle(.secondary)
-                    }
-                } else {
-                    ForEach(model.sections, id: \.day) { section in
-                        Section {
-                            ForEach(section.items) { item in
-                                Button {
-                                    transactionForm = .edit(item.transaction)
-                                } label: {
-                                    TransactionRow(item: item, style: .grouped)
-                                }
-                                .buttonStyle(.plain)
-                            }
-                        } header: {
-                            DayHeader(day: section.day)
+                        ForEach(section.items) { item in
+                            transactionButton(item)
                         }
+                    } header: {
+                        DayHeader(day: section.day)
                     }
                 }
             }
-            .listStyle(.insetGrouped)
         }
+        .listStyle(.insetGrouped)
+    }
+
+    private func transactionButton(_ item: TransactionListItem) -> some View {
+        Button {
+            transactionForm = .edit(item.transaction)
+        } label: {
+            TransactionRow(item: item, style: .grouped)
+        }
+        .buttonStyle(.plain)
     }
 
     @ViewBuilder

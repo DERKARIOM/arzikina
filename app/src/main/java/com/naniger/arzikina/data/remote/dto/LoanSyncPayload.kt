@@ -36,7 +36,14 @@ data class LoanSyncPayload(
     val status: String,
     val transactionSyncId: String,
     val createdAt: Long,
-    val updatedAt: Long
+    val updatedAt: Long,
+    /** « Transformer en cadeau » (migration serveur 008) — voir `Loan.giftedAmount`. Toujours
+     * envoyé (0 si jamais transformé). */
+    val giftedAmount: Long,
+    /** `syncId` de la transaction cadeau (`Loan.giftTransactionId`), `null` explicite tant que le
+     * prêt/emprunt n'a pas été transformé — même raisonnement que [reasonCustomText]. */
+    val giftTransactionSyncId: String?,
+    val giftedAt: Long?
 )
 
 /**
@@ -65,7 +72,12 @@ data class LoanServerStateDto(
     val createdAt: Long,
     val updatedAt: Long,
     val deletedAt: Long? = null,
-    val version: Int
+    val version: Int,
+    /** Valeurs par défaut : un serveur pas encore migré (008) ne renvoie pas ces champs — la ligne
+     * reste alors lisible, comme un prêt/emprunt jamais transformé. */
+    val giftedAmount: Long = 0L,
+    val giftTransactionSyncId: String? = null,
+    val giftedAt: Long? = null
 )
 
 /**

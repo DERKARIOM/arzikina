@@ -128,7 +128,7 @@ class LoanRepositoryImpl @Inject constructor(
             } else {
                 val existing = loanDao.getById(loan.id, userId) ?: error("Prêt/emprunt introuvable.")
                 val now = System.currentTimeMillis()
-                val status = computeLoanStatus(loan.amount, existing.amountRepaid, loan.startDate, loan.dueDate, now)
+                val status = computeLoanStatus(loan.amount, existing.amountRepaid, loan.startDate, loan.dueDate, now, existing.giftedAmount)
                 // La transaction de décaissement déjà créée (voir la doc de [Loan.transactionId])
                 // DOIT rester synchronisée avec les champs modifiables ici (montant, compte, date,
                 // description) — sans ceci, "Détail du compte"/"Transactions" continuerait
@@ -156,10 +156,15 @@ class LoanRepositoryImpl @Inject constructor(
                 }
                 val loanEntity = loan.copy(
                     amountRepaid = existing.amountRepaid,
-                    remainingAmount = loan.amount - existing.amountRepaid,
+                    remainingAmount = loan.amount - existing.amountRepaid - existing.giftedAmount,
                     status = status,
                     transactionId = existing.transactionId,
-                    updatedAt = now
+                    updatedAt = now,
+                    // Champs « cadeau » : uniquement gérés par la transformation en cadeau, jamais
+                    // par une mise à jour ordinaire — toujours repris de la ligne existante.
+                    giftedAmount = existing.giftedAmount,
+                    giftTransactionId = existing.giftTransactionId,
+                    giftedAt = existing.giftedAt
                 ).toEntity(userId).copy(
                     syncId = existing.syncId ?: UUID.randomUUID().toString(),
                     deletedAt = existing.deletedAt,
@@ -250,10 +255,10 @@ class LoanRepositoryImpl @Inject constructor(
             pendingTransactionOps += transactionEntity.copy(id = transactionId) to SyncOperation.CREATE
 
             val newAmountRepaid = loan.amountRepaid + payment.amount
-            val newStatus = computeLoanStatus(loan.amount, newAmountRepaid, loan.startDate, loan.dueDate, now)
+            val newStatus = computeLoanStatus(loan.amount, newAmountRepaid, loan.startDate, loan.dueDate, now, loan.giftedAmount)
             val updatedLoan = loan.copy(
                 amountRepaid = newAmountRepaid,
-                remainingAmount = loan.amount - newAmountRepaid,
+                remainingAmount = loan.amount - newAmountRepaid - loan.giftedAmount,
                 status = newStatus,
                 updatedAt = now,
                 syncId = loan.syncId ?: UUID.randomUUID().toString()
@@ -301,10 +306,10 @@ class LoanRepositoryImpl @Inject constructor(
             ) to SyncOperation.DELETE
 
             val newAmountRepaid = loan.amountRepaid - payment.amount
-            val newStatus = computeLoanStatus(loan.amount, newAmountRepaid, loan.startDate, loan.dueDate, now)
+            val newStatus = computeLoanStatus(loan.amount, newAmountRepaid, loan.startDate, loan.dueDate, now, loan.giftedAmount)
             val updatedLoan = loan.copy(
                 amountRepaid = newAmountRepaid,
-                remainingAmount = loan.amount - newAmountRepaid,
+                remainingAmount = loan.amount - newAmountRepaid - loan.giftedAmount,
                 status = newStatus,
                 updatedAt = now,
                 syncId = loan.syncId ?: UUID.randomUUID().toString()

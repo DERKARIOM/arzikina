@@ -578,6 +578,7 @@
     <string name="loans_status_repaid">Repaid</string>
     <string name="loans_status_overdue">Overdue</string>
     <string name="loans_status_upcoming">Upcoming</string>
+    <string name="loans_status_gifted">Gift</string>
     <string name="loans_empty_title">Nothing recorded</string>
     <string name="loans_empty_message">Add your first loan or borrowing to start tracking it.</string>
     <string name="loans_add_action">Add a loan / borrowing</string>
@@ -824,6 +825,7 @@
     <string name="category_default_health">Health</string>
     <string name="category_default_shopping">Shopping</string>
     <string name="category_default_gifts">Gifts</string>
+    <string name="category_default_gifts_received">Gifts</string>
     <string name="category_default_internet">Internet</string>
     <string name="category_default_water">Water</string>
     <string name="category_default_electricity">Electricity</string>

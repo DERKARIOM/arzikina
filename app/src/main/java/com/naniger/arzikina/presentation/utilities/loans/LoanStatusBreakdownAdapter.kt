@@ -51,6 +51,7 @@ class LoanStatusBreakdownAdapter :
             LoanStatus.REPAID -> R.string.loans_status_repaid
             LoanStatus.OVERDUE -> R.string.loans_status_overdue
             LoanStatus.UPCOMING -> R.string.loans_status_upcoming
+            LoanStatus.GIFTED -> R.string.loans_status_gifted
         }
 
         private fun statusColorRes(status: LoanStatus): Int = when (status) {
@@ -58,6 +59,7 @@ class LoanStatusBreakdownAdapter :
             LoanStatus.REPAID -> R.color.loan_lent_color
             LoanStatus.OVERDUE -> R.color.expense_red
             LoanStatus.UPCOMING -> R.color.arzikina_outline
+            LoanStatus.GIFTED -> R.color.loan_gifted_color
         }
     }
 

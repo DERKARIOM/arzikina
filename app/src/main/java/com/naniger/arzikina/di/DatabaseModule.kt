@@ -54,6 +54,7 @@ import com.naniger.arzikina.data.local.database.MIGRATION_28_29
 import com.naniger.arzikina.data.local.database.MIGRATION_29_30
 import com.naniger.arzikina.data.local.database.MIGRATION_30_31
 import com.naniger.arzikina.data.local.database.MIGRATION_31_32
+import com.naniger.arzikina.data.local.database.MIGRATION_32_33
 import com.naniger.arzikina.util.Constants
 import dagger.Module
 import dagger.Provides
@@ -91,7 +92,7 @@ object DatabaseModule {
                 MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21, MIGRATION_21_22,
                 MIGRATION_22_23, MIGRATION_23_24, MIGRATION_24_25, MIGRATION_25_26,
                 MIGRATION_26_27, MIGRATION_27_28, MIGRATION_28_29, MIGRATION_29_30,
-                MIGRATION_30_31, MIGRATION_31_32
+                MIGRATION_30_31, MIGRATION_31_32, MIGRATION_32_33
             )
             .build()
 

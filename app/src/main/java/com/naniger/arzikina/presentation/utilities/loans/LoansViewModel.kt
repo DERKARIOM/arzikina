@@ -7,7 +7,8 @@ import com.naniger.arzikina.domain.model.CurrencyAmount
 import com.naniger.arzikina.domain.model.Loan
 import com.naniger.arzikina.domain.model.LoanStatus
 import com.naniger.arzikina.domain.model.LoanType
-import com.naniger.arzikina.domain.model.computeLoanStatus
+import com.naniger.arzikina.domain.model.isSettled
+import com.naniger.arzikina.domain.model.liveStatus
 import com.naniger.arzikina.domain.repository.AccountRepository
 import com.naniger.arzikina.domain.repository.LoanRepository
 import com.naniger.arzikina.domain.repository.PersonRepository
@@ -106,7 +107,7 @@ class LoansViewModel @Inject constructor(
         // — ex. un prêt en retard depuis hier qui n'a connu aucune écriture depuis).
         val now = System.currentTimeMillis()
         val liveStatusById = loans.associate {
-            it.id to computeLoanStatus(it.amount, it.amountRepaid, it.startDate, it.dueDate, now)
+            it.id to it.liveStatus(now)
         }
 
         // Actifs (En cours/En retard/À venir) affichés avant les remboursés, comme sur la
@@ -114,7 +115,7 @@ class LoansViewModel @Inject constructor(
         // Chaque prêt garde son élément de liste : le résumé se calcule sur les MÊMES prêts que
         // ceux affichés, sans refaire le filtrage une seconde fois.
         val visible = loans
-            .sortedBy { liveStatusById.getValue(it.id) == LoanStatus.REPAID }
+            .sortedBy { liveStatusById.getValue(it.id).isSettled }
             .map { loan -> loan to loan.toListItem(personNamesById, accountsById, liveStatusById.getValue(loan.id)) }
             .filter { (_, item) -> matchesType(item.type, filters.type) }
             .filter { (_, item) -> matchesStatus(item.status, filters.status) }

@@ -7,7 +7,7 @@ import com.naniger.arzikina.domain.model.CurrencyAmount
 import com.naniger.arzikina.domain.model.Loan
 import com.naniger.arzikina.domain.model.LoanStatus
 import com.naniger.arzikina.domain.model.LoanType
-import com.naniger.arzikina.domain.model.computeLoanStatus
+import com.naniger.arzikina.domain.model.liveStatus
 import com.naniger.arzikina.domain.repository.AccountRepository
 import com.naniger.arzikina.domain.repository.LoanRepository
 import com.naniger.arzikina.domain.repository.PersonRepository
@@ -108,7 +108,7 @@ class LoanStatisticsViewModel @Inject constructor(
         if (totalCount == 0) return emptyList()
         val now = System.currentTimeMillis()
         return loans
-            .groupBy { computeLoanStatus(it.amount, it.amountRepaid, it.startDate, it.dueDate, now) }
+            .groupBy { it.liveStatus(now) }
             .map { (status, group) -> LoanStatusBreakdownItem(status, group.size, group.size.toFloat() / totalCount.toFloat()) }
             .sortedByDescending { it.count }
     }

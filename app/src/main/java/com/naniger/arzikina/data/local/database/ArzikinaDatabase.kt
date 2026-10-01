@@ -149,6 +149,9 @@ import com.naniger.arzikina.data.local.entity.UserServerLinkEntity
  *   `data/repository/LegacySavingsGoalMigrator` (la conversion doit enfiler leur synchronisation).
  * - 32 : « Créer un modèle à partir d'une transaction » — colonne nullable `sourceTransactionId` sur
  *   `transaction_templates` (voir [MIGRATION_31_32]). Aucune modification de `transactions`.
+ * - 33 : « Transformer un prêt/emprunt en cadeau » — colonnes `giftedAmount` (défaut 0),
+ *   `giftTransactionId`, `giftedAt` sur `loans` (voir [MIGRATION_32_33]) + statut `GIFTED`. Aucune
+ *   modification de `transactions`.
  */
 @Database(
     entities = [
@@ -173,7 +176,7 @@ import com.naniger.arzikina.data.local.entity.UserServerLinkEntity
         UserProfilePhotoEntity::class,
         TransactionTemplateEntity::class
     ],
-    version = 32,
+    version = 33,
     exportSchema = true
 )
 @TypeConverters(Converters::class)

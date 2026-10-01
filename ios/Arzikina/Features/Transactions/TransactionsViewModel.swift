@@ -80,7 +80,7 @@ final class TransactionsViewModel {
     // MARK: - Suppression
 
     /// Supprime [transaction] et ses frais ; refusé pour une transaction de prêt.
-    func delete(_ transaction: Transaction, using repository: TransactionRepository) async -> DeletionOutcome {
+    func delete(_ transaction: ArzikinaDomain.Transaction, using repository: TransactionRepository) async -> DeletionOutcome {
         do {
             if try await repository.isLinkedToLoan(id: transaction.id) { return .linkedToLoan }
             try await repository.delete(id: transaction.id)

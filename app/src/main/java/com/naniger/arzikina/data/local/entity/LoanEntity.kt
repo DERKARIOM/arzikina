@@ -62,6 +62,14 @@ data class LoanEntity(
      * toujours renseignée (créée atomiquement avec ce prêt/emprunt). Pas de contrainte
      * `FOREIGN KEY` vers `transactions` (même raisonnement que [LoanPaymentEntity.transactionId]). */
     val transactionId: Long,
+    /** Voir [com.naniger.arzikina.domain.model.Loan.giftedAmount] — `NOT NULL DEFAULT 0` (voir
+     * [com.naniger.arzikina.data.local.database.MIGRATION_32_33]). */
+    val giftedAmount: Long = 0L,
+    /** Voir [com.naniger.arzikina.domain.model.Loan.giftTransactionId] : pas de `FOREIGN KEY`, même
+     * raisonnement que [transactionId]. */
+    val giftTransactionId: Long? = null,
+    /** Voir [com.naniger.arzikina.domain.model.Loan.giftedAt]. */
+    val giftedAt: Long? = null,
     /** UUID partagé Android/API/MySQL pour la synchronisation multi-appareils — additif, voir
      * `docs/sync/AUDIT-ET-ARCHITECTURE-SYNC.md` (section 6.3, option B). `null` tant que cette
      * ligne n'a jamais été envoyée au serveur. */

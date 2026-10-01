@@ -16,7 +16,7 @@ final class TransactionFormViewModel {
     enum Mode {
         /// [presetAccountId] : compte présélectionné (ouverture depuis le détail d'un compte).
         case create(presetAccountId: EntityID?)
-        case edit(Transaction)
+        case edit(ArzikinaDomain.Transaction)
     }
 
     private(set) var draft: TransactionDraft
@@ -32,7 +32,7 @@ final class TransactionFormViewModel {
 
     let isEditing: Bool
 
-    @ObservationIgnored private let existing: Transaction?
+    @ObservationIgnored private let existing: ArzikinaDomain.Transaction?
     @ObservationIgnored private let transactions: TransactionRepository
     @ObservationIgnored private var hasLoadedFee = false
 

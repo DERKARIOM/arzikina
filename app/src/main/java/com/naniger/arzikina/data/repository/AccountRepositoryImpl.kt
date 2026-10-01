@@ -248,10 +248,10 @@ class AccountRepositoryImpl @Inject constructor(
                 softDeleteAndEnqueue(payment.transactionId, userId, now, pendingSyncOps)
                 val recalcNow = System.currentTimeMillis()
                 val newAmountRepaid = (loan.amountRepaid - payment.amount).coerceAtLeast(0L)
-                val newStatus = computeLoanStatus(loan.amount, newAmountRepaid, loan.startDate, loan.dueDate, recalcNow)
+                val newStatus = computeLoanStatus(loan.amount, newAmountRepaid, loan.startDate, loan.dueDate, recalcNow, loan.giftedAmount)
                 val updatedLoan = loan.copy(
                     amountRepaid = newAmountRepaid,
-                    remainingAmount = loan.amount - newAmountRepaid,
+                    remainingAmount = loan.amount - newAmountRepaid - loan.giftedAmount,
                     status = newStatus,
                     updatedAt = recalcNow,
                     syncId = loan.syncId ?: UUID.randomUUID().toString()

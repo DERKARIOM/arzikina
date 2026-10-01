@@ -24,6 +24,10 @@ enum class SystemCategoryKey(val canonicalName: String, val type: TransactionTyp
     HEALTH("Santé", TransactionType.EXPENSE),
     SHOPPING("Shopping", TransactionType.EXPENSE),
     GIFTS("Cadeaux", TransactionType.EXPENSE),
+    /** Cadeau REÇU (ex. emprunt transformé en cadeau) : même nom canonique que [GIFTS], type
+     * INCOME — même principe que [OTHER_INCOME]/[OTHER_EXPENSE] (« Divers »), la paire nom+type
+     * reste unique. */
+    GIFTS_RECEIVED("Cadeaux", TransactionType.INCOME),
     INTERNET("Internet", TransactionType.EXPENSE),
     WATER("Eau", TransactionType.EXPENSE),
     ELECTRICITY("Électricité", TransactionType.EXPENSE),

@@ -882,6 +882,8 @@
     <string name="loans_status_repaid">Remboursé</string>
     <string name="loans_status_overdue">En retard</string>
     <string name="loans_status_upcoming">À venir</string>
+    <!-- Statut final « Transformer en cadeau » (voir LoanStatus.GIFTED). -->
+    <string name="loans_status_gifted">Cadeau</string>
     <string name="loans_empty_title">Aucun enregistrement</string>
     <string name="loans_empty_message">Ajoutez votre premier prêt ou emprunt pour commencer à suivre vos transactions.</string>
     <string name="loans_add_action">Ajouter un prêt / emprunt</string>
@@ -1297,6 +1299,8 @@
     <string name="category_default_health">Santé</string>
     <string name="category_default_shopping">Shopping</string>
     <string name="category_default_gifts">Cadeaux</string>
+    <!-- Cadeaux REÇUS (catégorie de revenu, voir SystemCategoryKey.GIFTS_RECEIVED). -->
+    <string name="category_default_gifts_received">Cadeaux</string>
     <string name="category_default_internet">Internet</string>
     <string name="category_default_water">Eau</string>
     <string name="category_default_electricity">Électricité</string>

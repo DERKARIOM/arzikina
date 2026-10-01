@@ -5,7 +5,7 @@ import SwiftUI
 /// présélectionné) ou modification d'une transaction existante.
 enum TransactionFormRoute: Identifiable {
     case create(presetAccountId: EntityID?)
-    case edit(Transaction)
+    case edit(ArzikinaDomain.Transaction)
 
     var id: String {
         switch self {

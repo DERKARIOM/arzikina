@@ -97,6 +97,8 @@
         dans Arzikina (décision explicite, pas la couleur violette de la maquette d'origine).
     -->
     <color name="loan_lent_color">#FF16A34A</color>
+    <!-- Prêt/emprunt transformé en cadeau (LoanStatus.GIFTED) : même rose que la catégorie « Cadeaux ». -->
+    <color name="loan_gifted_color">#FFEC4899</color>
     <!-- Fond des cartes de résumé (voir item_loan_summary_header.xml) : mêmes teintes que
          ci-dessus mais très assombries, pour rester lisibles en carte "postcard" sombre. -->
     <color name="loan_summary_lent_bg">#1B3226</color>
