@@ -46,10 +46,6 @@ struct RemoteSyncAPI: SyncRemote {
 
     let api: APIClient
 
-    /// Taille maximale d'une page de `pull.php` (`$batchLimit` côté serveur). Sert à savoir si
-    /// une page est « pleine », donc s'il peut rester des lignes à lire.
-    static let pullBatchLimit = 500
-
     func pull(_ type: SyncEntityType, updatedAfter: Int64, token: String) async throws -> PullPage {
         try await api.get(
             "api/sync/pull.php",

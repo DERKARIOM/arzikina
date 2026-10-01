@@ -151,34 +151,24 @@ public actor SyncEngine {
 
     /// Reçoit toutes les pages de [schema] depuis le dernier curseur.
     ///
-    /// PAGINATION — `pull.php` renvoie au plus 500 lignes triées par `updated_at` et un
-    /// `serverTime` capturé AVANT sa requête. Reprendre à `serverTime` après une page PLEINE
-    /// sauterait les lignes restantes (toutes antérieures à `serverTime`). Le moteur reprend donc :
-    /// - page pleine → au `updatedAt` de la DERNIÈRE ligne reçue, moins 1 ms : les lignes de cette
-    ///   même milliseconde non encore reçues seront incluses (celles déjà reçues reviendront une
-    ///   seconde fois, sans effet : l'enregistrement est idempotent) ;
-    /// - page incomplète → à `serverTime` : tout ce qui existait avant la requête a été reçu.
-    /// Aucune modification du serveur n'est nécessaire.
+    /// Pagination : voir `SyncPullCursor` (règle partagée avec Android et le Web).
     private func pull(_ schema: SyncEntitySchema, token: String) async throws -> Int {
         var cursor = try await store.cursor(for: schema.type)
         var received = 0
         for _ in 0..<Self.maxPullPages {
             let page = try await remote.pull(schema.type, updatedAfter: cursor, token: token)
-            let isFull = page.entities.count >= RemoteSyncAPI.pullBatchLimit
-            let next = Self.nextCursor(after: page, current: cursor, isFull: isFull)
+            let isFull = SyncPullCursor.isFullBatch(page.entities.count)
+            let next = SyncPullCursor.next(
+                current: cursor,
+                updatedAts: page.entities.compactMap { $0["updatedAt"]?.int64Value },
+                serverTime: page.serverTime,
+                isFull: isFull
+            )
             received += try await store.applyPulled(page.entities, schema: schema, newCursor: next)
             cursor = next
             if !isFull { break }
         }
         return received
-    }
-
-    static func nextCursor(after page: PullPage, current: Int64, isFull: Bool) -> Int64 {
-        guard isFull else { return max(current, page.serverTime) }
-        let lastUpdatedAt = page.entities.compactMap { $0["updatedAt"]?.int64Value }.max() ?? current
-        // Cas extrême : 500 lignes ou plus partagent la même milliseconde. Reculer d'1 ms ne
-        // ferait plus progresser le curseur (boucle infinie) : on avance quand même.
-        return lastUpdatedAt - 1 > current ? lastUpdatedAt - 1 : max(current + 1, lastUpdatedAt)
     }
 
     // MARK: Erreurs

@@ -90,6 +90,9 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.longOrNull
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -265,6 +268,7 @@ class SyncEngineImpl @Inject constructor(
     /** Voir [SyncEngine.pullRemoteChanges] — chaque type d'entité a son PROPRE curseur
      *  ([SyncCursorStore]), donc son propre appel à [pullEntityType]. */
     override suspend fun pullRemoteChanges(): SyncPullResult {
+        resetCursorsWrittenByOldPullRuleIfSafe()
         var received = 0
         var applied = 0
         SUPPORTED_ENTITY_TYPES.forEach { entityType ->
@@ -286,11 +290,27 @@ class SyncEngineImpl @Inject constructor(
     }
 
     /**
-     * Boucle jusqu'à recevoir un lot VIDE pour [entityType] (plutôt que de s'appuyer sur la
-     * constante "500" du plafond serveur, voir la doc de tête de `pull.php`) : un lot plus petit
-     * que le plafond signifie "tout reçu", et un lot vide déclenché par une relance après un lot
-     * plein exact ne coûte qu'un aller-retour réseau supplémentaire, sans risque de boucle infinie
-     * ni de lecture incomplète.
+     * Correctif de pagination (voir [SyncPullCursor]) : les curseurs écrits par l'ancienne règle ont
+     * pu dépasser des lignes jamais reçues. Ils sont remis à zéro UNE fois, ce qui retélécharge tout
+     * au pull suivant et récupère ces lignes.
+     *
+     * Seulement quand la file d'envoi est VIDE : l'application d'une ligne serveur remplace la
+     * ligne locale, et un retéléchargement complet écraserait sinon une modification locale pas
+     * encore envoyée (le push suivant relirait la version écrasée). Tant que la file n'est pas vide,
+     * la remise à zéro est simplement reportée au pull suivant.
+     */
+    private suspend fun resetCursorsWrittenByOldPullRuleIfSafe() {
+        if (syncCursorStore.isPullRuleUpToDate()) return
+        if (syncQueueDao.countAll() > 0) return
+        syncCursorStore.resetForCurrentPullRule(SUPPORTED_ENTITY_TYPES)
+    }
+
+    /**
+     * Lit [entityType] lot par lot depuis son curseur, avec la règle [SyncPullCursor] : un lot
+     * PLEIN ([SyncPullCursor.SERVER_BATCH_LIMIT] lignes) est suivi d'un autre lot repris au
+     * `updatedAt` de sa dernière ligne moins 1 ms ; un lot incomplet termine la lecture et le
+     * curseur passe à `serverTime`. (Ancienne règle, corrigée : reprise à `serverTime` après chaque
+     * lot, qui sautait toutes les lignes au-delà de la 500ᵉ.)
      *
      * Le curseur ([SyncCursorStore]) avance APRÈS CHAQUE lot appliqué (pas seulement à la fin) :
      * une interruption (perte réseau, app tuée) entre deux lots ne fait jamais retraiter ceux déjà
@@ -329,14 +349,24 @@ class SyncEngineImpl @Inject constructor(
                 // ne bloque jamais le reste du lot, ni les autres types d'entité.
             }
 
-            cursor = response.serverTime
+            val isFullBatch = SyncPullCursor.isFullBatch(response.entities.size)
+            cursor = SyncPullCursor.next(
+                current = cursor,
+                updatedAts = response.entities.mapNotNull { it.updatedAtOrNull() },
+                serverTime = response.serverTime,
+                isFull = isFullBatch
+            )
             syncCursorStore.setLastPulledAt(entityType, cursor)
 
-            if (response.entities.isEmpty()) break
+            if (!isFullBatch) break
         }
 
         return received to applied
     }
+
+    /** `updatedAt` d'une ligne reçue (horloge serveur), `null` si absent ou illisible. */
+    private fun JsonElement.updatedAtOrNull(): Long? =
+        ((this as? JsonObject)?.get("updatedAt") as? JsonPrimitive)?.longOrNull
 
     /** Décode [element] selon [entityType] puis délègue à la fonction d'application dédiée — SEUL
      *  point de dispatch par type d'entité de cette classe (voir la doc de tête). */

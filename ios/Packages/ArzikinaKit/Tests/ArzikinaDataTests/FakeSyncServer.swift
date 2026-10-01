@@ -55,7 +55,7 @@ final class FakeSyncServer: SyncRemote, @unchecked Sendable {
         let page = (rows[type] ?? [:]).values
             .filter { ($0["updatedAt"]?.int64Value ?? 0) > updatedAfter }
             .sorted { ($0["updatedAt"]!.int64Value!, $0["id"]!.stringValue!) < ($1["updatedAt"]!.int64Value!, $1["id"]!.stringValue!) }
-            .prefix(RemoteSyncAPI.pullBatchLimit)
+            .prefix(SyncPullCursor.serverBatchLimit)
         return PullPage(entities: Array(page), serverTime: serverTime)
     }
 

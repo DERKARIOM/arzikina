@@ -3,6 +3,7 @@ package com.naniger.arzikina.data.repository
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import com.naniger.arzikina.di.IoDispatcher
 import com.naniger.arzikina.di.SyncAuthDataStore
@@ -42,5 +43,33 @@ class SyncCursorStore @Inject constructor(
         dataStore.edit { prefs -> prefs[keyFor(entityType)] = serverTime }
     }
 
+    /**
+     * `true` si les curseurs ont été produits par la règle de pagination actuelle
+     * ([SyncPullCursor]). Les curseurs écrits par l'ancienne règle (reprise à `serverTime` après
+     * un lot plein) ont pu dépasser des lignes jamais reçues : ils doivent être remis à zéro une
+     * fois, voir [resetForCurrentPullRule].
+     */
+    suspend fun isPullRuleUpToDate(): Boolean = withContext(ioDispatcher) {
+        (dataStore.data.firstOrNull()?.get(PULL_RULE_VERSION_KEY) ?: 0) >= CURRENT_PULL_RULE_VERSION
+    }
+
+    /**
+     * Remet à zéro le curseur de chaque type de [entityTypes] et note la règle actuelle, dans une
+     * seule écriture : le prochain pull retélécharge tout (sans risque, l'application d'une ligne
+     * serveur est idempotente) et récupère les lignes sautées par l'ancienne règle.
+     */
+    suspend fun resetForCurrentPullRule(entityTypes: Collection<String>) = withContext(ioDispatcher) {
+        dataStore.edit { prefs ->
+            entityTypes.forEach { prefs[keyFor(it)] = 0L }
+            prefs[PULL_RULE_VERSION_KEY] = CURRENT_PULL_RULE_VERSION
+        }
+    }
+
     private fun keyFor(entityType: String) = longPreferencesKey("sync_last_pulled_at_$entityType")
+
+    private companion object {
+        /** 1 (implicite) : reprise à `serverTime` ; 2 : [SyncPullCursor]. */
+        const val CURRENT_PULL_RULE_VERSION = 2
+        val PULL_RULE_VERSION_KEY = intPreferencesKey("sync_pull_cursor_rule_version")
+    }
 }

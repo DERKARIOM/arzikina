@@ -1,5 +1,6 @@
 package com.naniger.arzikina
 
+import com.naniger.arzikina.data.repository.SyncPullCursor
 import com.naniger.arzikina.domain.model.Account
 import com.naniger.arzikina.domain.model.AccountIcon
 import com.naniger.arzikina.domain.model.Budget
@@ -64,6 +65,23 @@ class SharedFixturesTest {
     @After
     fun restoreTimeZone() {
         TimeZone.setDefault(originalTimeZone)
+    }
+
+    // --- Synchronisation ---------------------------------------------------------------------
+
+    @Test
+    fun pullCursor() {
+        val fixture = fixture("pull-cursor.json")
+        assertEquals(fixture.long("serverBatchLimit"), SyncPullCursor.SERVER_BATCH_LIMIT.toLong())
+        fixture.objects("cases").forEach {
+            val next = SyncPullCursor.next(
+                current = it.long("current"),
+                updatedAts = it.getValue("updatedAts").jsonArray.map { value -> value.jsonPrimitive.long },
+                serverTime = it.long("serverTime"),
+                isFull = it.getValue("full").jsonPrimitive.boolean
+            )
+            assertEquals(it.string("name"), it.long("expected"), next)
+        }
     }
 
     // --- Montants ---------------------------------------------------------------------------

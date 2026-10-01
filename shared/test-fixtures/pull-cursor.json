@@ -1,0 +1,13 @@
+{
+  "description": "Curseur `updated_after` du lot suivant de pull.php (lots de 500 lignes triées par updatedAt ; serverTime capturé AVANT la lecture). Lot plein : updatedAt de la dernière ligne moins 1 ms (les ex-aequo sont relus, sans effet). Lot incomplet : serverTime. Le curseur ne recule jamais et progresse toujours après un lot plein.",
+  "serverBatchLimit": 500,
+  "cases": [
+    { "name": "lot incomplet : reprise à serverTime", "current": 0, "updatedAts": [5, 6], "serverTime": 9999, "full": false, "expected": 9999 },
+    { "name": "lot vide : reprise à serverTime", "current": 120, "updatedAts": [], "serverTime": 9999, "full": false, "expected": 9999 },
+    { "name": "horloge serveur en retard : le curseur ne recule pas", "current": 50, "updatedAts": [], "serverTime": 3, "full": false, "expected": 50 },
+    { "name": "lot plein : dernière ligne moins 1 ms", "current": 0, "updatedAts": [10, 20, 30], "serverTime": 9999, "full": true, "expected": 29 },
+    { "name": "lot plein non trié : la plus grande valeur fait foi", "current": 0, "updatedAts": [30, 10, 20], "serverTime": 9999, "full": true, "expected": 29 },
+    { "name": "lot plein entièrement à la même milliseconde : progression forcée", "current": 10, "updatedAts": [11, 11, 11], "serverTime": 9999, "full": true, "expected": 11 },
+    { "name": "lot plein sans aucun updatedAt lisible : repli sur serverTime", "current": 7, "updatedAts": [], "serverTime": 9999, "full": true, "expected": 9999 }
+  ]
+}

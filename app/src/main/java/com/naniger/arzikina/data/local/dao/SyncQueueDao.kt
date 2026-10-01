@@ -36,6 +36,11 @@ interface SyncQueueDao {
     @Query("SELECT COUNT(*) FROM sync_queue WHERE status = :status")
     fun observeCountByStatus(status: SyncStatus): Flow<Int>
 
+    /** Nombre d'entrées de la file, quel que soit leur statut (PENDING, SYNCING ou FAILED) :
+     *  autant de modifications locales pas encore confirmées par le serveur. */
+    @Query("SELECT COUNT(*) FROM sync_queue")
+    suspend fun countAll(): Int
+
     @Query("DELETE FROM sync_queue WHERE id = :id")
     suspend fun deleteById(id: Long)
 

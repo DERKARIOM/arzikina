@@ -273,18 +273,24 @@ final class SyncEngineTests: XCTestCase {
         XCTAssertGreaterThanOrEqual(server.pullRequests.filter { $0.0 == .categories }.count, 3)
     }
 
-    func testNextCursorRules() {
-        func page(_ updatedAts: [Int64], serverTime: Int64 = 9_999) -> PullPage {
-            PullPage(entities: updatedAts.map { ["updatedAt": .int($0)] }, serverTime: serverTime)
+    /// Règle de curseur PARTAGÉE avec Android et le Web (`shared/test-fixtures/pull-cursor.json`).
+    func testPullCursorMatchesSharedFixture() throws {
+        var url = URL(fileURLWithPath: #filePath)
+        for _ in 0..<6 { url.deleteLastPathComponent() }
+        let data = try Data(contentsOf: url.appendingPathComponent("shared/test-fixtures/pull-cursor.json"))
+        let fixture = try XCTUnwrap(try JSONSerialization.jsonObject(with: data) as? [String: Any])
+        XCTAssertEqual((fixture["serverBatchLimit"] as? NSNumber)?.intValue, SyncPullCursor.serverBatchLimit)
+        let cases = try XCTUnwrap(fixture["cases"] as? [[String: Any]])
+        XCTAssertFalse(cases.isEmpty)
+        for item in cases {
+            let next = SyncPullCursor.next(
+                current: (item["current"] as! NSNumber).int64Value,
+                updatedAts: (item["updatedAts"] as! [NSNumber]).map(\.int64Value),
+                serverTime: (item["serverTime"] as! NSNumber).int64Value,
+                isFull: item["full"] as! Bool
+            )
+            XCTAssertEqual(next, (item["expected"] as! NSNumber).int64Value, item["name"] as? String ?? "")
         }
-        // Page incomplète : tout ce qui précède serverTime a été reçu.
-        XCTAssertEqual(SyncEngine.nextCursor(after: page([5, 6]), current: 0, isFull: false), 9_999)
-        // Horloge serveur en retard sur le curseur : le curseur ne recule jamais.
-        XCTAssertEqual(SyncEngine.nextCursor(after: page([], serverTime: 3), current: 50, isFull: false), 50)
-        // Page pleine : dernière ligne reçue moins 1 ms (les ex-aequo suivants seront relus).
-        XCTAssertEqual(SyncEngine.nextCursor(after: page([10, 20, 30]), current: 0, isFull: true), 29)
-        // Page pleine entièrement à la même milliseconde : on avance quand même (pas de boucle).
-        XCTAssertEqual(SyncEngine.nextCursor(after: page([11, 11, 11]), current: 10, isFull: true), 11)
     }
 
     // MARK: - Erreurs et état
