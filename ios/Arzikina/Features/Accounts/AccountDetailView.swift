@@ -81,7 +81,7 @@ struct AccountDetailView: View {
                                 Button {
                                     transactionForm = .edit(item.transaction)
                                 } label: {
-                                    TransactionRow(item: item, style: .inAccount)
+                                    TransactionRow(item: item, style: .grouped)
                                 }
                                 .buttonStyle(.plain)
                             }

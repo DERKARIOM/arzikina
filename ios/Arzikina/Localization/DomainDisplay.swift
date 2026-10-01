@@ -69,6 +69,26 @@ extension Account {
 }
 
 extension CategoryIcon {
+    /// Nom lu par VoiceOver dans le choix d'icône (libellés des catégories par défaut).
+    var displayName: String {
+        switch self {
+        case .food: return DomainDisplay.localized("category.default.food")
+        case .transport: return DomainDisplay.localized("category.default.transport")
+        case .health: return DomainDisplay.localized("category.default.health")
+        case .salary: return DomainDisplay.localized("category.default.salary")
+        case .shopping: return DomainDisplay.localized("category.default.shopping")
+        case .gifts: return DomainDisplay.localized("category.default.gifts")
+        case .internet: return DomainDisplay.localized("category.default.internet")
+        case .water: return DomainDisplay.localized("category.default.water")
+        case .electricity: return DomainDisplay.localized("category.default.electricity")
+        case .education: return DomainDisplay.localized("category.default.education")
+        case .home: return DomainDisplay.localized("category.default.home")
+        case .other: return DomainDisplay.localized("category.icon.other")
+        case .loan: return DomainDisplay.localized("category.icon.loan")
+        case .fee: return DomainDisplay.localized("category.system.fees")
+        }
+    }
+
     var systemImage: String {
         switch self {
         case .food: return "fork.knife"
@@ -186,6 +206,12 @@ extension DomainDisplay {
     /// conservé tel quel (Android `DefaultNameLocalizer.canonicalAccountName`).
     static func canonicalAccountName(_ input: String) -> String {
         DefaultAccountKey.canonicalName(for: input) { labelsInAllLanguages($0.localizationKey) }
+    }
+
+    /// Nom de référence d'une catégorie : « Salary » ou « Salaire » (revenu) → « Salaire » ; tout
+    /// autre nom est conservé (Android `DefaultNameLocalizer.canonicalCategoryName`).
+    static func canonicalCategoryName(_ input: String, type: TransactionType) -> String {
+        SystemCategoryKey.canonicalName(for: input, type: type) { labelsInAllLanguages($0.localizationKey) }
     }
 }
 

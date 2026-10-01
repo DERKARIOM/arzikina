@@ -1,4 +1,4 @@
-/// Couleurs proposées pour les comptes (et plus tard catégories, planifications) — mêmes valeurs
+/// Couleurs proposées pour les comptes et les catégories (et plus tard les planifications) — mêmes valeurs
 /// qu'Android `ColorPalette.COLORS`, pour qu'un compte ait la même couleur sur tous les appareils.
 enum ColorPalette {
     static let colors: [Int64] = [
@@ -13,4 +13,10 @@ enum ColorPalette {
         0xFF84_CC16, // vert lime
         0xFF64_748B  // gris ardoise
     ]
+
+    /// Palette, plus [current] si elle n'en fait pas partie (couleur choisie sur un autre appareil
+    /// ou couleur d'un élément par défaut) : elle reste sélectionnée et conservée.
+    static func choices(including current: Int64) -> [Int64] {
+        colors.contains(current) ? colors : colors + [current]
+    }
 }

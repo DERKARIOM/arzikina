@@ -16,6 +16,7 @@ struct DashboardView: View {
     @AppStorage("dashboard.isBalanceHidden") private var isBalanceHidden = false
     @State private var model = DashboardViewModel()
     @State private var transactionForm: TransactionFormRoute?
+    @State private var isShowingAllTransactions = false
 
     var body: some View {
         ScrollView {
@@ -32,9 +33,11 @@ struct DashboardView: View {
                     if !monthRows.isEmpty {
                         MonthSummaryCard(rows: monthRows, isAmountHidden: isBalanceHidden)
                     }
-                    RecentTransactionsCard(items: model.recentTransactions) { item in
-                        transactionForm = .edit(item.transaction)
-                    }
+                    RecentTransactionsCard(
+                        items: model.recentTransactions,
+                        onSelect: { item in transactionForm = .edit(item.transaction) },
+                        onSeeAll: { isShowingAllTransactions = true }
+                    )
                 }
 
                 UpcomingSectionCard(titleKey: "dashboard.budgets", systemImage: "chart.bar.fill")
@@ -55,6 +58,9 @@ struct DashboardView: View {
             }
         }
         .transactionFormSheet($transactionForm, session: session)
+        .navigationDestination(isPresented: $isShowingAllTransactions) {
+            TransactionsView()
+        }
         .refreshable {
             await session.sync?.refresh()
         }

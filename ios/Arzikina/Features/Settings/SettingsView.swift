@@ -1,8 +1,8 @@
 import SwiftUI
 import UIKit
 
-/// Onglet Réglages : compte (déconnexion), données locales, apparence (Système / Clair / Sombre),
-/// langue et version.
+/// Onglet Réglages : compte (déconnexion), transactions et catégories, synchronisation, données
+/// locales, apparence (Système / Clair / Sombre), langue et version.
 ///
 /// Langue : l'app suit la langue de l'iPhone (français par défaut si elle n'est pas prise en
 /// charge). Le choix manuel passe par le réglage de langue PAR APP d'iOS (Réglages › Arzikina ›
@@ -34,6 +34,19 @@ struct SettingsView: View {
                     }
                 } message: {
                     Text("settings.account.logout_confirm_message")
+                }
+            }
+
+            Section("settings.section.transactions") {
+                NavigationLink {
+                    TransactionsView()
+                } label: {
+                    SettingsRow(titleKey: "settings.transactions.all", subtitleKey: "settings.transactions.all_subtitle", systemImage: "list.bullet.rectangle")
+                }
+                NavigationLink {
+                    CategoriesView()
+                } label: {
+                    SettingsRow(titleKey: "settings.categories", subtitleKey: "settings.categories_subtitle", systemImage: "square.grid.2x2")
                 }
             }
 
@@ -80,4 +93,25 @@ struct SettingsView: View {
 #Preview {
     NavigationStack { SettingsView() }
         .environment(SessionModel.preview())
+}
+
+/// Ligne de navigation des Réglages : icône, titre et sous-titre explicatif (comme Android).
+private struct SettingsRow: View {
+    let titleKey: LocalizedStringKey
+    let subtitleKey: LocalizedStringKey
+    let systemImage: String
+
+    var body: some View {
+        Label {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(titleKey)
+                Text(subtitleKey)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        } icon: {
+            Image(systemName: systemImage)
+                .foregroundStyle(Brand.primary)
+        }
+    }
 }

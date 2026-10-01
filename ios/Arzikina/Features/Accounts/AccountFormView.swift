@@ -82,7 +82,13 @@ struct AccountFormView: View {
 
     private var appearanceSection: some View {
         Section("account.form.appearance") {
-            IconGrid(selection: $model.draft.icon, colorArgb: model.draft.colorArgb)
+            IconGrid(
+                selection: $model.draft.icon,
+                icons: AccountIcon.allCases,
+                colorArgb: model.draft.colorArgb,
+                systemImage: \.systemImage,
+                accessibilityName: \.displayName
+            )
             ColorGrid(selection: $model.draft.colorArgb, choices: model.colorChoices)
         }
     }
@@ -194,70 +200,5 @@ struct AmountField: View {
                     .foregroundStyle(.secondary)
             }
         }
-    }
-}
-
-/// Choix de l'icône du compte.
-private struct IconGrid: View {
-    @Binding var selection: AccountIcon
-    let colorArgb: Int64
-
-    private let columns = [GridItem(.adaptive(minimum: 44), spacing: 12)]
-
-    var body: some View {
-        LazyVGrid(columns: columns, spacing: 12) {
-            ForEach(AccountIcon.allCases, id: \.self) { icon in
-                let isSelected = icon == selection
-                Button {
-                    selection = icon
-                } label: {
-                    Image(systemName: icon.systemImage)
-                        .font(.system(size: 18, weight: .semibold))
-                        .foregroundStyle(isSelected ? .white : Color(argb: colorArgb))
-                        .frame(width: 44, height: 44)
-                        .background(isSelected ? Color(argb: colorArgb) : Color(.tertiarySystemFill), in: Circle())
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel(Text(verbatim: icon.displayName))
-                .accessibilityAddTraits(isSelected ? .isSelected : [])
-            }
-        }
-        .padding(.vertical, 6)
-    }
-}
-
-/// Choix de la couleur du compte.
-private struct ColorGrid: View {
-    @Binding var selection: Int64
-    let choices: [Int64]
-
-    private let columns = [GridItem(.adaptive(minimum: 36), spacing: 12)]
-
-    var body: some View {
-        LazyVGrid(columns: columns, spacing: 12) {
-            ForEach(choices, id: \.self) { argb in
-                let isSelected = argb == selection
-                Button {
-                    selection = argb
-                } label: {
-                    Circle()
-                        .fill(Color(argb: argb))
-                        .frame(width: 32, height: 32)
-                        .overlay {
-                            if isSelected {
-                                Image(systemName: "checkmark")
-                                    .font(.footnote.weight(.bold))
-                                    .foregroundStyle(.white)
-                            }
-                        }
-                        .padding(2)
-                        .overlay(Circle().stroke(isSelected ? Color(argb: argb) : .clear, lineWidth: 2))
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel(Text("account.form.color"))
-                .accessibilityAddTraits(isSelected ? .isSelected : [])
-            }
-        }
-        .padding(.vertical, 6)
     }
 }

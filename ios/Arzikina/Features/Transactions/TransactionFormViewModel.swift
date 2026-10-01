@@ -27,6 +27,8 @@ final class TransactionFormViewModel {
     private(set) var saveFailed = false
     /// La transaction fait partie d'un prêt : elle se gère depuis le prêt (comme Android).
     private(set) var isLinkedToLoan = false
+    private(set) var isDeleting = false
+    private(set) var deleteFailed = false
 
     let isEditing: Bool
 
@@ -119,6 +121,7 @@ final class TransactionFormViewModel {
         change(&draft)
         error = nil
         saveFailed = false
+        deleteFailed = false
     }
 
     // MARK: - Enregistrement
@@ -141,6 +144,30 @@ final class TransactionFormViewModel {
                 saveFailed = true
                 return false
             }
+        }
+    }
+
+    // MARK: - Suppression
+
+    /// Seule une transaction existante, hors prêt, peut être supprimée.
+    var canDelete: Bool { isEditing && !isLinkedToLoan }
+
+    /// Supprime la transaction et ses frais ; `true` si l'écran peut se fermer.
+    func delete() async -> Bool {
+        guard let existing, canDelete, !isDeleting, !isSaving else { return false }
+        isDeleting = true
+        defer { isDeleting = false }
+        do {
+            // Revérifié : le bouton peut être touché avant la fin de `loadExistingDetails`.
+            if try await transactions.isLinkedToLoan(id: existing.id) {
+                isLinkedToLoan = true
+                return false
+            }
+            try await transactions.delete(id: existing.id)
+            return true
+        } catch {
+            deleteFailed = true
+            return false
         }
     }
 

@@ -8,13 +8,13 @@ import SwiftUI
 ///
 /// Deux présentations, comme Android (`showDescriptionSubtitle`) :
 /// - [Style.compact] (tableau de bord) : sous-titre « Compte • date [• moyen de paiement] » ;
-/// - [Style.inAccount] (détail d'un compte, déjà groupé par jour) : la description en sous-titre
+/// - [Style.grouped] (listes groupées par jour : Transactions, détail d'un compte) : la description en sous-titre
 ///   (masquée si vide) et, sous le montant, le solde du compte après la transaction.
 struct TransactionRow: View {
 
     enum Style {
         case compact
-        case inAccount
+        case grouped
     }
 
     let item: TransactionListItem
@@ -33,7 +33,7 @@ struct TransactionRow: View {
                 if let subtitle {
                     Text(verbatim: subtitle)
                         .font(.caption)
-                        .italic(style == .inAccount)
+                        .italic(style == .grouped)
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
                 }
@@ -48,7 +48,7 @@ struct TransactionRow: View {
                         .font(.caption2)
                         .foregroundStyle(.secondary)
                 }
-                if style == .inAccount, let balance = item.runningBalance {
+                if style == .grouped, let balance = item.runningBalance {
                     Text(verbatim: "(\(format(balance)))")
                         .font(.caption2.monospacedDigit())
                         .foregroundStyle(.secondary)
@@ -82,7 +82,7 @@ struct TransactionRow: View {
     }
 
     private var subtitle: String? {
-        if style == .inAccount {
+        if style == .grouped {
             let description = transaction.description.trimmingCharacters(in: .whitespacesAndNewlines)
             return description.isEmpty ? nil : description
         }

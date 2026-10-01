@@ -160,12 +160,7 @@ public enum TransactionForm {
     /// Catégories proposées dans le formulaire : jamais les catégories système des prêts (leurs
     /// transactions sont gérées par l'écran des prêts) ni celle des frais (créée automatiquement).
     public static func isSelectable(_ category: Category) -> Bool {
-        switch category.systemKey {
-        case .loanDisbursementLent, .loanRepaymentLent, .loanDisbursementBorrowed, .loanRepaymentBorrowed, .fees:
-            return false
-        default:
-            return true
-        }
+        !(category.systemKey?.isManagedAutomatically ?? false)
     }
 
     /// Transaction à enregistrer (et ses frais), ou la PREMIÈRE erreur de saisie.

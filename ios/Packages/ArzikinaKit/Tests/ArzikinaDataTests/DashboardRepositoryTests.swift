@@ -51,7 +51,10 @@ final class DashboardRepositoryTests: XCTestCase {
         try await space.accounts.save(Account(id: "a", name: "A"))
         try await space.categories.save(Category(id: "c", name: "C", type: .expense))
         try await space.transactions.save(Transaction(id: "t", amount: 5, type: .expense, accountId: "a", categoryId: "c", date: 1))
-        try await space.categories.delete(id: "c")
+        // Suppression reçue d'un autre appareil (localement, une catégorie utilisée est protégée).
+        try await space.database.writer.write { db in
+            try db.execute(sql: "UPDATE categories SET deletedAt = 1 WHERE id = 'c'")
+        }
 
         let snapshot = try await firstSnapshot()
 

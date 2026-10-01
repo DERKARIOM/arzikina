@@ -32,7 +32,10 @@ public protocol CategoryRepository: Sendable {
     func observeCategories(type: TransactionType?) -> AsyncStream<[Category]>
     func category(id: EntityID) async throws -> Category?
     func save(_ category: Category) async throws
-    func delete(id: EntityID) async throws
+    /// Supprime la catégorie SEULEMENT si rien ne l'utilise et si l'app ne la gère pas elle-même
+    /// (vérifié dans la même transaction SQL que la suppression).
+    @discardableResult
+    func delete(id: EntityID) async throws -> CategoryDeletion
 }
 
 /// Transactions de l'utilisateur connecté.
@@ -160,4 +163,14 @@ public protocol AccountOverviewRepository: Sendable {
     func observeAccountSummaries() -> AsyncStream<[AccountSummary]>
     /// `nil` si le compte n'existe pas ou a été supprimé (ex. depuis un autre appareil).
     func observeAccountDetail(id: EntityID) -> AsyncStream<AccountDetail?>
+}
+
+// MARK: - Liste des transactions
+
+/// Écran « Transactions » : toutes les transactions, mises à jour en continu.
+public protocol TransactionLedgerRepository: Sendable {
+    /// Transactions non supprimées, hors transactions de frais (portées par leur parente), de
+    /// la plus récente à la plus ancienne, avec le solde de leur(s) compte(s) après chacune.
+    /// Lu en UNE transaction SQL : soldes et lignes toujours cohérents entre eux.
+    func observeLedger() -> AsyncStream<[TransactionLedgerEntry]>
 }

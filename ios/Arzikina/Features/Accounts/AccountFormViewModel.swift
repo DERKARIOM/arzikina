@@ -52,7 +52,7 @@ final class AccountFormViewModel {
     /// Couleurs proposées : la palette, plus la couleur actuelle si elle vient d'ailleurs (compte
     /// créé avant la palette actuelle, par exemple).
     var colorChoices: [Int64] {
-        ColorPalette.colors.contains(draft.colorArgb) ? ColorPalette.colors : ColorPalette.colors + [draft.colorArgb]
+        ColorPalette.choices(including: draft.colorArgb)
     }
 
     func changeType(_ type: AccountType) {

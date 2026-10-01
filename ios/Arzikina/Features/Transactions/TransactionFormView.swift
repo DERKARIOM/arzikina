@@ -13,6 +13,8 @@ struct TransactionFormView: View {
     @Environment(SessionModel.self) private var session
     @State private var model: TransactionFormViewModel
     @FocusState private var focusedField: Field?
+    @State private var isConfirmingDelete = false
+    @State private var isCreatingCategory = false
 
     private enum Field { case amount, description, feeAmount, feeDescription }
 
@@ -41,6 +43,9 @@ struct TransactionFormView: View {
                 if model.saveFailed {
                     Section { FormErrorText(key: "transaction.form.save_failed") }
                 }
+                if model.canDelete {
+                    deleteSection
+                }
             }
             .navigationTitle(model.isEditing ? LocalizedStringKey("transaction.form.title.edit") : LocalizedStringKey("transaction.form.title.add"))
             .navigationBarTitleDisplayMode(.inline)
@@ -50,10 +55,24 @@ struct TransactionFormView: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("common.save") { submit() }
-                        .disabled(model.isSaving || model.isLinkedToLoan)
+                        .disabled(model.isSaving || model.isDeleting || model.isLinkedToLoan)
                 }
             }
-            .interactiveDismissDisabled(model.isSaving)
+            .interactiveDismissDisabled(model.isSaving || model.isDeleting)
+            .sheet(isPresented: $isCreatingCategory) {
+                if let space = session.dataSpace {
+                    // La nouvelle catégorie est sélectionnée si elle correspond au type en cours.
+                    CategoryFormView(mode: .create(type: model.draft.type), repository: space.categories) { category in
+                        if category.type == model.draft.type { model.changeCategory(category.id) }
+                    }
+                    .environment(session)
+                }
+            }
+            .confirmationDialog("transactions.delete.title", isPresented: $isConfirmingDelete, titleVisibility: .visible) {
+                Button("transactions.delete", role: .destructive) { deleteTransaction() }
+            } message: {
+                Text("transactions.delete.message")
+            }
             .task(id: session.dataSpace.map(ObjectIdentifier.init)) {
                 guard let space = session.dataSpace else { return }
                 await model.observeAccounts(space.accounts)
@@ -141,6 +160,12 @@ struct TransactionFormView: View {
                     onSelect: model.changeCategory
                 )
             }
+            Button {
+                focusedField = nil
+                isCreatingCategory = true
+            } label: {
+                Label("transaction.form.category.add", systemImage: "plus.circle")
+            }
         } header: {
             Text("transaction.form.category")
         } footer: {
@@ -207,6 +232,21 @@ struct TransactionFormView: View {
         }
     }
 
+    private var deleteSection: some View {
+        Section {
+            Button(role: .destructive) {
+                focusedField = nil
+                isConfirmingDelete = true
+            } label: {
+                Text("transaction.form.delete")
+                    .frame(maxWidth: .infinity)
+            }
+            .disabled(model.isSaving || model.isDeleting)
+        } footer: {
+            if model.deleteFailed { FormErrorText(key: "transactions.delete.failed") }
+        }
+    }
+
     private var amountColor: Color {
         switch model.draft.type {
         case .income: return Brand.income
@@ -221,6 +261,15 @@ struct TransactionFormView: View {
         focusedField = nil
         Task {
             if await model.save() {
+                session.sync?.requestSync(.localChange)
+                dismiss()
+            }
+        }
+    }
+
+    private func deleteTransaction() {
+        Task {
+            if await model.delete() {
                 session.sync?.requestSync(.localChange)
                 dismiss()
             }

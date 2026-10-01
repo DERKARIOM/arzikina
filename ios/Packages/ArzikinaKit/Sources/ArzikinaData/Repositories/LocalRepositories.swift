@@ -85,10 +85,12 @@ public struct LocalCategoryRepository: CategoryRepository {
 
     private let database: AppDatabase
     private let store: SyncedStore<CategoryRecord>
+    private let now: Clock
 
     public init(database: AppDatabase, now: @escaping Clock = Clocks.system) {
         self.database = database
         self.store = SyncedStore(database: database, entityType: .categories, now: now)
+        self.now = now
     }
 
     public func observeCategories(type: TransactionType?) -> AsyncStream<[ArzikinaDomain.Category]> {
@@ -112,8 +114,29 @@ public struct LocalCategoryRepository: CategoryRepository {
         try await store.save(id: category.id, createdAt: category.createdAt) { CategoryRecord(category, meta: $0) }
     }
 
-    public func delete(id: EntityID) async throws {
-        try await store.softDelete(id: id)
+    public func delete(id: EntityID) async throws -> CategoryDeletion {
+        let timestamp = now()
+        let store = self.store
+        return try await database.writer.write { db in
+            guard let record = try CategoryRecord.fetchOne(db, key: id), record.deletedAt == nil else {
+                return .deleted // déjà supprimée (ex. depuis un autre appareil)
+            }
+            if record.domain.systemKey?.isManagedAutomatically == true { return .managedAutomatically }
+            if try Self.isInUse(db, categoryId: id) { return .inUse }
+            try store.softDelete(db, id: id, timestamp: timestamp)
+            return .deleted
+        }
+    }
+
+    /// Tables qui référencent une catégorie (lignes non supprimées). Toutes synchronisées : une
+    /// référence reçue d'un autre appareil bloque aussi la suppression.
+    static let referencingTables = ["transactions", "recurring_transactions", "budgets", "transaction_templates", "financial_plan_items"]
+
+    static func isInUse(_ db: Database, categoryId: EntityID) throws -> Bool {
+        let checks = referencingTables
+            .map { "EXISTS(SELECT 1 FROM \($0) WHERE categoryId = ? AND deletedAt IS NULL)" }
+            .joined(separator: " OR ")
+        return try Bool.fetchOne(db, sql: "SELECT \(checks)", arguments: StatementArguments(Array(repeating: categoryId, count: referencingTables.count))) ?? false
     }
 }
 
