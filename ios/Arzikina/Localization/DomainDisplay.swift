@@ -100,3 +100,52 @@ extension PaymentMethod {
         }
     }
 }
+
+extension AccountType {
+    /// Libellés Android `account_type_*`.
+    var displayName: String {
+        switch self {
+        case .cash: return DomainDisplay.localized("account.type.cash")
+        case .bank: return DomainDisplay.localized("account.type.bank")
+        case .mobileMoney: return DomainDisplay.localized("account.type.mobile_money")
+        case .savings: return DomainDisplay.localized("account.type.savings")
+        case .creditCard: return DomainDisplay.localized("account.type.credit_card")
+        case .savingsGoal: return DomainDisplay.localized("account.type.savings_goal")
+        }
+    }
+}
+
+extension AccountIcon {
+    /// Libellé de l'icône (Android `AccountIcon.displayTextRes`, mêmes chaînes `account_type_*`).
+    var displayName: String {
+        switch self {
+        case .cash: return DomainDisplay.localized("account.type.cash")
+        case .bank: return DomainDisplay.localized("account.type.bank")
+        case .mobileMoney: return DomainDisplay.localized("account.type.mobile_money")
+        case .savings: return DomainDisplay.localized("account.type.savings")
+        case .wallet: return DomainDisplay.localized("account.type.wallet")
+        case .creditCard: return DomainDisplay.localized("account.type.credit_card")
+        case .other: return DomainDisplay.localized("account.type.other")
+        }
+    }
+
+    var systemImage: String {
+        switch self {
+        case .cash: return "banknote.fill"
+        case .bank: return "building.columns.fill"
+        case .mobileMoney: return "iphone.gen3"
+        case .savings: return "dollarsign.circle.fill"
+        case .wallet: return "wallet.pass.fill"
+        case .creditCard: return "creditcard.fill"
+        case .other: return "square.grid.2x2.fill"
+        }
+    }
+}
+
+extension Account {
+    /// Sous-titre d'une carte de compte : le TYPE pour un objectif d'épargne (ce qui le distingue
+    /// d'un compte classique), sinon le libellé de l'icône — comme Android `AccountCardBinder`.
+    var cardSubtitle: String {
+        type == .savingsGoal ? type.displayName : icon.displayName
+    }
+}

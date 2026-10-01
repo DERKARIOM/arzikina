@@ -5,7 +5,7 @@ exécutés **tels quels** par les deux applications :
 
 | Plateforme | Test | Code vérifié |
 |---|---|---|
-| Android | `app/src/test/java/com/naniger/arzikina/SharedFixturesTest.kt` | `data/repository/SyncPullCursor.kt`, `util/Money.kt`, `util/SavingsGoalProgress.kt`, `domain/model/LoanStatus.kt`, `presentation/accounts/AccountBalances.kt`, `util/BudgetProgress.kt`, `util/BudgetPace.kt`, `util/BudgetPeriodStatus.kt`, `domain/model/RecurringFrequency.kt`, `util/FinancialPlanProgress.kt`, `util/AuthValidator.kt` |
+| Android | `app/src/test/java/com/naniger/arzikina/SharedFixturesTest.kt` | `data/repository/SyncPullCursor.kt`, `util/Money.kt`, `util/SavingsGoalProgress.kt`, `domain/model/LoanStatus.kt`, `presentation/accounts/AccountBalances.kt`, `presentation/transactions/RunningBalance.kt`, `util/BudgetProgress.kt`, `util/BudgetPace.kt`, `util/BudgetPeriodStatus.kt`, `domain/model/RecurringFrequency.kt`, `util/FinancialPlanProgress.kt`, `util/AuthValidator.kt` |
 | iOS | `ios/Packages/ArzikinaKit/Tests/ArzikinaDomainTests/SharedFixtureTests.swift` | `ios/Packages/ArzikinaKit/Sources/ArzikinaDomain/Rules/*` |
 | iOS | `ios/Packages/ArzikinaKit/Tests/ArzikinaDataTests/SyncEngineTests.swift` (`pull-cursor.json`) | `ios/Packages/ArzikinaKit/Sources/ArzikinaData/Sync/SyncPullCursor.swift` |
 
@@ -22,6 +22,7 @@ lance tous les deux (`.github/workflows/shared-rules-tests.yml`).
 | `recurrence.json` | Prochaine échéance d'une automatisation et échéances dues |
 | `financial-plan.json` | Total prévu, reste et progression d'une planification |
 | `auth-validation.json` | Format de l'e-mail, du nom d'utilisateur, du mot de passe et de la réponse de sécurité |
+| `running-balance.json` | Solde d'un compte après chacune de ses transactions (détail d'un compte) |
 | `pull-cursor.json` | Curseur du lot suivant de `pull.php` (pagination de la synchronisation) — aussi recopié dans le Web (`src/lib/pull-cursor.test.ts`) |
 
 ## Conventions

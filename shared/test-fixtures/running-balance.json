@@ -1,0 +1,20 @@
+{
+  "description": "Solde d'un compte juste APRÈS chacune de ses transactions (détail d'un compte). Transactions listées de la plus récente à la plus ancienne ; les transferts entrants créditent le compte, les transferts sortants le débitent ; les transactions d'un autre compte sont ignorées.",
+  "account": { "id": "wallet", "initialBalance": 100000 },
+  "otherAccounts": ["bank"],
+  "transactions": [
+    { "id": "t6", "type": "EXPENSE", "amount": 2500, "accountId": "wallet" },
+    { "id": "t5", "type": "TRANSFER", "amount": 30000, "accountId": "bank", "transferAccountId": "wallet" },
+    { "id": "t4", "type": "INCOME", "amount": 999999, "accountId": "bank" },
+    { "id": "t3", "type": "TRANSFER", "amount": 20000, "accountId": "wallet", "transferAccountId": "bank" },
+    { "id": "t2", "type": "EXPENSE", "amount": 150, "accountId": "wallet" },
+    { "id": "t1", "type": "INCOME", "amount": 50000, "accountId": "wallet" }
+  ],
+  "expected": {
+    "t6": 157350,
+    "t5": 159850,
+    "t3": 129850,
+    "t2": 149850,
+    "t1": 150000
+  }
+}

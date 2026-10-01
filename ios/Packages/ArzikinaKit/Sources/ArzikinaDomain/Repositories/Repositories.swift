@@ -47,24 +47,39 @@ public protocol TransactionRepository: Sendable {
 
 // MARK: - Tableau de bord
 
-/// Une dernière transaction telle que l'affiche le tableau de bord, avec ce qu'elle référence.
-public struct RecentTransaction: Identifiable, Equatable, Sendable {
+/// Une transaction telle qu'une liste l'affiche (tableau de bord, détail d'un compte…), avec ce
+/// qu'elle référence.
+public struct TransactionListItem: Identifiable, Equatable, Sendable {
     public var transaction: Transaction
+    /// Compte de la ligne : le compte SOURCE, ou le compte consulté dans le détail d'un compte.
     /// `nil` si la référence est orpheline (données partiellement synchronisées).
     public var account: Account?
+    /// Pour un transfert : l'AUTRE compte, vu depuis [account] (destination d'un transfert
+    /// sortant, source d'un transfert reçu). `nil` sinon.
     public var transferAccount: Account?
     public var category: Category?
     /// Montant de la transaction de frais liée, `nil` sans frais.
     public var feeAmount: MinorUnits?
+    /// Solde du compte de la ligne juste APRÈS cette transaction (détail d'un compte), `nil`
+    /// ailleurs.
+    public var runningBalance: MinorUnits?
 
     public var id: EntityID { transaction.id }
 
-    public init(transaction: Transaction, account: Account?, transferAccount: Account? = nil, category: Category? = nil, feeAmount: MinorUnits? = nil) {
+    public init(
+        transaction: Transaction,
+        account: Account?,
+        transferAccount: Account? = nil,
+        category: Category? = nil,
+        feeAmount: MinorUnits? = nil,
+        runningBalance: MinorUnits? = nil
+    ) {
         self.transaction = transaction
         self.account = account
         self.transferAccount = transferAccount
         self.category = category
         self.feeAmount = feeAmount
+        self.runningBalance = runningBalance
     }
 }
 
@@ -77,9 +92,9 @@ public struct DashboardSnapshot: Equatable, Sendable {
     /// Revenus et dépenses du mois en cours, par devise.
     public var month: DashboardRules.PeriodTotals
     /// Dernières transactions, hors transactions de frais.
-    public var recentTransactions: [RecentTransaction]
+    public var recentTransactions: [TransactionListItem]
 
-    public init(accounts: [Account], totalBalances: [CurrencyAmount], month: DashboardRules.PeriodTotals, recentTransactions: [RecentTransaction]) {
+    public init(accounts: [Account], totalBalances: [CurrencyAmount], month: DashboardRules.PeriodTotals, recentTransactions: [TransactionListItem]) {
         self.accounts = accounts
         self.totalBalances = totalBalances
         self.month = month
@@ -93,4 +108,46 @@ public struct DashboardSnapshot: Equatable, Sendable {
 public protocol DashboardRepository: Sendable {
     /// [monthStart, monthEnd[ : bornes du mois affiché (voir `DashboardRules.monthInterval`).
     func observeDashboard(monthStart: EpochMillis, monthEnd: EpochMillis, recentLimit: Int) -> AsyncStream<DashboardSnapshot>
+}
+
+// MARK: - Comptes (lecture)
+
+/// Un compte et son solde courant.
+public struct AccountSummary: Identifiable, Equatable, Sendable {
+    public var account: Account
+    public var balance: MinorUnits
+
+    public var id: EntityID { account.id }
+
+    public init(account: Account, balance: MinorUnits) {
+        self.account = account
+        self.balance = balance
+    }
+
+    /// Progression si le compte est un objectif d'épargne avec un montant cible, `nil` sinon.
+    public var savingsGoal: SavingsGoalSnapshot? {
+        guard account.type == .savingsGoal else { return nil }
+        return SavingsGoalProgress.snapshot(balance: balance, target: account.savingsTargetAmount)
+    }
+}
+
+/// Détail d'un compte : son solde et TOUTES ses lignes (transactions dont il est la source ou la
+/// destination d'un transfert), de la plus récente à la plus ancienne, avec le solde après chacune.
+/// Les transactions de frais comptent dans les soldes mais n'ont pas de ligne propre.
+public struct AccountDetail: Equatable, Sendable {
+    public var summary: AccountSummary
+    public var transactions: [TransactionListItem]
+
+    public init(summary: AccountSummary, transactions: [TransactionListItem]) {
+        self.summary = summary
+        self.transactions = transactions
+    }
+}
+
+/// Écrans Comptes et détail d'un compte, mis à jour en continu.
+public protocol AccountOverviewRepository: Sendable {
+    /// Comptes non supprimés, dans l'ordre d'affichage, avec leur solde courant.
+    func observeAccountSummaries() -> AsyncStream<[AccountSummary]>
+    /// `nil` si le compte n'existe pas ou a été supprimé (ex. depuis un autre appareil).
+    func observeAccountDetail(id: EntityID) -> AsyncStream<AccountDetail?>
 }

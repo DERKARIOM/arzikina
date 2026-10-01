@@ -72,3 +72,30 @@ final class DomainUnitTests: XCTestCase {
         XCTAssertEqual(SavingsGoalProgress.progressPercent(current: Int64.max / 2, target: Int64.max), 49)
     }
 }
+
+final class AccountListRulesTests: XCTestCase {
+
+    func testEveryAccountTypeBelongsToExactlyOneGroup() {
+        XCTAssertEqual(AccountType.creditCard.group, .bankCards)
+        XCTAssertEqual(AccountType.savingsGoal.group, .savingsGoals)
+        for type in [AccountType.cash, .bank, .mobileMoney, .savings] {
+            XCTAssertEqual(type.group, .accounts, type.rawValue)
+        }
+    }
+
+    func testDayGroupingNewestDayFirstKeepingOrderWithinDay() {
+        let calendar = ArzikinaCalendar.make(timeZone: TimeZone(identifier: "Africa/Niamey")!)
+        func at(_ day: Int, _ hour: Int) -> EpochMillis {
+            CalendarDay(year: 2026, month: 9, day: day).millis(hour: hour, minute: 0, calendar: calendar)
+        }
+        // 23 h 30 à Niamey = 22 h 30 UTC : le jour est celui du fuseau, pas celui d'UTC.
+        let items: [(String, EpochMillis)] = [("c", at(30, 23)), ("b", at(30, 8)), ("a", at(29, 12)), ("z", at(1, 0))]
+        let sections = DayGrouping.group(items, calendar: calendar) { $0.1 }
+        XCTAssertEqual(sections.map(\.day), [
+            CalendarDay(year: 2026, month: 9, day: 30),
+            CalendarDay(year: 2026, month: 9, day: 29),
+            CalendarDay(year: 2026, month: 9, day: 1)
+        ])
+        XCTAssertEqual(sections[0].items.map(\.0), ["c", "b"])
+    }
+}

@@ -42,6 +42,7 @@ public final class UserDataSpace: Sendable {
     public let categories: CategoryRepository
     public let transactions: TransactionRepository
     public let dashboard: DashboardRepository
+    public let accountOverview: AccountOverviewRepository
 
     let database: AppDatabase
     private let locator: UserDatabaseLocator?
@@ -54,6 +55,7 @@ public final class UserDataSpace: Sendable {
         self.categories = LocalCategoryRepository(database: database, now: now)
         self.transactions = LocalTransactionRepository(database: database, now: now)
         self.dashboard = LocalDashboardRepository(database: database)
+        self.accountOverview = LocalAccountOverviewRepository(database: database)
     }
 
     /// Ouvre (ou crée) la base de [userId].

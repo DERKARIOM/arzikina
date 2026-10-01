@@ -6,10 +6,19 @@ import SwiftUI
 /// [• moyen de paiement] », montant coloré selon le type (sans signe +/-) et, s'il y a lieu,
 /// l'indicateur discret « + Frais X ».
 ///
-/// Réutilisable telle quelle par la future liste des transactions.
+/// Deux présentations, comme Android (`showDescriptionSubtitle`) :
+/// - [Style.compact] (tableau de bord) : sous-titre « Compte • date [• moyen de paiement] » ;
+/// - [Style.inAccount] (détail d'un compte, déjà groupé par jour) : la description en sous-titre
+///   (masquée si vide) et, sous le montant, le solde du compte après la transaction.
 struct TransactionRow: View {
 
-    let item: RecentTransaction
+    enum Style {
+        case compact
+        case inAccount
+    }
+
+    let item: TransactionListItem
+    var style: Style = .compact
 
     private var transaction: Transaction { item.transaction }
     private var isTransfer: Bool { transaction.type == .transfer }
@@ -21,10 +30,13 @@ struct TransactionRow: View {
                 Text(verbatim: title)
                     .font(.subheadline.weight(.semibold))
                     .lineLimit(1)
-                Text(verbatim: subtitle)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
+                if let subtitle {
+                    Text(verbatim: subtitle)
+                        .font(.caption)
+                        .italic(style == .inAccount)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
             }
             Spacer(minLength: 8)
             VStack(alignment: .trailing, spacing: 2) {
@@ -35,6 +47,12 @@ struct TransactionRow: View {
                     Text("transaction.fee_indicator \(format(fee))")
                         .font(.caption2)
                         .foregroundStyle(.secondary)
+                }
+                if style == .inAccount, let balance = item.runningBalance {
+                    Text(verbatim: "(\(format(balance)))")
+                        .font(.caption2.monospacedDigit())
+                        .foregroundStyle(.secondary)
+                        .accessibilityLabel(Text("transaction.balance_after \(format(balance))"))
                 }
             }
         }
@@ -63,7 +81,11 @@ struct TransactionRow: View {
         return item.category?.displayName ?? DomainDisplay.localized("transaction.uncategorized")
     }
 
-    private var subtitle: String {
+    private var subtitle: String? {
+        if style == .inAccount {
+            let description = transaction.description.trimmingCharacters(in: .whitespacesAndNewlines)
+            return description.isEmpty ? nil : description
+        }
         let account = item.account?.displayName ?? DomainDisplay.localized("transaction.unknown_account")
         let date = Date(timeIntervalSince1970: TimeInterval(transaction.date) / 1000)
             .formatted(.dateTime.day().month(.abbreviated))
@@ -89,13 +111,13 @@ struct TransactionRow: View {
 
 #Preview {
     List {
-        TransactionRow(item: RecentTransaction(
+        TransactionRow(item: TransactionListItem(
             transaction: Transaction(id: "1", amount: 250_000, type: .expense, accountId: "a", categoryId: "c", date: 1_727_000_000_000, paymentMethod: .mobileMoney, feeTransactionId: "f"),
             account: Account(id: "a", name: "Mobile Money", currencyCode: "XOF"),
             category: ArzikinaDomain.Category(id: "c", name: "Nourriture", icon: .food, colorArgb: 0xFFF5_9E0B, type: .expense),
             feeAmount: 5_000
         ))
-        TransactionRow(item: RecentTransaction(
+        TransactionRow(item: TransactionListItem(
             transaction: Transaction(id: "2", amount: 1_000_000, type: .transfer, accountId: "a", transferAccountId: "b", date: 1_727_000_000_000),
             account: Account(id: "a", name: "Espèces", currencyCode: "XOF")
         ))

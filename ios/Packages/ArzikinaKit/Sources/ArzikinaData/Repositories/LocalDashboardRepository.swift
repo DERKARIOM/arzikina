@@ -64,7 +64,7 @@ public struct LocalDashboardRepository: DashboardRepository {
     }
 
     /// Dernières transactions, sans les transactions de frais (affichées sur leur parente).
-    static func recentTransactions(_ db: Database, accounts: [Account], limit: Int) throws -> [RecentTransaction] {
+    static func recentTransactions(_ db: Database, accounts: [Account], limit: Int) throws -> [TransactionListItem] {
         let records = try TransactionRecord.fetchAll(db, sql: """
             SELECT * FROM transactions
             WHERE deletedAt IS NULL
@@ -98,7 +98,7 @@ public struct LocalDashboardRepository: DashboardRepository {
 
         let accountsById = Dictionary(uniqueKeysWithValues: accounts.map { ($0.id, $0) })
         return transactions.map { transaction in
-            RecentTransaction(
+            TransactionListItem(
                 transaction: transaction,
                 account: accountsById[transaction.accountId],
                 transferAccount: transaction.transferAccountId.flatMap { accountsById[$0] },

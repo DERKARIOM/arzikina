@@ -32,7 +32,7 @@ final class DashboardViewModel {
 
     var hasAccounts: Bool { !snapshot.accounts.isEmpty }
     var totalBalances: [CurrencyAmount] { snapshot.totalBalances }
-    var recentTransactions: [RecentTransaction] { snapshot.recentTransactions }
+    var recentTransactions: [TransactionListItem] { snapshot.recentTransactions }
 
     /// Une ligne par devise ayant des revenus ou des dépenses ce mois-ci, dans l'ordre des comptes.
     var monthRows: [MonthRow] {

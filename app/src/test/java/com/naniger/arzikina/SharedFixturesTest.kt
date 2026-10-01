@@ -15,6 +15,7 @@ import com.naniger.arzikina.domain.model.computeLoanStatus
 import com.naniger.arzikina.domain.model.computeNextExecutionDate
 import com.naniger.arzikina.domain.model.generateMissingScheduledDates
 import com.naniger.arzikina.presentation.accounts.computeCurrentBalances
+import com.naniger.arzikina.presentation.transactions.computeRunningBalances
 import com.naniger.arzikina.util.AuthValidator
 import com.naniger.arzikina.util.BudgetPace
 import com.naniger.arzikina.util.BudgetPeriodStatus
@@ -167,6 +168,30 @@ class SharedFixturesTest {
     }
 
     // --- Budgets ------------------------------------------------------------------------------
+
+    @Test
+    fun runningBalance() {
+        val fixture = fixture("running-balance.json")
+        val accountIds = IdRegistry()
+        val transactionIds = IdRegistry()
+        val accountJson = fixture.getValue("account").jsonObject
+        val account = account(accountIds.of(accountJson.string("id")), currencyCode = "XOF", initialBalance = accountJson.long("initialBalance"))
+        // Liste de la plus récente à la plus ancienne, comme TransactionDao.observeTransactions.
+        val transactions = fixture.objects("transactions").map {
+            transaction(
+                type = TransactionType.valueOf(it.string("type")),
+                amount = it.long("amount"),
+                accountId = accountIds.of(it.string("accountId")),
+                transferAccountId = it.stringOrNull("transferAccountId")?.let(accountIds::of)
+            ).copy(id = transactionIds.of(it.string("id")))
+        }
+        val balances = computeRunningBalances(transactions, listOf(account))
+        val expected = fixture.getValue("expected").jsonObject
+        assertEquals("Aucun solde pour une transaction d'un autre compte", expected.size, balances.size)
+        expected.forEach { (id, value) ->
+            assertEquals(id, value.jsonPrimitive.long, balances[transactionIds.of(id) to account.id])
+        }
+    }
 
     @Test
     fun budgets() {

@@ -5,7 +5,7 @@ import SwiftUI
 /// parente), ou un message quand il n'y en a pas encore.
 struct RecentTransactionsCard: View {
 
-    let items: [RecentTransaction]
+    let items: [TransactionListItem]
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {

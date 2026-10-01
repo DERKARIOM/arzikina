@@ -95,6 +95,28 @@ final class SharedFixtureTests: XCTestCase {
 
     // MARK: - Budgets
 
+    func testRunningBalance() throws {
+        let fixture = try SharedFixtures.load("running-balance.json")
+        let accountJSON = try fixture.object("account")
+        let account = Account(id: try accountJSON.string("id"), name: "", initialBalance: try accountJSON.int64("initialBalance"))
+        let transactions = try fixture.objects("transactions").map { item in
+            Transaction(
+                id: try item.string("id"),
+                amount: try item.int64("amount"),
+                type: try XCTUnwrap(TransactionType(rawValue: try item.string("type"))),
+                accountId: try item.string("accountId"),
+                transferAccountId: item.optionalString("transferAccountId"),
+                date: 0
+            )
+        }
+        let balances = RunningBalances.compute(account: account, transactions: transactions)
+        let expected = try fixture.object("expected")
+        XCTAssertEqual(balances.count, expected.count, "Aucun solde pour une transaction d'un autre compte")
+        for (transactionId, value) in expected {
+            XCTAssertEqual(balances[transactionId], (value as? NSNumber)?.int64Value, transactionId)
+        }
+    }
+
     func testBudgets() throws {
         let fixture = try SharedFixtures.load("budget.json")
         let calendar = try SharedFixtures.calendar(try fixture.string("timeZone"))
