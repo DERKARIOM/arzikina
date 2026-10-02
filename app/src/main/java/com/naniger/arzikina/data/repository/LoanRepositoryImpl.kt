@@ -11,11 +11,13 @@ import com.naniger.arzikina.data.local.entity.CategoryEntity
 import com.naniger.arzikina.data.local.entity.LoanEntity
 import com.naniger.arzikina.data.local.entity.LoanPaymentEntity
 import com.naniger.arzikina.data.local.entity.TransactionEntity
+import com.naniger.arzikina.data.local.entity.ownTransactionIds
 import com.naniger.arzikina.data.mapper.toDomain
 import com.naniger.arzikina.data.mapper.toEntity
 import com.naniger.arzikina.di.IoDispatcher
 import com.naniger.arzikina.domain.model.Loan
 import com.naniger.arzikina.domain.model.LoanCategoryNames
+import com.naniger.arzikina.domain.model.LoanGiftException
 import com.naniger.arzikina.domain.model.LoanPayment
 import com.naniger.arzikina.domain.model.LoanType
 import com.naniger.arzikina.domain.model.SyncOperation
@@ -57,6 +59,9 @@ import javax.inject.Inject
  * (fonction déjà présente AVANT la synchronisation, mais dont l'effet restait purement local), doit
  * désormais être enfilée via [loanSyncEnqueuer] — sans quoi la progression d'un remboursement
  * n'apparaîtrait jamais sur un second appareil.
+ *
+ * « Transformer en cadeau » : les écritures sont déléguées à [LoanGiftConverter] (testable sans
+ * Room) ; un prêt/emprunt transformé est verrouillé (voir la doc de [LoanRepository]).
  */
 class LoanRepositoryImpl @Inject constructor(
     private val database: ArzikinaDatabase,
@@ -68,6 +73,7 @@ class LoanRepositoryImpl @Inject constructor(
     private val transactionSyncEnqueuer: TransactionSyncEnqueuer,
     private val loanSyncEnqueuer: LoanSyncEnqueuer,
     private val categorySyncEnqueuer: CategorySyncEnqueuer,
+    private val loanGiftConverter: LoanGiftConverter,
     @IoDispatcher private val ioDispatcher: CoroutineDispatcher
 ) : LoanRepository {
 
@@ -137,7 +143,13 @@ class LoanRepositoryImpl @Inject constructor(
                 // stade du plan, voir nav_graph.xml/loanFormFragment), mais la corriger maintenant
                 // évite une régression silencieuse le jour où l'édition sera ajoutée.
                 val existingTransaction = transactionDao.getById(existing.transactionId, userId)
-                if (existingTransaction != null) {
+                if (existing.giftedAmount > 0L) {
+                    // Transformé en cadeau : décaissement et transaction cadeau portent un
+                    // reclassement précis (voir domain/model/LoanGift.kt) — seule la DATE peut
+                    // encore changer, sur les deux transactions à la fois.
+                    requireOnlyDateChangedOnGiftedLoan(existing, loan)
+                    pendingTransactionOps += moveGiftedLoanTransactionsTo(existing, loan.startDate, userId, now)
+                } else if (existingTransaction != null) {
                     val category = resolveLoanCategory(disbursementCategoryName(loan.type), userId)
                     val updatedTransaction = existingTransaction.copy(
                         amount = loan.amount,
@@ -207,14 +219,17 @@ class LoanRepositoryImpl @Inject constructor(
                     updatedAt = now
                 ) to SyncOperation.DELETE
             }
-            val loanTransaction = transactionDao.getById(loan.transactionId, userId)
-            transactionDao.softDeleteById(loan.transactionId, userId, now)
-            if (loanTransaction != null) {
-                pendingTransactionOps += loanTransaction.copy(
-                    syncId = loanTransaction.syncId ?: UUID.randomUUID().toString(),
-                    deletedAt = now,
-                    updatedAt = now
-                ) to SyncOperation.DELETE
+            // Décaissement + transaction cadeau éventuelle (voir LoanEntity.ownTransactionIds).
+            loan.ownTransactionIds().forEach { transactionId ->
+                val loanTransaction = transactionDao.getById(transactionId, userId)
+                transactionDao.softDeleteById(transactionId, userId, now)
+                if (loanTransaction != null) {
+                    pendingTransactionOps += loanTransaction.copy(
+                        syncId = loanTransaction.syncId ?: UUID.randomUUID().toString(),
+                        deletedAt = now,
+                        updatedAt = now
+                    ) to SyncOperation.DELETE
+                }
             }
             loanDao.softDeleteById(id, userId, now)
             pendingLoanOps += loan.copy(
@@ -237,6 +252,7 @@ class LoanRepositoryImpl @Inject constructor(
 
         val result = database.withTransaction {
             val loan = loanDao.getById(payment.loanId, userId) ?: error("Prêt/emprunt introuvable.")
+            if (loan.giftedAmount > 0L) throw LoanGiftException.Locked(loan.id)
             check(payment.amount in 1..loan.remainingAmount) {
                 "Le montant du remboursement dépasse le solde restant du prêt/emprunt."
             }
@@ -289,6 +305,9 @@ class LoanRepositoryImpl @Inject constructor(
         database.withTransaction {
             val payment = loanPaymentDao.getById(id, userId) ?: return@withTransaction
             val loan = loanDao.getById(payment.loanId, userId) ?: return@withTransaction
+            // Annuler un remboursement d'un prêt/emprunt transformé en cadeau casserait l'égalité
+            // « part remboursée = décaissement restant » (voir domain/model/LoanGift.kt).
+            if (loan.giftedAmount > 0L) throw LoanGiftException.Locked(loan.id)
             val paymentTransaction = transactionDao.getById(payment.transactionId, userId)
             transactionDao.softDeleteById(payment.transactionId, userId, now)
             if (paymentTransaction != null) {
@@ -326,8 +345,53 @@ class LoanRepositoryImpl @Inject constructor(
     override suspend fun findLoanIdForTransaction(transactionId: Long): Long? = withContext(ioDispatcher) {
         val userId = requireCurrentUserId()
         loanDao.findIdByTransactionId(transactionId, userId)
+            ?: loanDao.findIdByGiftTransactionId(transactionId, userId)
             ?: loanPaymentDao.findLoanIdByTransactionId(transactionId, userId)
     }
+
+    override suspend fun convertToGift(loanId: Long, description: String): Long = withContext(ioDispatcher) {
+        val userId = requireCurrentUserId()
+        // Toute la logique d'écriture vit dans LoanGiftConverter (testable sans Room) ; ce
+        // repository garantit seulement l'atomicité et l'enfilage APRÈS commit, comme partout.
+        val result = database.withTransaction {
+            loanGiftConverter.convert(loanId, description, userId, System.currentTimeMillis())
+        }
+        // Transactions AVANT le prêt : LoanSyncEnqueuer résout le syncId de la transaction cadeau.
+        result.transactionOps.forEach { (entity, operation) -> transactionSyncEnqueuer.enqueue(entity, operation) }
+        loanSyncEnqueuer.enqueueLoan(result.giftedLoan, SyncOperation.UPDATE)
+        result.giftTransactionId
+    }
+
+    /** Voir [saveLoan] : sur un prêt/emprunt transformé en cadeau, seule la date de début peut
+     * changer (cas de « Modifier la date et l'heure »). */
+    private fun requireOnlyDateChangedOnGiftedLoan(existing: LoanEntity, requested: Loan) {
+        val unchanged = requested.amount == existing.amount &&
+            requested.accountId == existing.accountId &&
+            requested.personId == existing.personId &&
+            requested.type == existing.type
+        if (!unchanged) throw LoanGiftException.Locked(existing.id)
+    }
+
+    /** Déplace à [newDate] le décaissement ET la transaction cadeau (voir
+     * [LoanEntity.ownTransactionIds]) d'un prêt/emprunt transformé — montants, catégories et
+     * descriptions inchangés. Retourne les mises à jour à enfiler. */
+    private suspend fun moveGiftedLoanTransactionsTo(
+        loan: LoanEntity,
+        newDate: Long,
+        userId: Long,
+        now: Long
+    ): List<Pair<TransactionEntity, SyncOperation>> =
+        loan.ownTransactionIds().mapNotNull { transactionId ->
+            val transaction = transactionDao.getById(transactionId, userId) ?: return@mapNotNull null
+            if (transaction.date == newDate) return@mapNotNull null
+            val moved = transaction.copy(
+                date = newDate,
+                syncId = transaction.syncId ?: UUID.randomUUID().toString(),
+                updatedAt = now
+            )
+            transactionDao.upsert(moved)
+            moved to SyncOperation.UPDATE
+        }
 
     /**
      * Retrouve l'une des 4 catégories par défaut Prêts/Emprunts par son nom exact, et la RECRÉE

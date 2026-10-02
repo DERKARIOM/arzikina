@@ -115,6 +115,7 @@ class LoansFragment : Fragment(R.layout.fragment_loans) {
                 R.id.statusChipRepaid -> LoanStatusFilterOption.REPAID
                 R.id.statusChipOverdue -> LoanStatusFilterOption.OVERDUE
                 R.id.statusChipUpcoming -> LoanStatusFilterOption.UPCOMING
+                R.id.statusChipGifted -> LoanStatusFilterOption.GIFTED
                 else -> LoanStatusFilterOption.ALL
             }
             if (status != viewModel.filters.value.status) {
@@ -183,6 +184,7 @@ class LoansFragment : Fragment(R.layout.fragment_loans) {
             LoanStatusFilterOption.REPAID -> R.id.statusChipRepaid
             LoanStatusFilterOption.OVERDUE -> R.id.statusChipOverdue
             LoanStatusFilterOption.UPCOMING -> R.id.statusChipUpcoming
+            LoanStatusFilterOption.GIFTED -> R.id.statusChipGifted
         }
         if (binding.statusChipGroup.checkedChipId != expectedStatusChip) {
             binding.statusChipGroup.check(expectedStatusChip)

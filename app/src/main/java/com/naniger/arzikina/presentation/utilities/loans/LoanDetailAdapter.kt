@@ -110,9 +110,29 @@ class LoanDetailAdapter(
             binding.descriptionContainer.visibility = if (description.isEmpty()) View.GONE else View.VISIBLE
             binding.descriptionValue.text = description
 
+            bindGiftCard(uiState)
+
             binding.paymentsSectionTitle.text =
                 context.getString(R.string.loan_detail_payments_title, uiState.payments.size)
             binding.paymentsEmptyText.visibility = if (uiState.payments.isEmpty()) View.VISIBLE else View.GONE
+        }
+
+        /** Carte « Transformé en cadeau » (voir `item_loan_detail_header.xml`) : visible seulement
+         * pour un prêt/emprunt transformé — montant offert (prêt) ou reçu (emprunt) et date. */
+        private fun bindGiftCard(uiState: LoanDetailUiState) {
+            val context = binding.root.context
+            val loan = uiState.loan
+            val isGifted = loan.giftedAmount > 0L
+            binding.giftCard.visibility = if (isGifted) View.VISIBLE else View.GONE
+            if (!isGifted) return
+
+            binding.giftAmountLabel.setText(
+                if (loan.type == LoanType.LENT) R.string.loan_gift_amount_label_lent else R.string.loan_gift_amount_label_borrowed
+            )
+            binding.giftAmountValue.text = formatMinor(loan.giftedAmount, uiState.currencyCode)
+            val giftedAt = loan.giftedAt
+            binding.giftDateContainer.visibility = if (giftedAt == null) View.GONE else View.VISIBLE
+            if (giftedAt != null) binding.giftDateValue.text = giftedAt.toFormattedDate(context)
         }
 
         private fun formatMinor(amountMinor: Long, currencyCode: String): String =
@@ -148,6 +168,9 @@ class LoanDetailAdapter(
                 ContextCompat.getColor(context, if (isCredit) R.color.loan_lent_color else R.color.expense_red)
             )
 
+            // Masqué (pas seulement désactivé) sur un prêt/emprunt transformé en cadeau : l'action
+            // n'a plus de sens, inutile de la montrer (voir LoanDetailUiState.canDeletePayments).
+            binding.paymentDeleteButton.visibility = if (row.canDelete) View.VISIBLE else View.GONE
             binding.paymentDeleteButton.setOnClickListener { onDeletePayment(payment) }
         }
     }

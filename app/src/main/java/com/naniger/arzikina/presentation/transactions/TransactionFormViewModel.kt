@@ -15,6 +15,7 @@ import com.naniger.arzikina.domain.model.TransactionFee
 import com.naniger.arzikina.domain.model.TransactionTemplate
 import com.naniger.arzikina.domain.model.TransactionType
 import com.naniger.arzikina.domain.model.LoanCategoryNames
+import com.naniger.arzikina.domain.model.LoanType
 import com.naniger.arzikina.domain.repository.AccountRepository
 import com.naniger.arzikina.domain.repository.CategoryRepository
 import com.naniger.arzikina.domain.repository.LoanRepository
@@ -98,6 +99,12 @@ data class TransactionFormState(
      * et affiche une bannière redirigeant vers "Détail du prêt/emprunt".
      */
     val linkedLoanId: Long? = null,
+    /**
+     * Non-`null` uniquement si cette transaction est la transaction CADEAU d'un prêt/emprunt
+     * transformé (voir `Loan.giftTransactionId`) : sens d'origine, pour afficher « Transformé
+     * depuis un prêt/emprunt » à la place de la bannière générique de [linkedLoanId] (traçabilité).
+     */
+    val giftOriginLoanType: LoanType? = null,
     /**
      * Voir [Transaction.receiptId] — `null` sauf : (a) en modification, si la transaction chargée
      * est déjà liée à un reçu (voir [TransactionFormViewModel.init]) ; (b) en création, si ce
@@ -280,7 +287,10 @@ class TransactionFormViewModel @Inject constructor(
                     // désactivation/bannière apparaît dès que cette valeur arrive.
                     val loanId = loanRepository.findLoanIdForTransaction(transactionId)
                     if (loanId != null) {
-                        _formState.update { it.copy(linkedLoanId = loanId) }
+                        val giftOrigin = loanRepository.getLoan(loanId)
+                            ?.takeIf { it.giftTransactionId == transactionId }
+                            ?.type
+                        _formState.update { it.copy(linkedLoanId = loanId, giftOriginLoanType = giftOrigin) }
                     }
                     // Frais liés (voir Transaction.feeTransactionId) : chargés séparément, après
                     // l'état principal, pour la même raison que linkedLoanId ci-dessus.

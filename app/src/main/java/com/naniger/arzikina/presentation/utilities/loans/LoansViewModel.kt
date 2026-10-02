@@ -41,7 +41,9 @@ enum class LoanStatusFilterOption {
     ONGOING,
     REPAID,
     OVERDUE,
-    UPCOMING
+    UPCOMING,
+    /** Transformés en cadeau (voir [LoanStatus.GIFTED]). */
+    GIFTED
 }
 
 /**
@@ -173,6 +175,7 @@ class LoansViewModel @Inject constructor(
             LoanStatusFilterOption.REPAID -> status == LoanStatus.REPAID
             LoanStatusFilterOption.OVERDUE -> status == LoanStatus.OVERDUE
             LoanStatusFilterOption.UPCOMING -> status == LoanStatus.UPCOMING
+            LoanStatusFilterOption.GIFTED -> status == LoanStatus.GIFTED
         }
 
     /**

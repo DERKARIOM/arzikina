@@ -13,6 +13,8 @@ import com.naniger.arzikina.R
 import com.naniger.arzikina.databinding.FragmentLoanDetailBinding
 import com.naniger.arzikina.domain.model.CurrencyAmount
 import com.naniger.arzikina.domain.model.LoanPayment
+import com.naniger.arzikina.domain.model.LoanType
+import com.naniger.arzikina.domain.model.outstandingAmount
 import com.naniger.arzikina.presentation.components.ConfirmDialogs
 import com.naniger.arzikina.presentation.components.NavAnimations
 import com.naniger.arzikina.presentation.components.TimePickerHelper
@@ -35,6 +37,10 @@ import java.time.ZoneOffset
  * un menu "Supprimer" seul déjà générique dans l'app — voir sa doc). Pas d'action "Modifier" :
  * l'édition n'est pas prévue à ce stade du plan de développement Prêts/Emprunts (voir la doc de
  * `nav_graph.xml`, destination `loanFormFragment`, "toujours en création").
+ *
+ * « Transformer en cadeau » (⋮, voir [confirmConvertToGift]) : visible seulement si la dette peut
+ * encore l'être ; une fois transformée, une carte dédiée l'indique et les actions de
+ * remboursement disparaissent.
  *
  * "Enregistrer un remboursement" ouvre désormais [LoanPaymentFormFragment] (Étape 6, Gestion des
  * remboursements) ; chaque ligne de la section "Versements" peut aussi être supprimée
@@ -84,6 +90,10 @@ class LoanDetailFragment : Fragment(R.layout.fragment_loan_detail) {
         binding.toolbar.inflateMenu(R.menu.loan_detail_menu)
         binding.toolbar.setOnMenuItemClickListener { item ->
             when (item.itemId) {
+                R.id.action_convert_to_gift -> {
+                    confirmConvertToGift()
+                    true
+                }
                 R.id.action_edit_loan_date_time -> {
                     editStartDateTime()
                     true
@@ -114,6 +124,7 @@ class LoanDetailFragment : Fragment(R.layout.fragment_loan_detail) {
         if (state !is AppResult.Success) return
         val uiState = state.data
         latestUiState = uiState
+        renderActions(binding, uiState)
 
         val rows = buildList {
             add(LoanDetailListRow.Header(uiState))
@@ -123,7 +134,8 @@ class LoanDetailFragment : Fragment(R.layout.fragment_loan_detail) {
                         payment = payment,
                         accountName = uiState.accountsById[payment.accountId]?.displayName(requireContext()).orEmpty(),
                         loanType = uiState.loan.type,
-                        currencyCode = uiState.currencyCode
+                        currencyCode = uiState.currencyCode,
+                        canDelete = uiState.canDeletePayments
                     )
                 }
             )
@@ -167,11 +179,57 @@ class LoanDetailFragment : Fragment(R.layout.fragment_loan_detail) {
         picker.show(parentFragmentManager, "loan_detail_date_picker")
     }
 
+    /**
+     * Actions dépendant de l'état de la dette : « Transformer en cadeau » (⋮) uniquement si la
+     * transformation est permise ; « Enregistrer un remboursement » masqué dès que la dette est
+     * éteinte (remboursée ou offerte) — il n'y a plus rien à rembourser.
+     */
+    private fun renderActions(binding: FragmentLoanDetailBinding, uiState: LoanDetailUiState) {
+        binding.toolbar.menu.findItem(R.id.action_convert_to_gift)?.isVisible = uiState.canConvertToGift
+        if (uiState.isSettled) binding.addPaymentButton.hide() else binding.addPaymentButton.show()
+    }
+
+    /**
+     * Confirmation avant transformation : titre selon le sens (prêt/emprunt), conséquence (plus
+     * une dette), montant exact concerné — en précisant, si une partie a déjà été remboursée, que
+     * SEUL le reste devient un cadeau — et libellé de la transaction qui sera visible dans
+     * l'historique.
+     */
+    private fun confirmConvertToGift() {
+        val uiState = latestUiState ?: return
+        if (!uiState.canConvertToGift) return
+        val loan = uiState.loan
+        val description = LoanGiftDescription.build(requireContext(), loan.type, uiState.personName)
+        val giftAmount = Money.format(CurrencyAmount(uiState.currencyCode, loan.outstandingAmount()))
+        val amountLine = if (loan.amountRepaid > 0L) {
+            val repaid = Money.format(CurrencyAmount(uiState.currencyCode, loan.amountRepaid))
+            getString(R.string.loan_gift_confirm_partial, giftAmount, repaid)
+        } else {
+            getString(R.string.loan_gift_confirm_full, giftAmount)
+        }
+        val message = listOf(
+            getString(R.string.loan_gift_confirm_message),
+            amountLine,
+            getString(R.string.loan_gift_confirm_label, description)
+        ).joinToString(separator = "\n\n")
+        ConfirmDialogs.confirm(
+            context = requireContext(),
+            title = getString(
+                if (loan.type == LoanType.LENT) R.string.loan_gift_confirm_title_lent else R.string.loan_gift_confirm_title_borrowed
+            ),
+            message = message,
+            confirmLabel = getString(R.string.loan_gift_action),
+            onConfirm = { viewModel.convertToGift(description) }
+        )
+    }
+
     private fun handleEvent(event: LoanDetailEvent) {
         val binding = binding ?: return
         val messageRes = when (event) {
             LoanDetailEvent.StartNotBeforeDue -> R.string.error_due_date_before_start
             LoanDetailEvent.StartAfterPayment -> R.string.loan_detail_start_after_payment_error
+            LoanDetailEvent.ConvertedToGift -> R.string.loan_gift_done_message
+            LoanDetailEvent.GiftNotAllowed -> R.string.loan_gift_not_convertible_error
         }
         Snackbar.make(binding.root, messageRes, Snackbar.LENGTH_LONG).show()
     }

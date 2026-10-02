@@ -22,6 +22,7 @@ import com.naniger.arzikina.domain.model.Account
 import com.naniger.arzikina.domain.model.Category
 import com.naniger.arzikina.domain.model.CurrencyAmount
 import com.naniger.arzikina.domain.model.FeeType
+import com.naniger.arzikina.domain.model.LoanType
 import com.naniger.arzikina.domain.model.PaymentMethod
 import com.naniger.arzikina.domain.model.SupportedCurrency
 import com.naniger.arzikina.domain.model.TransactionType
@@ -441,6 +442,7 @@ class TransactionFormFragment : Fragment(R.layout.fragment_transaction_form) {
         // différent — les lignes cliquables (compte, catégorie, date) restent, elles, guardées
         // individuellement dans chaque setUpXxx() ci-dessus (isLoanLinked()).
         binding.loanLinkedBanner.visibility = if (isLoanLinked) View.VISIBLE else View.GONE
+        renderLoanBannerContent(binding, state.giftOriginLoanType)
         // Voir la doc de TransactionFormState.receiptId : UNIQUEMENT à la création (une
         // transaction déjà enregistrée et liée à un reçu affiche plutôt une ligne "Reçu associé"
         // cliquable, voir Étape 8 à venir — pas cette bannière informative).
@@ -699,6 +701,21 @@ class TransactionFormFragment : Fragment(R.layout.fragment_transaction_form) {
             ReceiptDetailFragmentArgs(receiptId = receiptId).toBundle(),
             NavAnimations.push
         )
+    }
+
+    /**
+     * Même bannière cliquable pour toute transaction de prêt/emprunt ; pour une transaction CADEAU
+     * (voir `TransactionFormState.giftOriginLoanType`), le texte indique son origine (« Transformé
+     * depuis un prêt/emprunt ») et la carte prend la couleur « Cadeaux » au lieu de l'avertissement.
+     */
+    private fun renderLoanBannerContent(binding: FragmentTransactionFormBinding, giftOrigin: LoanType?) {
+        val (textRes, colorRes) = when (giftOrigin) {
+            LoanType.LENT -> R.string.transaction_form_loan_gift_banner_lent to R.color.loan_gifted_color
+            LoanType.BORROWED -> R.string.transaction_form_loan_gift_banner_borrowed to R.color.loan_gifted_color
+            null -> R.string.transaction_form_loan_linked_banner to R.color.warning_amber
+        }
+        binding.loanLinkedBannerText.setText(textRes)
+        binding.loanLinkedBanner.setCardBackgroundColor(ContextCompat.getColor(requireContext(), colorRes))
     }
 
     /** Voir la doc de `TransactionFormState.linkedLoanId` : accès synchrone utilisé par les

@@ -12,6 +12,7 @@ import com.naniger.arzikina.data.local.entity.AccountEntity
 import com.naniger.arzikina.data.local.entity.CardSecretEntity
 import com.naniger.arzikina.data.local.entity.LoanEntity
 import com.naniger.arzikina.data.local.entity.LoanPaymentEntity
+import com.naniger.arzikina.data.local.entity.ownTransactionIds
 import com.naniger.arzikina.data.local.entity.TransactionEntity
 import com.naniger.arzikina.data.mapper.toDomain
 import com.naniger.arzikina.data.mapper.toEntity
@@ -230,7 +231,10 @@ class AccountRepositoryImpl @Inject constructor(
                         updatedAt = now
                     ) to SyncOperation.DELETE
                 }
-                softDeleteAndEnqueue(loan.transactionId, userId, now, pendingSyncOps)
+                // Décaissement + transaction cadeau éventuelle (voir LoanEntity.ownTransactionIds) —
+                // la transaction cadeau est sur ce même compte : le dédoublonnage plus bas évite de
+                // l'enfiler deux fois.
+                loan.ownTransactionIds().forEach { softDeleteAndEnqueue(it, userId, now, pendingSyncOps) }
                 loanDao.softDeleteById(loan.id, userId, now)
                 pendingLoanOps += loan.copy(
                     syncId = loan.syncId ?: UUID.randomUUID().toString(),
@@ -244,6 +248,11 @@ class AccountRepositoryImpl @Inject constructor(
                 // Déjà traité ci-dessus (le prêt lui-même disparaît avec ce compte) : pas besoin de
                 // le recalculer, il n'existera plus.
                 if (loan.accountId == id) return@forEach
+                // Cas limite connu : sur un prêt/emprunt transformé en cadeau, ce recalcul fait
+                // réapparaître un reste égal au remboursement disparu avec ce compte, tandis que le
+                // statut reste GIFTED (verrouillé, aucune action proposée). Les montants des
+                // transactions décaissement/cadeau, eux, ne sont pas touchés : le solde des comptes
+                // restants reste exact.
 
                 softDeleteAndEnqueue(payment.transactionId, userId, now, pendingSyncOps)
                 val recalcNow = System.currentTimeMillis()

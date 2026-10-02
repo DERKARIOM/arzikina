@@ -4,6 +4,7 @@ import com.naniger.arzikina.data.local.dao.CategoryDao
 import com.naniger.arzikina.data.local.entity.CategoryEntity
 import com.naniger.arzikina.data.repository.CategorySyncEnqueuer
 import com.naniger.arzikina.domain.model.SyncOperation
+import com.naniger.arzikina.domain.model.SystemCategoryKey
 import java.util.UUID
 
 /**
@@ -26,20 +27,53 @@ import java.util.UUID
  * assigne un de secours — un seul endroit responsable, comme pour n'importe quelle autre catégorie.
  */
 internal object SystemCategoryResolver {
+    /** Résolution par NOM seul — catégories Prêts/Frais, dont les noms sont uniques tous types
+     * confondus (comportement historique inchangé). */
     suspend fun resolve(
         categoryDao: CategoryDao,
         categorySyncEnqueuer: CategorySyncEnqueuer,
         name: String,
         userId: Long
+    ): CategoryEntity = resolveOrRecreate(
+        categoryDao = categoryDao,
+        categorySyncEnqueuer = categorySyncEnqueuer,
+        find = { categoryDao.getFirstByNameForUser(name, userId) },
+        matchesTemplate = { it.name == name },
+        label = name,
+        userId = userId
+    )
+
+    /** Résolution par NOM + TYPE d'une [SystemCategoryKey] — obligatoire pour « Cadeaux », qui existe
+     * en dépense ([SystemCategoryKey.GIFTS]) ET en revenu ([SystemCategoryKey.GIFTS_RECEIVED]). */
+    suspend fun resolve(
+        categoryDao: CategoryDao,
+        categorySyncEnqueuer: CategorySyncEnqueuer,
+        key: SystemCategoryKey,
+        userId: Long
+    ): CategoryEntity = resolveOrRecreate(
+        categoryDao = categoryDao,
+        categorySyncEnqueuer = categorySyncEnqueuer,
+        find = { categoryDao.getFirstByNameAndTypeForUser(key.canonicalName, key.type, userId) },
+        matchesTemplate = { it.name == key.canonicalName && it.type == key.type },
+        label = "${key.canonicalName} (${key.type})",
+        userId = userId
+    )
+
+    private suspend fun resolveOrRecreate(
+        categoryDao: CategoryDao,
+        categorySyncEnqueuer: CategorySyncEnqueuer,
+        find: suspend () -> CategoryEntity?,
+        matchesTemplate: (CategoryEntity) -> Boolean,
+        label: String,
+        userId: Long
     ): CategoryEntity {
-        categoryDao.getFirstByNameForUser(name, userId)?.let { return it }
+        find()?.let { return it }
 
         val template = DefaultCategories.seed(System.currentTimeMillis(), userId)
-            .first { it.name == name }
+            .first(matchesTemplate)
             .copy(syncId = UUID.randomUUID().toString())
         categoryDao.upsert(template)
-        val created = categoryDao.getFirstByNameForUser(name, userId)
-            ?: error("Impossible de recréer la catégorie système \"$name\".")
+        val created = find() ?: error("Impossible de recréer la catégorie système \"$label\".")
         categorySyncEnqueuer.enqueue(created, SyncOperation.CREATE)
         return created
     }

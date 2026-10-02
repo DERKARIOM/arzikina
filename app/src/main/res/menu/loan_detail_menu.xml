@@ -7,6 +7,13 @@
 -->
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
+    <!-- « Transformer en cadeau » : visible uniquement si LoanDetailUiState.canConvertToGift
+         (voir LoanDetailFragment.render) — jamais pour une dette remboursée ou déjà offerte. -->
+    <item
+        android:id="@+id/action_convert_to_gift"
+        android:title="@string/loan_gift_action"
+        android:visible="false"
+        app:showAsAction="never" />
     <item
         android:id="@+id/action_edit_loan_date_time"
         android:title="@string/loan_detail_edit_date_time_action"

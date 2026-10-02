@@ -964,6 +964,28 @@
     <string name="loan_detail_time_label">Heure</string>
     <string name="loan_detail_edit_date_time_action">Modifier la date et l\'heure</string>
     <string name="loan_detail_start_after_payment_error">La date de début ne peut pas être après un versement déjà enregistré</string>
+    <!-- ==================== Transformer en cadeau (voir domain/model/LoanGift.kt) ==================== -->
+    <string name="loan_gift_action">Transformer en cadeau</string>
+    <string name="loan_gift_confirm_title_lent">Transformer ce prêt en cadeau ?</string>
+    <string name="loan_gift_confirm_title_borrowed">Transformer cet emprunt en cadeau ?</string>
+    <string name="loan_gift_confirm_message">Cette opération ne sera plus considérée comme une dette à rembourser.</string>
+    <!-- %1$s = montant transformé en cadeau (reste dû), %2$s = montant déjà remboursé. -->
+    <string name="loan_gift_confirm_partial">Seuls les %1$s restants deviendront un cadeau. Les %2$s déjà remboursés ne changent pas.</string>
+    <string name="loan_gift_confirm_full">Montant du cadeau : %1$s.</string>
+    <string name="loan_gift_confirm_label">Libellé : « %1$s »</string>
+    <!-- Description de la transaction cadeau. « _elided » : prénom commençant par une voyelle
+         (« de la part d'Aïcha »), voir util/FrenchElision. -->
+    <string name="loan_gift_description_to">Cadeau à %1$s</string>
+    <string name="loan_gift_description_from">Cadeau de la part de %1$s</string>
+    <string name="loan_gift_description_from_elided">Cadeau de la part d\'%1$s</string>
+    <string name="loan_gift_done_message">Transformé en cadeau</string>
+    <string name="loan_gift_not_convertible_error">Ce prêt/emprunt ne peut plus être transformé en cadeau.</string>
+    <string name="loan_gift_card_title">🎁 Transformé en cadeau</string>
+    <string name="loan_gift_amount_label_lent">Montant offert</string>
+    <string name="loan_gift_amount_label_borrowed">Montant reçu en cadeau</string>
+    <string name="loan_gift_date_label">Transformé le</string>
+    <string name="transaction_form_loan_gift_banner_lent">🎁 Transformé depuis un prêt. Touche ici pour voir le prêt d\'origine.</string>
+    <string name="transaction_form_loan_gift_banner_borrowed">🎁 Transformé depuis un emprunt. Touche ici pour voir l\'emprunt d\'origine.</string>
     <string name="loan_form_next_action">Suivant</string>
     <string name="loan_form_summary_type_label">Type</string>
     <string name="loan_form_summary_amount_label">Montant total</string>

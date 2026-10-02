@@ -8,6 +8,7 @@ import com.naniger.arzikina.data.local.dao.TransactionDao
 import com.naniger.arzikina.data.local.database.ArzikinaDatabase
 import com.naniger.arzikina.data.local.entity.LoanEntity
 import com.naniger.arzikina.data.local.entity.LoanPaymentEntity
+import com.naniger.arzikina.data.local.entity.ownTransactionIds
 import com.naniger.arzikina.data.local.entity.PersonEntity
 import com.naniger.arzikina.data.local.entity.TransactionEntity
 import com.naniger.arzikina.data.mapper.toDomain
@@ -134,14 +135,17 @@ class PersonRepositoryImpl @Inject constructor(
                         updatedAt = now
                     ) to SyncOperation.DELETE
                 }
-                val loanTransaction = transactionDao.getById(loan.transactionId, userId)
-                transactionDao.softDeleteById(loan.transactionId, userId, now)
-                if (loanTransaction != null) {
-                    pendingTransactionOps += loanTransaction.copy(
-                        syncId = loanTransaction.syncId ?: UUID.randomUUID().toString(),
-                        deletedAt = now,
-                        updatedAt = now
-                    ) to SyncOperation.DELETE
+                // Décaissement + transaction cadeau éventuelle (voir LoanEntity.ownTransactionIds).
+                loan.ownTransactionIds().forEach { transactionId ->
+                    val loanTransaction = transactionDao.getById(transactionId, userId)
+                    transactionDao.softDeleteById(transactionId, userId, now)
+                    if (loanTransaction != null) {
+                        pendingTransactionOps += loanTransaction.copy(
+                            syncId = loanTransaction.syncId ?: UUID.randomUUID().toString(),
+                            deletedAt = now,
+                            updatedAt = now
+                        ) to SyncOperation.DELETE
+                    }
                 }
                 loanDao.softDeleteById(loan.id, userId, now)
                 pendingLoanOps += loan.copy(

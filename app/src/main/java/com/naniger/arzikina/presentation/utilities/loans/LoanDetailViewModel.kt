@@ -5,7 +5,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.naniger.arzikina.domain.model.Account
 import com.naniger.arzikina.domain.model.Loan
+import com.naniger.arzikina.domain.model.LoanGiftException
 import com.naniger.arzikina.domain.model.LoanPayment
+import com.naniger.arzikina.domain.model.canConvertToGift
+import com.naniger.arzikina.domain.model.isSettled
 import com.naniger.arzikina.domain.model.liveStatus
 import com.naniger.arzikina.domain.repository.AccountRepository
 import com.naniger.arzikina.domain.repository.LoanRepository
@@ -42,17 +45,34 @@ import javax.inject.Inject
  * peut être réglé sur un compte différent de celui utilisé à la création du prêt/emprunt (voir la
  * doc de [LoanPayment.accountId]) — nécessaire pour afficher le bon nom de compte sur chaque ligne
  * de la section "Versements" (cahier des charges section 11).
+ * @param canConvertToGift action « Transformer en cadeau » proposée (voir
+ * [com.naniger.arzikina.domain.model.canConvertToGift] — même règle que la couche data).
+ * @param isSettled dette éteinte (remboursée OU transformée en cadeau) : plus d'ajout de
+ * remboursement possible.
+ * @param canDeletePayments `false` sur un prêt/emprunt transformé en cadeau (verrouillé, voir
+ * [LoanRepository.deletePayment]).
  */
 data class LoanDetailUiState(
     val loan: Loan,
     val personName: String,
     val currencyCode: String,
     val payments: List<LoanPayment>,
-    val accountsById: Map<Long, Account>
+    val accountsById: Map<Long, Account>,
+    val canConvertToGift: Boolean = false,
+    val isSettled: Boolean = false,
+    val canDeletePayments: Boolean = true
 )
 
-/** Refus de [LoanDetailViewModel.updateStartDateTime] — voir sa doc. */
+/** Retours ponctuels de [LoanDetailViewModel] (refus de [LoanDetailViewModel.updateStartDateTime],
+ * issue de [LoanDetailViewModel.convertToGift]). */
 sealed interface LoanDetailEvent {
+    /** Transformation en cadeau réussie. */
+    data object ConvertedToGift : LoanDetailEvent
+
+    /** Transformation refusée : l'état a changé entre l'affichage et la confirmation (ex.
+     * remboursement arrivé par synchronisation). Aucune donnée modifiée. */
+    data object GiftNotAllowed : LoanDetailEvent
+
     /** Le début doit tomber un jour AVANT l'échéance (même règle que la création). */
     data object StartNotBeforeDue : LoanDetailEvent
 
@@ -79,13 +99,17 @@ class LoanDetailViewModel @Inject constructor(
         val storedLoan = loans.find { it.id == loanId } ?: return@combine null
         // Voir la doc de `computeLoanStatus` : recalculé à l'affichage plutôt que de faire
         // confiance à `Loan.status` persisté, qui peut être périmé par le simple écoulement du temps.
-        val loan = storedLoan.copy(status = storedLoan.liveStatus(System.currentTimeMillis()))
+        val now = System.currentTimeMillis()
+        val loan = storedLoan.copy(status = storedLoan.liveStatus(now))
         LoanDetailUiState(
             loan = loan,
             personName = persons.find { it.id == loan.personId }?.name.orEmpty(),
             currencyCode = accounts.find { it.id == loan.accountId }?.currencyCode ?: Constants.DEFAULT_CURRENCY_CODE,
             payments = payments,
-            accountsById = accounts.associateBy { it.id }
+            accountsById = accounts.associateBy { it.id },
+            canConvertToGift = storedLoan.canConvertToGift(now),
+            isSettled = loan.status.isSettled,
+            canDeletePayments = loan.giftedAmount == 0L
         )
     }
         .map<LoanDetailUiState?, AppResult<LoanDetailUiState>> { state ->
@@ -128,6 +152,23 @@ class LoanDetailViewModel @Inject constructor(
         }
     }
 
+    /**
+     * « Transformer en cadeau » (voir [LoanRepository.convertToGift]) — [description] est
+     * construite par le Fragment dans la langue active (voir [LoanGiftDescription]). [uiState] se met
+     * à jour seul (statut, carte cadeau, actions masquées) : il observe déjà le prêt/emprunt.
+     */
+    fun convertToGift(description: String) {
+        viewModelScope.launch {
+            val event = try {
+                loanRepository.convertToGift(loanId, description)
+                LoanDetailEvent.ConvertedToGift
+            } catch (refused: LoanGiftException) {
+                LoanDetailEvent.GiftNotAllowed
+            }
+            _events.emit(event)
+        }
+    }
+
     fun deleteLoan() {
         viewModelScope.launch {
             loanRepository.deleteLoan(loanId)
@@ -140,7 +181,14 @@ class LoanDetailViewModel @Inject constructor(
      * et [LoanRepository.observeLoans]), aucun rechargement explicite nécessaire ici. */
     fun deletePayment(paymentId: Long) {
         viewModelScope.launch {
-            loanRepository.deletePayment(paymentId)
+            // Refus attendu sur un prêt/emprunt transformé en cadeau (voir LoanRepository) : ne doit
+            // jamais faire planter l'écran (l'action est de toute façon masquée, voir
+            // LoanDetailUiState.canDeletePayments).
+            try {
+                loanRepository.deletePayment(paymentId)
+            } catch (ignored: LoanGiftException.Locked) {
+                // Ignoré volontairement : aucune donnée n'a été modifiée (transaction Room annulée).
+            }
         }
     }
 }

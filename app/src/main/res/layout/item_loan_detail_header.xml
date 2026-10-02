@@ -178,6 +178,91 @@
 
     </com.google.android.material.card.MaterialCardView>
 
+    <!-- ==================== Carte Cadeau ====================
+         Visible uniquement pour un prêt/emprunt transformé en cadeau (LoanStatus.GIFTED, voir
+         LoanDetailAdapter) : montant offert/reçu et date de la transformation — la traçabilité
+         « c'était un prêt » reste lisible dans la carte principale ci-dessus. Même structure de
+         lignes libellé/valeur que la carte Informations, bordure rose (couleur « Cadeaux »). -->
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/giftCard"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/spacing_m"
+        android:checkable="false"
+        android:visibility="gone"
+        app:cardCornerRadius="@dimen/corner_radius_medium"
+        app:cardElevation="0dp"
+        app:strokeColor="@color/loan_gifted_color"
+        app:strokeWidth="1dp"
+        tools:visibility="visible">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="@dimen/spacing_m">
+
+            <TextView
+                style="@style/TextAppearance.Material3.TitleSmall"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/loan_gift_card_title"
+                android:textColor="@color/loan_gifted_color" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_m"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/giftAmountLabel"
+                    style="@style/TextAppearance.Material3.BodyMedium"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:textColor="?attr/colorOnSurfaceVariant"
+                    tools:text="@string/loan_gift_amount_label_lent" />
+
+                <TextView
+                    android:id="@+id/giftAmountValue"
+                    style="@style/TextAppearance.Material3.TitleSmall"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="?attr/colorOnSurface"
+                    tools:text="60 000 F" />
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/giftDateContainer"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_s"
+                android:orientation="horizontal">
+
+                <TextView
+                    style="@style/TextAppearance.Material3.BodyMedium"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/loan_gift_date_label"
+                    android:textColor="?attr/colorOnSurfaceVariant" />
+
+                <TextView
+                    android:id="@+id/giftDateValue"
+                    style="@style/TextAppearance.Material3.TitleSmall"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="?attr/colorOnSurface"
+                    tools:text="2 octobre 2026" />
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+    </com.google.android.material.card.MaterialCardView>
+
     <!-- ==================== Carte Informations ==================== -->
     <com.google.android.material.card.MaterialCardView
         android:layout_width="match_parent"

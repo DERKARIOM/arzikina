@@ -81,3 +81,14 @@ data class LoanEntity(
      * Last-Write-Wins. */
     val version: Int = 1
 )
+
+/**
+ * Transactions Arzikina appartenant EN PROPRE à ce prêt/emprunt (hors remboursements, portés par
+ * `LoanPaymentEntity.transactionId`) : son décaissement et, s'il a été transformé en cadeau, sa
+ * transaction cadeau — sans doublon quand le décaissement a été reclassé sur place
+ * (`giftTransactionId == transactionId`). Point unique utilisé par les TROIS suppressions en
+ * cascade (`LoanRepositoryImpl.deleteLoan`, `PersonRepositoryImpl.deletePerson`,
+ * `AccountRepositoryImpl.deleteAccount`) pour qu'aucune n'oublie la transaction cadeau.
+ */
+fun LoanEntity.ownTransactionIds(): List<Long> =
+    listOfNotNull(transactionId, giftTransactionId?.takeIf { it != transactionId })

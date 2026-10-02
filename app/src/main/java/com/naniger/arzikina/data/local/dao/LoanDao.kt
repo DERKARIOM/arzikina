@@ -85,4 +85,11 @@ interface LoanDao {
      * `TransactionFormViewModel`, section "Synchronisation avec les transactions"). */
     @Query("SELECT id FROM loans WHERE transactionId = :transactionId AND userId = :userId AND deletedAt IS NULL LIMIT 1")
     suspend fun findIdByTransactionId(transactionId: Long, userId: Long): Long?
+
+    /** Même rôle que [findIdByTransactionId], pour la transaction CADEAU d'un prêt/emprunt transformé
+     * (voir `Loan.giftTransactionId`) : verrouille son édition directe et permet d'afficher
+     * « Transformé depuis un prêt/emprunt » dans son détail. Sans index : la table `loans` reste
+     * petite (quelques dizaines de lignes par utilisateur), filtrée d'abord par `userId` (indexé). */
+    @Query("SELECT id FROM loans WHERE giftTransactionId = :transactionId AND userId = :userId AND deletedAt IS NULL LIMIT 1")
+    suspend fun findIdByGiftTransactionId(transactionId: Long, userId: Long): Long?
 }

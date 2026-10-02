@@ -61,6 +61,12 @@ interface CategoryDao {
     @Query("SELECT * FROM categories WHERE name = :name AND userId = :userId AND deletedAt IS NULL LIMIT 1")
     suspend fun getFirstByNameForUser(name: String, userId: Long): CategoryEntity?
 
+    /** Variante de [getFirstByNameForUser] filtrée AUSSI par [type] — indispensable pour les
+     * catégories système dont le nom existe dans les deux sens (« Cadeaux » dépense/revenu, voir
+     * `SystemCategoryKey.GIFTS`/`GIFTS_RECEIVED`), même raisonnement que [getUnsyncedByNameAndType]. */
+    @Query("SELECT * FROM categories WHERE name = :name AND type = :type AND userId = :userId AND deletedAt IS NULL LIMIT 1")
+    suspend fun getFirstByNameAndTypeForUser(name: String, type: TransactionType, userId: Long): CategoryEntity?
+
     /**
      * Réservé à [com.naniger.arzikina.data.repository.SyncEngineImpl.applyCategoryServerState] :
      * rattachement anti-doublon d'une catégorie reçue du serveur dont le `syncId` est INCONNU

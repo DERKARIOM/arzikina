@@ -13,6 +13,10 @@ import kotlinx.coroutines.flow.Flow
  * atomique, la [com.naniger.arzikina.domain.model.Transaction] Arzikina correspondante — voir la doc de
  * [Loan.transactionId]/[LoanPayment.transactionId]. Le contrat ne l'expose pas explicitement
  * (l'appelant n'a jamais besoin de le savoir), mais c'est un invariant fort de cette interface.
+ *
+ * Un prêt/emprunt transformé en cadeau ([convertToGift]) est VERROUILLÉ : [recordPayment],
+ * [deletePayment] et toute modification de son montant/compte/personne/type par [saveLoan] lèvent
+ * [com.naniger.arzikina.domain.model.LoanGiftException.Locked]. Seule la date peut encore changer.
  */
 interface LoanRepository {
 
@@ -52,19 +56,25 @@ interface LoanRepository {
      *
      * @throws IllegalStateException si le prêt/emprunt n'existe pas, ou si [LoanPayment.amount]
      * dépasse le solde restant du prêt/emprunt.
+     * @throws com.naniger.arzikina.domain.model.LoanGiftException.Locked si le prêt/emprunt a été
+     * transformé en cadeau.
      */
     suspend fun recordPayment(payment: LoanPayment): Long
 
     /**
      * Annule un remboursement : supprime la transaction Arzikina liée et la ligne [LoanPayment],
      * et recalcule [Loan.amountRepaid]/[Loan.remainingAmount]/[Loan.status] — atomiquement.
+     *
+     * @throws com.naniger.arzikina.domain.model.LoanGiftException.Locked si le prêt/emprunt a été
+     * transformé en cadeau.
      */
     suspend fun deletePayment(id: Long)
 
     /**
      * `null` si [transactionId] n'est celle d'AUCUN prêt/emprunt (transaction normale) — sinon
      * l'id du prêt/emprunt concerné, que [transactionId] soit son décaissement OU l'un de ses
-     * remboursements (voir la doc de [Loan.transactionId]/[LoanPayment.transactionId]).
+     * remboursements (voir la doc de [Loan.transactionId]/[LoanPayment.transactionId]), OU sa
+     * transaction cadeau (voir [Loan.giftTransactionId]).
      *
      * Utilisé par [com.naniger.arzikina.presentation.transactions.TransactionFormViewModel] pour
      * empêcher l'édition/suppression directe d'une transaction générée automatiquement par cette
@@ -72,4 +82,23 @@ interface LoanRepository {
      * [Loan.amountRepaid]/[Loan.remainingAmount]/[Loan.status] du montant réellement enregistré.
      */
     suspend fun findLoanIdForTransaction(transactionId: Long): Long?
+
+    /**
+     * « Transformer en cadeau » : reclasse la part NON remboursée du prêt/emprunt [loanId] en
+     * catégorie « Cadeaux » (dépense pour un prêt, revenu pour un emprunt) et le clôture
+     * ([com.naniger.arzikina.domain.model.LoanStatus.GIFTED]) — atomiquement, sans AUCUN nouveau
+     * mouvement d'argent (voir `domain/model/LoanGift.kt` pour la règle comptable complète) :
+     * - rien de remboursé : la transaction de décaissement est reclassée sur place ;
+     * - remboursement partiel : le décaissement est réduit à la part remboursée et UNE transaction
+     *   cadeau est créée pour le reste, même compte, même date que le prêt/emprunt.
+     * Le prêt/emprunt n'est jamais supprimé ; son montant d'origine et ses remboursements restent
+     * intacts (traçabilité).
+     *
+     * @param description texte de la transaction cadeau (« Cadeau à Abdou »), construit par la
+     * présentation dans la langue de l'utilisateur.
+     * @return id de la transaction cadeau.
+     * @throws com.naniger.arzikina.domain.model.LoanGiftException.NotConvertible si la transformation
+     * n'est plus permise (voir `canConvertToGift`).
+     */
+    suspend fun convertToGift(loanId: Long, description: String): Long
 }
