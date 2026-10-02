@@ -41,7 +41,7 @@ final class DomainUnitTests: XCTestCase {
     func testEnumRawValuesMatchApi() {
         XCTAssertEqual(AccountType.allCases.map(\.rawValue), ["CASH", "BANK", "MOBILE_MONEY", "SAVINGS", "CREDIT_CARD", "SAVINGS_GOAL"])
         XCTAssertEqual(TransactionType.allCases.map(\.rawValue), ["INCOME", "EXPENSE", "TRANSFER"])
-        XCTAssertEqual(LoanStatus.allCases.map(\.rawValue), ["ONGOING", "REPAID", "OVERDUE", "UPCOMING"])
+        XCTAssertEqual(LoanStatus.allCases.map(\.rawValue), ["ONGOING", "REPAID", "OVERDUE", "UPCOMING", "GIFTED"])
         XCTAssertEqual(RecurringFrequency.allCases.map(\.rawValue), ["ONCE", "DAILY", "WEEKLY", "BIWEEKLY", "MONTHLY", "QUARTERLY", "SEMIANNUAL", "YEARLY"])
         XCTAssertEqual(OccurrenceStatus.allCases.map(\.rawValue), ["PENDING", "ACCEPTED", "MODIFIED", "REJECTED"])
         XCTAssertEqual(PlanItemStatus.allCases.map(\.rawValue), ["TO_PLAN", "DONE", "CANCELLED"])

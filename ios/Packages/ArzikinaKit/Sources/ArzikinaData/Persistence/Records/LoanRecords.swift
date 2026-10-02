@@ -52,6 +52,9 @@ struct LoanRecord: SyncedRecord, Equatable, FetchableRecord, PersistableRecord {
     var description: String
     var status: String
     var transactionId: String
+    var giftedAmount: Int64
+    var giftTransactionId: String?
+    var giftedAt: Int64?
     var createdAt: Int64
     var updatedAt: Int64
     var deletedAt: Int64?
@@ -78,6 +81,9 @@ struct LoanRecord: SyncedRecord, Equatable, FetchableRecord, PersistableRecord {
         description = loan.description
         status = loan.status.rawValue
         transactionId = loan.transactionId
+        giftedAmount = loan.giftedAmount
+        giftTransactionId = loan.giftTransactionId
+        giftedAt = loan.giftedAt
         createdAt = meta.createdAt
         updatedAt = meta.updatedAt
         deletedAt = meta.deletedAt
@@ -102,7 +108,10 @@ struct LoanRecord: SyncedRecord, Equatable, FetchableRecord, PersistableRecord {
             status: LoanStatus(rawValue: status) ?? .ongoing,
             transactionId: transactionId,
             createdAt: createdAt,
-            updatedAt: updatedAt
+            updatedAt: updatedAt,
+            giftedAmount: giftedAmount,
+            giftTransactionId: giftTransactionId,
+            giftedAt: giftedAt
         )
     }
 }

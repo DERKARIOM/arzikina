@@ -30,6 +30,12 @@ public enum LoanStatus: String, CaseIterable, Codable, Sendable {
     case repaid = "REPAID"
     case overdue = "OVERDUE"
     case upcoming = "UPCOMING"
+    /// Le reste a été transformé en cadeau (Android `LoanStatus.GIFTED`) : statut FINAL, comme
+    /// `.repaid`, prioritaire sur tous les autres.
+    case gifted = "GIFTED"
+
+    /// Dette éteinte (remboursée ou offerte) : plus aucun remboursement attendu.
+    public var isSettled: Bool { self == .repaid || self == .gifted }
 }
 
 /// Personne liée à des prêts/emprunts.
@@ -68,6 +74,23 @@ public struct Loan: Identifiable, Equatable, Hashable, Sendable {
     public var transactionId: EntityID
     public var createdAt: EpochMillis
     public var updatedAt: EpochMillis
+    /// Part du reste transformée en cadeau (0 sinon) — gérée uniquement par la transformation.
+    public var giftedAmount: MinorUnits
+    /// Transaction « Cadeaux » qui porte [giftedAmount] ; égale à [transactionId] quand rien
+    /// n'avait été remboursé (décaissement reclassé sur place).
+    public var giftTransactionId: EntityID?
+    /// Instant de la transformation.
+    public var giftedAt: EpochMillis?
+
+    /// Transformé en cadeau : montant, compte, personne et remboursements sont verrouillés.
+    public var isGifted: Bool { giftedAmount > 0 }
+
+    /// Transactions qui appartiennent au prêt : décaissement et transaction cadeau éventuelle
+    /// (Android `LoanEntity.ownTransactionIds`).
+    public var ownTransactionIds: [EntityID] {
+        guard let gift = giftTransactionId, gift != transactionId else { return [transactionId] }
+        return [transactionId, gift]
+    }
 
     public init(
         id: EntityID,
@@ -86,7 +109,10 @@ public struct Loan: Identifiable, Equatable, Hashable, Sendable {
         status: LoanStatus = .ongoing,
         transactionId: EntityID,
         createdAt: EpochMillis = 0,
-        updatedAt: EpochMillis = 0
+        updatedAt: EpochMillis = 0,
+        giftedAmount: MinorUnits = 0,
+        giftTransactionId: EntityID? = nil,
+        giftedAt: EpochMillis? = nil
     ) {
         self.id = id
         self.personId = personId
@@ -105,6 +131,9 @@ public struct Loan: Identifiable, Equatable, Hashable, Sendable {
         self.transactionId = transactionId
         self.createdAt = createdAt
         self.updatedAt = updatedAt
+        self.giftedAmount = giftedAmount
+        self.giftTransactionId = giftTransactionId
+        self.giftedAt = giftedAt
     }
 }
 

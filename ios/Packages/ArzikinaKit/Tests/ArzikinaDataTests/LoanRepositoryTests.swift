@@ -198,4 +198,133 @@ final class LoanRepositoryTests: XCTestCase {
         XCTAssertEqual(disbursement?.type, .expense)
         XCTAssertEqual(disbursement?.description, "Moto")
     }
+
+    // MARK: - Prêt transformé en cadeau (sur Android ou le Web)
+
+    /// Prêt de 100 000 F, 40 000 F remboursés, puis transformé en cadeau sur Android : le
+    /// décaissement garde la part remboursée, la transaction « Cadeaux » porte les 60 000 F
+    /// restants (Android `LoanGiftConverter`), reçus ici par synchronisation.
+    private func giftedLoanFromAndroid() async throws -> Loan {
+        try await setUpAccountAndPerson()
+        let saved = try await space.loans.create(newLoan(amount: 100_000), firstPayment: nil)
+        try await space.loans.recordPayment(LoanPayment(id: "p1", loanId: saved.id, accountId: "cash", amount: 40_000, date: now, transactionId: ""))
+        try await space.database.writer.write { db in
+            try db.execute(sql: "UPDATE transactions SET amount = 40000 WHERE id = ?", arguments: [saved.transactionId])
+            try db.execute(sql: """
+                INSERT INTO transactions (id, amount, type, accountId, categoryId, date, description, createdAt, updatedAt, version)
+                VALUES ('gift', 60000, 'EXPENSE', 'cash', NULL, ?, 'Cadeau à Awa', 0, 0, 1)
+                """, arguments: [saved.startDate])
+            try db.execute(sql: """
+                UPDATE loans SET giftedAmount = 60000, giftTransactionId = 'gift', giftedAt = ?, status = 'GIFTED', remainingAmount = 0
+                WHERE id = ?
+                """, arguments: [self.now, saved.id])
+            try db.execute(sql: "DELETE FROM sync_queue")
+        }
+        let stored = try await storedLoan(saved.id)
+        return try XCTUnwrap(stored)
+    }
+
+    func testAGiftedLoanIsSettledAndKeepsTheBalance() async throws {
+        let loan = try await giftedLoanFromAndroid()
+        XCTAssertTrue(loan.isGifted)
+        XCTAssertEqual(loan.ownTransactionIds, [loan.transactionId, "gift"])
+
+        try await space.loans.create(newLoan("other", amount: 1_000), firstPayment: nil)
+        let summaries = try await first(space.loans.observeSummaries(now: now, calendar: calendar))
+        let gifted = try XCTUnwrap(summaries.first { $0.loan.id == "loan" })
+        XCTAssertEqual(gifted.status, .gifted)
+        XCTAssertEqual(gifted.remaining, 0)
+        XCTAssertEqual(LoanList.apply(summaries, filters: LoanFilters()).map(\.loan.id), ["other", "loan"], "Dette éteinte en dernier")
+        XCTAssertEqual(LoanList.apply(summaries, filters: LoanFilters(status: .gifted)).map(\.loan.id), ["loan"])
+
+        let balances = try await first(space.accounts.observeBalances())
+        XCTAssertEqual(balances["cash"], 100_000 - 40_000 - 60_000 + 40_000 - 1_000, "Aucun mouvement d'argent en plus")
+        let giftLinked = try await space.transactions.isLinkedToLoan(id: "gift")
+        XCTAssertTrue(giftLinked, "La transaction cadeau se gère depuis le prêt")
+    }
+
+    func testAGiftedLoanRefusesPaymentsAndLockedChanges() async throws {
+        let loan = try await giftedLoanFromAndroid()
+        for action in [
+            { try await self.space.loans.recordPayment(LoanPayment(id: "p2", loanId: loan.id, accountId: "cash", amount: 1, date: self.now, transactionId: "")) },
+            { try await self.space.loans.deletePayment(id: "p1") },
+            { var edited = loan; edited.amount = 120_000; try await self.space.loans.update(edited) },
+            { var edited = loan; edited.accountId = "bank"; try await self.space.loans.update(edited) }
+        ] as [() async throws -> Void] {
+            do {
+                try await action()
+                XCTFail("Verrouillé")
+            } catch let error as LoanWriteError {
+                XCTAssertEqual(error, .loanGifted)
+            }
+        }
+        let queued = try await space.database.writer.read { db in try Int.fetchOne(db, sql: "SELECT COUNT(*) FROM sync_queue") }
+        XCTAssertEqual(queued, 0, "Rien n'a été écrit")
+    }
+
+    func testMovingAGiftedLoanMovesBothTransactionsAndKeepsTheGift() async throws {
+        let loan = try await giftedLoanFromAndroid()
+        var edited = loan
+        edited.startDate = loan.startDate - 2 * day
+        edited.description = "Moto"
+        // Comme le ferait un formulaire qui renverrait des champs « cadeau » vides.
+        edited.giftedAmount = 0
+        edited.giftTransactionId = nil
+        try await space.loans.update(edited)
+
+        let reloaded = try await storedLoan(loan.id)
+        let stored = try XCTUnwrap(reloaded)
+        XCTAssertEqual(stored.giftedAmount, 60_000)
+        XCTAssertEqual(stored.giftTransactionId, "gift")
+        XCTAssertEqual(stored.status, .gifted)
+        XCTAssertEqual(stored.remainingAmount, 0)
+        XCTAssertEqual(stored.description, "Moto")
+        let disbursement = try await space.transactions.transaction(id: loan.transactionId)
+        let gift = try await space.transactions.transaction(id: "gift")
+        XCTAssertEqual(disbursement?.date, edited.startDate)
+        XCTAssertEqual(gift?.date, edited.startDate)
+        XCTAssertEqual(disbursement?.amount, 40_000, "Le reclassement n'est jamais défait")
+        XCTAssertEqual(gift?.amount, 60_000)
+        XCTAssertEqual(gift?.description, "Cadeau à Awa")
+    }
+
+    func testDeletingAGiftedLoanDeletesItsGiftTransaction() async throws {
+        let loan = try await giftedLoanFromAndroid()
+        try await space.loans.delete(id: loan.id)
+        let gift = try await space.transactions.transaction(id: "gift")
+        XCTAssertNil(gift)
+        let balances = try await first(space.accounts.observeBalances())
+        XCTAssertEqual(balances["cash"], 100_000)
+    }
+
+    /// Le serveur garde l'état « cadeau » : l'iPhone ne l'envoie que s'il est renseigné, jamais
+    /// pour l'effacer depuis une copie locale en retard.
+    func testGiftFieldsAreNeverSentEmpty() async throws {
+        let loan = try await giftedLoanFromAndroid()
+        try await space.loans.create(newLoan("plain", amount: 1_000), firstPayment: nil)
+        let (gifted, plain) = try await space.database.writer.read { db in
+            (try SyncRowCodec.payload(db, schema: .loans, id: loan.id, operation: .update),
+             try SyncRowCodec.payload(db, schema: .loans, id: "plain", operation: .create))
+        }
+        XCTAssertEqual(gifted?["giftedAmount"], .int(60_000))
+        XCTAssertEqual(gifted?["giftTransactionSyncId"], .string("gift"))
+        XCTAssertEqual(gifted?["status"], .string("GIFTED"))
+        XCTAssertNil(plain?["giftedAmount"])
+        XCTAssertNil(plain?["giftTransactionSyncId"])
+        XCTAssertNil(plain?["giftedAt"])
+        XCTAssertEqual(plain?["amount"], .int(1_000))
+    }
+
+    func testGiftFieldsAreReceivedFromTheServer() throws {
+        let entity: [String: JSONValue] = [
+            "id": .string("l"), "updatedAt": .int(5), "giftedAmount": .int(60_000),
+            "giftTransactionSyncId": .string("gift"), "giftedAt": .int(9)
+        ]
+        let decoded = try XCTUnwrap(SyncRowCodec.localValues(from: entity, schema: .loans))
+        XCTAssertEqual(decoded.values["giftedAmount"], 60_000.databaseValue)
+        XCTAssertEqual(decoded.values["giftTransactionId"], "gift".databaseValue)
+        let old = try XCTUnwrap(SyncRowCodec.localValues(from: ["id": .string("l"), "updatedAt": .int(5)], schema: .loans))
+        XCTAssertEqual(old.values["giftedAmount"], 0.databaseValue, "Ancien serveur : jamais transformé")
+        XCTAssertEqual(old.values["giftTransactionId"], .null)
+    }
 }

@@ -29,6 +29,7 @@ enum AppDatabaseSchema {
         migrator.registerMigration("v1_initial", migrate: createInitialSchema)
         migrator.registerMigration("v2_sync_engine", migrate: addSyncEngineSupport)
         migrator.registerMigration("v3_dashboard_indexes", migrate: addDashboardIndexes)
+        migrator.registerMigration("v4_loan_gift", migrate: addLoanGift)
         return migrator
     }
 
@@ -251,6 +252,23 @@ enum AppDatabaseSchema {
     /// parcourrait toute la table à chaque mise à jour de l'écran.
     private static func addDashboardIndexes(_ db: Database) throws {
         try db.create(index: "transactions_on_feeTransactionId", on: "transactions", columns: ["feeTransactionId"])
+    }
+
+    /// Version 4 : « Transformer un prêt en cadeau » (Android Room 33, MySQL 008) — trois colonnes
+    /// ajoutées, sans toucher aux lignes existantes (0 / NULL = jamais transformé).
+    private static func addLoanGift(_ db: Database) throws {
+        try db.alter(table: "loans") { t in
+            t.add(column: "giftedAmount", .integer).notNull().defaults(to: 0)
+            t.add(column: "giftTransactionId", .text)
+            t.add(column: "giftedAt", .integer)
+        }
+        // Retrouver le prêt d'une transaction cadeau (verrou du formulaire de transaction).
+        try db.create(index: "loans_on_giftTransactionId", on: "loans", columns: ["giftTransactionId"])
+        // Les prêts déjà reçus l'ont été SANS ces champs (version précédente de l'app) : ils sont
+        // tous redemandés au serveur à la prochaine synchronisation, pour qu'un prêt transformé
+        // en cadeau sur Android ou le Web apparaisse comme tel (les prêts modifiés localement et
+        // pas encore envoyés ne sont pas écrasés, voir `SyncStore.applyPulled`).
+        try db.execute(sql: "UPDATE sync_cursors SET lastPulledAt = 0 WHERE entityType = 'loans'")
     }
 
     /// Colonnes de synchronisation communes à toutes les entités.

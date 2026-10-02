@@ -28,7 +28,8 @@ final class DefaultDataTests: XCTestCase {
         XCTAssertEqual(categories.count, 18)
         XCTAssertEqual(Set(categories.map(\.id)).count, 18)
         XCTAssertEqual(categories.filter { $0.type == .income }.map(\.name), ["Salaire", "Divers", "Remboursement de prêt reçu", "Emprunt reçu"])
-        XCTAssertEqual(categories.compactMap(\.systemKey), SystemCategoryKey.allCases, "Chaque catégorie est reconnue par sa clé")
+        XCTAssertEqual(categories.compactMap(\.systemKey), SystemCategoryKey.allCases.filter { $0 != .giftsReceived }, "Chaque catégorie est reconnue par sa clé")
+        XCTAssertEqual(SystemCategoryKey.of(name: "Cadeaux", type: .income), .giftsReceived, "« Cadeaux » en revenu (emprunt offert) reconnue, créée à la demande")
 
         let byKey = Dictionary(uniqueKeysWithValues: categories.map { ($0.systemKey!, $0) })
         XCTAssertEqual(byKey[.salary]?.colorArgb, 0xFF00_6C4F)

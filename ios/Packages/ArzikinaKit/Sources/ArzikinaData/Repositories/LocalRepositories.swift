@@ -311,20 +311,26 @@ public struct LocalTransactionRepository: TransactionRepository {
         let timestamp = now()
         let store = self.store
         try await database.writer.write { db in
-            guard let existing = try TransactionRecord.fetchOne(db, key: id), existing.deletedAt == nil else { return }
-            if let feeId = existing.feeTransactionId {
-                try store.softDelete(db, id: feeId, timestamp: timestamp)
-            }
-            try store.softDelete(db, id: id, timestamp: timestamp)
+            try Self.deleteWithFee(db, id: id, store: store, timestamp: timestamp)
         }
+    }
+
+    /// Supprime, dans la transaction SQL de l'appelant, la transaction [id] et ses frais.
+    static func deleteWithFee(_ db: Database, id: EntityID, store: SyncedStore<TransactionRecord>, timestamp: Int64) throws {
+        guard let existing = try TransactionRecord.fetchOne(db, key: id), existing.deletedAt == nil else { return }
+        if let feeId = existing.feeTransactionId {
+            try store.softDelete(db, id: feeId, timestamp: timestamp)
+        }
+        try store.softDelete(db, id: id, timestamp: timestamp)
     }
 
     public func isLinkedToLoan(id: EntityID) async throws -> Bool {
         try await database.writer.read { db in
             try Bool.fetchOne(db, sql: """
                 SELECT EXISTS (SELECT 1 FROM loans WHERE transactionId = ? AND deletedAt IS NULL)
+                    OR EXISTS (SELECT 1 FROM loans WHERE giftTransactionId = ? AND deletedAt IS NULL)
                     OR EXISTS (SELECT 1 FROM loan_payments WHERE transactionId = ? AND deletedAt IS NULL)
-                """, arguments: [id, id]) ?? false
+                """, arguments: [id, id, id]) ?? false
         }
     }
 

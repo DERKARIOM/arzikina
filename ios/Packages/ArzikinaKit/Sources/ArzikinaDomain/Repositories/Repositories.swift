@@ -276,6 +276,8 @@ public enum LoanWriteError: Error, Equatable, Sendable {
     case loanNotFound
     case amountExceedsRemaining
     case amountBelowRepaid
+    /// Prêt transformé en cadeau : remboursements, montant, compte et personne verrouillés.
+    case loanGifted
 }
 
 // MARK: - Automatisations
@@ -294,6 +296,17 @@ public protocol RecurringRepository: Sendable {
     func reject(occurrenceId: EntityID) async throws
     /// Met en pause ou réactive une règle.
     func setActive(ruleId: EntityID, isActive: Bool) async throws
+    /// Règle enregistrée, `nil` si elle n'existe pas (ou plus).
+    func rule(id: EntityID) async throws -> RecurringTransaction?
+    /// Crée ou modifie une règle (voir `AutomationForm.ruleToStore` pour ce qui est conservé).
+    func save(_ rule: RecurringTransaction) async throws
+    /// Ce que [delete] emporterait.
+    func deletionImpact(ruleId: EntityID) async throws -> AutomationDeletionImpact
+    /// Supprime la règle et ses échéances ; les transactions déjà créées par elle sont supprimées
+    /// seulement si [deleteCreatedTransactions].
+    func delete(ruleId: EntityID, deleteCreatedTransactions: Bool) async throws
+    /// Valide une échéance en attente avec une transaction modifiée (la règle ne change pas).
+    func acceptWithChanges(occurrenceId: EntityID, transaction: Transaction) async throws
 }
 
 /// Action refusée : l'échéance a déjà été traitée (par exemple sur un autre appareil).

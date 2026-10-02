@@ -72,6 +72,8 @@ public enum LoanForm {
     /// - Modification : le TYPE n'est jamais changé (la transaction de décaissement et les
     ///   remboursements existants sont dans le sens du type d'origine) ; [repaid] = montant déjà
     ///   remboursé, plancher du nouveau montant.
+    /// - Prêt transformé en cadeau : personne, compte et montant restent ceux de [existing]
+    ///   (verrouillés, comme Android) ; dates, description et le reste restent modifiables.
     public static func build(
         _ draft: LoanDraft,
         existing: Loan?,
@@ -80,10 +82,11 @@ public enum LoanForm {
         newPaymentId: @autoclosure () -> EntityID,
         now: EpochMillis
     ) -> Result<(loan: Loan, firstPayment: LoanPayment?), LoanFormError> {
-        guard let personId = draft.personId else { return .failure(.personRequired) }
-        guard let accountId = draft.accountId else { return .failure(.accountRequired) }
-        guard let amount = Money.parseToMinorUnits(draft.amountInput), amount > 0 else { return .failure(.invalidAmount) }
-        if existing != nil, amount < repaid { return .failure(.amountBelowRepaid) }
+        let locked = existing.flatMap { $0.isGifted ? $0 : nil }
+        guard let personId = locked?.personId ?? draft.personId else { return .failure(.personRequired) }
+        guard let accountId = locked?.accountId ?? draft.accountId else { return .failure(.accountRequired) }
+        guard let amount = locked?.amount ?? Money.parseToMinorUnits(draft.amountInput), amount > 0 else { return .failure(.invalidAmount) }
+        if existing != nil, locked == nil, amount < repaid { return .failure(.amountBelowRepaid) }
         guard draft.dueDate > draft.startDate else { return .failure(.dueBeforeStart) }
 
         var firstPayment: (amount: MinorUnits, date: EpochMillis)?
@@ -107,7 +110,7 @@ public enum LoanForm {
         loan.dueDate = draft.dueDate
         loan.description = draft.description.trimmingCharacters(in: .whitespacesAndNewlines)
         loan.amountRepaid = repaid
-        loan.remainingAmount = amount - repaid
+        loan.remainingAmount = max(amount - repaid - loan.giftedAmount, 0)
 
         let payment = firstPayment.map {
             LoanPayment(id: newPaymentId(), loanId: loan.id, accountId: accountId, amount: $0.amount, date: $0.date, transactionId: "", createdAt: now)
@@ -138,6 +141,8 @@ public enum LoanPaymentFormError: Error, Equatable, Sendable {
     case exceedsRemaining
     /// Écart volontaire avec Android, qui ne le vérifie que pour le premier remboursement.
     case beforeStart
+    /// Prêt transformé en cadeau : plus aucun remboursement (comme Android et le Web).
+    case loanGifted
 }
 
 public enum LoanPaymentForm {
@@ -148,6 +153,7 @@ public enum LoanPaymentForm {
         newId: @autoclosure () -> EntityID,
         now: EpochMillis
     ) -> Result<LoanPayment, LoanPaymentFormError> {
+        guard !summary.loan.isGifted else { return .failure(.loanGifted) }
         guard let accountId = draft.accountId else { return .failure(.accountRequired) }
         guard let amount = Money.parseToMinorUnits(draft.amountInput), amount > 0 else { return .failure(.invalidAmount) }
         guard amount <= summary.remaining else { return .failure(.exceedsRemaining) }
@@ -168,6 +174,8 @@ public enum LoanPaymentForm {
 /// Un prêt / emprunt tel qu'une liste l'affiche : personne, devise, montant remboursé (TOUJOURS
 /// la somme de ses remboursements, jamais la valeur stockée, qui peut être en retard sur une
 /// synchronisation) et statut recalculé à l'instant de l'affichage.
+///
+/// Reste dû = montant − remboursé − part offerte (Android `outstandingAmount`).
 public struct LoanSummary: Identifiable, Equatable, Sendable {
     public let loan: Loan
     public let person: Person?
@@ -176,7 +184,7 @@ public struct LoanSummary: Identifiable, Equatable, Sendable {
     public let status: LoanStatus
 
     public var id: EntityID { loan.id }
-    public var remaining: MinorUnits { max(loan.amount - amountRepaid, 0) }
+    public var remaining: MinorUnits { max(loan.amount - amountRepaid - loan.giftedAmount, 0) }
     /// 0…100, arrondi à l'inférieur — Android `computeLoanProgressPercent`.
     public var progressPercent: Int {
         guard loan.amount > 0 else { return 0 }
@@ -194,7 +202,8 @@ public struct LoanSummary: Identifiable, Equatable, Sendable {
             startDate: loan.startDate,
             dueDate: loan.dueDate,
             now: now,
-            calendar: calendar
+            calendar: calendar,
+            giftedAmount: loan.giftedAmount
         )
     }
 }
@@ -217,11 +226,11 @@ public struct LoanFilters: Equatable, Sendable {
 
 public enum LoanList {
 
-    /// Lignes visibles : remboursés en dernier (ordre conservé sinon), puis filtres et recherche
+    /// Lignes visibles : dettes éteintes (remboursées ou offertes) en dernier (ordre conservé sinon), puis filtres et recherche
     /// sur le nom de la personne et la description — Android `LoansViewModel`.
     public static func apply(_ summaries: [LoanSummary], filters: LoanFilters) -> [LoanSummary] {
         let query = filters.query.trimmingCharacters(in: .whitespacesAndNewlines)
-        let ordered = summaries.filter { $0.status != .repaid } + summaries.filter { $0.status == .repaid }
+        let ordered = summaries.filter { !$0.status.isSettled } + summaries.filter { $0.status.isSettled }
         return ordered.filter { summary in
             (filters.type == nil || summary.loan.type == filters.type)
                 && (filters.status == nil || summary.status == filters.status)

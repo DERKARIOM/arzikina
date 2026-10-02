@@ -43,6 +43,11 @@ final class AppContainer {
         return SyncEngine(space: space, api: syncAPI, accessToken: accessToken)
     }
 
+    /// Rappels des automatisations (centre de notifications du système).
+    func makeReminderScheduler() -> AutomationReminderScheduler {
+        AutomationReminderScheduler(center: UserNotificationCenterClient())
+    }
+
     /// Dépendances réelles de l'application.
     static func live() -> AppContainer {
         let sessionStore = KeychainSessionStore()

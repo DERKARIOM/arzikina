@@ -8,6 +8,7 @@ extension LoanStatus {
         case .repaid: return "loans.status.repaid"
         case .overdue: return "loans.status.overdue"
         case .upcoming: return "loans.status.upcoming"
+        case .gifted: return "loans.status.gifted"
         }
     }
 
@@ -18,6 +19,8 @@ extension LoanStatus {
         case .repaid: return .secondary
         case .overdue: return Brand.expense
         case .upcoming: return Color(argb: 0xFFF5_9E0B)
+        // Rose « Cadeaux » (couleur de la catégorie, et du badge Web).
+        case .gifted: return Color(argb: 0xFFEC_4899)
         }
     }
 }

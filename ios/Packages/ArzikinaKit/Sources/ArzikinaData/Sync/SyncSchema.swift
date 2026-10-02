@@ -26,6 +26,11 @@ struct SyncEntitySchema: Sendable {
         let payload: String
         let kind: Kind
         let nullable: Bool
+        /// Valeur vide (0 / nul) NON envoyée : le serveur garde la sienne (`push.php` : champ
+        /// absent = conserver). Pour un état que d'autres appareils posent et que celui-ci ne
+        /// remet jamais à zéro (prêt transformé en cadeau) : une copie locale en retard ne peut
+        /// pas l'effacer.
+        var sentOnlyWhenSet = false
     }
 
     let type: SyncEntityType
@@ -43,6 +48,14 @@ struct SyncEntitySchema: Sendable {
 
     static func schema(for type: SyncEntityType) -> SyncEntitySchema {
         all.first { $0.type == type }!
+    }
+}
+
+extension SyncEntitySchema.Field {
+    fileprivate func whenSetOnly() -> Self {
+        var copy = self
+        copy.sentOnlyWhenSet = true
+        return copy
     }
 }
 
@@ -132,7 +145,13 @@ extension SyncEntitySchema {
         field("repaymentMode", .text),
         field("description", .text),
         field("status", .text),
-        field("transactionId", api: "transactionSyncId", .text)
+        field("transactionId", api: "transactionSyncId", .text),
+        // « Transformer en cadeau » (migration serveur 008) : absent d'une réponse d'un ancien
+        // serveur → 0 / nul, comme `push.php` l'appliquerait.
+        // Envoyés seulement s'ils sont renseignés : l'iPhone ne « dé-transforme » jamais un prêt.
+        field("giftedAmount", .integer).whenSetOnly(),
+        field("giftTransactionId", api: "giftTransactionSyncId", .text, nullable: true).whenSetOnly(),
+        field("giftedAt", .integer, nullable: true).whenSetOnly()
     ])
 
     static let loanPayments = SyncEntitySchema(type: .loanPayments, fields: [

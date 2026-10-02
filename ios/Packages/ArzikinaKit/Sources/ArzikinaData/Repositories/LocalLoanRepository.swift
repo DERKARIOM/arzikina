@@ -122,11 +122,21 @@ public struct LocalLoanRepository: LoanRepository {
         let store = self
         try await database.writer.write { db in
             guard let existing = try LoanRecord.fetchOne(db, key: loan.id), existing.deletedAt == nil else { throw LoanWriteError.loanNotFound }
-            guard loan.amount >= (try Self.repaid(db, loanId: loan.id)) else { throw LoanWriteError.amountBelowRepaid }
+            let stored = existing.domain
             var saved = loan
-            saved.type = existing.domain.type
+            saved.type = stored.type
             saved.transactionId = existing.transactionId
             saved.createdAt = existing.createdAt
+            // Champs « cadeau » : gérés uniquement par la transformation, jamais par une mise à
+            // jour ordinaire (Android `saveLoan`).
+            saved.giftedAmount = stored.giftedAmount
+            saved.giftTransactionId = stored.giftTransactionId
+            saved.giftedAt = stored.giftedAt
+            if stored.isGifted {
+                try store.updateGifted(db, saved, stored: stored, timestamp: timestamp)
+                return
+            }
+            guard loan.amount >= (try Self.repaid(db, loanId: loan.id)) else { throw LoanWriteError.amountBelowRepaid }
             // Transaction de décaissement alignée sur le prêt (montant, compte, date, description),
             // mise à jour EN PLACE ; recréée si elle a disparu.
             let categoryId = try LocalTransactionRepository.systemCategoryId(saved.type.disbursementCategory, db, store: store.categories, timestamp: timestamp)
@@ -152,6 +162,27 @@ public struct LocalLoanRepository: LoanRepository {
         }
     }
 
+    /// Prêt transformé en cadeau : décaissement et transaction cadeau portent un reclassement
+    /// précis (part remboursée / part offerte). Montant, compte et personne sont donc verrouillés ;
+    /// seule la date de début déplace les deux transactions (montants, catégories et descriptions
+    /// inchangés) — Android `requireOnlyDateChangedOnGiftedLoan` / `moveGiftedLoanTransactionsTo`.
+    private func updateGifted(_ db: Database, _ loan: Loan, stored: Loan, timestamp: Int64) throws {
+        guard loan.amount == stored.amount, loan.accountId == stored.accountId, loan.personId == stored.personId else {
+            throw LoanWriteError.loanGifted
+        }
+        if loan.startDate != stored.startDate {
+            for id in stored.ownTransactionIds {
+                guard var transaction = try TransactionRecord.fetchOne(db, key: id).flatMap({ $0.deletedAt == nil ? $0.domain : nil }),
+                      transaction.date != loan.startDate
+                else { continue }
+                transaction.date = loan.startDate
+                try transactions.save(db, id: transaction.id, createdAt: transaction.createdAt, timestamp: timestamp) { [transaction] in TransactionRecord(transaction, meta: $0) }
+            }
+        }
+        try saveLoan(db, loan, timestamp: timestamp)
+        _ = try refreshStoredProgress(db, loanId: loan.id, timestamp: timestamp)
+    }
+
     /// Suppression en cascade dans une transaction SQL ouverte par l'appelant (aussi utilisée par
     /// la suppression d'un compte).
     func delete(_ db: Database, loanId: EntityID, timestamp: Int64) throws {
@@ -161,7 +192,10 @@ public struct LocalLoanRepository: LoanRepository {
             try transactions.softDelete(db, id: payment.transactionId, timestamp: timestamp)
             try payments.softDelete(db, id: payment.id, timestamp: timestamp)
         }
-        try transactions.softDelete(db, id: loan.transactionId, timestamp: timestamp)
+        // Décaissement ET transaction cadeau éventuelle.
+        for id in loan.domain.ownTransactionIds {
+            try transactions.softDelete(db, id: id, timestamp: timestamp)
+        }
         try loans.softDelete(db, id: loanId, timestamp: timestamp)
     }
 
@@ -171,17 +205,25 @@ public struct LocalLoanRepository: LoanRepository {
         try await database.writer.write { db in
             guard let record = try LoanRecord.fetchOne(db, key: payment.loanId), record.deletedAt == nil else { throw LoanWriteError.loanNotFound }
             let loan = record.domain
-            // Revérifié ICI : un remboursement a pu arriver par synchronisation depuis la saisie.
+            // Revérifié ICI : le prêt a pu être offert ou remboursé ailleurs depuis la saisie.
+            guard !loan.isGifted else { throw LoanWriteError.loanGifted }
             guard payment.amount <= loan.amount - (try Self.repaid(db, loanId: loan.id)) else { throw LoanWriteError.amountExceedsRemaining }
             try store.insertPayment(db, payment, loan: loan, timestamp: timestamp)
             _ = try store.refreshStoredProgress(db, loanId: loan.id, timestamp: timestamp)
         }
     }
 
+    /// Refusé sur un prêt transformé en cadeau (la part remboursée y est figée). La suppression
+    /// d'un COMPTE retire quand même ses remboursements (voir `deletePayment(_:paymentId:)`), comme
+    /// Android.
     public func deletePayment(id: EntityID) async throws {
         let timestamp = now()
         let store = self
         try await database.writer.write { db in
+            if let payment = try LoanPaymentRecord.fetchOne(db, key: id),
+               let loan = try LoanRecord.fetchOne(db, key: payment.loanId), loan.giftedAmount > 0 {
+                throw LoanWriteError.loanGifted
+            }
             try store.deletePayment(db, paymentId: id, timestamp: timestamp)
         }
     }
@@ -239,14 +281,16 @@ public struct LocalLoanRepository: LoanRepository {
     }
 
     /// Recopie dans la ligne `loans` le remboursé, le reste et le statut DÉDUITS des
-    /// remboursements : Android et le Web, qui lisent ces champs, affichent ainsi les bonnes valeurs.
+    /// remboursements (et de la part offerte) : Android et le Web, qui lisent ces champs, affichent
+    /// ainsi les bonnes valeurs.
     private func refreshStoredProgress(_ db: Database, loanId: EntityID, timestamp: Int64) throws -> Loan {
         guard var loan = try LoanRecord.fetchOne(db, key: loanId)?.domain else { throw LoanWriteError.loanNotFound }
         let repaid = try Self.repaid(db, loanId: loanId)
-        let status = LoanStatusRule.status(amount: loan.amount, amountRepaid: repaid, startDate: loan.startDate, dueDate: loan.dueDate, now: timestamp, calendar: ArzikinaCalendar.current)
-        guard loan.amountRepaid != repaid || loan.remainingAmount != loan.amount - repaid || loan.status != status else { return loan }
+        let remaining = max(loan.amount - repaid - loan.giftedAmount, 0)
+        let status = LoanStatusRule.status(amount: loan.amount, amountRepaid: repaid, startDate: loan.startDate, dueDate: loan.dueDate, now: timestamp, calendar: ArzikinaCalendar.current, giftedAmount: loan.giftedAmount)
+        guard loan.amountRepaid != repaid || loan.remainingAmount != remaining || loan.status != status else { return loan }
         loan.amountRepaid = repaid
-        loan.remainingAmount = loan.amount - repaid
+        loan.remainingAmount = remaining
         loan.status = status
         try saveLoan(db, loan, timestamp: timestamp)
         return loan

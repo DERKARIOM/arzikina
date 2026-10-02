@@ -1,20 +1,22 @@
 import ArzikinaDomain
 import SwiftUI
 
-/// Automatisations (Réglages › Budget et finances, comme Android) : échéances à valider ou
-/// rejeter, prochaines échéances, règles (pause / reprise) et historique.
+/// Automatisations (Réglages › Budget et finances, comme Android) : échéances à valider (telles
+/// quelles, ou après modification en touchant la ligne) ou rejeter, prochaines échéances, règles
+/// (création, modification, pause / reprise) et historique.
 ///
 /// Les échéances dues sont créées après chaque synchronisation (au lancement, au retour au
-/// premier plan…) ; la création et la modification des règles arrivent à l'étape suivante.
+/// premier plan…).
 struct AutomationsView: View {
 
     @Environment(SessionModel.self) private var session
     @State private var model = AutomationsViewModel()
     @State private var pendingRejection: AutomationItem?
+    @State private var ruleForm: AutomationFormRoute?
+    @State private var editedOccurrence: AutomationItem?
 
     var body: some View {
-        content
-            .navigationTitle("automations.title")
+        screen
             .confirmationDialog(
                 "automations.reject.title",
                 isPresented: Binding(get: { pendingRejection != nil }, set: { if !$0 { pendingRejection = nil } }),
@@ -33,6 +35,35 @@ struct AutomationsView: View {
                 guard let space = session.dataSpace else { return }
                 await model.observe(space.recurring)
             }
+            .task { await session.reminders?.refresh() }
+    }
+
+    /// Contenu, titre, bouton « + » et feuilles. Séparé de `body` pour que le compilateur vérifie
+    /// deux expressions courtes plutôt qu'une très longue.
+    private var screen: some View {
+        content
+            .navigationTitle("automations.title")
+            .toolbar {
+                ToolbarItem(placement: .primaryAction) {
+                    Button {
+                        ruleForm = .create
+                    } label: {
+                        Label("automation.add", systemImage: "plus")
+                    }
+                }
+            }
+            .sheet(item: $ruleForm) { route in
+                if let space = session.dataSpace {
+                    AutomationFormView(mode: route.mode, recurring: space.recurring, accounts: space.accounts, categories: space.categories)
+                        .environment(session)
+                }
+            }
+            .sheet(item: $editedOccurrence) { item in
+                if let space = session.dataSpace, let occurrence = item.occurrence {
+                    OccurrenceEditView(occurrence: occurrence, rule: item.rule, recurring: space.recurring, accounts: space.accounts, categories: space.categories)
+                        .environment(session)
+                }
+            }
     }
 
     @ViewBuilder
@@ -46,9 +77,19 @@ struct AutomationsView: View {
                 Label("automations.empty.title", systemImage: "arrow.triangle.2.circlepath")
             } description: {
                 Text("automations.empty.message")
+            } actions: {
+                Button("automation.add") { ruleForm = .create }
+                    .buttonStyle(.borderedProminent)
             }
         } else {
             List {
+                if let reminders = session.reminders, reminders.authorization != .allowed, model.overview.rules.contains(where: \.isActive) {
+                    Section {
+                        ReminderInvitationRow(authorization: reminders.authorization) {
+                            Task { await reminders.requestAuthorizationIfNeeded() }
+                        }
+                    }
+                }
                 if !model.overview.pending.isEmpty {
                     Section {
                         ForEach(model.overview.pending) { item in
@@ -63,7 +104,13 @@ struct AutomationsView: View {
                 if !model.overview.upcoming.isEmpty {
                     Section("automations.upcoming") {
                         ForEach(model.overview.upcoming) { item in
-                            AutomationRow(item: item, detail: .scheduled)
+                            Button {
+                                ruleForm = .edit(item.rule)
+                            } label: {
+                                AutomationRow(item: item, detail: .scheduled)
+                                    .contentShape(Rectangle())
+                            }
+                            .buttonStyle(.plain)
                         }
                     }
                 }
@@ -86,7 +133,15 @@ struct AutomationsView: View {
 
     private func pendingRow(_ item: AutomationItem) -> some View {
         VStack(alignment: .leading, spacing: 10) {
-            AutomationRow(item: item, detail: .scheduled)
+            // Toucher la ligne = modifier avant de valider (action secondaire, comme Android).
+            Button {
+                editedOccurrence = item
+            } label: {
+                AutomationRow(item: item, detail: .scheduled)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityHint(Text("automations.edit_hint"))
             HStack(spacing: 12) {
                 Button {
                     accept(item)
@@ -108,19 +163,31 @@ struct AutomationsView: View {
         .padding(.vertical, 4)
     }
 
+    /// Toucher la règle l'ouvre ; l'interrupteur la met en pause ou la reprend.
     private func ruleRow(_ rule: RecurringTransaction) -> some View {
-        Toggle(isOn: Binding(get: { rule.isActive }, set: { setActive(rule, $0) })) {
-            VStack(alignment: .leading, spacing: 2) {
-                Text(verbatim: rule.displayTitle())
-                    .font(.subheadline.weight(.semibold))
-                    .lineLimit(1)
-                Text(verbatim: "\(rule.frequency.displayName) · \(Money.formatAmount(rule.amount))")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+        HStack(spacing: 12) {
+            Button {
+                ruleForm = .edit(rule)
+            } label: {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(verbatim: rule.displayTitle())
+                        .font(.subheadline.weight(.semibold))
+                        .lineLimit(1)
+                    Text(verbatim: "\(rule.frequency.displayName) · \(Money.formatAmount(rule.amount))")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .contentShape(Rectangle())
             }
+            .buttonStyle(.plain)
+            Toggle(isOn: Binding(get: { rule.isActive }, set: { setActive(rule, $0) })) {
+                Text(verbatim: rule.displayTitle())
+            }
+            .labelsHidden()
+            .disabled(model.busyIds.contains(rule.id))
+            .accessibilityHint(Text(rule.isActive ? "automations.rule.pause_hint" : "automations.rule.resume_hint"))
         }
-        .disabled(model.busyIds.contains(rule.id))
-        .accessibilityHint(Text(rule.isActive ? "automations.rule.pause_hint" : "automations.rule.resume_hint"))
     }
 
     // MARK: - Actions
@@ -203,30 +270,6 @@ struct AutomationRow: View {
             }
             let date = Date(timeIntervalSince1970: TimeInterval(item.scheduledDate) / 1000)
             return "\(status) · \(date.formatted(.dateTime.day().month(.abbreviated).year()))"
-        }
-    }
-}
-
-extension RecurringTransaction {
-    /// Description de la règle, sinon nom de la catégorie, sinon « Transaction automatique ».
-    func displayTitle(category: ArzikinaDomain.Category? = nil) -> String {
-        let trimmed = description.trimmingCharacters(in: .whitespacesAndNewlines)
-        if !trimmed.isEmpty { return trimmed }
-        return category?.displayName ?? DomainDisplay.localized("automations.fallback_name")
-    }
-}
-
-extension RecurringFrequency {
-    var displayName: String {
-        switch self {
-        case .once: return DomainDisplay.localized("automations.frequency.once")
-        case .daily: return DomainDisplay.localized("automations.frequency.daily")
-        case .weekly: return DomainDisplay.localized("automations.frequency.weekly")
-        case .biweekly: return DomainDisplay.localized("automations.frequency.biweekly")
-        case .monthly: return DomainDisplay.localized("automations.frequency.monthly")
-        case .quarterly: return DomainDisplay.localized("automations.frequency.quarterly")
-        case .semiannual: return DomainDisplay.localized("automations.frequency.semiannual")
-        case .yearly: return DomainDisplay.localized("automations.frequency.yearly")
         }
     }
 }

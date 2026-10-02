@@ -36,15 +36,20 @@ final class SessionModel {
     private let openDataSpace: (AuthSession) -> (space: UserDataSpace, isPersistent: Bool)
     @ObservationIgnored
     private let makeSyncEngine: (UserDataSpace) -> SyncEngine?
+    /// Rappels des automatisations de l'utilisateur connecté (`nil` dans les aperçus).
+    @ObservationIgnored
+    let reminders: AutomationReminderScheduler?
 
     init(
         authRepository: AuthRepository,
         openDataSpace: @escaping (AuthSession) -> (space: UserDataSpace, isPersistent: Bool),
-        makeSyncEngine: @escaping (UserDataSpace) -> SyncEngine? = { _ in nil }
+        makeSyncEngine: @escaping (UserDataSpace) -> SyncEngine? = { _ in nil },
+        reminders: AutomationReminderScheduler? = nil
     ) {
         self.authRepository = authRepository
         self.openDataSpace = openDataSpace
         self.makeSyncEngine = makeSyncEngine
+        self.reminders = reminders
     }
 
     var currentSession: AuthSession? {
@@ -92,8 +97,21 @@ final class SessionModel {
     }
 
     /// L'app revient au premier plan : synchronisation, qui crée ensuite les échéances dues ; sans
-    /// synchronisation (aperçus), les échéances sont créées directement.
+    /// synchronisation (aperçus), les échéances sont créées directement. Les rappels sont
+    /// recalculés (le temps a passé, l'autorisation a pu changer dans Réglages).
     func appDidBecomeActive() {
+        createDueOccurrences()
+        if let reminders, dataSpace != nil {
+            Task { await reminders.refresh() }
+        }
+    }
+
+    /// Un rappel d'automatisation arrive app ouverte : son échéance est due, on la crée.
+    func automationReminderDelivered() {
+        createDueOccurrences()
+    }
+
+    private func createDueOccurrences() {
         if let sync {
             sync.requestSync(.automatic)
         } else if let space = dataSpace {
@@ -111,6 +129,7 @@ final class SessionModel {
     func clearLocalData() throws {
         guard let session = currentSession, let space = dataSpace else { return }
         stopSync()
+        reminders?.stop()
         dataSpace = nil
         try space.closeAndErase()
         openSpace(for: session)
@@ -134,6 +153,7 @@ final class SessionModel {
         }
         dataSpace = opened.space
         isDataPersistent = opened.isPersistent
+        reminders?.start(opened.space.recurring)
         if let engine = makeSyncEngine(opened.space) {
             let space = opened.space
             let coordinator = SyncCoordinator(
@@ -150,6 +170,7 @@ final class SessionModel {
 
     private func closeSpace() {
         stopSync()
+        if dataSpace != nil { reminders?.stop() }
         dataSpace?.close()
         dataSpace = nil
     }

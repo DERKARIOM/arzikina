@@ -3,6 +3,7 @@ import Foundation
 /// Statut réel d'un prêt/emprunt — portage d'Android `computeLoanStatus`.
 ///
 /// Ordre des règles :
+/// 0. transformé en cadeau (`giftedAmount > 0`) → `.gifted`, prioritaire sur « remboursé » ;
 /// 1. remboursé (`amountRepaid ≥ amount`) → `.repaid`, même après l'échéance ;
 /// 2. avant l'instant de début → `.upcoming` ;
 /// 3. à partir du LENDEMAIN du jour d'échéance → `.overdue` (le jour même reste « en cours ») ;
@@ -15,8 +16,10 @@ public enum LoanStatusRule {
         startDate: EpochMillis,
         dueDate: EpochMillis,
         now: EpochMillis,
-        calendar: Calendar
+        calendar: Calendar,
+        giftedAmount: MinorUnits = 0
     ) -> LoanStatus {
+        if giftedAmount > 0 { return .gifted }
         if amountRepaid >= amount { return .repaid }
         if now < startDate { return .upcoming }
         if CalendarDay(epochMillis: now, calendar: calendar) > CalendarDay(epochMillis: dueDate, calendar: calendar) {
@@ -33,7 +36,8 @@ public enum LoanStatusRule {
             startDate: loan.startDate,
             dueDate: loan.dueDate,
             now: now,
-            calendar: calendar
+            calendar: calendar,
+            giftedAmount: loan.giftedAmount
         )
     }
 }

@@ -83,8 +83,23 @@ final class LocalPersistenceTests: XCTestCase {
         try AppDatabase.open(at: url).close()
         let reopened = try AppDatabase.open(at: url)
         let applied = try reopened.writer.read { db in try AppDatabaseSchema.migrator.appliedMigrations(db) }
-        XCTAssertEqual(applied, ["v1_initial", "v2_sync_engine", "v3_dashboard_indexes"])
+        XCTAssertEqual(applied, ["v1_initial", "v2_sync_engine", "v3_dashboard_indexes", "v4_loan_gift"])
         try reopened.close()
+    }
+
+    /// Les prêts reçus avant la v4 n'ont pas les champs « cadeau » : ils sont redemandés au serveur.
+    func testLoanGiftMigrationRepullsLoansOnly() throws {
+        let queue = try DatabaseQueue()
+        let migrator = AppDatabaseSchema.migrator
+        try migrator.migrate(queue, upTo: "v3_dashboard_indexes")
+        try queue.write { db in
+            try db.execute(sql: "INSERT INTO sync_cursors (entityType, lastPulledAt) VALUES ('loans', 123), ('transactions', 456)")
+        }
+        try migrator.migrate(queue)
+        let cursors = try queue.read { db in
+            Dictionary(uniqueKeysWithValues: try Row.fetchAll(db, sql: "SELECT entityType, lastPulledAt FROM sync_cursors").map { ($0["entityType"] as String, $0["lastPulledAt"] as Int64) })
+        }
+        XCTAssertEqual(cursors, ["loans": 0, "transactions": 456])
     }
 
     // MARK: - Écritures et file d'envoi

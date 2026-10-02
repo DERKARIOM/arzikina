@@ -28,7 +28,9 @@ enum SyncRowCodec {
 
         entity["createdAt"] = .int(row["createdAt"] ?? 0)
         for field in schema.fields {
-            entity[field.payload] = encode(row[field.local] as DatabaseValue, kind: field.kind)
+            let value = encode(row[field.local] as DatabaseValue, kind: field.kind)
+            if field.sentOnlyWhenSet, value.isNull || value.int64Value == 0 { continue }
+            entity[field.payload] = value
         }
         return entity
     }

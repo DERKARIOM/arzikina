@@ -5,6 +5,7 @@ import SwiftUI
 struct MainTabView: View {
 
     @State private var selection: AppTab = .home
+    @Environment(AppRouter.self) private var router
 
     var body: some View {
         TabView(selection: $selection) {
@@ -16,6 +17,10 @@ struct MainTabView: View {
                 .tag(tab)
             }
         }
+        // Les automatisations s'ouvrent depuis l'Accueil (voir `DashboardView`).
+        .onChange(of: router.pendingDestination, initial: true) { _, destination in
+            if destination == .automations { selection = .home }
+        }
     }
 }
 
@@ -23,4 +28,5 @@ struct MainTabView: View {
     MainTabView()
         .tint(Brand.primary)
         .environment(SessionModel.preview())
+        .environment(AppRouter())
 }
