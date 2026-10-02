@@ -25,6 +25,7 @@ import com.naniger.arzikina.presentation.accounts.computeCurrentBalances
 import com.naniger.arzikina.presentation.utilities.marketplace.TemplateFromTransaction
 import com.naniger.arzikina.util.Money
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -287,10 +288,13 @@ class TransactionFormViewModel @Inject constructor(
                     // désactivation/bannière apparaît dès que cette valeur arrive.
                     val loanId = loanRepository.findLoanIdForTransaction(transactionId)
                     if (loanId != null) {
-                        val giftOrigin = loanRepository.getLoan(loanId)
-                            ?.takeIf { it.giftTransactionId == transactionId }
-                            ?.type
-                        _formState.update { it.copy(linkedLoanId = loanId, giftOriginLoanType = giftOrigin) }
+                        // Verrouillage D'ABORD : il ne doit jamais dépendre de la recherche
+                        // d'origine « cadeau » ci-dessous, purement informative.
+                        _formState.update { it.copy(linkedLoanId = loanId) }
+                        val giftOrigin = resolveGiftOrigin(loanId, transactionId)
+                        if (giftOrigin != null) {
+                            _formState.update { it.copy(giftOriginLoanType = giftOrigin) }
+                        }
                     }
                     // Frais liés (voir Transaction.feeTransactionId) : chargés séparément, après
                     // l'état principal, pour la même raison que linkedLoanId ci-dessus.
@@ -666,5 +670,19 @@ class TransactionFormViewModel @Inject constructor(
             transactionRepository.deleteTransaction(transactionId)
             _events.emit(TransactionFormEvent.Deleted)
         }
+    }
+
+    /**
+     * Sens du prêt/emprunt d'origine si [transactionId] est sa transaction CADEAU (voir
+     * `Loan.giftTransactionId`), sinon `null`. Information d'affichage uniquement (bannière
+     * « Transformé depuis un prêt/emprunt ») : un échec de lecture ne doit jamais empêcher le
+     * verrouillage du formulaire, déjà appliqué par l'appelant — d'où le repli sur `null`.
+     */
+    private suspend fun resolveGiftOrigin(loanId: Long, transactionId: Long): LoanType? = try {
+        loanRepository.getLoan(loanId)?.takeIf { it.giftTransactionId == transactionId }?.type
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        null
     }
 }
