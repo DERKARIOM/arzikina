@@ -112,13 +112,13 @@
               "one": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%lld automation or template uses this account: it will stop working until you edit it on Android or the web."
+                  "value": "%lld automation or template uses this account: it will stop working until you edit it."
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%lld automations or templates use this account: they will stop working until you edit them on Android or the web."
+                  "value": "%lld automations or templates use this account: they will stop working until you edit them."
                 }
               }
             }
@@ -130,13 +130,13 @@
               "one": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%lld automatisation ou modèle utilise ce compte : il ne fonctionnera plus tant que tu ne l'auras pas modifié sur Android ou le Web."
+                  "value": "%lld automatisation ou modèle utilise ce compte : il ne fonctionnera plus tant que tu ne l'auras pas modifié."
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%lld automatisations ou modèles utilisent ce compte : ils ne fonctionneront plus tant que tu ne les auras pas modifiés sur Android ou le Web."
+                  "value": "%lld automatisations ou modèles utilisent ce compte : ils ne fonctionneront plus tant que tu ne les auras pas modifiés."
                 }
               }
             }
@@ -1382,6 +1382,394 @@
         }
       }
     },
+    "automation.add": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New automation"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nouvelle automatisation"
+          }
+        }
+      }
+    },
+    "automation.delete": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete automation"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Supprimer l'automatisation"
+          }
+        }
+      }
+    },
+    "automation.delete.failed": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deletion failed. Try again."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La suppression a échoué. Réessaie."
+          }
+        }
+      }
+    },
+    "automation.delete.message": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Its pending occurrences and history will be deleted."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ses échéances en attente et son historique seront supprimés."
+          }
+        }
+      }
+    },
+    "automation.delete.message.with_transactions %lld": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "It has already created %lld transaction. It stays in your accounts unless you choose to delete it too."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "It has already created %lld transactions. They stay in your accounts unless you choose to delete them too."
+                }
+              }
+            }
+          }
+        },
+        "fr": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Elle a déjà créé %lld transaction. Elle reste dans tes comptes, sauf si tu choisis de la supprimer aussi."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Elle a déjà créé %lld transactions. Elles restent dans tes comptes, sauf si tu choisis de les supprimer aussi."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "automation.delete.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete this automation?"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Supprimer cette automatisation ?"
+          }
+        }
+      }
+    },
+    "automation.delete.with_transactions %lld": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Also delete the transaction"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Also delete the %lld transactions"
+                }
+              }
+            }
+          }
+        },
+        "fr": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Supprimer aussi la transaction"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Supprimer aussi les %lld transactions"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "automation.form.date": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Date"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Date"
+          }
+        }
+      }
+    },
+    "automation.form.end_date": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ends on"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fin le"
+          }
+        }
+      }
+    },
+    "automation.form.error.end_date": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The end date can't be before the first occurrence"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La date de fin ne peut pas précéder la première échéance"
+          }
+        }
+      }
+    },
+    "automation.form.frequency": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Frequency"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fréquence"
+          }
+        }
+      }
+    },
+    "automation.form.future_only": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Changes apply to upcoming occurrences: transactions already recorded stay as they are."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Les modifications s'appliquent aux prochaines échéances : les transactions déjà enregistrées ne changent pas."
+          }
+        }
+      }
+    },
+    "automation.form.has_end_date": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "End date"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Date de fin"
+          }
+        }
+      }
+    },
+    "automation.form.schedule": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Schedule"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Planification"
+          }
+        }
+      }
+    },
+    "automation.form.schedule.footer": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "At each occurrence, the transaction is suggested at the chosen time: you confirm, edit or reject it."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "À chaque échéance, la transaction te sera proposée à l'heure choisie : tu la valides, la modifies ou la rejettes."
+          }
+        }
+      }
+    },
+    "automation.form.start_date": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "First occurrence"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Première échéance"
+          }
+        }
+      }
+    },
+    "automation.form.time": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Time"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Heure"
+          }
+        }
+      }
+    },
+    "automation.form.title.add": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New automation"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nouvelle automatisation"
+          }
+        }
+      }
+    },
+    "automation.form.title.edit": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Edit automation"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Modifier l'automatisation"
+          }
+        }
+      }
+    },
+    "automation.notification.body": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Time to record this recurring transaction."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Il est temps d'enregistrer cette transaction récurrente."
+          }
+        }
+      }
+    },
     "automations.accept": {
       "extractionState": "manual",
       "localizations": {
@@ -1416,19 +1804,36 @@
         }
       }
     },
+    "automations.edit_hint": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Edit before confirming"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Modifier avant de valider"
+          }
+        }
+      }
+    },
     "automations.empty.message": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Recurring transactions created on Android or the web appear here. Creating them on iPhone is coming in the next version."
+            "value": "Rent, salary, subscription… Create a recurring transaction: at each occurrence, it's suggested for you to accept."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Les transactions récurrentes créées sur Android ou le Web apparaissent ici. Leur création sur iPhone arrive dans la prochaine version."
+            "value": "Loyer, salaire, abonnement… Crée une transaction récurrente : à chaque échéance, elle te sera proposée à valider."
           }
         }
       }
@@ -1643,13 +2048,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Accepting records the transaction; rejecting skips it for this date."
+            "value": "Accepting records the transaction; rejecting skips it for this date. Tap an occurrence to edit it before accepting."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Valider enregistre la transaction ; rejeter l'ignore pour cette échéance."
+            "value": "Valider enregistre la transaction ; rejeter l'ignore pour cette échéance. Touche une échéance pour la modifier avant de la valider."
           }
         }
       }
@@ -1701,6 +2106,91 @@
           "stringUnit": {
             "state": "translated",
             "value": "Rejeter cette transaction automatique ?"
+          }
+        }
+      }
+    },
+    "automations.reminders.denied": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Arzikina's notifications are turned off. Turn them on in iPhone Settings to get these reminders."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Les notifications d'Arzikina sont désactivées. Active-les dans les Réglages de l'iPhone pour recevoir ces rappels."
+          }
+        }
+      }
+    },
+    "automations.reminders.enable": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Turn on reminders"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Activer les rappels"
+          }
+        }
+      }
+    },
+    "automations.reminders.message": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Arzikina lets you know at the chosen time when an automatic transaction is ready to confirm."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Arzikina te prévient à l'heure choisie quand une transaction automatique est à valider."
+          }
+        }
+      }
+    },
+    "automations.reminders.open_settings": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open Settings"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ouvrir les Réglages"
+          }
+        }
+      }
+    },
+    "automations.reminders.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reminders when transactions are due"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rappels à l'heure des échéances"
           }
         }
       }
@@ -4786,6 +5276,23 @@
         }
       }
     },
+    "loans.form.gift_locked": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Turned into a gift: the person, account and amount can no longer be changed. Changing the start date also moves the gift transaction."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Transformé en cadeau : la personne, le compte et le montant ne sont plus modifiables. La date de début déplace aussi la transaction cadeau."
+          }
+        }
+      }
+    },
     "loans.form.person.add": {
       "extractionState": "manual",
       "localizations": {
@@ -4952,6 +5459,74 @@
           "stringUnit": {
             "state": "translated",
             "value": "Le type ne se modifie pas : supprime le prêt et recrée-le si besoin."
+          }
+        }
+      }
+    },
+    "loans.gift.amount_label": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Amount given"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Montant offert"
+          }
+        }
+      }
+    },
+    "loans.gift.date_label": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Converted on"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Transformé le"
+          }
+        }
+      }
+    },
+    "loans.gift.locked": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Turned into a gift: repayments can no longer be added or deleted."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Transformé en cadeau : les remboursements ne peuvent plus être ajoutés ni supprimés."
+          }
+        }
+      }
+    },
+    "loans.gift.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Turned into a gift"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Transformé en cadeau"
           }
         }
       }
@@ -5292,6 +5867,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "Rechercher un prêt ou un emprunt"
+          }
+        }
+      }
+    },
+    "loans.status.gifted": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gift"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cadeau"
           }
         }
       }
@@ -5673,6 +6265,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "Bon retour !"
+          }
+        }
+      }
+    },
+    "occurrence.edit.footer": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Only this transaction changes: the automation stays the same."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seule cette transaction est modifiée : l'automatisation reste inchangée."
+          }
+        }
+      }
+    },
+    "occurrence.edit.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Edit and confirm"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Modifier puis valider"
           }
         }
       }

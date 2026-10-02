@@ -111,7 +111,7 @@ struct LoansView: View {
             .pickerStyle(.segmented)
             Picker("loans.filter.status", selection: $model.filters.status) {
                 Text("loans.filter.all").tag(LoanStatus?.none)
-                ForEach([LoanStatus.ongoing, .overdue, .upcoming, .repaid], id: \.self) { status in
+                ForEach([LoanStatus.ongoing, .overdue, .upcoming, .repaid, .gifted], id: \.self) { status in
                     Text(status.titleKey).tag(LoanStatus?.some(status))
                 }
             }

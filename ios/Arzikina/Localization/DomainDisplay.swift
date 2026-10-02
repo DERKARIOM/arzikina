@@ -24,7 +24,7 @@ extension SystemCategoryKey {
         case .transport: return "category.default.transport"
         case .health: return "category.default.health"
         case .shopping: return "category.default.shopping"
-        case .gifts: return "category.default.gifts"
+        case .gifts, .giftsReceived: return "category.default.gifts"
         case .internet: return "category.default.internet"
         case .water: return "category.default.water"
         case .electricity: return "category.default.electricity"

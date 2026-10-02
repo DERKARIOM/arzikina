@@ -59,6 +59,10 @@ final class LoanPaymentFormViewModel {
             } catch LoanWriteError.amountExceedsRemaining {
                 error = .exceedsRemaining
                 return false
+            } catch LoanWriteError.loanGifted {
+                // Transformé en cadeau ailleurs pendant la saisie (synchronisation).
+                error = .loanGifted
+                return false
             } catch {
                 saveFailed = true
                 return false
@@ -112,6 +116,7 @@ struct LoanPaymentFormView: View {
                     case .invalidAmount: FormErrorText(key: "transaction.form.error.amount")
                     case .exceedsRemaining: FormErrorText(key: "loans.payment.error.exceeds_remaining")
                     case .beforeStart: FormErrorText(key: "loans.form.error.before_start")
+                    case .loanGifted: FormErrorText(key: "loans.gift.locked")
                     case nil:
                         if model.hasCurrencyMismatch { Text("loans.payment.currency_mismatch") }
                     }

@@ -11,6 +11,9 @@ public enum SystemCategoryKey: String, CaseIterable, Sendable {
     case health
     case shopping
     case gifts
+    /// Cadeau REÇU (emprunt transformé en cadeau) : même nom que [gifts], type revenu (Android
+    /// `GIFTS_RECEIVED`).
+    case giftsReceived
     case internet
     case water
     case electricity
@@ -32,7 +35,7 @@ public enum SystemCategoryKey: String, CaseIterable, Sendable {
         case .transport: return "Transport"
         case .health: return "Santé"
         case .shopping: return "Shopping"
-        case .gifts: return "Cadeaux"
+        case .gifts, .giftsReceived: return "Cadeaux"
         case .internet: return "Internet"
         case .water: return "Eau"
         case .electricity: return "Électricité"
@@ -48,7 +51,7 @@ public enum SystemCategoryKey: String, CaseIterable, Sendable {
 
     public var type: TransactionType {
         switch self {
-        case .salary, .otherIncome, .loanRepaymentLent, .loanDisbursementBorrowed: return .income
+        case .salary, .otherIncome, .giftsReceived, .loanRepaymentLent, .loanDisbursementBorrowed: return .income
         default: return .expense
         }
     }

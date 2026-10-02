@@ -146,4 +146,61 @@ final class LoanRulesTests: XCTestCase {
         XCTAssertEqual(payment.amount, 400)
         XCTAssertEqual(payment.note, "espèces")
     }
+
+    // MARK: - Transformé en cadeau
+
+    private func giftedLoan() -> Loan {
+        Loan(id: "g", personId: "p", accountId: "a", type: .lent, amount: 100_000, amountRepaid: 40_000, remainingAmount: 0, startDate: now - 60 * day, dueDate: now - 30 * day, transactionId: "t", giftedAmount: 60_000, giftTransactionId: "gift", giftedAt: now)
+    }
+
+    func testGiftedStatusWinsOverEverything() {
+        let loan = giftedLoan()
+        XCTAssertEqual(LoanStatusRule.status(of: loan, now: now, calendar: calendar), .gifted, "Pas « en retard » malgré l'échéance passée")
+        XCTAssertEqual(LoanStatusRule.status(amount: 100, amountRepaid: 100, startDate: 0, dueDate: 0, now: now, calendar: calendar, giftedAmount: 1), .gifted, "Prioritaire sur « remboursé »")
+        XCTAssertTrue(LoanStatus.gifted.isSettled)
+        XCTAssertTrue(LoanStatus.repaid.isSettled)
+        XCTAssertFalse(LoanStatus.overdue.isSettled)
+
+        let summary = LoanSummary(loan: loan, person: nil, currencyCode: "XOF", amountRepaid: 40_000, now: now, calendar: calendar)
+        XCTAssertEqual(summary.status, .gifted)
+        XCTAssertEqual(summary.remaining, 0, "Reste = montant − remboursé − offert")
+        XCTAssertEqual(LoanList.remainingByCurrency([summary], type: .lent), [CurrencyAmount(currencyCode: "XOF", amountMinor: 0)])
+    }
+
+    func testOwnTransactionsOfAGiftedLoan() {
+        var loan = giftedLoan()
+        XCTAssertEqual(loan.ownTransactionIds, ["t", "gift"])
+        loan.giftTransactionId = "t"
+        XCTAssertEqual(loan.ownTransactionIds, ["t"], "Rien remboursé : décaissement reclassé sur place")
+        loan.giftTransactionId = nil
+        XCTAssertEqual(loan.ownTransactionIds, ["t"])
+    }
+
+    func testEditingAGiftedLoanKeepsLockedFields() throws {
+        let existing = giftedLoan()
+        var draft = LoanDraft(editing: existing)
+        draft.amountInput = "1"
+        draft.accountId = "other"
+        draft.personId = "someone"
+        draft.description = "Moto"
+        draft.startDate = existing.startDate + day
+        let loan = try LoanForm.build(draft, existing: existing, repaid: 40_000, newId: "x", newPaymentId: "y", now: now).get().loan
+        XCTAssertEqual(loan.amount, 100_000)
+        XCTAssertEqual(loan.accountId, "a")
+        XCTAssertEqual(loan.personId, "p")
+        XCTAssertEqual(loan.description, "Moto")
+        XCTAssertEqual(loan.startDate, existing.startDate + day, "La date reste modifiable")
+        XCTAssertEqual(loan.giftedAmount, 60_000)
+        XCTAssertEqual(loan.remainingAmount, 0)
+    }
+
+    func testNoPaymentOnAGiftedLoan() {
+        let loan = giftedLoan()
+        let summary = LoanSummary(loan: loan, person: nil, currencyCode: "XOF", amountRepaid: 40_000, now: now, calendar: calendar)
+        var draft = LoanPaymentDraft(loan: loan, now: now)
+        draft.amountInput = "1"
+        if case .failure(let error) = LoanPaymentForm.build(draft, summary: summary, newId: "p", now: now) {
+            XCTAssertEqual(error, .loanGifted)
+        } else { XCTFail() }
+    }
 }

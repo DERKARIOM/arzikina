@@ -26,6 +26,12 @@ struct LoanFormView: View {
         @Bindable var model = model
         NavigationStack {
             Form {
+                if model.isGiftLocked {
+                    Section {
+                        Label("loans.form.gift_locked", systemImage: "gift.fill")
+                            .foregroundStyle(.secondary)
+                    }
+                }
                 Section {
                     if model.isEditing {
                         LabeledContent("loans.form.type") { Text(model.draft.type.titleKey) }
@@ -59,6 +65,7 @@ struct LoanFormView: View {
                 } footer: {
                     if model.error == .personRequired { FormErrorText(key: "loans.form.error.person") }
                 }
+                .disabled(model.isGiftLocked)
 
                 Section {
                     Picker("loans.form.account", selection: $model.draft.accountId) {
@@ -79,6 +86,7 @@ struct LoanFormView: View {
                     default: EmptyView()
                     }
                 }
+                .disabled(model.isGiftLocked)
 
                 Section {
                     DatePicker("loans.form.start", selection: $model.startDate)

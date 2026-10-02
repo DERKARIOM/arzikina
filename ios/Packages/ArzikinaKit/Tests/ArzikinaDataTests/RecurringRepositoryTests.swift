@@ -113,6 +113,137 @@ final class RecurringRepositoryTests: XCTestCase {
         XCTAssertEqual(state.rules.first?.isActive, false)
     }
 
+    // MARK: - Règles (création, modification, suppression)
+
+    private func queue(_ type: String) async throws -> [String: String] {
+        let rows = try await space.database.writer.read { db in
+            try Row.fetchAll(db, sql: "SELECT entityId, operation FROM sync_queue WHERE entityType = ?", arguments: [type])
+        }
+        return Dictionary(uniqueKeysWithValues: rows.map { ($0["entityId"] as String, $0["operation"] as String) })
+    }
+
+    func testSavingANewRuleActivatesItAndQueuesItsCreation() async throws {
+        try await space.accounts.save(Account(id: "a", name: "A"))
+        let rule = RecurringTransaction(id: "new", type: .income, amount: 9_000, accountId: "a", categoryId: "c", startDate: day(10, 5), frequency: .weekly, nextExecutionDate: 0, isActive: false, createdAt: 1)
+        try await space.recurring.save(rule)
+
+        let saved = try await space.recurring.rule(id: "new")
+        XCTAssertEqual(saved?.nextExecutionDate, day(10, 5))
+        XCTAssertEqual(saved?.isActive, true)
+        let queued = try await queue("recurring_transactions")
+        XCTAssertEqual(queued["new"], "CREATE")
+    }
+
+    func testEditingMovesTheFirstOccurrenceOnlyWhileNoneWasGenerated() async throws {
+        try await insertRule(next: day(10, 31))
+        var edited = try await XCTUnwrapAsync(await space.recurring.rule(id: "r"))
+        edited.startDate = day(11, 15)
+        edited.amount = 6_000
+        try await space.recurring.save(edited)
+        let moved = try await space.recurring.rule(id: "r")
+        XCTAssertEqual(moved?.nextExecutionDate, day(11, 15))
+        XCTAssertEqual(moved?.amount, 6_000)
+
+        try await space.recurring.generateDueOccurrences(now: day(11, 15, hour: 9), calendar: calendar)
+        var again = try await XCTUnwrapAsync(await space.recurring.rule(id: "r"))
+        XCTAssertEqual(again.nextExecutionDate, day(12, 15))
+        again.startDate = day(1, 1)
+        try await space.recurring.save(again)
+        let kept = try await space.recurring.rule(id: "r")
+        XCTAssertEqual(kept?.nextExecutionDate, day(12, 15), "Jamais de retour en arrière : pas d'échéances regénérées")
+        let queued = try await queue("recurring_transactions")
+        XCTAssertEqual(queued["r"], "UPDATE")
+    }
+
+    func testEditingNeverResumesAPausedRuleNorResurrectsADeletedOne() async throws {
+        try await insertRule(next: day(10, 31))
+        try await space.recurring.setActive(ruleId: "r", isActive: false)
+        var edited = try await XCTUnwrapAsync(await space.recurring.rule(id: "r"))
+        edited.isActive = true
+        try await space.recurring.save(edited)
+        let paused = try await space.recurring.rule(id: "r")
+        XCTAssertEqual(paused?.isActive, false)
+
+        try await space.recurring.delete(ruleId: "r", deleteCreatedTransactions: false)
+        do {
+            try await space.recurring.save(edited)
+            XCTFail("Supprimée : jamais recréée")
+        } catch let error as RecurringWriteError {
+            XCTAssertEqual(error, .ruleNotFound)
+        }
+    }
+
+    /// Une échéance validée, une modifiée puis validée, une rejetée.
+    private func ruleWithHistory() async throws -> (accepted: EntityID, modified: EntityID) {
+        try await insertRule(next: day(7, 31))
+        try await space.recurring.generateDueOccurrences(now: day(9, 30, hour: 9), calendar: calendar)
+        let ids = try await overview().pending.compactMap(\.occurrence?.id)
+        XCTAssertEqual(ids.count, 3)
+        try await space.recurring.accept(occurrenceId: ids[0])
+        let changed = Transaction(id: "changed", amount: 4_200, type: .expense, accountId: "a", categoryId: "c", date: day(8, 31, hour: 20), description: "Loyer réduit", createdAt: 5)
+        try await space.recurring.acceptWithChanges(occurrenceId: ids[1], transaction: changed)
+        try await space.recurring.reject(occurrenceId: ids[2])
+        let accepted = try await overview().history.first { $0.occurrence?.status == .accepted }?.occurrence?.transactionId
+        return (try XCTUnwrap(accepted), "changed")
+    }
+
+    func testAcceptWithChangesCreatesTheEditedTransactionAndLeavesTheRuleAlone() async throws {
+        let created = try await ruleWithHistory()
+        let state = try await overview()
+        let modified = try XCTUnwrap(state.history.first { $0.occurrence?.status == .modified }?.occurrence)
+        XCTAssertEqual(modified.transactionId, created.modified)
+        let transaction = try await space.transactions.transaction(id: "changed")
+        XCTAssertEqual(transaction?.amount, 4_200)
+        XCTAssertEqual(transaction?.date, day(8, 31, hour: 20))
+        let rule = try await space.recurring.rule(id: "r")
+        XCTAssertEqual(rule?.amount, 5_000, "La règle ne change pas")
+
+        do {
+            try await space.recurring.acceptWithChanges(occurrenceId: modified.id, transaction: Transaction(id: "again", amount: 1, type: .expense, accountId: "a", date: 0))
+            XCTFail("Déjà traitée")
+        } catch let error as RecurringWriteError {
+            XCTAssertEqual(error, .occurrenceNotPending)
+        }
+        let notCreated = try await space.transactions.transaction(id: "again")
+        XCTAssertNil(notCreated, "Rien n'est écrit si l'échéance n'est plus en attente")
+    }
+
+    func testDeletingARuleKeepsItsTransactionsUnlessAsked() async throws {
+        let created = try await ruleWithHistory()
+        let impact = try await space.recurring.deletionImpact(ruleId: "r")
+        XCTAssertEqual(impact.createdTransactionCount, 2)
+
+        try await space.recurring.delete(ruleId: "r", deleteCreatedTransactions: false)
+        let state = try await overview()
+        XCTAssertTrue(state.rules.isEmpty)
+        XCTAssertTrue(state.history.isEmpty)
+        let accepted = try await space.transactions.transaction(id: created.accepted)
+        let modified = try await space.transactions.transaction(id: created.modified)
+        XCTAssertNotNil(accepted)
+        XCTAssertNotNil(modified)
+        let occurrenceQueue = try await queue("recurring_transaction_occurrences")
+        XCTAssertTrue(occurrenceQueue.isEmpty, "Échéances jamais envoyées : leur suppression annule leur création")
+        let generated = try await space.recurring.generateDueOccurrences(now: day(12, 31, hour: 9), calendar: calendar)
+        XCTAssertEqual(generated, 0, "Règle supprimée : plus rien n'est généré")
+    }
+
+    func testDeletingARuleWithItsTransactionsRemovesThemAndTheirFees() async throws {
+        let created = try await ruleWithHistory()
+        // Frais ajoutés après coup à la transaction validée (depuis le formulaire de transaction).
+        let accepted = try await XCTUnwrapAsync(await space.transactions.transaction(id: created.accepted))
+        try await space.transactions.save(accepted, fee: TransactionFee(amount: 100, accountId: "a", type: .transfer))
+        let withFee = try await XCTUnwrapAsync(await space.transactions.transaction(id: created.accepted))
+        let feeId = try XCTUnwrap(withFee.feeTransactionId)
+
+        try await space.recurring.delete(ruleId: "r", deleteCreatedTransactions: true)
+        for id in [created.accepted, created.modified, feeId] {
+            let transaction = try await space.transactions.transaction(id: id)
+            XCTAssertNil(transaction, "\(id) supprimée")
+        }
+        let impact = try await space.recurring.deletionImpact(ruleId: "r")
+        XCTAssertEqual(impact.createdTransactionCount, 0)
+    }
+
     // MARK: - Plusieurs appareils (faux serveur avec la contrainte d'unicité règle + jour)
 
     private func syncRuleToServer(_ server: FakeSyncServer) async throws {
@@ -166,4 +297,9 @@ final class RecurringRepositoryTests: XCTestCase {
         let pending = try await space.pendingChangesCount()
         XCTAssertEqual(pending, 0)
     }
+}
+
+/// `XCTUnwrap` d'une valeur obtenue de façon asynchrone (pas d'`await` dans l'autoclosure).
+private func XCTUnwrapAsync<T>(_ value: T?, file: StaticString = #filePath, line: UInt = #line) throws -> T {
+    try XCTUnwrap(value, file: file, line: line)
 }

@@ -25,7 +25,7 @@ public enum DefaultData {
 
     /// Les 13 catégories courantes, les 4 des prêts et « Frais et commissions ».
     public static func categories(now: EpochMillis, newId: () -> EntityID) -> [Category] {
-        SystemCategoryKey.allCases.map { key in
+        SystemCategoryKey.allCases.filter(\.isCreatedAtRegistration).map { key in
             Category(
                 id: newId(),
                 name: key.canonicalName,
@@ -71,6 +71,10 @@ extension DefaultAccountKey {
 }
 
 extension SystemCategoryKey {
+    /// Créée à l'inscription (Android `DefaultCategories`). « Cadeaux » en revenu ne l'est pas :
+    /// elle est créée au premier emprunt transformé en cadeau, comme sur Android.
+    public var isCreatedAtRegistration: Bool { self != .giftsReceived }
+
     /// Apparence d'une catégorie système créée par l'app (Android `DefaultCategories`).
     public var defaultIcon: CategoryIcon {
         switch self {
@@ -80,7 +84,7 @@ extension SystemCategoryKey {
         case .transport: return .transport
         case .health: return .health
         case .shopping: return .shopping
-        case .gifts: return .gifts
+        case .gifts, .giftsReceived: return .gifts
         case .internet: return .internet
         case .water: return .water
         case .electricity: return .electricity
@@ -99,7 +103,7 @@ extension SystemCategoryKey {
         case .transport: return 0xFF25_63EB
         case .health: return 0xFFDC_2626
         case .shopping: return 0xFF7C_3AED
-        case .gifts: return 0xFFEC_4899
+        case .gifts, .giftsReceived: return 0xFFEC_4899
         case .internet: return 0xFF0E_A5E9
         case .water: return 0xFF06_B6D4
         case .education: return 0xFF16_A34A

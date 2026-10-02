@@ -97,6 +97,7 @@ struct DashboardView: View {
         .navigationDestination(isPresented: $isShowingAutomations) {
             AutomationsView()
         }
+        .modifier(OpensAutomationsOnRequest(isShowingAutomations: $isShowingAutomations))
         .budgetFormSheet($budgetForm, session: session)
         .refreshable {
             await session.sync?.refresh()
@@ -146,7 +147,23 @@ struct DashboardView: View {
     }
 }
 
+/// Toucher d'un rappel d'automatisation (voir `AppRouter`) : ouvre l'écran Automatisations.
+private struct OpensAutomationsOnRequest: ViewModifier {
+
+    @Binding var isShowingAutomations: Bool
+    @Environment(AppRouter.self) private var router
+
+    func body(content: Content) -> some View {
+        content.onChange(of: router.pendingDestination, initial: true) { _, destination in
+            guard destination == .automations else { return }
+            isShowingAutomations = true
+            router.consume(.automations)
+        }
+    }
+}
+
 #Preview {
     NavigationStack { DashboardView() }
         .environment(SessionModel.preview())
+        .environment(AppRouter())
 }

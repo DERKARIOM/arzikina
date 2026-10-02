@@ -141,6 +141,76 @@ public struct LocalRecurringRepository: RecurringRepository {
         }
     }
 
+    public func acceptWithChanges(occurrenceId: EntityID, transaction: Transaction) async throws {
+        let timestamp = now()
+        let store = self
+        try await database.writer.write { db in
+            var occurrence = try store.pendingOccurrence(db, id: occurrenceId)
+            try store.transactions.save(db, id: transaction.id, createdAt: timestamp, timestamp: timestamp) { TransactionRecord(transaction, meta: $0) }
+            occurrence.status = .modified
+            occurrence.transactionId = transaction.id
+            occurrence.processedAt = timestamp
+            try store.occurrences.save(db, id: occurrence.id, createdAt: occurrence.createdAt, timestamp: timestamp) { [occurrence] in RecurringOccurrenceRecord(occurrence, meta: $0) }
+        }
+    }
+
+    // MARK: - Règles
+
+    public func rule(id: EntityID) async throws -> RecurringTransaction? {
+        try await rules.fetchActive(id: id)?.domain
+    }
+
+    public func save(_ rule: RecurringTransaction) async throws {
+        let timestamp = now()
+        let store = self
+        try await database.writer.write { db in
+            let record = try RecurringTransactionRecord.fetchOne(db, key: rule.id)
+            // Supprimée entre-temps (sur un autre appareil) : on ne la ressuscite pas.
+            if let record, record.deletedAt != nil { throw RecurringWriteError.ruleNotFound }
+            let stored = record?.domain
+            let hasOccurrences = try Bool.fetchOne(db, sql: """
+                SELECT EXISTS (SELECT 1 FROM recurring_transaction_occurrences WHERE recurringTransactionId = ? AND deletedAt IS NULL)
+                """, arguments: [rule.id]) ?? false
+            let toStore = AutomationForm.ruleToStore(rule, stored: stored, hasGeneratedOccurrences: hasOccurrences)
+            try store.rules.save(db, id: toStore.id, createdAt: toStore.createdAt, timestamp: timestamp) { RecurringTransactionRecord(toStore, meta: $0) }
+        }
+    }
+
+    public func deletionImpact(ruleId: EntityID) async throws -> AutomationDeletionImpact {
+        try await database.writer.read { db in
+            AutomationDeletionImpact(createdTransactionCount: try Self.createdTransactionIds(db, ruleId: ruleId).count)
+        }
+    }
+
+    public func delete(ruleId: EntityID, deleteCreatedTransactions: Bool) async throws {
+        let timestamp = now()
+        let store = self
+        try await database.writer.write { db in
+            guard let record = try RecurringTransactionRecord.fetchOne(db, key: ruleId), record.deletedAt == nil else { return }
+            if deleteCreatedTransactions {
+                for id in try Self.createdTransactionIds(db, ruleId: ruleId) {
+                    try LocalTransactionRepository.deleteWithFee(db, id: id, store: store.transactions, timestamp: timestamp)
+                }
+            }
+            let occurrenceIds = try String.fetchAll(db, sql: """
+                SELECT id FROM recurring_transaction_occurrences WHERE recurringTransactionId = ? AND deletedAt IS NULL
+                """, arguments: [ruleId])
+            for id in occurrenceIds {
+                try store.occurrences.softDelete(db, id: id, timestamp: timestamp)
+            }
+            try store.rules.softDelete(db, id: ruleId, timestamp: timestamp)
+        }
+    }
+
+    /// Transactions (encore présentes) créées par les échéances validées de [ruleId].
+    static func createdTransactionIds(_ db: Database, ruleId: EntityID) throws -> [EntityID] {
+        try String.fetchAll(db, sql: """
+            SELECT DISTINCT t.id FROM recurring_transaction_occurrences o
+            JOIN transactions t ON t.id = o.transactionId AND t.deletedAt IS NULL
+            WHERE o.recurringTransactionId = ? AND o.deletedAt IS NULL
+            """, arguments: [ruleId])
+    }
+
     /// Échéance encore en attente (elle a pu être traitée entre-temps sur un autre appareil).
     private func pendingOccurrence(_ db: Database, id: EntityID) throws -> RecurringTransactionOccurrence {
         guard let record = try RecurringOccurrenceRecord.fetchOne(db, key: id), record.deletedAt == nil,

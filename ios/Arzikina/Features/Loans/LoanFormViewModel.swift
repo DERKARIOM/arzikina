@@ -24,6 +24,8 @@ final class LoanFormViewModel {
     private(set) var saveFailed = false
 
     let isEditing: Bool
+    /// Prêt transformé en cadeau : personne, compte et montant sont verrouillés (comme Android).
+    var isGiftLocked: Bool { existing?.isGifted ?? false }
     /// Montant déjà remboursé (modification).
     let repaid: MinorUnits
 

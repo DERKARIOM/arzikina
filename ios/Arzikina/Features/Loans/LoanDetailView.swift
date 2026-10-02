@@ -95,54 +95,12 @@ struct LoanDetailView: View {
                         LabeledContent("loans.person.phone") { Text(verbatim: phone) }
                     }
                 }
-                Section {
-                    if detail.summary.remaining > 0 {
-                        Button {
-                            isRecordingPayment = true
-                        } label: {
-                            Label("loans.payment.title", systemImage: "plus.circle.fill")
-                        }
+                if detail.summary.loan.isGifted {
+                    Section {
+                        GiftedLoanCard(summary: detail.summary)
                     }
-                    if detail.payments.isEmpty {
-                        Text("loans.detail.no_payments")
-                            .foregroundStyle(.secondary)
-                    } else {
-                        ForEach(detail.payments) { payment in
-                            HStack {
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(date(payment.date), format: .dateTime.day().month().year())
-                                        .font(.subheadline)
-                                    if !payment.note.isEmpty {
-                                        Text(verbatim: payment.note)
-                                            .font(.caption)
-                                            .foregroundStyle(.secondary)
-                                    }
-                                }
-                                Spacer()
-                                Text(verbatim: format(payment.amount, detail.summary))
-                                    .font(.subheadline.weight(.semibold).monospacedDigit())
-                            }
-                            .accessibilityElement(children: .combine)
-                            .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                                Button {
-                                    pendingPaymentDeletion = payment
-                                } label: {
-                                    Label("loans.delete", systemImage: "trash")
-                                }
-                                .tint(.red)
-                            }
-                            .contextMenu {
-                                Button(role: .destructive) {
-                                    pendingPaymentDeletion = payment
-                                } label: {
-                                    Label("loans.delete", systemImage: "trash")
-                                }
-                            }
-                        }
-                    }
-                } header: {
-                    Text("loans.detail.payments \(detail.payments.count)")
                 }
+                paymentsSection(detail)
                 Section {
                     Button(role: .destructive) {
                         isConfirmingDelete = true
@@ -152,6 +110,66 @@ struct LoanDetailView: View {
                 }
             }
             .listStyle(.insetGrouped)
+        }
+    }
+
+    /// Remboursements (enregistrement, suppression) ; figés sur un prêt transformé en cadeau.
+    private func paymentsSection(_ detail: LoanDetail) -> some View {
+        let isGifted = detail.summary.loan.isGifted
+        return Section {
+            if detail.summary.remaining > 0 && !isGifted {
+                Button {
+                    isRecordingPayment = true
+                } label: {
+                    Label("loans.payment.title", systemImage: "plus.circle.fill")
+                }
+            }
+            if detail.payments.isEmpty {
+                Text("loans.detail.no_payments")
+                    .foregroundStyle(.secondary)
+            } else {
+                ForEach(detail.payments) { payment in
+                    HStack {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(date(payment.date), format: .dateTime.day().month().year())
+                                .font(.subheadline)
+                            if !payment.note.isEmpty {
+                                Text(verbatim: payment.note)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                        Spacer()
+                        Text(verbatim: format(payment.amount, detail.summary))
+                            .font(.subheadline.weight(.semibold).monospacedDigit())
+                    }
+                    .accessibilityElement(children: .combine)
+                    .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                        // Prêt offert : la part remboursée est figée (comme Android).
+                        if !isGifted {
+                            Button {
+                                pendingPaymentDeletion = payment
+                            } label: {
+                                Label("loans.delete", systemImage: "trash")
+                            }
+                            .tint(.red)
+                        }
+                    }
+                    .contextMenu {
+                        if !isGifted {
+                            Button(role: .destructive) {
+                                pendingPaymentDeletion = payment
+                            } label: {
+                                Label("loans.delete", systemImage: "trash")
+                            }
+                        }
+                    }
+                }
+            }
+        } header: {
+            Text("loans.detail.payments \(detail.payments.count)")
+        } footer: {
+            if isGifted { Text("loans.gift.locked") }
         }
     }
 
@@ -218,5 +236,28 @@ struct LoanDetailView: View {
                 deleteFailed = true
             }
         }
+    }
+}
+
+/// Prêt transformé en cadeau : montant offert et date (Android « 🎁 Transformé en cadeau »).
+private struct GiftedLoanCard: View {
+    let summary: LoanSummary
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Label("loans.gift.title", systemImage: "gift.fill")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(LoanStatus.gifted.color)
+            LabeledContent("loans.gift.amount_label") {
+                Text(verbatim: Money.format(CurrencyAmount(currencyCode: summary.currencyCode, amountMinor: summary.loan.giftedAmount)))
+                    .monospacedDigit()
+            }
+            if let giftedAt = summary.loan.giftedAt {
+                LabeledContent("loans.gift.date_label") {
+                    Text(Date(timeIntervalSince1970: TimeInterval(giftedAt) / 1000), format: .dateTime.day().month().year())
+                }
+            }
+        }
+        .accessibilityElement(children: .combine)
     }
 }
