@@ -11,10 +11,14 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.naniger.arzikina.R
 import com.naniger.arzikina.databinding.ItemLoanDetailHeaderBinding
-import com.naniger.arzikina.databinding.ItemLoanPaymentBinding
+import com.naniger.arzikina.databinding.ItemTransactionCompactBinding
+import com.naniger.arzikina.domain.model.CategoryIcon
 import com.naniger.arzikina.domain.model.CurrencyAmount
 import com.naniger.arzikina.domain.model.LoanPayment
 import com.naniger.arzikina.domain.model.LoanType
+import com.naniger.arzikina.presentation.categories.CategoryIconMapper
+import com.naniger.arzikina.presentation.transactions.TransactionAmountTone
+import com.naniger.arzikina.presentation.transactions.transactionAmountDisplay
 import com.naniger.arzikina.util.AppDateFormats
 import com.naniger.arzikina.util.DatePeriods
 import com.naniger.arzikina.util.LoanDateTime
@@ -27,10 +31,13 @@ import com.naniger.arzikina.util.TriggerTimeFormatter
  * par remboursement RÉELLEMENT enregistré — voir la doc de [LoanDetailUiState.payments]. Même
  * raisonnement `ListAdapter`/`DiffUtil` que [LoansAdapter].
  *
- * [onDeletePayment] : icône de suppression de chaque ligne [LoanDetailListRow.PaymentRow] (voir
- * `item_loan_payment.xml`) — la confirmation elle-même reste la responsabilité du Fragment (voir
- * `LoanDetailFragment.confirmDeletePayment`), cet adapter reste volontairement sans logique
- * métier/dialogue, même principe que [LoansAdapter.onLoanClick].
+ * Chaque versement s'affiche avec la MÊME ligne que les transactions (`item_transaction_compact.xml`,
+ * blocs « postcard » arrondis comme les groupes par jour de l'écran Transactions) : icône de la
+ * catégorie système de remboursement, montant coloré sans signe (voir `TransactionAmountDisplay`).
+ *
+ * [onDeletePayment] : appui long sur un versement (plus d'icône poubelle, comme les transactions) —
+ * la confirmation reste la responsabilité du Fragment (voir `LoanDetailFragment.confirmDeletePayment`),
+ * cet adapter reste volontairement sans logique métier/dialogue, même principe que [LoansAdapter.onLoanClick].
  */
 class LoanDetailAdapter(
     private val onDeletePayment: (LoanPayment) -> Unit
@@ -46,7 +53,7 @@ class LoanDetailAdapter(
         return if (viewType == VIEW_TYPE_HEADER) {
             HeaderViewHolder(ItemLoanDetailHeaderBinding.inflate(inflater, parent, false))
         } else {
-            PaymentViewHolder(ItemLoanPaymentBinding.inflate(inflater, parent, false))
+            PaymentViewHolder(ItemTransactionCompactBinding.inflate(inflater, parent, false))
         }
     }
 
@@ -139,39 +146,80 @@ class LoanDetailAdapter(
             Money.format(CurrencyAmount(currencyCode, amountMinor))
     }
 
-    class PaymentViewHolder(private val binding: ItemLoanPaymentBinding) : RecyclerView.ViewHolder(binding.root) {
+    /**
+     * Remplit la ligne de transaction partagée (`item_transaction_compact.xml`) pour un versement :
+     * - icône et couleur de la catégorie système « Remboursement » (vert pour un prêt accordé, rouge
+     *   pour un emprunt, mêmes valeurs que `DefaultCategories`) ;
+     * - titre : date et heure ; sous-titre : compte, suivi de la note s'il y en a une ;
+     * - montant : vert si l'argent revient (prêt accordé), rouge s'il sort (emprunt), sans signe.
+     */
+    class PaymentViewHolder(private val binding: ItemTransactionCompactBinding) : RecyclerView.ViewHolder(binding.root) {
         fun bind(row: LoanDetailListRow.PaymentRow, onDeletePayment: (LoanPayment) -> Unit) {
             val context = binding.root.context
             val payment = row.payment
+            val isLent = row.loanType == LoanType.LENT
+
+            binding.categoryIcon.setImageResource(CategoryIconMapper.iconFor(CategoryIcon.LOAN))
+            binding.categoryIcon.backgroundTintList = ColorStateList.valueOf(
+                ContextCompat.getColor(context, if (isLent) R.color.loan_lent_color else R.color.expense_red)
+            )
 
             // Date + heure du remboursement ; heure omise pour une ancienne donnée saisie sans heure
             // (minuit technique, voir LoanDateTime.hasExplicitTime) — jamais « 00:00 » fictif.
             val paymentDay = payment.date.toFormattedDate(context)
-            binding.paymentDate.text = if (LoanDateTime.hasExplicitTime(payment.date)) {
+            binding.categoryName.text = if (LoanDateTime.hasExplicitTime(payment.date)) {
                 val time = LoanDateTime.toLocalTime(payment.date)
                 context.getString(R.string.loan_date_at_time, paymentDay, TriggerTimeFormatter.format(context, time.hour, time.minute))
             } else {
                 paymentDay
             }
-            binding.paymentAccountName.text = row.accountName
 
             val note = payment.note.trim()
-            binding.paymentNote.visibility = if (note.isEmpty()) View.GONE else View.VISIBLE
-            binding.paymentNote.text = note
+            val subtitle = listOf(row.accountName, note).filter { it.isNotEmpty() }.joinToString(" · ")
+            binding.subtitle.visibility = if (subtitle.isEmpty()) View.GONE else View.VISIBLE
+            binding.subtitle.text = subtitle
 
-            // Un remboursement fait revenir l'argent si le prêt a été ACCORDÉ (LENT), en fait
-            // sortir s'il a été CONTRACTÉ (BORROWED) — même logique de signe que TransactionItemBinder.
-            val isCredit = row.loanType == LoanType.LENT
-            val formattedAmount = Money.format(CurrencyAmount(row.currencyCode, payment.amount))
-            binding.paymentAmount.text = "${if (isCredit) "+" else "-"}$formattedAmount"
-            binding.paymentAmount.setTextColor(
-                ContextCompat.getColor(context, if (isCredit) R.color.loan_lent_color else R.color.expense_red)
+            val amount = transactionAmountDisplay(
+                payment.amount,
+                row.currencyCode,
+                if (isLent) TransactionAmountTone.INCOME else TransactionAmountTone.EXPENSE
             )
+            binding.amount.text = amount.text
+            binding.amount.setTextColor(ContextCompat.getColor(context, amount.colorRes))
+            binding.runningBalance.visibility = View.GONE
+            binding.feeIndicator.visibility = View.GONE
 
-            // Masqué (pas seulement désactivé) sur un prêt/emprunt transformé en cadeau : l'action
-            // n'a plus de sens, inutile de la montrer (voir LoanDetailUiState.canDeletePayments).
-            binding.paymentDeleteButton.visibility = if (row.canDelete) View.VISIBLE else View.GONE
-            binding.paymentDeleteButton.setOnClickListener { onDeletePayment(payment) }
+            // Bloc « postcard » unique pour tous les versements, comme un groupe de transactions
+            // d'un même jour ; pas de séparateur au-dessus de la première ligne.
+            binding.root.setBackgroundResource(
+                when {
+                    row.isFirst && row.isLast -> R.drawable.bg_postcard_single
+                    row.isFirst -> R.drawable.bg_postcard_top
+                    row.isLast -> R.drawable.bg_postcard_bottom
+                    else -> R.color.arzikina_postcart_background
+                }
+            )
+            binding.divider.visibility = if (row.isFirst) View.INVISIBLE else View.VISIBLE
+            val sideMargin = binding.root.resources.getDimensionPixelSize(R.dimen.spacing_m)
+            (binding.root.layoutParams as? ViewGroup.MarginLayoutParams)?.let { params ->
+                params.marginStart = sideMargin
+                params.marginEnd = sideMargin
+                params.topMargin = if (row.isFirst) binding.root.resources.getDimensionPixelSize(R.dimen.spacing_s) else 0
+                binding.root.layoutParams = params
+            }
+
+            // Suppression par appui long (avec confirmation), seulement si elle est permise : un
+            // prêt/emprunt transformé en cadeau n'accepte plus de suppression (voir
+            // LoanDetailUiState.canDeletePayments).
+            if (row.canDelete) {
+                binding.root.setOnLongClickListener {
+                    onDeletePayment(payment)
+                    true
+                }
+            } else {
+                binding.root.setOnLongClickListener(null)
+                binding.root.isLongClickable = false
+            }
         }
     }
 

@@ -129,13 +129,15 @@ class LoanDetailFragment : Fragment(R.layout.fragment_loan_detail) {
         val rows = buildList {
             add(LoanDetailListRow.Header(uiState))
             addAll(
-                uiState.payments.map { payment ->
+                uiState.payments.mapIndexed { index, payment ->
                     LoanDetailListRow.PaymentRow(
                         payment = payment,
                         accountName = uiState.accountsById[payment.accountId]?.displayName(requireContext()).orEmpty(),
                         loanType = uiState.loan.type,
                         currencyCode = uiState.currencyCode,
-                        canDelete = uiState.canDeletePayments
+                        canDelete = uiState.canDeletePayments,
+                        isFirst = index == 0,
+                        isLast = index == uiState.payments.lastIndex
                     )
                 }
             )

@@ -22,6 +22,9 @@ sealed interface LoanDetailListRow {
         val loanType: LoanType,
         val currencyCode: String,
         /** `false` sur un prêt/emprunt transformé en cadeau (voir `LoanDetailUiState.canDeletePayments`). */
-        val canDelete: Boolean = true
+        val canDelete: Boolean = true,
+        /** Position dans le bloc « postcard » des versements (coins arrondis du haut / du bas). */
+        val isFirst: Boolean = false,
+        val isLast: Boolean = false
     ) : LoanDetailListRow
 }

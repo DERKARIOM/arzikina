@@ -5,7 +5,7 @@
     principal) : réunit la carte "postcard" de résumé (avatar/titre/statut/montants/progression,
     même structure visuelle que item_loan.xml), la carte "Informations" (dates/description), et le
     titre de la section "Versements" — les remboursements eux-mêmes sont des items séparés
-    (item_loan_payment.xml) suivant celui-ci dans la liste.
+    (item_transaction_compact.xml) suivant celui-ci dans la liste.
 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
