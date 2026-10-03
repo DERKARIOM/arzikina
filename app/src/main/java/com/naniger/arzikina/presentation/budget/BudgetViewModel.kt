@@ -21,7 +21,6 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 /**
@@ -95,12 +94,6 @@ class BudgetViewModel @Inject constructor(
 
     fun onStatusFilterChange(filter: BudgetStatusFilterOption) {
         _statusFilter.value = filter
-    }
-
-    fun deleteBudget(id: Long) {
-        viewModelScope.launch {
-            budgetRepository.deleteBudget(id)
-        }
     }
 
     /** Voir [BudgetStatusFilterOption], doc de tête : un budget récurrent legacy ([status] `null`)

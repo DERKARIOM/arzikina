@@ -40,8 +40,7 @@ import kotlin.math.roundToInt
  * élévation, espacement) : les deux écrans affichent exactement la même carte.
  */
 class BudgetAdapter(
-    private val onClick: (BudgetUiItem) -> Unit,
-    private val onDeleteClick: (BudgetUiItem) -> Unit
+    private val onClick: (BudgetUiItem) -> Unit
 ) : ListAdapter<BudgetUiItem, BudgetAdapter.ViewHolder>(DIFF_CALLBACK) {
 
     override fun onCreateViewHolder(parent: ViewGroup, position: Int): ViewHolder {
@@ -50,7 +49,7 @@ class BudgetAdapter(
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        holder.bind(getItem(position), onClick, onDeleteClick)
+        holder.bind(getItem(position), onClick)
     }
 
     /**
@@ -62,7 +61,7 @@ class BudgetAdapter(
         private val binding: ItemBudgetBinding,
         itemView: View = binding.root
     ) : RecyclerView.ViewHolder(itemView) {
-        fun bind(item: BudgetUiItem, onClick: (BudgetUiItem) -> Unit, onDeleteClick: (BudgetUiItem) -> Unit) {
+        fun bind(item: BudgetUiItem, onClick: (BudgetUiItem) -> Unit) {
             val context = binding.root.context
             val category = item.category
 
@@ -151,8 +150,9 @@ class BudgetAdapter(
             binding.expirationLabel.setTextColor(expirationTextColor)
             binding.expirationIcon.setColorFilter(expirationTextColor)
 
+            // Pas de suppression depuis la carte : elle se fait dans le formulaire du budget
+            // (menu Supprimer de la barre d'outils, avec confirmation).
             binding.root.setOnClickListener { onClick(item) }
-            binding.deleteButton.setOnClickListener { onDeleteClick(item) }
         }
 
         /** Repositionne le repère "Aujourd'hui" via `horizontalBias` — voir item_budget.xml. */

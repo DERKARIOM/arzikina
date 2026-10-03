@@ -11,7 +11,6 @@ import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.naniger.arzikina.R
 import com.naniger.arzikina.databinding.FragmentBudgetBinding
-import com.naniger.arzikina.presentation.components.ConfirmDialogs
 import com.naniger.arzikina.presentation.components.NavAnimations
 import com.naniger.arzikina.util.AppResult
 import dagger.hilt.android.AndroidEntryPoint
@@ -25,8 +24,8 @@ import kotlinx.coroutines.launch
  *
  * [BudgetAdapter] : le MÊME PostCard que l'aperçu des budgets du Dashboard (`item_budget.xml` dans
  * la même carte, voir `item_budget_card.xml`), pour une apparence identique entre les deux écrans.
- * Le Dashboard n'est pas modifié. Callbacks inchangés : toucher la carte ouvre le formulaire
- * (`navigateToForm`), l'icône corbeille demande confirmation (`confirmDelete`).
+ * Toucher la carte ouvre le formulaire (`navigateToForm`), où se trouve aussi la suppression
+ * (menu Supprimer, avec confirmation) : la carte n'a pas de bouton corbeille.
  */
 @AndroidEntryPoint
 class BudgetFragment : Fragment(R.layout.fragment_budget) {
@@ -34,8 +33,7 @@ class BudgetFragment : Fragment(R.layout.fragment_budget) {
     private val viewModel: BudgetViewModel by viewModels()
     private var binding: FragmentBudgetBinding? = null
     private val adapter = BudgetAdapter(
-        onClick = { item -> navigateToForm(item.budget.id) },
-        onDeleteClick = { item -> confirmDelete(item) }
+        onClick = { item -> navigateToForm(item.budget.id) }
     )
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -100,14 +98,6 @@ class BudgetFragment : Fragment(R.layout.fragment_budget) {
         adapter.submitList(state.data)
     }
 
-    private fun confirmDelete(item: BudgetUiItem) {
-        ConfirmDialogs.confirm(
-            context = requireContext(),
-            title = getString(R.string.budgets_delete_title),
-            message = getString(R.string.budgets_delete_message),
-            onConfirm = { viewModel.deleteBudget(item.budget.id) }
-        )
-    }
 
     private fun navigateToForm(budgetId: Long) {
         findNavController().navigate(R.id.budgetFormFragment, BudgetFormFragmentArgs(budgetId = budgetId).toBundle(), NavAnimations.push)

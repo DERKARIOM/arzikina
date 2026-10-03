@@ -161,9 +161,6 @@ class DashboardFragment : Fragment(R.layout.fragment_dashboard) {
         viewBinding.createBudgetAction.setOnClickListener {
             findNavController().navigate(R.id.budgetFormFragment, null, NavAnimations.push)
         }
-        // Pas d'action de suppression depuis cet aperçu (voir item_budget.xml, réutilisé
-        // tel quel avec BudgetAdapter.ViewHolder pour ne pas dupliquer son rendu).
-        viewBinding.budgetPreview.deleteButton.visibility = View.GONE
 
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -272,8 +269,7 @@ class DashboardFragment : Fragment(R.layout.fragment_dashboard) {
         if (item != null) {
             BudgetAdapter.ViewHolder(binding.budgetPreview).bind(
                 item = item,
-                onClick = { findNavController().navigate(R.id.budgetFragment, null, NavAnimations.push) },
-                onDeleteClick = {}
+                onClick = { findNavController().navigate(R.id.budgetFragment, null, NavAnimations.push) }
             )
         }
     }
