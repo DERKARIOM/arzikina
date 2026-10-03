@@ -25,6 +25,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -50,6 +51,10 @@ import javax.inject.Inject
  * remboursement partagé entre deux devises resterait donc incohérent quel que soit l'écran ; ce
  * choix garde au moins la cohérence avec [loanRemainingAmount]/la barre de progression affichées
  * sur "Détail du prêt".
+ *
+ * Mode édition ([isEditMode], argument `paymentId` non nul) : formulaire pré-rempli avec le
+ * remboursement existant ; le montant autorisé va jusqu'au solde restant PLUS le montant actuel de
+ * ce remboursement ([editedPaymentAmount]), puisque celui-ci sera remplacé.
  */
 data class LoanPaymentFormState(
     val isLoaded: Boolean = false,
@@ -71,11 +76,19 @@ data class LoanPaymentFormState(
     val note: String = "",
     @StringRes val accountError: Int? = null,
     @StringRes val amountError: Int? = null,
-    val isSaving: Boolean = false
-)
+    val isSaving: Boolean = false,
+    val isEditMode: Boolean = false,
+    /** Montant actuel du remboursement modifié (0 en création). */
+    val editedPaymentAmount: Long = 0L
+) {
+    /** Montant maximal accepté : le solde restant, plus le remboursement remplacé en édition. */
+    val maxAmount: Long get() = loanRemainingAmount + editedPaymentAmount
+}
 
 sealed interface LoanPaymentFormEvent {
     data object Saved : LoanPaymentFormEvent
+    data object Updated : LoanPaymentFormEvent
+    data object Deleted : LoanPaymentFormEvent
 }
 
 @HiltViewModel
@@ -87,7 +100,12 @@ class LoanPaymentFormViewModel @Inject constructor(
     transactionRepository: TransactionRepository
 ) : ViewModel() {
 
-    private val loanId: Long = LoanPaymentFormFragmentArgs.fromSavedStateHandle(savedStateHandle).loanId
+    private val args = LoanPaymentFormFragmentArgs.fromSavedStateHandle(savedStateHandle)
+    private val loanId: Long = args.loanId
+
+    /** 0 en création ; id du remboursement modifié sinon. */
+    private val paymentId: Long = args.paymentId
+    val isEditMode: Boolean get() = paymentId != 0L
 
     private val _formState = MutableStateFlow(LoanPaymentFormState())
     val formState: StateFlow<LoanPaymentFormState> = _formState.asStateFlow()
@@ -112,6 +130,17 @@ class LoanPaymentFormViewModel @Inject constructor(
                 _formState.update { it.copy(notFound = true) }
                 return@launch
             }
+            // Édition : le remboursement doit toujours exister (supprimé ailleurs → même retour
+            // arrière que pour un prêt introuvable).
+            val payment = if (isEditMode) {
+                loanRepository.observePayments(loanId).first().firstOrNull { it.id == paymentId }
+                    ?: run {
+                        _formState.update { it.copy(notFound = true) }
+                        return@launch
+                    }
+            } else {
+                null
+            }
             val person = personRepository.getPerson(loan.personId)
             val account = accountRepository.getAccount(loan.accountId)
             _formState.update {
@@ -122,7 +151,12 @@ class LoanPaymentFormViewModel @Inject constructor(
                     loanType = loan.type,
                     loanRemainingAmount = loan.remainingAmount,
                     loanCurrencyCode = account?.currencyCode ?: Constants.DEFAULT_CURRENCY_CODE,
-                    accountId = loan.accountId
+                    accountId = payment?.accountId ?: loan.accountId,
+                    amountInput = payment?.let { p -> Money.formatForInput(p.amount) } ?: it.amountInput,
+                    dateMillis = payment?.date ?: it.dateMillis,
+                    note = payment?.note ?: it.note,
+                    isEditMode = payment != null,
+                    editedPaymentAmount = payment?.amount ?: 0L
                 )
             }
         }
@@ -158,7 +192,7 @@ class LoanPaymentFormViewModel @Inject constructor(
         val amountMinor = Money.parseToMinorUnits(state.amountInput)
         val amountError = when {
             amountMinor == null || amountMinor <= 0L -> R.string.error_invalid_amount
-            amountMinor > state.loanRemainingAmount -> R.string.error_amount_exceeds_remaining
+            amountMinor > state.maxAmount -> R.string.error_amount_exceeds_remaining
             else -> null
         }
 
@@ -169,6 +203,26 @@ class LoanPaymentFormViewModel @Inject constructor(
         checkNotNull(amountMinor)
 
         _formState.update { it.copy(isSaving = true) }
+        if (isEditMode) {
+            viewModelScope.launch {
+                loanRepository.updatePayment(
+                    LoanPayment(
+                        id = paymentId,
+                        loanId = loanId,
+                        accountId = state.accountId,
+                        amount = amountMinor,
+                        date = state.dateMillis,
+                        note = state.note.trim(),
+                        // Ignorés par LoanRepository.updatePayment (jamais modifiés).
+                        transactionId = 0L,
+                        createdAt = 0L
+                    )
+                )
+                _formState.update { it.copy(isSaving = false) }
+                _events.emit(LoanPaymentFormEvent.Updated)
+            }
+            return
+        }
         viewModelScope.launch {
             loanRepository.recordPayment(
                 LoanPayment(
@@ -184,6 +238,18 @@ class LoanPaymentFormViewModel @Inject constructor(
             )
             _formState.update { it.copy(isSaving = false) }
             _events.emit(LoanPaymentFormEvent.Saved)
+        }
+    }
+
+    /** Suppression depuis le formulaire en édition (confirmée par le Fragment) : supprime aussi
+     * la transaction liée et recalcule le prêt/emprunt (voir [LoanRepository.deletePayment]). */
+    fun delete() {
+        if (!isEditMode || _formState.value.isSaving) return
+        _formState.update { it.copy(isSaving = true) }
+        viewModelScope.launch {
+            loanRepository.deletePayment(paymentId)
+            _formState.update { it.copy(isSaving = false) }
+            _events.emit(LoanPaymentFormEvent.Deleted)
         }
     }
 }

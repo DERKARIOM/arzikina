@@ -12,7 +12,6 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.naniger.arzikina.R
 import com.naniger.arzikina.databinding.FragmentLoanDetailBinding
 import com.naniger.arzikina.domain.model.CurrencyAmount
-import com.naniger.arzikina.domain.model.LoanPayment
 import com.naniger.arzikina.domain.model.LoanType
 import com.naniger.arzikina.domain.model.outstandingAmount
 import com.naniger.arzikina.presentation.components.ConfirmDialogs
@@ -43,15 +42,15 @@ import java.time.ZoneOffset
  * remboursement disparaissent.
  *
  * "Enregistrer un remboursement" ouvre désormais [LoanPaymentFormFragment] (Étape 6, Gestion des
- * remboursements) ; chaque ligne de la section "Versements" peut aussi être supprimée
- * individuellement (voir [confirmDeletePayment]).
+ * remboursements) ; toucher une ligne de la section "Versements" ouvre ce même formulaire pour
+ * modifier ou supprimer ce remboursement (voir [navigateToPaymentForm]).
  */
 @AndroidEntryPoint
 class LoanDetailFragment : Fragment(R.layout.fragment_loan_detail) {
 
     private val viewModel: LoanDetailViewModel by viewModels()
     private var binding: FragmentLoanDetailBinding? = null
-    private val adapter = LoanDetailAdapter(onDeletePayment = { payment -> confirmDeletePayment(payment) })
+    private val adapter = LoanDetailAdapter(onPaymentClick = { payment -> navigateToPaymentForm(paymentId = payment.id) })
 
     /** Dernier état connu, pour [confirmDelete] (même raisonnement que
      * `AccountDetailFragment.confirmDelete`, qui lit `viewModel.uiState.value` directement). */
@@ -250,18 +249,13 @@ class LoanDetailFragment : Fragment(R.layout.fragment_loan_detail) {
         )
     }
 
-    private fun confirmDeletePayment(payment: LoanPayment) {
-        val uiState = latestUiState ?: return
-        val amountLabel = Money.format(CurrencyAmount(uiState.currencyCode, payment.amount))
-        ConfirmDialogs.confirm(
-            context = requireContext(),
-            title = getString(R.string.loan_payment_delete_title),
-            message = getString(R.string.loan_payment_delete_message, amountLabel),
-            onConfirm = { viewModel.deletePayment(payment.id) }
-        )
-    }
 
-    private fun navigateToPaymentForm() {
-        findNavController().navigate(R.id.loanPaymentFormFragment, LoanPaymentFormFragmentArgs(loanId = viewModel.loanId).toBundle(), NavAnimations.push)
+    /** [paymentId] : 0 pour un nouveau remboursement, sinon le versement à modifier/supprimer. */
+    private fun navigateToPaymentForm(paymentId: Long = 0L) {
+        findNavController().navigate(
+            R.id.loanPaymentFormFragment,
+            LoanPaymentFormFragmentArgs(loanId = viewModel.loanId, paymentId = paymentId).toBundle(),
+            NavAnimations.push
+        )
     }
 }

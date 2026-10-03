@@ -366,6 +366,12 @@
         <argument
             android:name="loanId"
             app:argType="long" />
+        <!-- 0 (défaut) : nouveau remboursement ; sinon id du remboursement à modifier/supprimer
+             (atteint en touchant un versement de loanDetailFragment). -->
+        <argument
+            android:name="paymentId"
+            android:defaultValue="0L"
+            app:argType="long" />
     </fragment>
 
     <!--

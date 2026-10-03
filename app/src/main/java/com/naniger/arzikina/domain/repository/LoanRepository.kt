@@ -15,7 +15,7 @@ import kotlinx.coroutines.flow.Flow
  * (l'appelant n'a jamais besoin de le savoir), mais c'est un invariant fort de cette interface.
  *
  * Un prêt/emprunt transformé en cadeau ([convertToGift]) est VERROUILLÉ : [recordPayment],
- * [deletePayment] et toute modification de son montant/compte/personne/type par [saveLoan] lèvent
+ * [updatePayment], [deletePayment] et toute modification de son montant/compte/personne/type par [saveLoan] lèvent
  * [com.naniger.arzikina.domain.model.LoanGiftException.Locked]. Seule la date peut encore changer.
  */
 interface LoanRepository {
@@ -60,6 +60,24 @@ interface LoanRepository {
      * transformé en cadeau.
      */
     suspend fun recordPayment(payment: LoanPayment): Long
+
+    /**
+     * Modifie un remboursement déjà enregistré (compte, montant, date et heure, note) : met à jour
+     * la ligne [LoanPayment], sa transaction Arzikina liée (même compte, montant, date, description)
+     * et recalcule [Loan.amountRepaid]/[Loan.remainingAmount]/[Loan.status] — atomiquement.
+     * [LoanPayment.loanId], [LoanPayment.transactionId] et [LoanPayment.createdAt] ne changent jamais.
+     *
+     * Implémentation par défaut uniquement pour les doubles de test qui n'en ont pas besoin :
+     * toute implémentation réelle DOIT la redéfinir.
+     *
+     * @throws IllegalStateException si le remboursement ou son prêt/emprunt n'existe pas, ou si le
+     * nouveau montant dépasse le solde restant (en comptant le montant actuel de ce remboursement).
+     * @throws com.naniger.arzikina.domain.model.LoanGiftException.Locked si le prêt/emprunt a été
+     * transformé en cadeau.
+     */
+    suspend fun updatePayment(payment: LoanPayment) {
+        throw UnsupportedOperationException("updatePayment n'est pas pris en charge par cette implémentation.")
+    }
 
     /**
      * Annule un remboursement : supprime la transaction Arzikina liée et la ligne [LoanPayment],

@@ -588,6 +588,9 @@
     <string name="loan_payment_form_note_placeholder">Add a note (optional)</string>
     <string name="loan_payment_form_save_action">Save</string>
     <string name="loan_payment_form_saved_message">Repayment recorded.</string>
+    <string name="loan_payment_form_title_edit">Edit repayment</string>
+    <string name="loan_payment_form_updated_message">Repayment updated.</string>
+    <string name="loan_payment_form_deleted_message">Repayment deleted.</string>
     <string name="loan_payment_form_currency_mismatch_warning">This account\'s currency differs from the loan/borrowing: the amount will be recorded as is, without conversion.</string>
     <string name="loan_payment_delete_title">Delete this repayment?</string>
     <string name="loan_payment_delete_message">Delete this repayment of %1$s? This cannot be undone and will also delete the related transaction.</string>

@@ -19,6 +19,7 @@ import com.naniger.arzikina.domain.model.LoanType
 import com.naniger.arzikina.domain.model.SupportedCurrency
 import com.naniger.arzikina.presentation.accounts.AccountIconMapper
 import com.naniger.arzikina.presentation.components.AccountPickerDialog
+import com.naniger.arzikina.presentation.components.ConfirmDialogs
 import com.naniger.arzikina.presentation.components.TimePickerHelper
 import com.naniger.arzikina.presentation.components.displayName
 import com.naniger.arzikina.util.AppDateFormats
@@ -41,6 +42,10 @@ import java.time.ZoneOffset
  * enregistrement réussi : cet écran observe déjà [com.naniger.arzikina.domain.repository.LoanRepository]
  * et se met donc à jour automatiquement (montant remboursé, statut, liste des versements), sans
  * rechargement explicite — même principe que [LoanFormFragment].
+ *
+ * Aussi atteint en touchant un versement de "Détail du prêt" (argument `paymentId`) : le même
+ * formulaire sert alors à MODIFIER ce remboursement, ou à le SUPPRIMER (menu de la barre d'outils,
+ * avec confirmation) — même convention que les formulaires de budget/transaction.
  */
 @AndroidEntryPoint
 class LoanPaymentFormFragment : Fragment(R.layout.fragment_loan_payment_form) {
@@ -64,6 +69,18 @@ class LoanPaymentFormFragment : Fragment(R.layout.fragment_loan_payment_form) {
         binding = viewBinding
 
         viewBinding.toolbar.setNavigationOnClickListener { findNavController().navigateUp() }
+        if (viewModel.isEditMode) {
+            viewBinding.toolbar.setTitle(R.string.loan_payment_form_title_edit)
+            viewBinding.toolbar.inflateMenu(R.menu.form_delete_menu)
+            viewBinding.toolbar.setOnMenuItemClickListener { item ->
+                if (item.itemId == R.id.action_delete_item) {
+                    confirmDelete()
+                    true
+                } else {
+                    false
+                }
+            }
+        }
         setUpInputs(viewBinding)
         setUpPickers(viewBinding)
         viewBinding.primaryActionButton.setOnClickListener { viewModel.save() }
@@ -95,7 +112,28 @@ class LoanPaymentFormFragment : Fragment(R.layout.fragment_loan_payment_form) {
                 Snackbar.make(binding.root, R.string.loan_payment_form_saved_message, Snackbar.LENGTH_SHORT).show()
                 findNavController().popBackStack()
             }
+            LoanPaymentFormEvent.Updated -> {
+                Snackbar.make(binding.root, R.string.loan_payment_form_updated_message, Snackbar.LENGTH_SHORT).show()
+                findNavController().popBackStack()
+            }
+            LoanPaymentFormEvent.Deleted -> {
+                Snackbar.make(binding.root, R.string.loan_payment_form_deleted_message, Snackbar.LENGTH_SHORT).show()
+                findNavController().popBackStack()
+            }
         }
+    }
+
+    /** Même message que l'ancienne suppression depuis la liste (montant d'ORIGINE du remboursement). */
+    private fun confirmDelete() {
+        val state = viewModel.formState.value
+        if (!state.isEditMode) return
+        val amountLabel = Money.format(CurrencyAmount(state.loanCurrencyCode, state.editedPaymentAmount))
+        ConfirmDialogs.confirm(
+            context = requireContext(),
+            title = getString(R.string.loan_payment_delete_title),
+            message = getString(R.string.loan_payment_delete_message, amountLabel),
+            onConfirm = { viewModel.delete() }
+        )
     }
 
     private fun setUpInputs(binding: FragmentLoanPaymentFormBinding) {

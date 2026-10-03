@@ -881,6 +881,9 @@
     <string name="loan_payment_form_note_placeholder">Ajoute une note (facultatif)</string>
     <string name="loan_payment_form_save_action">Enregistrer</string>
     <string name="loan_payment_form_saved_message">Remboursement enregistré.</string>
+    <string name="loan_payment_form_title_edit">Modifier le remboursement</string>
+    <string name="loan_payment_form_updated_message">Remboursement modifié.</string>
+    <string name="loan_payment_form_deleted_message">Remboursement supprimé.</string>
     <string name="loan_payment_form_currency_mismatch_warning">Ce compte n\'a pas la même devise que le prêt/emprunt : le montant sera enregistré tel quel, sans conversion.</string>
     <string name="loan_payment_delete_title">Supprimer ce remboursement ?</string>
     <string name="loan_payment_delete_message">Supprimer ce remboursement de %1$s ? Cette action est irréversible et supprimera aussi la transaction associée.</string>

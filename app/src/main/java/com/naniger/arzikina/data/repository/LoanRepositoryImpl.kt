@@ -40,7 +40,7 @@ import javax.inject.Inject
  *
  * Isolation multi-utilisateurs : voir `AccountRepositoryImpl` pour le raisonnement.
  *
- * Écritures atomiques ([saveLoan] pour une création, [recordPayment], [deleteLoan],
+ * Écritures atomiques ([saveLoan] pour une création, [recordPayment], [updatePayment], [deleteLoan],
  * [deletePayment]) via [ArzikinaDatabase.withTransaction] (même mécanisme que
  * `BackupRepositoryImpl` pour sa restauration) : le prêt/emprunt et sa transaction Arzikina liée
  * sont créés/supprimés ensemble, ou pas du tout.
@@ -293,6 +293,69 @@ class LoanRepositoryImpl @Inject constructor(
         pendingLoanOps.forEach { (entity, operation) -> loanSyncEnqueuer.enqueueLoan(entity, operation) }
         pendingLoanPaymentOps.forEach { (entity, operation) -> loanSyncEnqueuer.enqueueLoanPayment(entity, operation) }
         result
+    }
+
+    override suspend fun updatePayment(payment: LoanPayment) = withContext(ioDispatcher) {
+        val userId = requireCurrentUserId()
+        val pendingTransactionOps = mutableListOf<Pair<TransactionEntity, SyncOperation>>()
+        val pendingLoanOps = mutableListOf<Pair<LoanEntity, SyncOperation>>()
+        val pendingLoanPaymentOps = mutableListOf<Pair<LoanPaymentEntity, SyncOperation>>()
+        val now = System.currentTimeMillis()
+
+        database.withTransaction {
+            val existing = loanPaymentDao.getById(payment.id, userId) ?: error("Remboursement introuvable.")
+            val loan = loanDao.getById(existing.loanId, userId) ?: error("Prêt/emprunt introuvable.")
+            if (loan.giftedAmount > 0L) throw LoanGiftException.Locked(loan.id)
+            // Le montant actuel de ce remboursement est « rendu » au solde avant de vérifier le nouveau.
+            val maxAmount = loan.remainingAmount + existing.amount
+            check(payment.amount in 1..maxAmount) {
+                "Le montant du remboursement dépasse le solde restant du prêt/emprunt."
+            }
+
+            // Transaction liée : mêmes règles qu'à la création (voir recordPayment) — description =
+            // note, sinon le nom de la catégorie de remboursement.
+            val linkedTransaction = transactionDao.getById(existing.transactionId, userId)
+            if (linkedTransaction != null) {
+                val category = resolveLoanCategory(repaymentCategoryName(loan.type), userId)
+                val updatedTransaction = linkedTransaction.copy(
+                    amount = payment.amount,
+                    accountId = payment.accountId,
+                    date = payment.date,
+                    description = payment.note.ifBlank { category.name },
+                    updatedAt = now,
+                    syncId = linkedTransaction.syncId ?: UUID.randomUUID().toString()
+                )
+                transactionDao.upsert(updatedTransaction)
+                pendingTransactionOps += updatedTransaction to SyncOperation.UPDATE
+            }
+
+            val updatedPayment = existing.copy(
+                accountId = payment.accountId,
+                amount = payment.amount,
+                date = payment.date,
+                note = payment.note,
+                updatedAt = now,
+                syncId = existing.syncId ?: UUID.randomUUID().toString()
+            )
+            loanPaymentDao.upsert(updatedPayment)
+            pendingLoanPaymentOps += updatedPayment to SyncOperation.UPDATE
+
+            val newAmountRepaid = loan.amountRepaid - existing.amount + payment.amount
+            val newStatus = computeLoanStatus(loan.amount, newAmountRepaid, loan.startDate, loan.dueDate, now, loan.giftedAmount)
+            val updatedLoan = loan.copy(
+                amountRepaid = newAmountRepaid,
+                remainingAmount = loan.amount - newAmountRepaid - loan.giftedAmount,
+                status = newStatus,
+                updatedAt = now,
+                syncId = loan.syncId ?: UUID.randomUUID().toString()
+            )
+            loanDao.upsert(updatedLoan)
+            pendingLoanOps += updatedLoan to SyncOperation.UPDATE
+        }
+
+        pendingTransactionOps.forEach { (entity, operation) -> transactionSyncEnqueuer.enqueue(entity, operation) }
+        pendingLoanOps.forEach { (entity, operation) -> loanSyncEnqueuer.enqueueLoan(entity, operation) }
+        pendingLoanPaymentOps.forEach { (entity, operation) -> loanSyncEnqueuer.enqueueLoanPayment(entity, operation) }
     }
 
     override suspend fun deletePayment(id: Long) = withContext(ioDispatcher) {

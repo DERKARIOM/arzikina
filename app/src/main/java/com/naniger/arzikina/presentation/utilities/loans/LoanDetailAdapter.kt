@@ -35,12 +35,12 @@ import com.naniger.arzikina.util.TriggerTimeFormatter
  * blocs « postcard » arrondis comme les groupes par jour de l'écran Transactions) : icône de la
  * catégorie système de remboursement, montant coloré sans signe (voir `TransactionAmountDisplay`).
  *
- * [onDeletePayment] : appui long sur un versement (plus d'icône poubelle, comme les transactions) —
- * la confirmation reste la responsabilité du Fragment (voir `LoanDetailFragment.confirmDeletePayment`),
- * cet adapter reste volontairement sans logique métier/dialogue, même principe que [LoansAdapter.onLoanClick].
+ * [onPaymentClick] : toucher un versement ouvre son formulaire (modification ou suppression), comme
+ * une transaction — la navigation reste la responsabilité du Fragment, cet adapter reste
+ * volontairement sans logique métier, même principe que [LoansAdapter.onLoanClick].
  */
 class LoanDetailAdapter(
-    private val onDeletePayment: (LoanPayment) -> Unit
+    private val onPaymentClick: (LoanPayment) -> Unit
 ) : ListAdapter<LoanDetailListRow, RecyclerView.ViewHolder>(DIFF_CALLBACK) {
 
     override fun getItemViewType(position: Int): Int = when (getItem(position)) {
@@ -60,7 +60,7 @@ class LoanDetailAdapter(
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
         when (val row = getItem(position)) {
             is LoanDetailListRow.Header -> (holder as HeaderViewHolder).bind(row.uiState)
-            is LoanDetailListRow.PaymentRow -> (holder as PaymentViewHolder).bind(row, onDeletePayment)
+            is LoanDetailListRow.PaymentRow -> (holder as PaymentViewHolder).bind(row, onPaymentClick)
         }
     }
 
@@ -154,7 +154,7 @@ class LoanDetailAdapter(
      * - montant : vert si l'argent revient (prêt accordé), rouge s'il sort (emprunt), sans signe.
      */
     class PaymentViewHolder(private val binding: ItemTransactionCompactBinding) : RecyclerView.ViewHolder(binding.root) {
-        fun bind(row: LoanDetailListRow.PaymentRow, onDeletePayment: (LoanPayment) -> Unit) {
+        fun bind(row: LoanDetailListRow.PaymentRow, onPaymentClick: (LoanPayment) -> Unit) {
             val context = binding.root.context
             val payment = row.payment
             val isLent = row.loanType == LoanType.LENT
@@ -208,17 +208,13 @@ class LoanDetailAdapter(
                 binding.root.layoutParams = params
             }
 
-            // Suppression par appui long (avec confirmation), seulement si elle est permise : un
-            // prêt/emprunt transformé en cadeau n'accepte plus de suppression (voir
-            // LoanDetailUiState.canDeletePayments).
+            // Toucher ouvre le formulaire (modifier / supprimer), seulement si c'est permis : un
+            // prêt/emprunt transformé en cadeau est verrouillé (voir LoanDetailUiState.canDeletePayments).
             if (row.canDelete) {
-                binding.root.setOnLongClickListener {
-                    onDeletePayment(payment)
-                    true
-                }
+                binding.root.setOnClickListener { onPaymentClick(payment) }
             } else {
-                binding.root.setOnLongClickListener(null)
-                binding.root.isLongClickable = false
+                binding.root.setOnClickListener(null)
+                binding.root.isClickable = false
             }
         }
     }
