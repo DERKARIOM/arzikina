@@ -48,6 +48,12 @@ final class AppContainer {
         AutomationReminderScheduler(center: UserNotificationCenterClient())
     }
 
+    /// Verrouillage par Face ID / Touch ID / code (réglage par appareil).
+    @MainActor
+    func makeAppLock() -> AppLockModel {
+        AppLockModel(authenticator: LocalDeviceAuthenticator())
+    }
+
     /// Dépendances réelles de l'application.
     static func live() -> AppContainer {
         let sessionStore = KeychainSessionStore()

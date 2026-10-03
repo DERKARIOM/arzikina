@@ -1,3 +1,4 @@
+import Foundation
 import ArzikinaData
 import ArzikinaDomain
 
@@ -19,5 +20,18 @@ extension SessionModel {
         SessionModel(authRepository: PreviewAuthRepository()) { session in
             (try! UserDataSpace.inMemory(userId: session.userId), true)
         }
+    }
+}
+
+/// Authentification factice pour les aperçus : Face ID disponible, toujours acceptée.
+struct PreviewDeviceAuthenticator: DeviceAuthenticator {
+    func availableMethod() -> DeviceAuthentication? { .faceID }
+    func authenticate(reason: String) async -> Bool { true }
+}
+
+extension AppLockModel {
+    /// Verrou factice pour les aperçus SwiftUI (réglage isolé du vrai UserDefaults).
+    static func preview() -> AppLockModel {
+        AppLockModel(authenticator: PreviewDeviceAuthenticator(), defaults: UserDefaults(suiteName: "preview.appLock") ?? .standard)
     }
 }

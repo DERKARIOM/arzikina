@@ -48,6 +48,11 @@ struct SettingsView: View {
                 } label: {
                     SettingsRow(titleKey: "settings.categories", subtitleKey: "settings.categories_subtitle", systemImage: "square.grid.2x2")
                 }
+                NavigationLink {
+                    TemplatesView()
+                } label: {
+                    SettingsRow(titleKey: "settings.templates", subtitleKey: "settings.templates_subtitle", systemImage: "square.stack.3d.up")
+                }
             }
 
             Section("settings.section.budget_finance") {
@@ -71,6 +76,10 @@ struct SettingsView: View {
             if let sync = session.sync {
                 SyncSection(sync: sync)
             }
+
+            SecuritySection()
+
+            BackupSection()
 
             LocalDataSection()
 
@@ -111,6 +120,7 @@ struct SettingsView: View {
 #Preview {
     NavigationStack { SettingsView() }
         .environment(SessionModel.preview())
+        .environment(AppLockModel.preview())
 }
 
 /// Ligne de navigation des Réglages : icône, titre et sous-titre explicatif (comme Android).

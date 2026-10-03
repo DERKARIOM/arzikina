@@ -15,6 +15,8 @@ struct TransactionFormView: View {
     @FocusState private var focusedField: Field?
     @State private var isConfirmingDelete = false
     @State private var isCreatingCategory = false
+    @State private var isPickingTemplate = false
+    @State private var templateForm: TemplateFormRoute?
 
     private enum Field { case amount, description, feeAmount, feeDescription }
 
@@ -25,6 +27,16 @@ struct TransactionFormView: View {
     var body: some View {
         NavigationStack {
             Form {
+                if !model.isEditing && !model.templates.isEmpty {
+                    Section {
+                        Button {
+                            focusedField = nil
+                            isPickingTemplate = true
+                        } label: {
+                            Label("transaction.form.use_template", systemImage: "square.stack.3d.up")
+                        }
+                    }
+                }
                 if model.isLinkedToLoan {
                     Section {
                         Label("transaction.form.loan_linked", systemImage: "person.2.fill")
@@ -43,6 +55,7 @@ struct TransactionFormView: View {
                 if model.saveFailed {
                     Section { FormErrorText(key: "transaction.form.save_failed") }
                 }
+                templateSection
                 if model.canDelete {
                     deleteSection
                 }
@@ -84,6 +97,7 @@ struct TransactionFormView: View {
             .task {
                 await model.loadExistingDetails()
             }
+            .modifier(TransactionTemplateSheets(model: model, isPicking: $isPickingTemplate, templateForm: $templateForm, session: session))
         }
     }
 
@@ -232,6 +246,36 @@ struct TransactionFormView: View {
         }
     }
 
+    /// Transaction enregistrée : « Créer un modèle à partir de cette transaction » ou « Voir le
+    /// modèle » (un seul modèle par transaction, comme Android).
+    @ViewBuilder
+    private var templateSection: some View {
+        switch model.templateAction {
+        case .hidden:
+            EmptyView()
+        case .canCreate:
+            Section {
+                Button {
+                    if let saved = model.savedTransaction {
+                        templateForm = .fromTransaction(saved.transaction, categoryName: saved.categoryName)
+                    }
+                } label: {
+                    Label("transaction.form.create_template", systemImage: "plus.square.on.square")
+                }
+            } footer: {
+                Text("transaction.form.create_template.footer")
+            }
+        case .linked(let template):
+            Section {
+                Button {
+                    templateForm = .edit(template)
+                } label: {
+                    Label("transaction.form.view_template", systemImage: "square.stack.3d.up")
+                }
+            }
+        }
+    }
+
     private var deleteSection: some View {
         Section {
             Button(role: .destructive) {
@@ -274,5 +318,29 @@ struct TransactionFormView: View {
                 dismiss()
             }
         }
+    }
+}
+
+/// Feuilles « Utiliser un modèle » et formulaire de modèle, et lecture des modèles — regroupées
+/// pour garder le corps de `TransactionFormView` court.
+private struct TransactionTemplateSheets: ViewModifier {
+
+    let model: TransactionFormViewModel
+    @Binding var isPicking: Bool
+    @Binding var templateForm: TemplateFormRoute?
+    let session: SessionModel
+
+    func body(content: Content) -> some View {
+        content
+            .sheet(isPresented: $isPicking) {
+                TemplatePickerView(templates: model.templates, categories: model.allCategories, accounts: model.accounts) { template in
+                    model.applyTemplate(template)
+                }
+            }
+            .templateFormSheet($templateForm, session: session)
+            .task(id: session.dataSpace.map(ObjectIdentifier.init)) {
+                guard let space = session.dataSpace else { return }
+                await model.observeTemplates(space.templates)
+            }
     }
 }

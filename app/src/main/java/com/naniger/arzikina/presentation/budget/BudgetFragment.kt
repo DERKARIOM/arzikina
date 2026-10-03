@@ -23,18 +23,17 @@ import kotlinx.coroutines.launch
  * Reconstruite en XML/Views (voir instructions projet) ; [BudgetViewModel]
  * est inchangé.
  *
- * [BudgetModernAdapter] (PostCard "moderne", voir sa doc) — cahier des charges "Personnalisation
- * des PostCards — Fragment Budget uniquement" : UNIQUEMENT cet écran. Le Dashboard continue de
- * réutiliser [BudgetAdapter]/`item_budget.xml` tels quels (voir
- * [com.naniger.arzikina.presentation.dashboard.DashboardFragment.renderFeaturedBudget]), aucun changement
- * là-bas. Mêmes callbacks `onClick`/`onDeleteClick` qu'avant : seule la classe d'adapter change.
+ * [BudgetAdapter] : le MÊME PostCard que l'aperçu des budgets du Dashboard (`item_budget.xml` dans
+ * la même carte, voir `item_budget_card.xml`), pour une apparence identique entre les deux écrans.
+ * Le Dashboard n'est pas modifié. Callbacks inchangés : toucher la carte ouvre le formulaire
+ * (`navigateToForm`), l'icône corbeille demande confirmation (`confirmDelete`).
  */
 @AndroidEntryPoint
 class BudgetFragment : Fragment(R.layout.fragment_budget) {
 
     private val viewModel: BudgetViewModel by viewModels()
     private var binding: FragmentBudgetBinding? = null
-    private val adapter = BudgetModernAdapter(
+    private val adapter = BudgetAdapter(
         onClick = { item -> navigateToForm(item.budget.id) },
         onDeleteClick = { item -> confirmDelete(item) }
     )
@@ -46,10 +45,9 @@ class BudgetFragment : Fragment(R.layout.fragment_budget) {
 
         viewBinding.budgetsList.layoutManager = LinearLayoutManager(requireContext())
         viewBinding.budgetsList.adapter = adapter
-        // Désactive l'animateur d'item par défaut (DefaultItemAnimator) : sans ça, ses propres
-        // animations d'ajout/changement se superposeraient au fondu+glissement déjà géré par
-        // BudgetModernAdapter.animateAppearance, avec le même clignotement déjà corrigé côté
-        // AccountsFragment (voir son historique) — le fondu du ViewHolder suffit à lui seul.
+        // Pas d'animateur d'item : son fondu « changement » ferait clignoter chaque carte à chaque
+        // nouvelle valeur émise (progression recalculée après une transaction), même correctif que
+        // AccountsFragment.
         viewBinding.budgetsList.itemAnimator = null
         viewBinding.addBudgetButton.setOnClickListener { navigateToForm(budgetId = 0L) }
         setUpStatusFilter(viewBinding)

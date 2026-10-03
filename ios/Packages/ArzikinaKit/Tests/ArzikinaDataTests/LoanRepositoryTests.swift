@@ -327,4 +327,91 @@ final class LoanRepositoryTests: XCTestCase {
         XCTAssertEqual(old.values["giftedAmount"], 0.databaseValue, "Ancien serveur : jamais transformé")
         XCTAssertEqual(old.values["giftTransactionId"], .null)
     }
+
+    // MARK: - Transformer en cadeau sur l'iPhone
+
+    private func queueOrder() async throws -> [String] {
+        try await space.database.writer.read { db in
+            try String.fetchAll(db, sql: "SELECT entityType || ':' || operation FROM sync_queue ORDER BY id")
+        }
+    }
+
+    func testConvertingAPartlyRepaidLoanKeepsTheBalanceAndGivesTheRest() async throws {
+        try await setUpAccountAndPerson()
+        let saved = try await space.loans.create(newLoan(amount: 100_000), firstPayment: nil)
+        try await space.loans.recordPayment(LoanPayment(id: "p1", loanId: saved.id, accountId: "cash", amount: 40_000, date: now, transactionId: ""))
+        let before = try await first(space.accounts.observeBalances())
+        try await space.database.writer.write { db in try db.execute(sql: "DELETE FROM sync_queue") }
+
+        let giftId = try await space.loans.convertToGift(loanId: saved.id, description: "Cadeau à Awa")
+
+        XCTAssertNotEqual(giftId, saved.transactionId)
+        let after = try await first(space.accounts.observeBalances())
+        XCTAssertEqual(after, before, "Aucun mouvement d'argent")
+        let disbursement = try await space.transactions.transaction(id: saved.transactionId)
+        let gift = try await space.transactions.transaction(id: giftId)
+        XCTAssertEqual(disbursement?.amount, 40_000)
+        XCTAssertEqual(gift?.amount, 60_000)
+        XCTAssertEqual(gift?.type, .expense)
+        XCTAssertEqual(gift?.date, disbursement?.date)
+        XCTAssertEqual(gift?.accountId, "cash")
+        XCTAssertEqual(gift?.description, "Cadeau à Awa")
+        let category = try await space.categories.category(id: try XCTUnwrap(gift?.categoryId))
+        XCTAssertEqual(category?.systemKey, .gifts)
+
+        let stored = try await storedLoan(saved.id)
+        XCTAssertEqual(stored?.giftedAmount, 60_000)
+        XCTAssertEqual(stored?.giftTransactionId, giftId)
+        XCTAssertEqual(stored?.status, .gifted)
+        XCTAssertEqual(stored?.remainingAmount, 0)
+        XCTAssertNotNil(stored?.giftedAt)
+        let order = try await queueOrder()
+        // Le moteur envoie par type (catégories, puis transactions, puis prêts) : le prêt part
+        // toujours après les transactions qu'il référence.
+        XCTAssertEqual(Set(order), ["categories:CREATE", "transactions:CREATE", "transactions:UPDATE", "loans:UPDATE"])
+        XCTAssertLessThan(SyncEntitySchema.all.firstIndex { $0.type == .transactions }!, SyncEntitySchema.all.firstIndex { $0.type == .loans }!)
+
+        do {
+            _ = try await space.loans.convertToGift(loanId: saved.id, description: "x")
+            XCTFail("Déjà transformé")
+        } catch let error as LoanWriteError {
+            XCTAssertEqual(error, .notConvertible)
+        }
+    }
+
+    func testConvertingABorrowingWithNothingRepaidReclassifiesInPlace() async throws {
+        try await setUpAccountAndPerson()
+        let saved = try await space.loans.create(newLoan(type: .borrowed, amount: 50_000), firstPayment: nil)
+        let before = try await first(space.accounts.observeBalances())
+
+        let giftId = try await space.loans.convertToGift(loanId: saved.id, description: "Cadeau de la part d'Awa")
+
+        XCTAssertEqual(giftId, saved.transactionId, "Même transaction : aucune nouvelle ligne")
+        let gift = try await space.transactions.transaction(id: giftId)
+        XCTAssertEqual(gift?.amount, 50_000)
+        XCTAssertEqual(gift?.type, .income)
+        XCTAssertEqual(gift?.description, "Cadeau de la part d'Awa")
+        let category = try await space.categories.category(id: try XCTUnwrap(gift?.categoryId))
+        XCTAssertEqual(category?.systemKey, .giftsReceived, "« Cadeaux » en revenu, créée à la demande")
+        let after = try await first(space.accounts.observeBalances())
+        XCTAssertEqual(after, before)
+        let transactionCount = try await space.database.writer.read { db in try Int.fetchOne(db, sql: "SELECT COUNT(*) FROM transactions WHERE deletedAt IS NULL") }
+        XCTAssertEqual(transactionCount, 1)
+        let summaries = try await first(space.loans.observeSummaries(now: now, calendar: calendar))
+        XCTAssertEqual(summaries.first?.status, .gifted)
+        XCTAssertEqual(summaries.first?.remaining, 0)
+    }
+
+    func testAFullyRepaidLoanCannotBeConverted() async throws {
+        try await setUpAccountAndPerson()
+        let saved = try await space.loans.create(newLoan(amount: 10_000), firstPayment: LoanPayment(id: "p", loanId: "", accountId: "cash", amount: 10_000, date: now, transactionId: ""))
+        do {
+            _ = try await space.loans.convertToGift(loanId: saved.id, description: "x")
+            XCTFail("Remboursé")
+        } catch let error as LoanWriteError {
+            XCTAssertEqual(error, .notConvertible)
+        }
+        let stored = try await storedLoan(saved.id)
+        XCTAssertEqual(stored?.giftedAmount, 0, "Rien n'est écrit")
+    }
 }

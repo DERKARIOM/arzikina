@@ -72,6 +72,9 @@ targets:
         UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
         # Aucune cryptographie propriétaire (HTTPS standard uniquement).
         ITSAppUsesNonExemptEncryption: false
+        # Obligatoire avant tout appel à Face ID (sinon l'app est arrêtée). Traduit dans
+        # Resources/InfoPlist.xcstrings.
+        NSFaceIDUsageDescription: Arzikina utilise Face ID pour protéger l'accès à vos finances.
         # URL de l'API Arzikina (pas un secret) — même serveur qu'Android (RemoteConfig.BASE_URL).
         ArzikinaAPIBaseURL: https://api.opal-niger.com/
     settings:

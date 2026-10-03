@@ -2,6 +2,7 @@ package com.naniger.arzikina.presentation.budget
 
 import android.content.res.ColorStateList
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.ContextCompat
@@ -10,6 +11,7 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.naniger.arzikina.R
 import com.naniger.arzikina.databinding.ItemBudgetBinding
+import com.naniger.arzikina.databinding.ItemBudgetCardBinding
 import com.naniger.arzikina.domain.model.BudgetPeriod
 import com.naniger.arzikina.domain.model.CurrencyAmount
 import com.naniger.arzikina.presentation.categories.CategoryIconMapper
@@ -29,6 +31,13 @@ import kotlin.math.roundToInt
  * Liste des budgets avec leur progression sur la période en cours. Voir
  * [com.naniger.arzikina.presentation.dashboard.RecentTransactionsAdapter] pour le
  * raisonnement (`ListAdapter`/`DiffUtil` plutôt que `notifyDataSetChanged`).
+ *
+ * PostCard UNIQUE des budgets (`item_budget.xml` + [ViewHolder]) : utilisé à la fois par
+ * [BudgetFragment] (liste) et par l'aperçu du Dashboard
+ * ([com.naniger.arzikina.presentation.dashboard.DashboardFragment.renderFeaturedBudget], qui
+ * réutilise [ViewHolder] sur sa vue incluse). Dans la liste, chaque carte est posée dans
+ * `item_budget_card.xml`, la même MaterialCardView que `budgetPreviewCard` du Dashboard (coins,
+ * élévation, espacement) : les deux écrans affichent exactement la même carte.
  */
 class BudgetAdapter(
     private val onClick: (BudgetUiItem) -> Unit,
@@ -36,15 +45,23 @@ class BudgetAdapter(
 ) : ListAdapter<BudgetUiItem, BudgetAdapter.ViewHolder>(DIFF_CALLBACK) {
 
     override fun onCreateViewHolder(parent: ViewGroup, position: Int): ViewHolder {
-        val binding = ItemBudgetBinding.inflate(LayoutInflater.from(parent.context), parent, false)
-        return ViewHolder(binding)
+        val card = ItemBudgetCardBinding.inflate(LayoutInflater.from(parent.context), parent, false)
+        return ViewHolder(card.budget, itemView = card.root)
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         holder.bind(getItem(position), onClick, onDeleteClick)
     }
 
-    class ViewHolder(private val binding: ItemBudgetBinding) : RecyclerView.ViewHolder(binding.root) {
+    /**
+     * [itemView] : la vue recyclée par la liste — la carte qui enveloppe le contenu (voir
+     * `item_budget_card.xml`). Par défaut le contenu lui-même, comme sur le Dashboard où la carte
+     * est déjà dans `fragment_dashboard.xml`.
+     */
+    class ViewHolder(
+        private val binding: ItemBudgetBinding,
+        itemView: View = binding.root
+    ) : RecyclerView.ViewHolder(itemView) {
         fun bind(item: BudgetUiItem, onClick: (BudgetUiItem) -> Unit, onDeleteClick: (BudgetUiItem) -> Unit) {
             val context = binding.root.context
             val category = item.category
@@ -138,9 +155,7 @@ class BudgetAdapter(
             binding.deleteButton.setOnClickListener { onDeleteClick(item) }
         }
 
-        /** Repositionne le repère "Aujourd'hui" via `horizontalBias` — voir item_budget.xml et
-         *  BudgetModernAdapter.bindTodayCursor (même technique, dupliquée ici car ce sont deux
-         *  layouts/ViewHolders indépendants, voir la doc de tête de BudgetModernAdapter.kt). */
+        /** Repositionne le repère "Aujourd'hui" via `horizontalBias` — voir item_budget.xml. */
         private fun bindTodayCursor(pace: BudgetPace) {
             val bias = pace.elapsedRatio.coerceIn(0f, 1f)
             (binding.todayCursorLine.layoutParams as ConstraintLayout.LayoutParams).horizontalBias = bias

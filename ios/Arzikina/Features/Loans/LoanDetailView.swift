@@ -2,8 +2,9 @@ import ArzikinaDomain
 import SwiftUI
 
 /// Détail d'un prêt / emprunt : montant, reste, progression et statut, informations, puis les
-/// remboursements (enregistrement, suppression par balayage). Modification et suppression
-/// confirmée : le prêt, ses remboursements et toutes leurs transactions disparaissent ensemble.
+/// remboursements (enregistrement, suppression par balayage). Modification, transformation en
+/// cadeau et suppression confirmée : le prêt, ses remboursements et toutes leurs transactions
+/// disparaissent ensemble.
 struct LoanDetailView: View {
 
     let loanId: EntityID
@@ -16,6 +17,8 @@ struct LoanDetailView: View {
     @State private var isEditing = false
     @State private var isRecordingPayment = false
     @State private var pendingPaymentDeletion: LoanPayment?
+    @State private var isConfirmingGift = false
+    @State private var giftFailed = false
 
     var body: some View {
         content
@@ -58,6 +61,7 @@ struct LoanDetailView: View {
             .alert("loans.delete.failed", isPresented: $deleteFailed) {
                 Button("common.ok", role: .cancel) {}
             }
+            .modifier(LoanGiftConfirmation(summary: loadedSummary, isPresented: $isConfirmingGift, failed: $giftFailed, onConfirm: convertToGift))
             .task(id: session.dataSpace.map(ObjectIdentifier.init)) {
                 guard let space = session.dataSpace else { return }
                 let now = EpochMillis(Date().timeIntervalSince1970 * 1000)
@@ -101,6 +105,17 @@ struct LoanDetailView: View {
                     }
                 }
                 paymentsSection(detail)
+                if detail.summary.canConvertToGift {
+                    Section {
+                        Button {
+                            isConfirmingGift = true
+                        } label: {
+                            Label("loans.gift.action", systemImage: "gift")
+                        }
+                    } footer: {
+                        Text("loans.gift.action.help")
+                    }
+                }
                 Section {
                     Button(role: .destructive) {
                         isConfirmingDelete = true
@@ -225,6 +240,25 @@ struct LoanDetailView: View {
         }
     }
 
+    private var loadedSummary: LoanSummary? {
+        if case .some(.some(let detail)) = detail { return detail.summary }
+        return nil
+    }
+
+    /// Reclassement du reste en « Cadeaux » (aucun mouvement d'argent) ; refusé si la dette a été
+    /// remboursée ou offerte ailleurs entre-temps.
+    private func convertToGift(description: String) {
+        guard let space = session.dataSpace else { return }
+        Task {
+            do {
+                try await space.loans.convertToGift(loanId: loanId, description: description)
+                session.sync?.requestSync(.localChange)
+            } catch {
+                giftFailed = true
+            }
+        }
+    }
+
     private func deleteLoan() {
         guard let space = session.dataSpace else { return }
         Task {
@@ -248,7 +282,7 @@ private struct GiftedLoanCard: View {
             Label("loans.gift.title", systemImage: "gift.fill")
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(LoanStatus.gifted.color)
-            LabeledContent("loans.gift.amount_label") {
+            LabeledContent(summary.loan.type == .lent ? LocalizedStringKey("loans.gift.amount_label") : LocalizedStringKey("loans.gift.amount_label.borrowed")) {
                 Text(verbatim: Money.format(CurrencyAmount(currencyCode: summary.currencyCode, amountMinor: summary.loan.giftedAmount)))
                     .monospacedDigit()
             }

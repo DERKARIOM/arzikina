@@ -16,6 +16,8 @@ final class TransactionFormViewModel {
     enum Mode {
         /// [presetAccountId] : compte présélectionné (ouverture depuis le détail d'un compte).
         case create(presetAccountId: EntityID?)
+        /// Nouvelle transaction déjà remplie (modèle de transaction).
+        case prefilled(TransactionDraft)
         case edit(ArzikinaDomain.Transaction)
     }
 
@@ -29,6 +31,8 @@ final class TransactionFormViewModel {
     private(set) var isLinkedToLoan = false
     private(set) var isDeleting = false
     private(set) var deleteFailed = false
+    /// Modèles (favoris en tête) : « Utiliser un modèle » et lien « Voir le modèle ».
+    private(set) var templates: [TransactionTemplate] = []
 
     let isEditing: Bool
 
@@ -43,6 +47,10 @@ final class TransactionFormViewModel {
             existing = nil
             isEditing = false
             draft = TransactionDraft(now: Self.nowMillis(), presetAccountId: presetAccountId)
+        case .prefilled(let prefilled):
+            existing = nil
+            isEditing = false
+            draft = prefilled
         case .edit(let transaction):
             existing = transaction
             isEditing = true
@@ -80,6 +88,44 @@ final class TransactionFormViewModel {
         for await categories in repository.observeCategories(type: nil) {
             allCategories = categories
         }
+    }
+
+    func observeTemplates(_ repository: TransactionTemplateRepository) async {
+        for await templates in repository.observeTemplates() {
+            self.templates = templates
+        }
+    }
+
+    // MARK: - Modèles
+
+    /// Action proposée pour une transaction ENREGISTRÉE — Android `TemplateActionState`.
+    enum TemplateAction: Equatable {
+        case hidden
+        /// « Créer un modèle à partir de cette transaction ».
+        case canCreate
+        /// Un modèle existe déjà : « Voir le modèle ».
+        case linked(TransactionTemplate)
+    }
+
+    var templateAction: TemplateAction {
+        guard let existing else { return .hidden }
+        if let linked = templates.first(where: { $0.sourceTransactionId == existing.id }) { return .linked(linked) }
+        // Jamais un transfert, une ligne de frais ou une transaction de prêt.
+        guard !isLinkedToLoan, TemplateForm.isEligible(existing) else { return .hidden }
+        return .canCreate
+    }
+
+    /// La transaction telle qu'ENREGISTRÉE (jamais les modifications en cours) et le nom affiché
+    /// de sa catégorie, pour pré-remplir un modèle.
+    var savedTransaction: (transaction: ArzikinaDomain.Transaction, categoryName: String?)? {
+        guard let existing else { return nil }
+        let category = existing.categoryId.flatMap { id in allCategories.first { $0.id == id } }
+        return (existing, category?.displayName)
+    }
+
+    /// « Utiliser un modèle » (nouvelle transaction) : le compte choisi est conservé.
+    func applyTemplate(_ template: TransactionTemplate) {
+        mutate { $0.apply(template, calendar: ArzikinaCalendar.current) }
     }
 
     /// Modification : frais liés et lien éventuel avec un prêt, chargés une fois.

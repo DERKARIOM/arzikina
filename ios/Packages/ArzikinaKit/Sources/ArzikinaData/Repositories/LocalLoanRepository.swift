@@ -239,6 +239,61 @@ public struct LocalLoanRepository: LoanRepository {
         }
     }
 
+    // MARK: - Transformation en cadeau
+
+    /// Android `LoanGiftConverter`, en UNE transaction SQL. Le moteur de synchronisation envoie
+    /// les transactions avant les prêts (ordre de `SyncEntitySchema.all`) : le serveur reçoit la
+    /// transaction cadeau avant le prêt qui la référence.
+    public func convertToGift(loanId: EntityID, description: String) async throws -> EntityID {
+        let timestamp = now()
+        let store = self
+        return try await database.writer.write { db in
+            guard let record = try LoanRecord.fetchOne(db, key: loanId), record.deletedAt == nil else { throw LoanWriteError.loanNotFound }
+            var loan = record.domain
+            let repaid = try Self.repaid(db, loanId: loanId)
+            // Règle unique du domaine, sur les montants SOURCES (somme des remboursements).
+            guard let plan = LoanGift.plan(loan, repaid: repaid, now: timestamp, calendar: ArzikinaCalendar.current),
+                  var disbursement = try TransactionRecord.fetchOne(db, key: loan.transactionId).flatMap({ $0.deletedAt == nil ? $0.domain : nil })
+            else { throw LoanWriteError.notConvertible }
+            let categoryId = try LocalTransactionRepository.systemCategoryId(loan.type.giftCategory, db, store: store.categories, timestamp: timestamp)
+
+            let giftId: EntityID
+            if plan.reusesDisbursementTransaction {
+                // Rien de remboursé : reclassement EN PLACE (même identifiant, montant, compte et
+                // date) — aucune nouvelle ligne, aucun doublon possible en synchronisation.
+                disbursement.categoryId = categoryId
+                disbursement.description = description
+                giftId = disbursement.id
+            } else {
+                // Remboursement partiel : le décaissement garde la part remboursée…
+                disbursement.amount = plan.disbursementAmountAfter
+                // …et UNE transaction cadeau porte le reste, même compte, même date.
+                let gift = Transaction(
+                    id: EntityIDs.generate(),
+                    amount: plan.giftAmount,
+                    type: loan.type.giftCategory.type,
+                    accountId: disbursement.accountId,
+                    categoryId: categoryId,
+                    date: disbursement.date,
+                    description: description,
+                    createdAt: timestamp
+                )
+                try store.transactions.save(db, id: gift.id, createdAt: timestamp, timestamp: timestamp) { TransactionRecord(gift, meta: $0) }
+                giftId = gift.id
+            }
+            try store.transactions.save(db, id: disbursement.id, createdAt: disbursement.createdAt, timestamp: timestamp) { [disbursement] in TransactionRecord(disbursement, meta: $0) }
+
+            loan.giftedAmount = plan.giftAmount
+            loan.giftTransactionId = giftId
+            loan.giftedAt = timestamp
+            loan.amountRepaid = repaid
+            loan.remainingAmount = 0
+            loan.status = .gifted
+            try store.saveLoan(db, loan, timestamp: timestamp)
+            return giftId
+        }
+    }
+
     // MARK: - Interne
 
     /// Transaction de décaissement d'un prêt : la description du prêt, sinon le nom de la

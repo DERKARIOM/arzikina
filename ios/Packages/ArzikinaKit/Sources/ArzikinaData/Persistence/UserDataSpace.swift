@@ -40,6 +40,7 @@ public final class UserDataSpace: Sendable {
     public let userId: String
     public let accounts: AccountRepository
     public let categories: CategoryRepository
+    public let templates: TransactionTemplateRepository
     public let transactions: TransactionRepository
     public let dashboard: DashboardRepository
     public let accountOverview: AccountOverviewRepository
@@ -48,6 +49,7 @@ public final class UserDataSpace: Sendable {
     public let reports: ReportsRepository
     public let loans: LoanRepository
     public let recurring: RecurringRepository
+    public let backup: BackupRepository
 
     let database: AppDatabase
     private let locator: UserDatabaseLocator?
@@ -60,6 +62,7 @@ public final class UserDataSpace: Sendable {
         self.now = now
         self.accounts = LocalAccountRepository(database: database, now: now)
         self.categories = LocalCategoryRepository(database: database, now: now)
+        self.templates = LocalTransactionTemplateRepository(database: database, now: now)
         self.transactions = LocalTransactionRepository(database: database, now: now)
         self.dashboard = LocalDashboardRepository(database: database)
         self.accountOverview = LocalAccountOverviewRepository(database: database)
@@ -68,6 +71,7 @@ public final class UserDataSpace: Sendable {
         self.reports = LocalReportsRepository(database: database)
         self.loans = LocalLoanRepository(database: database, now: now)
         self.recurring = LocalRecurringRepository(database: database, now: now)
+        self.backup = LocalBackupRepository(database: database)
     }
 
     /// Ouvre (ou crée) la base de [userId].

@@ -1,14 +1,15 @@
 import ArzikinaDomain
 import SwiftUI
 
-/// Sections communes au formulaire d'automatisation et à « Modifier puis valider » : type,
-/// montant, compte, catégorie, puis [schedule] (planification ou date de la transaction), puis
-/// description et moyen de paiement.
+/// Sections communes au formulaire d'automatisation, à « Modifier puis valider » et au formulaire
+/// de modèle : type, montant, compte, catégorie, puis [schedule] (planification, date, heure par
+/// défaut…), puis description et moyen de paiement (absent d'un modèle, comme sur Android).
 struct AutomationDetailsSections<Schedule: View>: View {
 
     @Binding var details: AutomationDetailsDraft
     let choices: AutomationChoices
     let error: AutomationFormError?
+    var showsPaymentMethod = true
     @ViewBuilder let schedule: () -> Schedule
 
     @FocusState private var focusedField: Field?
@@ -95,10 +96,12 @@ struct AutomationDetailsSections<Schedule: View>: View {
             TextField("transaction.form.description", text: $details.description, axis: .vertical)
                 .lineLimit(1...3)
                 .focused($focusedField, equals: .description)
-            Picker("transaction.form.payment_method", selection: $details.paymentMethod) {
-                Text("transaction.form.payment_method.none").tag(PaymentMethod?.none)
-                ForEach(PaymentMethod.allCases, id: \.self) { method in
-                    Text(verbatim: method.displayName).tag(PaymentMethod?.some(method))
+            if showsPaymentMethod {
+                Picker("transaction.form.payment_method", selection: $details.paymentMethod) {
+                    Text("transaction.form.payment_method.none").tag(PaymentMethod?.none)
+                    ForEach(PaymentMethod.allCases, id: \.self) { method in
+                        Text(verbatim: method.displayName).tag(PaymentMethod?.some(method))
+                    }
                 }
             }
         }

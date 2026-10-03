@@ -268,6 +268,11 @@ public protocol LoanRepository: Sendable {
     func recordPayment(_ payment: LoanPayment) async throws
     /// Supprime un remboursement et sa transaction.
     func deletePayment(id: EntityID) async throws
+    /// Transforme le reste dû en cadeau (voir `LoanGift`) : reclassement du décaissement et
+    /// transaction « Cadeaux » de [description], sans aucun mouvement d'argent. Retourne
+    /// l'identifiant de la transaction cadeau.
+    @discardableResult
+    func convertToGift(loanId: EntityID, description: String) async throws -> EntityID
 }
 
 /// Écriture refusée par la base (état changé entre la saisie et l'enregistrement, par exemple
@@ -278,6 +283,37 @@ public enum LoanWriteError: Error, Equatable, Sendable {
     case amountBelowRepaid
     /// Prêt transformé en cadeau : remboursements, montant, compte et personne verrouillés.
     case loanGifted
+    /// Transformation en cadeau impossible : dette déjà remboursée ou déjà offerte (par exemple
+    /// sur un autre appareil depuis l'affichage).
+    case notConvertible
+}
+
+// MARK: - Modèles de transactions
+
+/// Modèles de transactions (Android « Marketplace personnelle ») : raccourcis vers une
+/// transaction pré-remplie. Utiliser un modèle ne le modifie jamais.
+public protocol TransactionTemplateRepository: Sendable {
+    /// Modèles non supprimés : favoris en tête, puis par nom.
+    func observeTemplates() -> AsyncStream<[TransactionTemplate]>
+    func template(id: EntityID) async throws -> TransactionTemplate?
+    /// Modèle actif créé à partir de [transactionId] (« Voir le modèle »), `nil` sinon.
+    func template(createdFromTransaction transactionId: EntityID) async throws -> TransactionTemplate?
+    /// Crée ou met à jour un modèle (`sourceTransactionId` n'est retenu qu'à la création). Refuse
+    /// un second modèle pour la même transaction (`TemplateWriteError.alreadyLinked`).
+    func save(_ template: TransactionTemplate) async throws
+    /// Copie de [id] nommée [name], jamais favorite ni liée à une transaction. Retourne son id.
+    @discardableResult
+    func duplicate(id: EntityID, name: String) async throws -> EntityID
+    func setFavorite(id: EntityID, isFavorite: Bool) async throws
+    /// Suppression douce ; les transactions déjà créées à partir du modèle ne changent pas.
+    func delete(id: EntityID) async throws
+}
+
+/// Écriture refusée sur un modèle.
+public enum TemplateWriteError: Error, Equatable, Sendable {
+    case templateNotFound
+    /// La transaction a déjà un modèle (créé entre-temps, ou sur un autre appareil).
+    case alreadyLinked(existingTemplateId: EntityID)
 }
 
 // MARK: - Automatisations

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Carte d'un budget dans la liste du Fragment Budgets : MÊME MaterialCardView que
+    `budgetPreviewCard` du Dashboard (fragment_dashboard.xml — coins corner_radius_medium,
+    élévation elevation_card, marge haute spacing_s, pleine largeur) autour du MÊME contenu
+    (item_budget.xml, lié par BudgetAdapter.ViewHolder). Si la carte du Dashboard change, changer
+    aussi celle-ci.
+-->
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="@dimen/spacing_s"
+    app:cardCornerRadius="@dimen/corner_radius_medium"
+    app:cardElevation="@dimen/elevation_card">
+
+    <include
+        android:id="@+id/budget"
+        layout="@layout/item_budget" />
+
+</com.google.android.material.card.MaterialCardView>

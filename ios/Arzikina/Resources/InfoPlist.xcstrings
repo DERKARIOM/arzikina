@@ -1,0 +1,24 @@
+{
+  "sourceLanguage": "fr",
+  "strings": {
+    "NSFaceIDUsageDescription": {
+      "comment": "Face ID permission prompt",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Arzikina uses Face ID to protect access to your finances."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Arzikina utilise Face ID pour protéger l'accès à vos finances."
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}

@@ -29,4 +29,5 @@ struct MainTabView: View {
         .tint(Brand.primary)
         .environment(SessionModel.preview())
         .environment(AppRouter())
+        .environment(AppLockModel.preview())
 }

@@ -4,6 +4,7 @@ import SwiftUI
 struct RootView: View {
 
     @Environment(SessionModel.self) private var session
+    @Environment(AppLockModel.self) private var lock
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
@@ -20,9 +21,21 @@ struct RootView: View {
                 )
             case .signedIn:
                 MainTabView()
+                    .overlay {
+                        // Par-dessus (et non à la place) de l'app : la navigation et les
+                        // formulaires en cours sont retrouvés intacts après déverrouillage.
+                        if lock.isLocked {
+                            LockScreenView()
+                                .transition(.opacity)
+                        }
+                    }
             }
         }
         .animation(reduceMotion ? nil : .easeInOut(duration: 0.25), value: session.state)
+        .animation(reduceMotion ? nil : .easeInOut(duration: 0.2), value: lock.isLocked)
+        .onChange(of: session.state) { _, state in
+            if state == .signedOut { lock.sessionEnded() }
+        }
         .task { await session.restore() }
     }
 }
