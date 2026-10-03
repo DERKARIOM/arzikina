@@ -90,13 +90,13 @@ class LoansAdapter(
 
             binding.amountValue.text = formatMinor(item.amountMinor, item.currencyCode)
             binding.remainingValue.text = formatMinor(item.remainingAmountMinor, item.currencyCode)
-            // "Restant" en ambre tant qu'il reste quelque chose à régler, neutre une fois soldé
+            // "Restant" en rouge (comme une dépense) tant qu'il reste quelque chose à régler, neutre une fois soldé
             // (voir maquette) — indépendant de LoanType : la pastille de statut porte déjà cette
             // distinction, pas besoin de la répéter ici avec un troisième code couleur.
             binding.remainingValue.setTextColor(
                 ContextCompat.getColor(
                     context,
-                    if (item.remainingAmountMinor > 0L) R.color.warning_amber else R.color.arzikina_on_balance_card_variant
+                    if (item.remainingAmountMinor > 0L) R.color.expense_red else R.color.arzikina_on_balance_card_variant
                 )
             )
 

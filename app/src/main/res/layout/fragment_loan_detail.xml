@@ -37,16 +37,15 @@
 
     <!--
         Enregistrement d'un remboursement : ouvre LoanPaymentFormFragment (voir
-        LoanDetailFragment.navigateToPaymentForm, Étape 6 "Gestion des remboursements" du plan de
-        développement Prêts/Emprunts).
+        LoanDetailFragment.navigateToPaymentForm). Icône « + » seule, comme le bouton d'ajout de
+        l'écran Budgets ; le libellé reste lu par les lecteurs d'écran (contentDescription).
     -->
     <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
         android:id="@+id/addPaymentButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_margin="@dimen/spacing_m"
-        android:text="@string/loan_detail_add_payment_action"
-        android:textColor="@color/white"
+        android:contentDescription="@string/loan_detail_add_payment_action"
         app:icon="@drawable/ic_add_24"
         app:iconTint="@color/white"
         app:layout_constraintBottom_toBottomOf="parent"

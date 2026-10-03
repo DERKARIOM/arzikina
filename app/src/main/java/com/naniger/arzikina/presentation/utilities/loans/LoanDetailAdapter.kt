@@ -95,7 +95,7 @@ class LoanDetailAdapter(
             binding.remainingValue.setTextColor(
                 ContextCompat.getColor(
                     context,
-                    if (loan.remainingAmount > 0L) R.color.warning_amber else R.color.arzikina_on_balance_card_variant
+                    if (loan.remainingAmount > 0L) R.color.expense_red else R.color.arzikina_on_balance_card_variant
                 )
             )
             binding.repaidLabel.text = context.getString(R.string.loans_repaid_amount, formatMinor(loan.amountRepaid, uiState.currencyCode))

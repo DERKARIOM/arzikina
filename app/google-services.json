@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "720142055727",
+    "project_id": "arzikina-8d4b7",
+    "storage_bucket": "arzikina-8d4b7.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:720142055727:android:3dbfa516d878571abd89da",
+        "android_client_info": {
+          "package_name": "com.naniger.arzikina"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCDR3P1cjAFcuBTAARg5BxleDaiXHGwiiw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
