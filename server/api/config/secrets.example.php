@@ -32,3 +32,15 @@ define('TOKEN_SIGNING_KEY', 'REMPLACER_PAR_UNE_VALEUR_ALEATOIRE_GENEREE_UNE_SEUL
  * `api/auth/refresh.php`, à écrire dans une étape ultérieure).
  */
 define('TOKEN_EXPIRY_SECONDS', 60 * 60 * 24 * 30);
+
+/**
+ * FACULTATIF — chemin du fichier JSON du compte de service Firebase (envoi des notifications push,
+ * voir `api/push/FcmSender.php`). Sans cette constante, le serveur utilise
+ * `$HOME/firebase-service-account.json` : même dossier privé que ce fichier-ci, HORS de
+ * `public_html`, permissions 600. Ne la définir que si la clé est rangée ailleurs.
+ *
+ * Le fichier JSON lui-même ne doit JAMAIS être copié dans Git, dans l'application Android/iOS/Web,
+ * ni partagé : il contient une clé privée. En cas de fuite, supprimer la clé dans Google Cloud
+ * (IAM > Comptes de service > Clés) et en générer une nouvelle.
+ */
+// define('FIREBASE_SERVICE_ACCOUNT_PATH', '/home/<compte>/firebase-service-account.json');

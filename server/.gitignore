@@ -7,3 +7,8 @@ secrets.php
 .env
 .env.*
 !secrets.example.php
+# Compte de service Firebase (clé privée) et cache du jeton d'accès FCM : uniquement dans $HOME sur
+# le serveur, jamais dans le dépôt — voir api/push/FcmSender.php.
+firebase-service-account.json
+*-service-account*.json
+.arzikina-fcm-access-token.json

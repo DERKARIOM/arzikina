@@ -19,3 +19,12 @@ function generateUuidV4(): string
 
     return vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($data), 4));
 }
+
+/**
+ * Vrai si la chaîne est un UUID au format canonique 8-4-4-4-12 (hexadécimal, casse indifférente).
+ * Ne contrôle pas la version : les UUID générés par Android, iOS ou le Web sont tous acceptés.
+ */
+function isValidUuid(string $value): bool
+{
+    return preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $value) === 1;
+}

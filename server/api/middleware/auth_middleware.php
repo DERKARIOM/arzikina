@@ -7,6 +7,8 @@ require_once __DIR__ . '/../utils/json_response.php';
 /**
  * Vérifie l'en-tête `Authorization: Bearer <token>` et retourne l'utilisateur authentifié.
  *
+ * @return array{userId: string, tokenId: int}
+ *
  * Point de sécurité CENTRAL (cahier des charges : "protection contre la falsification de user_id
  * / de token") : TOUT endpoint `api/sync/*` doit appeler cette fonction et utiliser UNIQUEMENT le
  * `userId` qu'elle retourne pour toute lecture/écriture — jamais une valeur envoyée par le client
@@ -48,5 +50,9 @@ function requireAuthenticatedUser(PDO $pdo): array
     $update = $pdo->prepare('UPDATE auth_tokens SET last_used_at = :now WHERE id = :id');
     $update->execute(['now' => $nowMillis, 'id' => $row['id']]);
 
-    return ['userId' => $row['user_id']];
+    // `tokenId` = identifiant de la SESSION (ligne `auth_tokens`), jamais le token lui-même :
+    // utilisé pour rattacher un appareil push à sa session et pour la déconnexion
+    // (`api/devices/register.php`, `api/auth/logout.php`). Ajout rétrocompatible : les endpoints
+    // existants ne lisent que `userId`.
+    return ['userId' => $row['user_id'], 'tokenId' => (int) $row['id']];
 }
