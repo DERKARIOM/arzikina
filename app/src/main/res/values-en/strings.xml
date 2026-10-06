@@ -632,6 +632,7 @@
     <string name="loan_detail_time_label">Time</string>
     <string name="loan_detail_edit_date_time_action">Edit date and time</string>
     <string name="loan_detail_start_after_payment_error">The start date can\'t be after a payment already recorded</string>
+    <string name="loan_payment_form_date_before_loan_error">The repayment date can\'t be before the loan date</string>
     <string name="loan_gift_action">Convert to gift</string>
     <string name="loan_gift_confirm_title_lent">Convert this loan to a gift?</string>
     <string name="loan_gift_confirm_title_borrowed">Convert this borrowing to a gift?</string>

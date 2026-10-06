@@ -68,6 +68,9 @@ data class LoanPaymentFormState(
     val loanType: LoanType = LoanType.LENT,
     val loanRemainingAmount: Long = 0L,
     val loanCurrencyCode: String = Constants.DEFAULT_CURRENCY_CODE,
+    /** Date de début du prêt/emprunt (`Loan.startDate`) : un remboursement ne peut pas la précéder
+     *  (comparaison par JOUR, voir [LoanPaymentFormViewModel.save]). 0 tant que non chargé. */
+    val loanStartDate: Long = 0L,
     val accountId: Long = 0L,
     val amountInput: String = "",
     /** Date ET heure du remboursement, un seul instant (voir `LoanDateTime`, mêmes règles que la
@@ -76,10 +79,13 @@ data class LoanPaymentFormState(
     val note: String = "",
     @StringRes val accountError: Int? = null,
     @StringRes val amountError: Int? = null,
+    @StringRes val dateError: Int? = null,
     val isSaving: Boolean = false,
     val isEditMode: Boolean = false,
     /** Montant actuel du remboursement modifié (0 en création). */
-    val editedPaymentAmount: Long = 0L
+    val editedPaymentAmount: Long = 0L,
+    /** Date d'origine du remboursement modifié (0 en création) — voir [LoanPaymentFormViewModel.save]. */
+    val originalPaymentDate: Long = 0L
 ) {
     /** Montant maximal accepté : le solde restant, plus le remboursement remplacé en édition. */
     val maxAmount: Long get() = loanRemainingAmount + editedPaymentAmount
@@ -151,12 +157,14 @@ class LoanPaymentFormViewModel @Inject constructor(
                     loanType = loan.type,
                     loanRemainingAmount = loan.remainingAmount,
                     loanCurrencyCode = account?.currencyCode ?: Constants.DEFAULT_CURRENCY_CODE,
+                    loanStartDate = loan.startDate,
                     accountId = payment?.accountId ?: loan.accountId,
                     amountInput = payment?.let { p -> Money.formatForInput(p.amount) } ?: it.amountInput,
                     dateMillis = payment?.date ?: it.dateMillis,
                     note = payment?.note ?: it.note,
                     isEditMode = payment != null,
-                    editedPaymentAmount = payment?.amount ?: 0L
+                    editedPaymentAmount = payment?.amount ?: 0L,
+                    originalPaymentDate = payment?.date ?: 0L
                 )
             }
         }
@@ -173,11 +181,13 @@ class LoanPaymentFormViewModel @Inject constructor(
     /** [millis] : jour choisi (minuit local, voir `LoanPaymentFormFragment.showDatePicker`) —
      * l'heure déjà choisie est CONSERVÉE (voir [onTimeChange]). */
     fun onDateChange(millis: Long) {
-        _formState.update { it.copy(dateMillis = LoanDateTime.withDate(it.dateMillis, LoanDateTime.toLocalDate(millis))) }
+        _formState.update {
+            it.copy(dateMillis = LoanDateTime.withDate(it.dateMillis, LoanDateTime.toLocalDate(millis)), dateError = null)
+        }
     }
 
     fun onTimeChange(hour: Int, minute: Int) {
-        _formState.update { it.copy(dateMillis = LoanDateTime.withTime(it.dateMillis, hour, minute)) }
+        _formState.update { it.copy(dateMillis = LoanDateTime.withTime(it.dateMillis, hour, minute), dateError = null) }
     }
 
     fun onNoteChange(value: String) {
@@ -195,9 +205,20 @@ class LoanPaymentFormViewModel @Inject constructor(
             amountMinor > state.maxAmount -> R.string.error_amount_exceeds_remaining
             else -> null
         }
+        // Un remboursement ne peut pas précéder le prêt/emprunt (même règle que l'application Web,
+        // et symétrique de `loan_detail_start_after_payment_error`). Comparaison par JOUR : le même
+        // jour reste accepté quelle que soit l'heure. En modification, un ancien remboursement déjà
+        // antérieur dont la date n'est pas touchée reste enregistrable (correction de la note, du
+        // montant…) : la règle ne bloque que les dates nouvellement saisies.
+        val dateChanged = !state.isEditMode || state.dateMillis != state.originalPaymentDate
+        val dateError = if (dateChanged && LoanDateTime.isBeforeDay(state.dateMillis, state.loanStartDate)) {
+            R.string.loan_payment_form_date_before_loan_error
+        } else {
+            null
+        }
 
-        if (accountError != null || amountError != null) {
-            _formState.update { it.copy(accountError = accountError, amountError = amountError) }
+        if (accountError != null || amountError != null || dateError != null) {
+            _formState.update { it.copy(accountError = accountError, amountError = amountError, dateError = dateError) }
             return
         }
         checkNotNull(amountMinor)

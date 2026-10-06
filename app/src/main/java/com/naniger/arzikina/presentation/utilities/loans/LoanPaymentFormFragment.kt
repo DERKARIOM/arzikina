@@ -226,6 +226,8 @@ class LoanPaymentFormFragment : Fragment(R.layout.fragment_loan_payment_form) {
         binding.dateField.dateFieldValue.text = formatDate(state.dateMillis)
         val time = LoanDateTime.toLocalTime(state.dateMillis)
         binding.timeField.dateFieldValue.text = TriggerTimeFormatter.format(requireContext(), time.hour, time.minute)
+        binding.dateErrorText.text = state.dateError?.let { getString(it) }
+        binding.dateErrorText.visibility = if (state.dateError != null) View.VISIBLE else View.GONE
         if (binding.noteInput.text?.toString() != state.note) {
             binding.noteInput.setText(state.note)
         }

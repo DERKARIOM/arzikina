@@ -296,6 +296,20 @@
 
             </com.google.android.material.card.MaterialCardView>
 
+            <!-- Erreur de date (remboursement antérieur au prêt/emprunt), sous Date + Heure : même
+                 style que amountErrorText. -->
+            <TextView
+                android:id="@+id/dateErrorText"
+                style="@style/TextAppearance.Material3.BodySmall"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/spacing_xs"
+                android:layout_marginTop="@dimen/spacing_xs"
+                android:textColor="@color/expense_red"
+                android:visibility="gone"
+                tools:text="La date du remboursement ne peut pas précéder celle du prêt/emprunt"
+                tools:visibility="visible" />
+
             <!-- Postcard — voir descriptionLayout de fragment_transaction_form.xml
                  ("harmonisation des champs de saisie"). -->
             <com.google.android.material.card.MaterialCardView
