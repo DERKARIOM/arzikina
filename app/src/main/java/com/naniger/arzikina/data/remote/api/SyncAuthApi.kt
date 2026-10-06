@@ -4,20 +4,14 @@ import com.naniger.arzikina.data.remote.RemoteConfig
 import com.naniger.arzikina.data.remote.dto.LoginRequestDto
 import com.naniger.arzikina.data.remote.dto.LoginResponseDto
 import com.naniger.arzikina.data.remote.dto.RegisterRequestDto
-import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.serialization.json.Json
-import okhttp3.Call
-import okhttp3.Callback
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
-import okhttp3.Response
 import java.io.IOException
 import javax.inject.Inject
 import javax.inject.Singleton
-import kotlin.coroutines.resume
-import kotlin.coroutines.resumeWithException
 
 /**
  * Client HTTP pour les routes `server/api/auth/` — OkHttp direct, SANS Retrofit. Voir
@@ -29,7 +23,7 @@ import kotlin.coroutines.resumeWithException
  * que [com.naniger.arzikina.data.repository.SyncAuthStore], déjà éprouvé sans problème dans ce même
  * diagnostic), contourne entièrement le mécanisme `retrofit.create()` mis en cause.
  *
- * `login.php`/`register.php` sont câblés ici (fondation réseau) — `api/sync/pull.php`/`push.php`
+ * `login.php`/`register.php`/`logout.php` sont câblés ici (fondation réseau) — `api/sync/pull.php`/`push.php`
  * suivront le même schéma (une méthode suspend de plus ici, ou une classe dédiée si le nombre
  * d'endpoints grossit).
  */
@@ -47,7 +41,7 @@ class SyncAuthApi @Inject constructor(
             .post(body)
             .build()
 
-        val responseBody = execute(httpRequest)
+        val responseBody = okHttpClient.awaitBody(httpRequest)
         return json.decodeFromString(LoginResponseDto.serializer(), responseBody)
     }
 
@@ -60,33 +54,23 @@ class SyncAuthApi @Inject constructor(
             .post(body)
             .build()
 
-        val responseBody = execute(httpRequest)
+        val responseBody = okHttpClient.awaitBody(httpRequest)
         return json.decodeFromString(LoginResponseDto.serializer(), responseBody)
     }
 
-    /** Pont callback OkHttp -> coroutine ; annule l'appel HTTP si la coroutine est annulée. */
-    private suspend fun execute(request: Request): String = suspendCancellableCoroutine { continuation ->
-        val call = okHttpClient.newCall(request)
-        continuation.invokeOnCancellation { call.cancel() }
-        call.enqueue(object : Callback {
-            override fun onFailure(call: Call, e: IOException) {
-                continuation.resumeWithException(e)
-            }
-
-            override fun onResponse(call: Call, response: Response) {
-                response.use {
-                    if (!it.isSuccessful) {
-                        // Corps JSON de la réponse (ex. {"error":"username_taken",...}, voir
-                        // utils/json_response.php), PAS `it.message` (simple libellé HTTP générique
-                        // du type "Conflict") — SyncAuthRepositoryImpl.mapConflictError() a besoin du
-                        // code d'erreur métier réel pour distinguer username_taken/email_taken.
-                        continuation.resumeWithException(HttpFailureException(it.code, it.body?.string()))
-                        return
-                    }
-                    continuation.resume(it.body?.string().orEmpty())
-                }
-            }
-        })
+    /**
+     * Ferme la session serveur de [rawToken] et coupe les notifications push des appareils qu'elle
+     * avait enregistrés (voir `server/api/auth/logout.php`). Bearer posé explicitement : appelé
+     * APRÈS l'effacement local de la session (voir `SyncAuthRepositoryImpl.logout`), le token n'est
+     * donc plus lisible par `SyncAuthInterceptor`.
+     */
+    suspend fun logout(rawToken: String) {
+        val httpRequest = Request.Builder()
+            .url(RemoteConfig.BASE_URL + "api/auth/logout.php")
+            .header("Authorization", "Bearer $rawToken")
+            .post("".toRequestBody(jsonMediaType))
+            .build()
+        okHttpClient.awaitBody(httpRequest)
     }
 }
 

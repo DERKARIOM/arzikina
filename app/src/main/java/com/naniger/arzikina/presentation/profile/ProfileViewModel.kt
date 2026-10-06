@@ -9,6 +9,7 @@ import com.naniger.arzikina.domain.repository.AuthRepository
 import com.naniger.arzikina.domain.repository.BiometricAuthenticator
 import com.naniger.arzikina.domain.repository.ProfilePhotoRepository
 import com.naniger.arzikina.domain.repository.SessionManager
+import com.naniger.arzikina.domain.repository.UnifiedAuthRepository
 import com.naniger.arzikina.domain.repository.UserPreferencesRepository
 import com.naniger.arzikina.util.AuthValidator
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -93,7 +94,8 @@ class ProfileViewModel @Inject constructor(
     private val sessionManager: SessionManager,
     private val userPreferencesRepository: UserPreferencesRepository,
     private val biometricAuthenticator: BiometricAuthenticator,
-    private val profilePhotoRepository: ProfilePhotoRepository
+    private val profilePhotoRepository: ProfilePhotoRepository,
+    private val unifiedAuthRepository: UnifiedAuthRepository
 ) : ViewModel() {
 
     private val _formState = MutableStateFlow(ProfileFormState())
@@ -237,14 +239,14 @@ class ProfileViewModel @Inject constructor(
     }
 
     /**
-     * Ne fait QUE nettoyer la session locale ([SessionManager.clearSession]) :
-     * aucune donnée de l'utilisateur (comptes, transactions...) n'est
-     * touchée — voir les instructions du projet ("la déconnexion ne doit
+     * Déconnexion complète ([UnifiedAuthRepository.logout]) : session serveur fermée (notifications
+     * push coupées) puis session locale effacée. Aucune donnée de l'utilisateur (comptes,
+     * transactions...) n'est touchée — voir les instructions du projet ("la déconnexion ne doit
      * jamais effacer les données").
      */
     fun logout() {
         viewModelScope.launch {
-            sessionManager.clearSession()
+            unifiedAuthRepository.logout()
             _events.emit(ProfileEvent.LoggedOut)
         }
     }

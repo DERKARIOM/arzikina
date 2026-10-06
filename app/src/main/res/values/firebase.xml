@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Configuration Firebase (projet arzikina-8d4b7, application com.naniger.arzikina), recopiée
+    depuis app/google-services.json : équivalent exact de ce que générerait le plugin Gradle
+    `com.google.gms.google-services`, non appliqué ici (voir gradle/libs.versions.toml). Lue au
+    démarrage par FirebaseInitProvider (bibliothèque Firebase).
+
+    Ce sont des identifiants PUBLICS de l'application cliente, pas des secrets : ils sont présents
+    dans tout APK utilisant Firebase. La protection repose sur la restriction de la clé d'API dans
+    Google Cloud (package + empreintes SHA-1, à faire avant publication) et sur le fait que l'envoi
+    de notifications exige la clé privée du compte de service, qui reste exclusivement sur le
+    serveur.
+
+    À mettre à jour si google-services.json est retéléchargé (nouvelle application Firebase, clé
+    régénérée). translatable="false" : jamais traduits.
+-->
+<resources>
+    <string name="google_app_id" translatable="false">1:720142055727:android:3dbfa516d878571abd89da</string>
+    <string name="gcm_defaultSenderId" translatable="false">720142055727</string>
+    <string name="google_api_key" translatable="false">AIzaSyCDR3P1cjAFcuBTAARg5BxleDaiXHGwiiw</string>
+    <string name="google_crash_reporting_api_key" translatable="false">AIzaSyCDR3P1cjAFcuBTAARg5BxleDaiXHGwiiw</string>
+    <string name="project_id" translatable="false">arzikina-8d4b7</string>
+    <string name="google_storage_bucket" translatable="false">arzikina-8d4b7.firebasestorage.app</string>
+</resources>

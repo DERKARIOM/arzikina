@@ -12,6 +12,7 @@ import com.naniger.arzikina.domain.model.SyncAuthResult
 import com.naniger.arzikina.domain.model.SyncSession
 import com.naniger.arzikina.domain.model.UnifiedAuthError
 import com.naniger.arzikina.domain.model.UnifiedAuthResult
+import com.naniger.arzikina.domain.repository.SessionManager
 import com.naniger.arzikina.domain.repository.SyncAuthRepository
 import com.naniger.arzikina.domain.repository.UnifiedAuthRepository
 import com.naniger.arzikina.util.AuthValidator
@@ -52,8 +53,17 @@ class UnifiedAuthRepositoryImpl @Inject constructor(
     private val userDao: UserDao,
     private val userServerLinkDao: UserServerLinkDao,
     private val newUserDefaultDataSeeder: NewUserDefaultDataSeeder,
-    @IoDispatcher private val ioDispatcher: CoroutineDispatcher
+    @IoDispatcher private val ioDispatcher: CoroutineDispatcher,
+    private val sessionManager: SessionManager
 ) : UnifiedAuthRepository {
+
+    /** Ordre volontaire : serveur d'abord (effacement local immédiat du token, voir
+     *  [SyncAuthRepository.logout]), pour qu'aucune synchronisation ne puisse partir entre les deux
+     *  étapes avec le token d'un compte déjà déconnecté localement. */
+    override suspend fun logout(): Unit = withContext(ioDispatcher) {
+        syncAuthRepository.logout()
+        sessionManager.clearSession()
+    }
 
     override suspend fun login(email: String, rawPassword: String): UnifiedAuthResult = withContext(ioDispatcher) {
         val trimmedEmail = email.trim()

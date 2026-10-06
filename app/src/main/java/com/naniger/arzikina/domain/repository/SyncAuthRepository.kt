@@ -41,8 +41,10 @@ interface SyncAuthRepository {
         deviceLabel: String? = null
     ): SyncAuthResult<SyncSession>
 
-    /** Supprime la session serveur stockée sur cet appareil. N'affecte ni le compte local
-     *  ([AuthRepository]) ni les données déjà synchronisées côté serveur. */
+    /** Supprime la session serveur stockée sur cet appareil (immédiatement, même hors ligne), puis
+     *  demande au serveur de la révoquer et de couper les notifications push de cet appareil (au
+     *  mieux, sans bloquer). N'affecte ni le compte local ([AuthRepository]) ni les données déjà
+     *  synchronisées côté serveur. */
     suspend fun logout()
 
     /** Lecture ponctuelle. `null` si aucune connexion au serveur n'a jamais été faite, ou si le

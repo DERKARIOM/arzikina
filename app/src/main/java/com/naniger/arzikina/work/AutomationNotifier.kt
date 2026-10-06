@@ -1,18 +1,15 @@
 package com.naniger.arzikina.work
 
-import android.app.NotificationChannel
-import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.graphics.BitmapFactory
-import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
-import androidx.core.content.getSystemService
 import com.naniger.arzikina.MainActivity
 import com.naniger.arzikina.R
 import com.naniger.arzikina.domain.model.RecurringTransaction
+import com.naniger.arzikina.notification.NotificationChannels
 
 /**
  * Notification de rappel posée par [AutomationAlarmReceiver] à l'heure exacte de déclenchement
@@ -48,7 +45,7 @@ import com.naniger.arzikina.domain.model.RecurringTransaction
 object AutomationNotifier {
 
     fun notifyTrigger(context: Context, rule: RecurringTransaction) {
-        ensureChannel(context)
+        NotificationChannels.ensureCreated(context)
 
         val label = rule.description.ifBlank { context.getString(R.string.automation_notification_fallback_name) }
         val contentIntent = PendingIntent.getActivity(
@@ -73,20 +70,6 @@ object AutomationNotifier {
         NotificationManagerCompat.from(context).notify(rule.id.toInt(), notification)
     }
 
-    /** Idempotent (voir doc officielle `createNotificationChannel`) : peut être rappelée à chaque
-     * notification sans effet indésirable, plus simple qu'un appel unique au démarrage de l'app. */
-    private fun ensureChannel(context: Context) {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
-        val manager = context.getSystemService<NotificationManager>() ?: return
-        val channel = NotificationChannel(
-            CHANNEL_ID,
-            context.getString(R.string.automation_notification_channel_name),
-            NotificationManager.IMPORTANCE_DEFAULT
-        ).apply {
-            description = context.getString(R.string.automation_notification_channel_description)
-        }
-        manager.createNotificationChannel(channel)
-    }
-
-    private const val CHANNEL_ID = "automation_triggers"
+    /** Canal défini dans le registre commun [NotificationChannels] (identifiant inchangé). */
+    private const val CHANNEL_ID = NotificationChannels.AUTOMATION
 }

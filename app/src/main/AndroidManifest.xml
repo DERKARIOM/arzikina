@@ -130,6 +130,31 @@
             android:name=".work.AutomationAlarmReceiver"
             android:exported="false" />
 
+        <!--
+            Notifications push (Firebase Cloud Messaging), voir push/ArzikinaMessagingService.kt.
+            - exported="false" : seul Firebase (même processus, via son propre récepteur protégé)
+              lui livre les messages ; aucune application tierce ne peut l'appeler.
+            - Les deux meta-data ne servent qu'aux messages « notification » affichés directement par
+              Firebase, que le serveur Arzikina n'envoie jamais (messages « data » uniquement) :
+              filet de sécurité pour qu'un tel message, s'il arrivait, utilise la bonne icône et le
+              canal « Informations » plutôt qu'un canal générique créé par Firebase.
+            - Aucune permission supplémentaire : INTERNET et POST_NOTIFICATIONS sont déjà déclarées.
+        -->
+        <service
+            android:name=".push.ArzikinaMessagingService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
+
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="general" />
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_icon"
+            android:resource="@drawable/ic_stat_arzikina" />
+
         <receiver
             android:name=".work.BootCompletedReceiver"
             android:exported="true">
@@ -188,4 +213,4 @@
         </activity>
     </application>
 
-</manifest>
+</manifest>

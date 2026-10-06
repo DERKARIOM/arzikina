@@ -58,4 +58,15 @@ interface UnifiedAuthRepository {
         securityQuestion: SecurityQuestion,
         securityAnswer: String
     ): UnifiedAuthResult
+
+    /**
+     * Déconnexion complète de l'utilisateur (Profil, écran de verrouillage biométrique) : session
+     * serveur fermée (voir [SyncAuthRepository.logout]) PUIS session locale effacée. Aucune donnée
+     * de l'utilisateur n'est supprimée.
+     *
+     * Fermer aussi la session serveur évite qu'un autre profil connecté ensuite sur le même
+     * téléphone (notamment par le repli hors ligne, qui n'ouvre pas de session serveur) hérite du
+     * token de synchronisation et des notifications push du compte précédent.
+     */
+    suspend fun logout()
 }

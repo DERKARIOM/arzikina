@@ -16,6 +16,7 @@ private const val PREFERENCES_DATASTORE_NAME = "arzikina_preferences"
 private const val SESSION_DATASTORE_NAME = "arzikina_session"
 private const val SYNC_AUTH_DATASTORE_NAME = "arzikina_sync_auth"
 private const val APP_UPDATE_DATASTORE_NAME = "arzikina_app_update"
+private const val PUSH_DATASTORE_NAME = "arzikina_push"
 
 private val Context.preferencesDataStore: DataStore<Preferences> by preferencesDataStore(
     name = PREFERENCES_DATASTORE_NAME
@@ -31,6 +32,12 @@ private val Context.syncAuthDataStore: DataStore<Preferences> by preferencesData
 
 private val Context.appUpdateDataStore: DataStore<Preferences> by preferencesDataStore(
     name = APP_UPDATE_DATASTORE_NAME
+)
+
+/** Notifications push (identifiant d'installation, token FCM) — voir `data/push/PushStore`. Séparé
+ *  de la session : rien ici n'appartient à un compte, rien n'est effacé à la déconnexion. */
+private val Context.pushDataStore: DataStore<Preferences> by preferencesDataStore(
+    name = PUSH_DATASTORE_NAME
 )
 
 /**
@@ -62,6 +69,10 @@ annotation class SyncAuthDataStore
 @Qualifier
 @Retention(AnnotationRetention.BINARY)
 annotation class AppUpdateDataStore
+
+@Qualifier
+@Retention(AnnotationRetention.BINARY)
+annotation class PushDataStore
 
 /**
  * Fournit les [DataStore] de préférences utilisateur (thème, devise
@@ -101,4 +112,11 @@ object DataStoreModule {
     fun provideAppUpdateDataStore(
         @ApplicationContext context: Context
     ): DataStore<Preferences> = context.appUpdateDataStore
+
+    @PushDataStore
+    @Provides
+    @Singleton
+    fun providePushDataStore(
+        @ApplicationContext context: Context
+    ): DataStore<Preferences> = context.pushDataStore
 }

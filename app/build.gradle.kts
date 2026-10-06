@@ -149,6 +149,13 @@ dependencies {
     // aucune comparaison de version locale ni API maison.
     implementation(libs.play.app.update)
 
+    // Notifications push (Firebase Cloud Messaging) — messages « data » uniquement, la notification
+    // est construite par l'application (voir push/ArzikinaMessagingService.kt). Configuration
+    // Firebase dans res/values/firebase.xml (pas de plugin google-services, voir
+    // gradle/libs.versions.toml). Aucune clé serveur dans l'application.
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.messaging)
+
     // Tests unitaires JVM (src/test) : ViewModels des prêts/emprunts — voir le détail de chaque
     // dépendance dans gradle/libs.versions.toml.
     testImplementation(libs.junit)

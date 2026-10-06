@@ -1324,4 +1324,18 @@
     <string name="in_app_update_downloaded_message">La mise à jour est prête à être installée.</string>
     <string name="in_app_update_action_restart">Redémarrer</string>
     <string name="in_app_update_failed_message">La mise à jour n\'a pas pu aboutir. Réessayez plus tard.</string>
+
+    <!-- Notifications push (Firebase Cloud Messaging) : canaux (réglages Android) et textes. Les
+         textes sont toujours composés par l'application, jamais envoyés par le serveur. -->
+    <string name="notification_channel_loans_name">Prêts et emprunts</string>
+    <string name="notification_channel_loans_description">Rappels d\'échéance de vos prêts et emprunts.</string>
+    <string name="notification_channel_general_name">Informations Arzikina</string>
+    <string name="notification_channel_general_description">Annonces et informations sur l\'application.</string>
+    <string name="notification_channel_security_name">Sécurité du compte</string>
+    <string name="notification_channel_security_description">Alertes importantes concernant la sécurité de votre compte.</string>
+    <string name="push_system_message_text">Vous avez une nouvelle information d\'Arzikina.</string>
+    <string name="push_loan_due_title">Échéance de prêt</string>
+    <string name="push_loan_due_text">Un prêt ou un emprunt arrive à échéance. Ouvrez Arzikina pour le consulter.</string>
+    <string name="push_security_alert_title">Sécurité du compte</string>
+    <string name="push_security_alert_text">Une activité importante a eu lieu sur votre compte. Ouvrez Arzikina pour vérifier.</string>
 </resources>

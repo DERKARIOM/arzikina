@@ -7,13 +7,18 @@ import com.naniger.arzikina.data.remote.api.SyncAuthApi
 import com.naniger.arzikina.data.remote.dto.LoginRequestDto
 import com.naniger.arzikina.data.remote.dto.LoginResponseDto
 import com.naniger.arzikina.data.remote.dto.RegisterRequestDto
+import com.naniger.arzikina.di.ApplicationScope
 import com.naniger.arzikina.di.IoDispatcher
 import com.naniger.arzikina.domain.model.SyncAuthError
 import com.naniger.arzikina.domain.model.SyncAuthResult
 import com.naniger.arzikina.domain.model.SyncSession
+import com.naniger.arzikina.domain.repository.PushRegistrationRepository
 import com.naniger.arzikina.domain.repository.SyncAuthRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.withContext
 import java.io.IOException
@@ -42,7 +47,9 @@ class SyncAuthRepositoryImpl @Inject constructor(
     private val authApi: SyncAuthApi,
     @ApplicationContext private val context: Context,
     private val store: SyncAuthStore,
-    @IoDispatcher private val ioDispatcher: CoroutineDispatcher
+    @IoDispatcher private val ioDispatcher: CoroutineDispatcher,
+    private val pushRegistrationRepository: PushRegistrationRepository,
+    @ApplicationScope private val applicationScope: CoroutineScope
 ) : SyncAuthRepository {
 
     override suspend fun login(
@@ -105,6 +112,10 @@ class SyncAuthRepositoryImpl @Inject constructor(
                 expiresAt = response.expiresAt,
                 fullName = response.fullName
             )
+            // Nouvelle session serveur : (ré)enregistre l'appareil pour les notifications push,
+            // rattaché à CETTE session (voir `server/api/devices/register.php`). WorkManager : ne
+            // retarde pas la connexion et réessaie seul hors ligne.
+            pushRegistrationRepository.requestRegistration()
             SyncAuthResult.Success(
                 SyncSession(serverUserId = response.userId, expiresAt = response.expiresAt, fullName = response.fullName)
             )
@@ -131,8 +142,25 @@ class SyncAuthRepositoryImpl @Inject constructor(
         else -> SyncAuthError.ServerError(rawBody)
     }
 
+    /**
+     * Déconnexion du serveur, en deux temps :
+     * 1. LOCAL, immédiat et garanti (même hors ligne) : session effacée, enregistrement push en
+     *    attente annulé. Plus aucun appel authentifié ne peut partir de cet appareil.
+     * 2. SERVEUR, au mieux : `auth/logout.php` révoque la session et coupe les notifications de cet
+     *    appareil. Lancé dans la portée de l'application (et non celle de l'écran, détruit par la
+     *    navigation qui suit), avec un délai maximal. S'il échoue (hors ligne), la session expirera
+     *    seule et les notifications éventuellement reçues sont écartées par l'application (voir
+     *    `PushRecipientVerifier`).
+     */
     override suspend fun logout() {
+        val rawToken = store.getValidRawToken()
         store.clear()
+        pushRegistrationRepository.onSignedOut()
+        if (rawToken != null) {
+            applicationScope.launch(ioDispatcher) {
+                withTimeoutOrNull(SERVER_LOGOUT_TIMEOUT_MILLIS) { runCatching { authApi.logout(rawToken) } }
+            }
+        }
     }
 
     override suspend fun getActiveSession(): SyncSession? = store.getActiveSession()
@@ -144,3 +172,5 @@ class SyncAuthRepositoryImpl @Inject constructor(
     private fun androidDeviceId(): String? =
         Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID)
 }
+
+private const val SERVER_LOGOUT_TIMEOUT_MILLIS = 15_000L

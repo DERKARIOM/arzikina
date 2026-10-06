@@ -2,7 +2,7 @@ package com.naniger.arzikina.presentation.security
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.naniger.arzikina.domain.repository.SessionManager
+import com.naniger.arzikina.domain.repository.UnifiedAuthRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -25,7 +25,7 @@ sealed interface BiometricLockEvent {
  */
 @HiltViewModel
 class BiometricLockViewModel @Inject constructor(
-    private val sessionManager: SessionManager
+    private val unifiedAuthRepository: UnifiedAuthRepository
 ) : ViewModel() {
 
     private val _events = MutableSharedFlow<BiometricLockEvent>()
@@ -44,7 +44,8 @@ class BiometricLockViewModel @Inject constructor(
      */
     fun onLogout() {
         viewModelScope.launch {
-            sessionManager.clearSession()
+            // Déconnexion complète (session serveur + locale), identique à celle du Profil.
+            unifiedAuthRepository.logout()
             _events.emit(BiometricLockEvent.LoggedOut)
         }
     }

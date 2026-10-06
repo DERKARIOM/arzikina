@@ -89,6 +89,13 @@ pdfboxAndroid = "2.0.27.0"
 # Java uniquement : la variante `-ktx` n'apporte que des extensions Flow non utilisées ici.
 appUpdate = "2.1.0"
 
+# Notifications push (Firebase Cloud Messaging, voir claude/fcm/AUDIT-FCM-ANDROID.md). BoM 34.19.0
+# (9 septembre 2026) : fixe firebase-messaging en 25.1.3 ; minSdk 23 requis (nous : 26). Seul
+# Messaging est utilisé : ni Analytics, ni Crashlytics. Le plugin Gradle `google-services` n'est PAS
+# appliqué (compatibilité AGP 9 non annoncée officiellement) : la configuration Firebase est
+# déclarée dans app/src/main/res/values/firebase.xml, méthode documentée par Firebase.
+firebaseBom = "34.19.0"
+
 # Tests (voir la section [libraries] plus bas pour le détail de chaque usage :
 # JVM pur pour les ViewModels, instrumentés pour Room)
 mockk = "1.14.11"
@@ -157,6 +164,9 @@ pdfbox-android = { group = "com.tom-roush", name = "pdfbox-android", version.ref
 
 # Google Play In-App Updates (voir presentation/update/PlayStoreUpdateManager.kt)
 play-app-update = { group = "com.google.android.play", name = "app-update", version.ref = "appUpdate" }
+firebase-bom = { group = "com.google.firebase", name = "firebase-bom", version.ref = "firebaseBom" }
+# Version fournie par firebase-bom (voir plus haut).
+firebase-messaging = { group = "com.google.firebase", name = "firebase-messaging" }
 
 # Tests unitaires JVM (src/test) : ViewModels des prêts/emprunts (voir Étape "Tests et correction
 # des bugs" du plan de développement). kotlinx-coroutines-test pour piloter les coroutines/StateFlow

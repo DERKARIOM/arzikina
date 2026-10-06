@@ -8,8 +8,10 @@ import com.naniger.arzikina.data.repository.LegacySavingsGoalMigrator
 import com.naniger.arzikina.domain.model.ThemeMode
 import com.naniger.arzikina.domain.repository.AppLanguageRepository
 import com.naniger.arzikina.domain.repository.AutomationScheduler
+import com.naniger.arzikina.domain.repository.PushRegistrationRepository
 import com.naniger.arzikina.domain.repository.RecurringTransactionRepository
 import com.naniger.arzikina.domain.repository.UserPreferencesRepository
+import com.naniger.arzikina.notification.NotificationChannels
 import com.naniger.arzikina.work.RecurringOccurrencesScheduler
 import com.naniger.arzikina.work.SyncConnectivityObserver
 import com.naniger.arzikina.work.SyncWorkScheduler
@@ -56,6 +58,11 @@ import javax.inject.Inject
  * classe plutôt que dans `ReceiptTextExtractor` lui-même (qui resterait sinon appelé plusieurs fois
  * sans bénéfice, une fois par instance créée par Hilt).
  *
+ * [NotificationChannels.ensureCreated] / [PushRegistrationRepository.requestRegistration] :
+ * notifications push (Firebase Cloud Messaging), voir `claude/fcm/AUDIT-FCM-ANDROID.md`. Firebase
+ * lui-même s'initialise seul avant cette classe (fournisseur `FirebaseInitProvider`, configuration
+ * dans `res/values/firebase.xml`).
+ *
  * [applyStoredThemeMode] : appelé en tout premier, avant toute autre initialisation — voir sa doc.
  * Déplacé depuis `MainActivity.onCreate()` (chantier "thème sombre par défaut") : y était appelé
  * APRÈS `super.onCreate()`, donc après qu'`AppCompatActivity` ait déjà résolu ses ressources
@@ -89,6 +96,9 @@ class ArzikinaApplication : Application(), Configuration.Provider {
     @Inject
     lateinit var legacySavingsGoalMigrator: LegacySavingsGoalMigrator
 
+    @Inject
+    lateinit var pushRegistrationRepository: PushRegistrationRepository
+
     override val workManagerConfiguration: Configuration
         get() = Configuration.Builder()
             .setWorkerFactory(workerFactory)
@@ -106,6 +116,11 @@ class ArzikinaApplication : Application(), Configuration.Provider {
         migrateLegacySavingsGoals()
         SyncWorkScheduler.schedulePeriodic(this)
         syncConnectivityObserver.start()
+        // Notifications : canaux visibles dans les réglages système dès l'installation, puis
+        // (ré)enregistrement push en arrière-plan — sans effet si personne n'est connecté ou si
+        // rien n'a changé (voir PushRegistrationRepositoryImpl). Aucun appel réseau ici.
+        NotificationChannels.ensureCreated(this)
+        pushRegistrationRepository.requestRegistration()
     }
 
     /**
