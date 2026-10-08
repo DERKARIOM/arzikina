@@ -68,6 +68,16 @@
             automatiquement (nouveaux écrans compris).
         -->
         <item name="materialCardViewStyle">@style/Widget.Arzikina.CardView</item>
+
+        <!--
+            Sélecteurs de date et d'heure (MaterialDatePicker / MaterialTimePicker, partout dans
+            l'application) : surcouches dédiées, voir ThemeOverlay.Arzikina.MaterialCalendar
+            ci-dessous. Sans elles, le jour sélectionné (et l'heure sélectionnée) s'affichait en
+            émeraude SUR un cercle émeraude, donc invisible.
+        -->
+        <item name="materialCalendarTheme">@style/ThemeOverlay.Arzikina.MaterialCalendar</item>
+        <item name="materialCalendarFullscreenTheme">@style/ThemeOverlay.Arzikina.MaterialCalendar.Fullscreen</item>
+        <item name="materialTimePickerTheme">@style/ThemeOverlay.Arzikina.MaterialTimePicker</item>
     </style>
 
     <!--
@@ -227,4 +237,34 @@
         <item name="iconPadding">@dimen/spacing_s</item>
         <item name="iconTint">?attr/colorOnPrimary</item>
     </style>
+
+    <!--
+        Surcouches des sélecteurs de date et d'heure. Elles héritent des surcouches Material 3 par
+        défaut (mise en page, formes, typographie inchangées) et ne corrigent QUE le contraste du
+        texte posé sur l'émeraude :
+        - date : le jour sélectionné (et l'année sélectionnée) = texte colorOnPrimary sur cercle
+          colorPrimary ;
+        - heure : l'heure/la minute sélectionnée = texte colorOnPrimaryContainer sur
+          colorPrimaryContainer, et le chiffre sous l'aiguille = colorOnPrimary sur colorPrimary.
+        En mode sombre, colorOnPrimary et colorOnPrimaryContainer valent l'émeraude elle-même
+        (values-night/colors.xml), et colorOnPrimaryContainer aussi en mode clair : texte invisible.
+        Blanc dans les deux modes, comme le reste du texte sur fond émeraude en mode clair.
+        Correction volontairement LOCALE aux sélecteurs : changer colorOnPrimary pour toute
+        l'application en mode sombre toucherait d'autres écrans, à revoir séparément.
+    -->
+    <style name="ThemeOverlay.Arzikina.MaterialCalendar" parent="ThemeOverlay.Material3.MaterialCalendar">
+        <item name="colorOnPrimary">@color/white</item>
+        <item name="colorOnPrimaryContainer">@color/white</item>
+    </style>
+
+    <style name="ThemeOverlay.Arzikina.MaterialCalendar.Fullscreen" parent="ThemeOverlay.Material3.MaterialCalendar.Fullscreen">
+        <item name="colorOnPrimary">@color/white</item>
+        <item name="colorOnPrimaryContainer">@color/white</item>
+    </style>
+
+    <style name="ThemeOverlay.Arzikina.MaterialTimePicker" parent="ThemeOverlay.Material3.MaterialTimePicker">
+        <item name="colorOnPrimary">@color/white</item>
+        <item name="colorOnPrimaryContainer">@color/white</item>
+    </style>
+
 </resources>
