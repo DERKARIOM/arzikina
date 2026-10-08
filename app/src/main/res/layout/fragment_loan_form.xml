@@ -498,7 +498,7 @@
                                     style="@style/TextAppearance.Material3.TitleSmall"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:textColor="@android:color/white"
+                                    android:textColor="@color/arzikina_on_balance_card"
                                     tools:text="Emprunt voiture" />
 
                                 <TextView
@@ -538,7 +538,7 @@
                                 style="@style/TextAppearance.Material3.TitleSmall"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:textColor="@android:color/white"
+                                android:textColor="@color/arzikina_on_balance_card"
                                 tools:text="300 000 F CFA" />
 
                         </LinearLayout>
@@ -562,7 +562,7 @@
                                 style="@style/TextAppearance.Material3.TitleSmall"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:textColor="@android:color/white"
+                                android:textColor="@color/arzikina_on_balance_card"
                                 tools:text="12/05/2025" />
 
                         </LinearLayout>
@@ -586,7 +586,7 @@
                                 style="@style/TextAppearance.Material3.TitleSmall"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:textColor="@android:color/white"
+                                android:textColor="@color/arzikina_on_balance_card"
                                 tools:text="12/10/2025" />
 
                         </LinearLayout>

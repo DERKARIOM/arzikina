@@ -52,7 +52,8 @@
                     android:layout_weight="1"
                     app:cardBackgroundColor="@color/loan_summary_lent_bg"
                     app:cardCornerRadius="@dimen/corner_radius_medium"
-                    app:cardElevation="@dimen/elevation_card">
+                    app:cardElevation="@dimen/elevation_card"
+                    android:theme="@style/ThemeOverlay.Arzikina.OnBalanceCard">
 
                     <LinearLayout
                         android:layout_width="match_parent"
@@ -73,7 +74,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="2dp"
-                            android:textColor="@android:color/white"
+                            android:textColor="@color/arzikina_on_balance_card"
                             android:textStyle="bold"
                             tools:text="1 000 000 F CFA" />
 
@@ -88,7 +89,8 @@
                     android:layout_weight="1"
                     app:cardBackgroundColor="@color/loan_summary_borrowed_bg"
                     app:cardCornerRadius="@dimen/corner_radius_medium"
-                    app:cardElevation="@dimen/elevation_card">
+                    app:cardElevation="@dimen/elevation_card"
+                    android:theme="@style/ThemeOverlay.Arzikina.OnBalanceCard">
 
                     <LinearLayout
                         android:layout_width="match_parent"
@@ -109,7 +111,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="2dp"
-                            android:textColor="@android:color/white"
+                            android:textColor="@color/arzikina_on_balance_card"
                             android:textStyle="bold"
                             tools:text="750 000 F CFA" />
 

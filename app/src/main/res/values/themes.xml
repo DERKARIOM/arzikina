@@ -112,6 +112,14 @@
     <style name="ThemeOverlay.Arzikina.OnBalanceCard" parent="">
         <item name="colorOnSurface">@color/arzikina_on_balance_card</item>
         <item name="colorOnSurfaceVariant">@color/arzikina_on_balance_card_variant</item>
+        <!-- Textes sans couleur explicite et icônes par défaut : en mode clair, ils prenaient les
+             couleurs foncées du thème (prévues pour le fond blanc), illisibles sur ces cartes
+             sombres fixes. Posé sur TOUTES les postcards sombres (arzikina_postcart_background,
+             arzikina_balance_card, loan_summary_*). Sans effet visible en mode sombre. -->
+        <item name="colorOnBackground">@color/arzikina_on_balance_card</item>
+        <item name="android:textColorPrimary">@color/arzikina_on_balance_card</item>
+        <item name="android:textColorSecondary">@color/arzikina_on_balance_card_variant</item>
+        <item name="colorControlNormal">@color/arzikina_on_balance_card_variant</item>
     </style>
 
     <!--

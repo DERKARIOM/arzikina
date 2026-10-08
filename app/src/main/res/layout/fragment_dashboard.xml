@@ -92,7 +92,7 @@
                         android:layout_gravity="center"
                         android:contentDescription="@null"
                         android:src="@drawable/ic_person_24"
-                        app:tint="@color/arzikina_on_dashboard_header_variant" />
+                        app:tint="?attr/colorOnSurfaceVariant" />
 
                 </FrameLayout>
 
@@ -108,7 +108,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@string/dashboard_greeting"
-                        android:textColor="@color/arzikina_on_dashboard_header_variant" />
+                        android:textColor="?attr/colorOnSurfaceVariant" />
 
                     <TextView
                         android:id="@+id/userFullNameText"
@@ -118,7 +118,7 @@
                         android:layout_marginTop="2dp"
                         android:ellipsize="end"
                         android:maxLines="1"
-                        android:textColor="@color/arzikina_on_dashboard_header"
+                        android:textColor="?attr/colorOnSurface"
                         android:textStyle="bold"
                         tools:text="Aïcha Konaté" />
 
@@ -130,12 +130,10 @@
                     la même ligne (voir headerRow), placé AVANT le raccourci Paramètres (demande
                     explicite). FrameLayout + pastille superposée, MÊME structure que
                     utilityIcon/utilityBadge (item_utility_tile.xml) — réutilise bg_badge_circle tel
-                    quel plutôt que de créer un second drawable de badge. Teinte FIXE
-                    arzikina_on_dashboard_header (blanche) : ce bouton vit sur le fond brun/ambré
-                    fixe de l'en-tête, jamais sur ?attr/colorOnSurface (voir
-                    SystemBars.updateStatusBarIconAppearance, icônes toujours claires ici quel que
-                    soit le thème) — contrairement à settingsShortcut ci-dessous, qui utilise
-                    ?attr/colorOnSurface (incohérence préexistante, hors périmètre de cette étape).
+                    quel plutôt que de créer un second drawable de badge. Teinte
+                    ?attr/colorOnSurface, comme settingsShortcut ci-dessous : l'en-tête n'a plus de
+                    fond coloré fixe, il repose sur le fond du thème (blanc en clair, sombre en
+                    sombre) — une teinte blanche fixe le rendait invisible en mode clair.
                     Rotation pendant la synchronisation : voir DashboardFragment.renderSyncButton.
                 -->
                 <FrameLayout
@@ -151,7 +149,7 @@
                         android:contentDescription="@string/dashboard_sync_content_description"
                         android:padding="@dimen/spacing_s"
                         android:src="@drawable/ic_sync_24"
-                        app:tint="@color/arzikina_on_dashboard_header" />
+                        app:tint="?attr/colorOnSurface" />
 
                     <TextView
                         android:id="@+id/syncBadge"
@@ -254,7 +252,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@string/dashboard_balance_label"
-                        android:textColor="@color/arzikina_on_balance_card"
+                        android:textColor="@color/white"
                         app:layout_constraintStart_toStartOf="parent"
                         app:layout_constraintTop_toTopOf="parent" />
 
@@ -264,7 +262,7 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="@dimen/spacing_xs"
-                        android:textColor="@color/arzikina_on_balance_card"
+                        android:textColor="@color/white"
                         android:textStyle="bold"
                         app:layout_constraintEnd_toStartOf="@id/toggleBalanceVisibility"
                         app:layout_constraintStart_toStartOf="parent"
@@ -283,7 +281,7 @@
                         app:layout_constraintBottom_toBottomOf="@id/balanceValue"
                         app:layout_constraintEnd_toEndOf="parent"
                         app:layout_constraintTop_toTopOf="@id/balanceValue"
-                        app:tint="@color/arzikina_on_balance_card" />
+                        app:tint="@color/white" />
 
                     <!--
                         Numéro décoratif façon carte VISA (voir
@@ -297,7 +295,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="@dimen/spacing_l"
                         android:letterSpacing="0.15"
-                        android:textColor="@color/arzikina_on_balance_card"
+                        android:textColor="@color/white"
                         app:layout_constraintStart_toStartOf="parent"
                         app:layout_constraintTop_toBottomOf="@id/balanceValue"
                         tools:text="•••• •••• •••• 2026" />
@@ -311,6 +309,7 @@
                         android:layout_marginTop="@dimen/spacing_l"
                         android:ellipsize="end"
                         android:maxLines="1"
+                        android:textColor="@color/white"
                         app:layout_constraintEnd_toStartOf="@id/cardBadge"
                         app:layout_constraintStart_toStartOf="parent"
                         app:layout_constraintTop_toBottomOf="@id/cardNumberText"
@@ -322,7 +321,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@string/accounts_card_badge"
-                        android:textColor="@color/arzikina_on_balance_card"
+                        android:textColor="@color/white"
                         android:textStyle="bold"
                         app:layout_constraintBottom_toBottomOf="@id/cardHolderNameText"
                         app:layout_constraintEnd_toEndOf="parent"
@@ -387,7 +386,8 @@
             android:layout_marginTop="12dp"
             app:cardBackgroundColor="@color/arzikina_balance_card"
             app:cardCornerRadius="@dimen/corner_radius_large"
-            app:cardElevation="0dp">
+            app:cardElevation="0dp"
+            android:theme="@style/ThemeOverlay.Arzikina.OnBalanceCard">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -395,7 +395,8 @@
                 android:background="@color/arzikina_postcart_background"
                 android:gravity="bottom"
                 android:orientation="horizontal"
-                android:padding="@dimen/spacing_l">
+                android:padding="@dimen/spacing_l"
+                android:theme="@style/ThemeOverlay.Arzikina.OnBalanceCard">
 
                 <!-- gravity="bottom" (plutôt que "center_vertical") : IncomeExpenseBarView dessine
                      toujours ses barres en partant du BAS de sa propre hauteur fixe (voir
@@ -581,7 +582,8 @@
             android:layout_marginTop="@dimen/spacing_s"
             app:cardBackgroundColor="@color/arzikina_postcart_background"
             app:cardCornerRadius="@dimen/corner_radius_medium"
-            app:cardElevation="0dp">
+            app:cardElevation="0dp"
+            android:theme="@style/ThemeOverlay.Arzikina.OnBalanceCard">
 
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/utilitiesList"
@@ -735,7 +737,8 @@
             android:layout_marginTop="@dimen/spacing_s"
             app:cardBackgroundColor="@color/arzikina_postcart_background"
             app:cardCornerRadius="@dimen/corner_radius_medium"
-            app:cardElevation="0dp">
+            app:cardElevation="0dp"
+            android:theme="@style/ThemeOverlay.Arzikina.OnBalanceCard">
 
             <LinearLayout
                 android:layout_width="match_parent"

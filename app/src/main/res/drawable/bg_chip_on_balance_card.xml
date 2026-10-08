@@ -7,6 +7,6 @@
 -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
     android:shape="rectangle">
-    <solid android:color="#26FFFFFF" />
+    <solid android:color="@color/arzikina_chip_on_postcard" />
     <corners android:radius="8dp" />
 </shape>

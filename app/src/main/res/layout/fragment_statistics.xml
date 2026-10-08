@@ -132,14 +132,16 @@
                 android:layout_marginTop="@dimen/spacing_m"
                 app:cardBackgroundColor="@color/arzikina_balance_card"
                 app:cardCornerRadius="@dimen/corner_radius_medium"
-                app:cardElevation="0dp">
+                app:cardElevation="0dp"
+                android:theme="@style/ThemeOverlay.Arzikina.OnBalanceCard">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:background="@color/arzikina_postcart_background"
                     android:orientation="horizontal"
-                    android:padding="@dimen/spacing_m">
+                    android:padding="@dimen/spacing_m"
+                    android:theme="@style/ThemeOverlay.Arzikina.OnBalanceCard">
 
                     <LinearLayout
                         android:layout_width="0dp"

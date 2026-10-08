@@ -46,4 +46,15 @@
     <color name="expense_red">#EE8578</color>
     <color name="warning_amber">#FFF59E0B</color>
     <color name="arzikina_balance_card">#1E293B</color>
+
+    <!-- Cartes « postcard » et leur contenu : valeurs sombres d'origine (le mode clair a ses propres
+         valeurs dans values/colors.xml). -->
+    <color name="arzikina_postcart_background">#191F2C</color>
+    <color name="arzikina_on_balance_card">#FFFFFFFF</color>
+    <color name="arzikina_on_balance_card_variant">#FF94A3B8</color>
+    <color name="arzikina_divider_on_balance_card">#1F94A3B8</color>
+    <color name="arzikina_chip_on_postcard">#26FFFFFF</color>
+    <color name="arzikina_chip_on_budget_card">#33FFFFFF</color>
+    <color name="loan_summary_lent_bg">#1B3226</color>
+    <color name="loan_summary_borrowed_bg">#3A1E1E</color>
 </resources>

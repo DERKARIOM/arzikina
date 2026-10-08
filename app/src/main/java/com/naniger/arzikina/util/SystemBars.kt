@@ -48,7 +48,7 @@ object SystemBars {
 
         val insetsController = WindowCompat.getInsetsController(window, window.decorView)
         insetsController.isAppearanceLightNavigationBars = isLightTheme(activity)
-        updateStatusBarIconAppearance(activity, forceLightIcons = false)
+        updateStatusBarIconAppearance(activity)
     }
 
     private fun isLightTheme(activity: Activity): Boolean =
@@ -56,21 +56,18 @@ object SystemBars {
             Configuration.UI_MODE_NIGHT_MASK != Configuration.UI_MODE_NIGHT_YES
 
     /**
-     * Icônes foncées sur fond clair, claires sur fond sombre — sauf si
-     * [forceLightIcons] est vrai, cas du Dashboard : son en-tête a un fond
-     * brun/ambré FIXE (voir colors.xml, `arzikina_dashboard_header_*`),
-     * volontairement identique en thème clair et sombre, et qui s'étend
-     * sous la barre de statut désormais transparente (voir
-     * `fragment_dashboard.xml`, `dashboardHeaderBackground`) — les icônes y
-     * restent donc TOUJOURS claires, quel que soit le thème de l'app.
-     * À rappeler à chaque changement de destination (voir MainActivity) et
-     * à chaque changement de thème (un `recreate()` de l'Activity rappelle
-     * `configure()`, qui repasse ici avec `forceLightIcons = false`).
+     * Icônes foncées sur fond clair, claires sur fond sombre, sur TOUS les écrans.
+     *
+     * Le Dashboard forçait autrefois des icônes claires (son en-tête avait un fond brun/ambré
+     * fixe sous la barre de statut) : ce fond n'existe plus, l'en-tête repose sur le fond du
+     * thème, et les icônes blanches devenaient invisibles en mode clair (heure, batterie,
+     * réseau). Rappelée à chaque changement de destination (voir MainActivity) et à chaque
+     * changement de thème (un `recreate()` de l'Activity rappelle `configure()`).
      */
-    fun updateStatusBarIconAppearance(activity: Activity, forceLightIcons: Boolean) {
+    fun updateStatusBarIconAppearance(activity: Activity) {
         val window = activity.window
         val insetsController = WindowCompat.getInsetsController(window, window.decorView)
-        insetsController.isAppearanceLightStatusBars = if (forceLightIcons) false else isLightTheme(activity)
+        insetsController.isAppearanceLightStatusBars = isLightTheme(activity)
     }
 
     /**

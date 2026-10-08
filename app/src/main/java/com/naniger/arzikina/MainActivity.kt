@@ -127,7 +127,7 @@ class MainActivity : AppCompatActivity() {
         navController.graph = navController.navInflater.inflate(R.navigation.nav_graph).apply {
             setStartDestination(startDestinationId)
         }
-        SystemBars.updateStatusBarIconAppearance(this, forceLightIcons = startDestinationId == R.id.dashboardFragment)
+        SystemBars.updateStatusBarIconAppearance(this)
 
         setUpBottomNavigation(navController)
 
@@ -164,14 +164,9 @@ class MainActivity : AppCompatActivity() {
             binding.bottomNavigation.visibility = bottomNavVisibility
             binding.bottomNavGlassBorder.visibility = bottomNavVisibility
             ViewCompat.requestApplyInsets(binding.root)
-            // Icônes de la status bar claires en permanence sur le Dashboard
-            // (fond brun/ambré fixe qui s'étend sous elle, voir
-            // SystemBars.updateStatusBarIconAppearance), thème-dépendantes
-            // partout ailleurs.
-            SystemBars.updateStatusBarIconAppearance(
-                this,
-                forceLightIcons = destination.id == R.id.dashboardFragment
-            )
+            // Icônes de la status bar selon le thème sur tous les écrans, Dashboard compris (voir
+            // SystemBars.updateStatusBarIconAppearance).
+            SystemBars.updateStatusBarIconAppearance(this)
             // Ne surligne un item de la Bottom Navigation QUE si la destination courante EST
             // littéralement l'un des 4 onglets (voir TAB_DESTINATION_IDS) : un écran secondaire
             // (formulaire, détail, Budget/Catégories/Profil/Transactions depuis Paramètres/le

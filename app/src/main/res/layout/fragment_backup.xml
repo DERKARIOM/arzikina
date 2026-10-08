@@ -41,7 +41,8 @@
                 android:layout_height="wrap_content"
                 app:cardBackgroundColor="@color/arzikina_postcart_background"
                 app:cardCornerRadius="@dimen/corner_radius_medium"
-                app:cardElevation="@dimen/elevation_raised">
+                app:cardElevation="@dimen/elevation_raised"
+                android:theme="@style/ThemeOverlay.Arzikina.OnBalanceCard">
 
                 <TextView
                     style="@style/TextAppearance.Material3.BodyMedium"

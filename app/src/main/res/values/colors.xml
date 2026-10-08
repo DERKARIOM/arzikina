@@ -27,7 +27,11 @@
     <!-- Neutres -->
     <color name="arzikina_background">#FFFFFFFF</color>
     <color name="arzikina_on_background">#2B3940</color>
-    <color name="arzikina_postcart_background">#191F2C</color>
+    <!-- Fond des cartes « postcard » (formulaires, listes, résumés) : gris-vert très clair en mode
+         clair, posé sur le fond blanc (même teinte que le fond de l'application Web) ; bleu nuit en
+         mode sombre (values-night). Le texte posé dessus utilise arzikina_on_balance_card(_variant),
+         adaptés eux aussi, et ThemeOverlay.Arzikina.OnBalanceCard (themes.xml). -->
+    <color name="arzikina_postcart_background">#FFF1F5F4</color>
     <color name="arzikina_surface">#FFFFFFFF</color>
     <color name="arzikina_on_surface">#2B3940</color>
     <color name="arzikina_surface_variant">#FFF5F7F6</color>
@@ -60,13 +64,21 @@
         pensée comme un élément visuel "à part", pas comme une déclinaison du
         thème.
     -->
-    <color name="arzikina_balance_card">#1E293B</color>
-    <color name="arzikina_on_balance_card">#FFFFFFFF</color>
-    <!-- Libellés discrets sur ces cartes sombres fixes (ex. "Revenu", "Dépense"). -->
-    <color name="arzikina_on_balance_card_variant">#FF94A3B8</color>
+    <!-- MISE À JOUR : n'est plus fixe. Clair en mode clair (même fond que les postcards), bleu nuit
+         en mode sombre (values-night) — demande « couleur de postcard adaptée au mode clair ». -->
+    <color name="arzikina_balance_card">#FFF1F5F4</color>
+    <!-- Texte principal sur toutes les cartes (postcards, carte « Dépenses vs revenus ») : foncé en
+         mode clair, blanc en mode sombre. Les cartes à fond COLORÉ (Solde, comptes, plans) utilisent
+         @color/white, jamais cette couleur. -->
+    <color name="arzikina_on_balance_card">#FF2B3940</color>
+    <!-- Libellés discrets sur ces cartes (ex. "Revenu", "Dépense"). -->
+    <color name="arzikina_on_balance_card_variant">#FF64748B</color>
     <!-- Ligne de séparation entre transactions (voir divider_on_balance_card.xml) : même
          teinte que ci-dessus mais très transparente, pour rester à peine visible. -->
-    <color name="arzikina_divider_on_balance_card">#1F94A3B8</color>
+    <color name="arzikina_divider_on_balance_card">#2964748B</color>
+    <!-- Fond des petites pastilles posées sur une postcard (bg_chip_on_balance_card,
+         bg_pill_translucent_white) : voile foncé léger en clair, voile blanc en sombre. -->
+    <color name="arzikina_chip_on_postcard">#142B3940</color>
 
     <!--
         En-tête du Dashboard (avatar + salutation, voir bg_dashboard_header.xml) :
@@ -102,8 +114,9 @@
     <color name="loan_gifted_color">#FFEC4899</color>
     <!-- Fond des cartes de résumé (voir item_loan_summary_header.xml) : mêmes teintes que
          ci-dessus mais très assombries, pour rester lisibles en carte "postcard" sombre. -->
-    <color name="loan_summary_lent_bg">#1B3226</color>
-    <color name="loan_summary_borrowed_bg">#3A1E1E</color>
+    <!-- Version claire en mode clair (vert/rouge très pâles), assombrie en mode sombre (values-night). -->
+    <color name="loan_summary_lent_bg">#FFE3F4EA</color>
+    <color name="loan_summary_borrowed_bg">#FFFCE8E8</color>
 
     <!--
         PostCard "Montant disponible" de la liste des planifications (voir item_financial_plan.xml/
@@ -121,7 +134,7 @@
     <color name="arzikina_track_on_financial_plan_card">#47FFFFFF</color>
 
     <!-- Fond translucide du repère "Aujourd'hui" d'un budget (bg_budget_card_chip, item_budget.xml). -->
-    <color name="arzikina_chip_on_budget_card">#33FFFFFF</color>
+    <color name="arzikina_chip_on_budget_card">#142B3940</color>
 
     <!-- Objectif d'épargne (compte AccountType.SAVINGS_GOAL, voir item_account.xml et
          fragment_account_detail.xml). Piste de la barre de progression posée sur le dégradé

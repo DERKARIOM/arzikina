@@ -8,7 +8,8 @@
     android:clickable="true"
     android:focusable="true"
     android:paddingHorizontal="@dimen/spacing_m"
-    android:paddingVertical="@dimen/spacing_s">
+    android:paddingVertical="@dimen/spacing_s"
+    android:theme="@style/ThemeOverlay.Arzikina.OnBalanceCard">
 
     <ImageView
         android:id="@+id/categoryIcon"
@@ -141,4 +142,4 @@
         app:layout_constraintTop_toTopOf="@id/expirationIcon"
         tools:text="Restant : 48 000 F CFA" />
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>
