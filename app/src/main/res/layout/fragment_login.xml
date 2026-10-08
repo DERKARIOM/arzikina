@@ -9,7 +9,7 @@
     Refonte visuelle (cahier des charges "Refonte Login/Register", inspirée de la maquette
     fournie) : en-tête réutilisable (item_auth_header.xml), champs postcard réutilisables
     (item_postcard_text_input.xml, personnalisés en code par LoginFragment.setUpInputs — hint,
-    icône, type de clavier), bouton plein-arrondi (Widget.Arzikina.Button.Pill). LoginViewModel
+    icône, type de clavier), bouton principal à coins de 10dp (Widget.Arzikina.Button.Pill). LoginViewModel
     et sa logique (validation, LoginStage, gestion des erreurs) restent INCHANGÉS — seuls les ids
     exposés à LoginFragment.kt changent (passage par les `<include>` ci-dessous), voir sa KDoc.
 

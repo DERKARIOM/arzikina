@@ -3,21 +3,28 @@
     <!-- Variante sombre de la palette Arzikina — mêmes noms de ressources que
          values/colors.xml, voir ce fichier pour le raisonnement. -->
 
+    <!-- Rôles « on » = couleur du texte et des icônes posés SUR la couleur correspondante
+         (bouton plein, chip sélectionné, interrupteur, jour sélectionné du calendrier, heure
+         sélectionnée…). Ils valaient l'émeraude elle-même, soit du vert sur vert, illisible :
+         blanc partout, comme en mode clair. -->
+
     <!-- Émeraude (couleur principale) -->
     <color name="arzikina_primary">#42B998</color>
-    <color name="arzikina_on_primary">#42B998</color>
+    <color name="arzikina_on_primary">#FFFFFFFF</color>
     <color name="arzikina_primary_container">#42B998</color>
-    <color name="arzikina_on_primary_container">#42B998</color>
+    <color name="arzikina_on_primary_container">#FFFFFFFF</color>
 
     <!-- Vert clair (accent secondaire) -->
     <color name="arzikina_secondary">#42B998</color>
-    <color name="arzikina_on_secondary">#42B998</color>
+    <color name="arzikina_on_secondary">#FFFFFFFF</color>
     <color name="arzikina_secondary_container">#42B998</color>
-    <color name="arzikina_on_secondary_container">#42B998</color>
+    <color name="arzikina_on_secondary_container">#FFFFFFFF</color>
 
     <!-- Tertiaire -->
     <color name="arzikina_tertiary">#FF5CE0AE</color>
-    <color name="arzikina_on_tertiary">#42B998</color>
+    <!-- Tertiaire plus clair en mode sombre (#5CE0AE) : texte foncé (fond de l'app) plutôt que
+         blanc, pour garder un contraste suffisant. -->
+    <color name="arzikina_on_tertiary">#FF0D1318</color>
 
     <!-- Neutres -->
     <color name="arzikina_background">#0D1318</color>

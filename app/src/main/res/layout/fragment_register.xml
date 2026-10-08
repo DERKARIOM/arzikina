@@ -4,7 +4,7 @@
     charges "Refonte Login/Register", inspirée de la maquette fournie), même principe que
     fragment_login.xml : en-tête réutilisable (item_auth_header.xml), champs postcard réutilisables
     (item_postcard_text_input.xml, personnalisés en code par RegisterFragment.setUpInputs — hint,
-    icône, type de clavier), bouton plein-arrondi (Widget.Arzikina.Button.Pill).
+    icône, type de clavier), bouton principal à coins de 10dp (Widget.Arzikina.Button.Pill).
     RegisterViewModel/RegisterFragment.kt conservent TOUS les champs existants (photo de profil,
     nom complet, nom d'utilisateur, e-mail, téléphone, mot de passe, confirmation, question/réponse
     de sécurité) — la maquette n'en montre qu'une partie, le reste est habillé dans le même langage

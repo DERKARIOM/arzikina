@@ -62,7 +62,7 @@
             android:text="@string/accounts_tab_accounts"
             android:textColor="@color/toggle_button_text_selector"
             app:backgroundTint="@color/toggle_button_background_selector"
-            app:cornerRadius="@dimen/corner_radius_small"
+            app:cornerRadius="@dimen/corner_radius_button"
             app:strokeColor="?attr/colorOutline" />
 
         <com.google.android.material.button.MaterialButton
@@ -81,7 +81,7 @@
             android:text="@string/accounts_tab_bank_cards"
             android:textColor="@color/toggle_button_text_selector"
             app:backgroundTint="@color/toggle_button_background_selector"
-            app:cornerRadius="@dimen/corner_radius_small"
+            app:cornerRadius="@dimen/corner_radius_button"
             app:strokeColor="?attr/colorOutline" />
 
         <com.google.android.material.button.MaterialButton
@@ -100,7 +100,7 @@
             android:text="@string/accounts_tab_savings_goals"
             android:textColor="@color/toggle_button_text_selector"
             app:backgroundTint="@color/toggle_button_background_selector"
-            app:cornerRadius="@dimen/corner_radius_small"
+            app:cornerRadius="@dimen/corner_radius_button"
             app:strokeColor="?attr/colorOutline" />
 
     </com.google.android.material.button.MaterialButtonToggleGroup>

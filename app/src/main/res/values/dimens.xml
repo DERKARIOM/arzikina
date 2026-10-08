@@ -15,6 +15,9 @@
     <dimen name="corner_radius_medium">16dp</dimen>
     <dimen name="corner_radius_large">10dp</dimen>
     <dimen name="corner_radius_extra_large">10dp</dimen>
+    <!-- Rayon UNIQUE de tous les boutons de l'application (pleins, contour, Connexion/Inscription),
+         appliqué par le thème (voir ShapeAppearance.Arzikina.Button dans themes.xml). -->
+    <dimen name="corner_radius_button">10dp</dimen>
     <!-- Coins très arrondis réservés aux grandes cartes "hero" décoratives (ex. le PostCard
          dégradé de item_financial_plan.xml) — hors de l'échelle standard ci-dessus, qui reste
          pensée pour des composants ordinaires (champs, boutons, petites cartes). -->

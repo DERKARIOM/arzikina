@@ -11,13 +11,14 @@
     <color name="arzikina_primary">#42B998</color>
     <color name="arzikina_on_primary">#FFFFFFFF</color>
     <color name="arzikina_primary_container">#42B998</color>
-    <color name="arzikina_on_primary_container">#42B998</color>
+    <!-- Blanc et non l'émeraude : texte posé SUR le conteneur émeraude (vert sur vert sinon). -->
+    <color name="arzikina_on_primary_container">#FFFFFFFF</color>
 
     <!-- Vert clair (accent secondaire) -->
     <color name="arzikina_secondary">#42B998</color>
     <color name="arzikina_on_secondary">#FFFFFFFF</color>
     <color name="arzikina_secondary_container">#42B998</color>
-    <color name="arzikina_on_secondary_container">#42B998</color>
+    <color name="arzikina_on_secondary_container">#FFFFFFFF</color>
 
     <!-- Tertiaire -->
     <color name="arzikina_tertiary">#42B998</color>

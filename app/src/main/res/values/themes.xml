@@ -70,14 +70,12 @@
         <item name="materialCardViewStyle">@style/Widget.Arzikina.CardView</item>
 
         <!--
-            Sélecteurs de date et d'heure (MaterialDatePicker / MaterialTimePicker, partout dans
-            l'application) : surcouches dédiées, voir ThemeOverlay.Arzikina.MaterialCalendar
-            ci-dessous. Sans elles, le jour sélectionné (et l'heure sélectionnée) s'affichait en
-            émeraude SUR un cercle émeraude, donc invisible.
+            Boutons : rayon de 10dp partout (voir ShapeAppearance.Arzikina.Button), y compris pour
+            les boutons sans style explicite et ceux en ?attr/materialButtonOutlinedStyle. Un
+            app:cornerRadius posé dans un layout reste prioritaire.
         -->
-        <item name="materialCalendarTheme">@style/ThemeOverlay.Arzikina.MaterialCalendar</item>
-        <item name="materialCalendarFullscreenTheme">@style/ThemeOverlay.Arzikina.MaterialCalendar.Fullscreen</item>
-        <item name="materialTimePickerTheme">@style/ThemeOverlay.Arzikina.MaterialTimePicker</item>
+        <item name="materialButtonStyle">@style/Widget.Arzikina.Button</item>
+        <item name="materialButtonOutlinedStyle">@style/Widget.Arzikina.Button.Outlined</item>
     </style>
 
     <!--
@@ -204,30 +202,27 @@
         <item name="cornerSize">@dimen/corner_radius_extra_large</item>
     </style>
 
-    <!-- Forme pleinement arrondie ("pill") des boutons principaux Connexion/Inscription (voir
-         Widget.Arzikina.Button.Pill juste en dessous) — cornerSize en pourcentage (50%) plutôt
-         qu'un rayon fixe en dp : s'adapte automatiquement à la hauteur réelle du bouton, contrairement
-         à l'échelle ExtraSmall/.../ExtraLarge ci-dessus, pensée pour des rayons fixes. -->
-    <style name="ShapeAppearance.Arzikina.Pill" parent="ShapeAppearance.Material3.Corner.Full">
-        <item name="cornerSize">50%</item>
+    <!-- Forme de TOUS les boutons : coins arrondis de 10dp (@dimen/corner_radius_button). Remplace
+         l'ancienne forme « pill » (50 %, entièrement arrondie) des boutons Connexion/Inscription. -->
+    <style name="ShapeAppearance.Arzikina.Button" parent="ShapeAppearance.Material3.Corner.Small">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">@dimen/corner_radius_button</item>
     </style>
 
-    <!--
-        Bouton principal des écrans Connexion/Inscription (voir cahier des charges "Refonte
-        Login/Register") : forme pleinement arrondie (ShapeAppearance.Arzikina.Pill) et flèche de
-        fin systématique (ic_arrow_forward_24), pour un seul style visuel partagé entre
-        "Se connecter →" (LoginFragment) et "Créer mon compte →" (RegisterFragment) — plus besoin
-        de dupliquer un `android:background` par écran (remplace l'ancien `forme_radius_10dp` posé
-        directement sur `registerButton` dans fragment_register.xml, retiré à l'étape suivante de
-        cette refonte au profit de ce style commun).
+    <!-- Bouton plein par défaut (thème : materialButtonStyle). -->
+    <style name="Widget.Arzikina.Button" parent="Widget.Material3.Button">
+        <item name="shapeAppearance">@style/ShapeAppearance.Arzikina.Button</item>
+    </style>
 
-        État désactivé (formulaire invalide, voir `loginButton.isEnabled`/`registerButton.isEnabled`
-        dans les deux Fragments) : comportement PAR DÉFAUT de Widget.Material3.Button (désaturation
-        automatique), volontairement non recustomisé ici — aucun autre bouton du projet ne redéfinit
-        cet état, pas de raison de commencer sur ces deux écrans seulement.
-    -->
-    <style name="Widget.Arzikina.Button.Pill" parent="Widget.Material3.Button">
-        <item name="shapeAppearance">@style/ShapeAppearance.Arzikina.Pill</item>
+    <!-- Bouton à contour par défaut (thème : materialButtonOutlinedStyle). -->
+    <style name="Widget.Arzikina.Button.Outlined" parent="Widget.Material3.Button.OutlinedButton">
+        <item name="shapeAppearance">@style/ShapeAppearance.Arzikina.Button</item>
+    </style>
+
+    <!-- Bouton principal Connexion/Inscription : bouton plein + flèche à droite, texte plus grand.
+         Nom « Pill » conservé pour ne pas toucher aux layouts, mais la forme est désormais celle de
+         tous les boutons (10dp). -->
+    <style name="Widget.Arzikina.Button.Pill" parent="Widget.Arzikina.Button">
         <item name="android:textAllCaps">false</item>
         <item name="android:textSize">16sp</item>
         <item name="android:paddingTop">@dimen/spacing_m</item>
@@ -236,35 +231,6 @@
         <item name="iconGravity">end</item>
         <item name="iconPadding">@dimen/spacing_s</item>
         <item name="iconTint">?attr/colorOnPrimary</item>
-    </style>
-
-    <!--
-        Surcouches des sélecteurs de date et d'heure. Elles héritent des surcouches Material 3 par
-        défaut (mise en page, formes, typographie inchangées) et ne corrigent QUE le contraste du
-        texte posé sur l'émeraude :
-        - date : le jour sélectionné (et l'année sélectionnée) = texte colorOnPrimary sur cercle
-          colorPrimary ;
-        - heure : l'heure/la minute sélectionnée = texte colorOnPrimaryContainer sur
-          colorPrimaryContainer, et le chiffre sous l'aiguille = colorOnPrimary sur colorPrimary.
-        En mode sombre, colorOnPrimary et colorOnPrimaryContainer valent l'émeraude elle-même
-        (values-night/colors.xml), et colorOnPrimaryContainer aussi en mode clair : texte invisible.
-        Blanc dans les deux modes, comme le reste du texte sur fond émeraude en mode clair.
-        Correction volontairement LOCALE aux sélecteurs : changer colorOnPrimary pour toute
-        l'application en mode sombre toucherait d'autres écrans, à revoir séparément.
-    -->
-    <style name="ThemeOverlay.Arzikina.MaterialCalendar" parent="ThemeOverlay.Material3.MaterialCalendar">
-        <item name="colorOnPrimary">@color/white</item>
-        <item name="colorOnPrimaryContainer">@color/white</item>
-    </style>
-
-    <style name="ThemeOverlay.Arzikina.MaterialCalendar.Fullscreen" parent="ThemeOverlay.Material3.MaterialCalendar.Fullscreen">
-        <item name="colorOnPrimary">@color/white</item>
-        <item name="colorOnPrimaryContainer">@color/white</item>
-    </style>
-
-    <style name="ThemeOverlay.Arzikina.MaterialTimePicker" parent="ThemeOverlay.Material3.MaterialTimePicker">
-        <item name="colorOnPrimary">@color/white</item>
-        <item name="colorOnPrimaryContainer">@color/white</item>
     </style>
 
 </resources>
