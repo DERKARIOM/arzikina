@@ -28,6 +28,7 @@ import com.naniger.arzikina.presentation.components.syncResultMessage
 import com.naniger.arzikina.presentation.components.SyncIndicatorLevel
 import com.naniger.arzikina.presentation.components.SyncIndicatorUiState
 import com.naniger.arzikina.presentation.components.SyncNowUiState
+import com.naniger.arzikina.presentation.auth.GoogleSignInLauncher
 import com.naniger.arzikina.presentation.profile.BiometricLockUiState
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
@@ -48,6 +49,11 @@ class SettingsFragment : Fragment(R.layout.fragment_settings) {
 
     private val viewModel: SettingsViewModel by viewModels()
     private var binding: FragmentSettingsBinding? = null
+
+    /** Voir `LoginFragment`/`RegisterFragment` : même point d'entrée unique vers Credential
+     *  Manager, réutilisé ici pour lier (et non authentifier) un compte Google — cahier des
+     *  charges "Authentification Google", Cas C. */
+    private val googleSignInLauncher by lazy { GoogleSignInLauncher(requireContext()) }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -76,6 +82,7 @@ class SettingsFragment : Fragment(R.layout.fragment_settings) {
                 launch { viewModel.syncIndicatorState.collect { state -> renderSyncIndicator(viewBinding, state) } }
                 launch { viewModel.syncAccountState.collect { state -> renderSyncAccount(viewBinding, state) } }
                 launch { viewModel.events.collect { event -> handleEvent(viewBinding, event) } }
+                launch { viewModel.linkGoogleAccountEvents.collect { event -> handleLinkGoogleEvent(viewBinding, event) } }
             }
         }
     }
@@ -266,6 +273,36 @@ class SettingsFragment : Fragment(R.layout.fragment_settings) {
         binding.syncNowRow.rowTitle.setText(R.string.settings_sync_now_title)
         binding.syncNowRow.rowSubtitle.setText(R.string.settings_sync_now_subtitle)
         binding.syncNowRow.root.setOnClickListener { viewModel.syncNow() }
+
+        binding.linkGoogleRow.rowIcon.setImageResource(R.drawable.ic_google_logo_24)
+        binding.linkGoogleRow.rowTitle.setText(R.string.settings_link_google_label)
+        binding.linkGoogleRow.rowSubtitle.setText(R.string.settings_link_google_subtitle)
+        binding.linkGoogleRow.root.setOnClickListener { onLinkGoogleClicked() }
+    }
+
+    /**
+     * Cahier des charges "Authentification Google", Cas C : lier le compte Google choisi au
+     * compte Arzikina classique déjà connecté — jamais une fusion automatique, cette action
+     * explicite (bouton dans Paramètres) est le SEUL moyen d'y parvenir. Si l'utilisateur ferme la
+     * fenêtre Google sans choisir de compte ([GoogleSignInLauncher.Result.Cancelled]), rien ne se
+     * passe (même raisonnement que `LoginFragment`/`RegisterFragment`, Cas D).
+     */
+    private fun onLinkGoogleClicked() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            when (val result = googleSignInLauncher.signInWithFallback()) {
+                is GoogleSignInLauncher.Result.Success -> viewModel.onLinkGoogleAccount(result.idToken)
+                is GoogleSignInLauncher.Result.Cancelled -> Unit
+                is GoogleSignInLauncher.Result.Error -> Unit
+            }
+        }
+    }
+
+    private fun handleLinkGoogleEvent(binding: FragmentSettingsBinding, event: LinkGoogleAccountEvent) {
+        val message = when (event) {
+            LinkGoogleAccountEvent.Success -> getString(R.string.settings_link_google_success)
+            is LinkGoogleAccountEvent.Failure -> getString(event.messageRes)
+        }
+        Snackbar.make(binding.root, message, Snackbar.LENGTH_LONG).show()
     }
 
     /** Confirmation avant déconnexion (voir [SettingsViewModel.disconnectSyncAccount]) — action
@@ -402,6 +439,12 @@ class SettingsFragment : Fragment(R.layout.fragment_settings) {
         }
         binding.syncRow.root.isClickable = state.isConnected
         binding.syncRow.root.isFocusable = state.isConnected
+
+        // linkGoogleRow n'a de sens que pour un compte DÉJÀ connecté classiquement (cahier des
+        // charges, Cas C) — masqué avec son séparateur tant qu'aucune session serveur n'est
+        // active, même condition que celle qui rend syncRow cliquable ci-dessus.
+        binding.linkGoogleRow.root.visibility = if (state.isConnected) View.VISIBLE else View.GONE
+        binding.linkGoogleDivider.visibility = if (state.isConnected) View.VISIBLE else View.GONE
     }
 
     private fun handleEvent(binding: FragmentSettingsBinding, event: SyncButtonEvent) {

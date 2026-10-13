@@ -252,6 +252,17 @@
     <string name="settings_sync_now_title">Synchroniser maintenant</string>
     <string name="settings_sync_now_subtitle">Envoie les modifications en attente vers le serveur</string>
     <string name="settings_sync_now_in_progress">Synchronisation en cours…</string>
+
+    <!-- linkGoogleRow (voir SettingsFragment.setUpSyncSection, Cas C du cahier des charges
+         "Authentification Google") — lie un compte Google au compte Arzikina déjà connecté, visible
+         uniquement si une session serveur est active (voir renderSyncAccount). -->
+    <string name="settings_link_google_label">Lier un compte Google</string>
+    <string name="settings_link_google_subtitle">Connectez-vous plus vite la prochaine fois avec ce compte Google</string>
+    <string name="settings_link_google_success">Compte Google lié avec succès.</string>
+    <string name="settings_link_google_error_no_session">Reconnectez-vous avant de lier un compte Google.</string>
+    <string name="settings_link_google_error_already_linked">Ce compte Google est déjà lié à un autre compte Arzikina.</string>
+    <string name="settings_link_google_error_network">Impossible de joindre le serveur, vérifie ta connexion.</string>
+    <string name="settings_link_google_error_server">Le serveur a rencontré une erreur, réessaie plus tard.</string>
     <!-- %1$d = envoyées avec succès (push), %2$d = en erreur (push), %3$d = reçues et appliquées
          (pull) — voir SettingsViewModel.syncNow, qui enchaîne toujours push PUIS pull. -->
     <!-- Chantier i18n, étape 3 : chaque compteur est un <plurals> (sync_*_count ci-dessous), ce

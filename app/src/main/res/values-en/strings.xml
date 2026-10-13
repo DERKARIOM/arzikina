@@ -145,6 +145,14 @@
     <string name="settings_sync_now_title">Sync now</string>
     <string name="settings_sync_now_subtitle">Send pending changes to the server</string>
     <string name="settings_sync_now_in_progress">Syncing…</string>
+
+    <string name="settings_link_google_label">Link a Google account</string>
+    <string name="settings_link_google_subtitle">Sign in faster next time with this Google account</string>
+    <string name="settings_link_google_success">Google account linked successfully.</string>
+    <string name="settings_link_google_error_no_session">Sign in again before linking a Google account.</string>
+    <string name="settings_link_google_error_already_linked">This Google account is already linked to another Arzikina account.</string>
+    <string name="settings_link_google_error_network">Unable to reach the server, check your connection.</string>
+    <string name="settings_link_google_error_server">The server encountered an error, please try again later.</string>
     <string name="settings_sync_now_result">%1$s, %2$s, %3$s</string>
     <plurals name="sync_sent_count">
         <item quantity="one">%d sent</item>

@@ -491,6 +491,23 @@
                         android:id="@+id/syncNowRow"
                         layout="@layout/item_settings_row" />
 
+                    <!-- linkGoogleRow : Cas C du cahier des charges "Authentification Google" — ne
+                         réalise AUCUNE fusion automatique, ne fait que lier le compte Google choisi
+                         au compte Arzikina classique déjà connecté (voir
+                         SettingsViewModel.onLinkGoogleAccount / UnifiedAuthRepository.linkGoogleAccount).
+                         Visibilité pilotée par SettingsFragment.renderSyncAccount : masquée tant
+                         qu'aucune session serveur n'est active, comme syncRow lui-même ne devient
+                         cliquable qu'à cette condition. -->
+                    <com.google.android.material.divider.MaterialDivider
+                        android:id="@+id/linkGoogleDivider"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="@dimen/spacing_m" />
+
+                    <include
+                        android:id="@+id/linkGoogleRow"
+                        layout="@layout/item_settings_row" />
+
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 

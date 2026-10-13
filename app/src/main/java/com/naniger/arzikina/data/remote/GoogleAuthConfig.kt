@@ -22,5 +22,5 @@ package com.naniger.arzikina.data.remote
  * `arzikina-8d4b7`, voir la KDoc de `GOOGLE_CLIENT_ID_WEB` côté serveur).
  */
 object GoogleAuthConfig {
-    const val WEB_CLIENT_ID = "REMPLACER_PAR_LE_CLIENT_ID_WEB.apps.googleusercontent.com"
+    const val WEB_CLIENT_ID = "720142055727-m2hr8fl3uag9vqth6og8fjj34t4oocht.apps.googleusercontent.com"
 }

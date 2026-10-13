@@ -79,7 +79,7 @@ try {
     $existingByGoogleId = $stmt->fetch();
 
     if ($existingByGoogleId !== false) {
-        issueGoogleSession($pdo, $existingByGoogleId['id'], $existingByGoogleId['full_name'] ?? '', $deviceId, $deviceLabel);
+        issueGoogleSession($pdo, $existingByGoogleId['id'], $existingByGoogleId['full_name'] ?? '', $email, false, $deviceId, $deviceLabel);
     }
 
     // Cas C : un compte existe deja avec cet e-mail, mais pas encore lie a CE Google.
@@ -129,7 +129,7 @@ try {
         'updated_at' => $nowMillis,
     ]);
 
-    issueGoogleSession($pdo, $userId, $fullName, $deviceId, $deviceLabel);
+    issueGoogleSession($pdo, $userId, $fullName, $email, true, $deviceId, $deviceLabel);
 } catch (PDOException $e) {
     // Course rarissime (meme raisonnement que register.php) : un `google_id` ou un `email` deja
     // pris entre la verification ci-dessus et l'INSERT tranche ici via les contraintes UNIQUE.
@@ -145,8 +145,17 @@ try {
  * (extraire une fonction commune aux trois fichiers serait premature pour l'instant, meme
  * raisonnement "regle de trois" deja ecrit dans `register.php` ; cette fonction-ci existe
  * seulement parce que CE fichier a deux points de sortie - cas A et cas B - qui en ont besoin).
+ *
+ * Reponse enrichie de deux champs ABSENTS de `login.php`/`register.php` (voir
+ * `data/remote/dto/GoogleLoginResponseDto.kt` cote Android) :
+ * - `email` : le client (Android/Web) n'a jamais a relire le jeton Google lui-meme pour
+ *   l'obtenir - il recoit directement la valeur deja VERIFIEE par ce serveur.
+ * - `isNewAccount` : indique au client si un compte Arzikina VIENT d'etre cree (Cas B) ou
+ *   existait deja (Cas A) - necessaire pour decider, cote Android, si les donnees par defaut
+ *   doivent etre semees pour le nouvel utilisateur (meme logique que `register.php`, jamais pour
+ *   une connexion a un compte deja existant - voir `UnifiedAuthRepositoryImpl.resolveOrCreateLocalUser`).
  */
-function issueGoogleSession(PDO $pdo, string $userId, string $fullName, ?string $deviceId, ?string $deviceLabel): never
+function issueGoogleSession(PDO $pdo, string $userId, string $fullName, string $email, bool $isNewAccount, ?string $deviceId, ?string $deviceLabel): never
 {
     $rawToken = bin2hex(random_bytes(32));
     $tokenHash = hash('sha256', $rawToken);
@@ -171,6 +180,8 @@ function issueGoogleSession(PDO $pdo, string $userId, string $fullName, ?string 
         'userId' => $userId,
         'expiresAt' => $expiresAtMillis,
         'fullName' => $fullName,
+        'email' => $email,
+        'isNewAccount' => $isNewAccount,
     ]);
 }
 

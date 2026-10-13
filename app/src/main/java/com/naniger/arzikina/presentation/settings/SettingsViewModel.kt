@@ -2,6 +2,9 @@ package com.naniger.arzikina.presentation.settings
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.naniger.arzikina.R
+import com.naniger.arzikina.domain.model.AccountLinkError
+import com.naniger.arzikina.domain.model.AccountLinkResult
 import com.naniger.arzikina.domain.model.AppLanguage
 import com.naniger.arzikina.domain.model.ThemeMode
 import com.naniger.arzikina.domain.repository.AppLanguageRepository
@@ -9,6 +12,7 @@ import com.naniger.arzikina.domain.repository.AuthRepository
 import com.naniger.arzikina.domain.repository.BiometricAuthenticator
 import com.naniger.arzikina.domain.repository.SessionManager
 import com.naniger.arzikina.domain.repository.SyncAuthRepository
+import com.naniger.arzikina.domain.repository.UnifiedAuthRepository
 import com.naniger.arzikina.domain.repository.UserPreferencesRepository
 import com.naniger.arzikina.presentation.components.SyncButtonController
 import com.naniger.arzikina.presentation.components.SyncButtonEvent
@@ -17,10 +21,12 @@ import com.naniger.arzikina.presentation.components.SyncNowUiState
 import com.naniger.arzikina.presentation.profile.BiometricLockUiState
 import com.naniger.arzikina.util.Constants
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
@@ -30,6 +36,17 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+
+/**
+ * Résultat de [SettingsViewModel.onLinkGoogleAccount] (cahier des charges "Authentification
+ * Google", Cas C) — DISTINCT de [SyncButtonEvent] : [SettingsViewModel.events] est partagé avec
+ * `DashboardViewModel` via [SyncButtonController] et ne concerne que la synchronisation, pas la
+ * liaison d'un compte Google, sémantiquement différente.
+ */
+sealed interface LinkGoogleAccountEvent {
+    data object Success : LinkGoogleAccountEvent
+    data class Failure(val messageRes: Int) : LinkGoogleAccountEvent
+}
 
 /**
  * État affiché par l'écran Paramètres. [fullName]/[profilePhotoUri] sont PUREMENT informatifs
@@ -88,7 +105,8 @@ class SettingsViewModel @Inject constructor(
     private val biometricAuthenticator: BiometricAuthenticator,
     private val syncButtonController: SyncButtonController,
     private val syncAuthRepository: SyncAuthRepository,
-    private val appLanguageRepository: AppLanguageRepository
+    private val appLanguageRepository: AppLanguageRepository,
+    private val unifiedAuthRepository: UnifiedAuthRepository
 ) : ViewModel() {
 
     /** Voir [SyncButtonController] : logique partagée avec `DashboardViewModel`, extraite de cet
@@ -218,5 +236,35 @@ class SettingsViewModel @Inject constructor(
      */
     fun disconnectSyncAccount() {
         viewModelScope.launch { syncAuthRepository.logout() }
+    }
+
+    /** Voir [LinkGoogleAccountEvent] — émis vers [SettingsFragment], consommé une seule fois
+     *  (`Snackbar`), jamais rejoué après une rotation d'écran : un `MutableSharedFlow` sans valeur
+     *  initiale convient mieux ici qu'un `StateFlow`, même raisonnement que [events] ci-dessus. */
+    private val _linkGoogleAccountEvents = MutableSharedFlow<LinkGoogleAccountEvent>(extraBufferCapacity = 1)
+    val linkGoogleAccountEvents: SharedFlow<LinkGoogleAccountEvent> = _linkGoogleAccountEvents.asSharedFlow()
+
+    /**
+     * Lie le compte Google choisi (voir `GoogleSignInLauncher`, appelé depuis [SettingsFragment])
+     * au compte Arzikina classique déjà connecté — cahier des charges "Authentification Google",
+     * Cas C : AUCUNE fusion automatique n'a jamais lieu ailleurs dans l'app, cette action explicite
+     * est le SEUL moyen de lier les deux. [idToken] est BRUT et non vérifié ici, voir
+     * [UnifiedAuthRepository.linkGoogleAccount] et `google_token_verifier.php` côté serveur.
+     */
+    fun onLinkGoogleAccount(idToken: String) {
+        viewModelScope.launch {
+            val event = when (val result = unifiedAuthRepository.linkGoogleAccount(idToken)) {
+                is AccountLinkResult.Success -> LinkGoogleAccountEvent.Success
+                is AccountLinkResult.Failure -> LinkGoogleAccountEvent.Failure(result.error.toMessageRes())
+            }
+            _linkGoogleAccountEvents.emit(event)
+        }
+    }
+
+    private fun AccountLinkError.toMessageRes(): Int = when (this) {
+        AccountLinkError.NoActiveSession -> R.string.settings_link_google_error_no_session
+        AccountLinkError.GoogleAccountAlreadyLinked -> R.string.settings_link_google_error_already_linked
+        AccountLinkError.NetworkUnavailable -> R.string.settings_link_google_error_network
+        is AccountLinkError.ServerError, is AccountLinkError.Unknown -> R.string.settings_link_google_error_server
     }
 }
