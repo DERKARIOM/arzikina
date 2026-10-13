@@ -34,6 +34,26 @@ define('TOKEN_SIGNING_KEY', 'REMPLACER_PAR_UNE_VALEUR_ALEATOIRE_GENEREE_UNE_SEUL
 define('TOKEN_EXPIRY_SECONDS', 60 * 60 * 24 * 30);
 
 /**
+ * Client IDs OAuth 2.0 Google utilisés pour l'authentification « Continuer avec Google »
+ * (voir api/auth/google_login.php, api/auth/link_google_account.php, api/utils/google_token_verifier.php).
+ *
+ * Réutilisent le projet Google Cloud/Firebase EXISTANT (arzikina-8d4b7, déjà utilisé pour FCM —
+ * voir app/src/main/res/values/firebase.xml) : ne crée PAS un second projet. Deux Client IDs
+ * distincts, car Google en exige un par type de client :
+ * - un Client ID de type « Android » (lié au package com.naniger.arzikina + empreintes SHA-1/
+ *   SHA-256 du certificat de signature) ;
+ * - un Client ID de type « Web » (lié aux origines autorisées du site Web Arzikina).
+ *
+ * Ce ne sont PAS des secrets au sens strict (ils apparaissent en clair dans l'APK et dans le code
+ * JS du navigateur, c'est normal et documenté par Google) — mais ils vivent ici, à côté de
+ * TOKEN_SIGNING_KEY, car le BACKEND doit les connaître pour vérifier qu'un jeton Google reçu lui
+ * est bien destiné (claim "aud", voir google_token_verifier.php) : accepter n'importe quel "aud"
+ * reviendrait à faire confiance à un jeton émis pour une tout autre application.
+ */
+define('GOOGLE_CLIENT_ID_ANDROID', 'REMPLACER_PAR_LE_CLIENT_ID_ANDROID.apps.googleusercontent.com');
+define('GOOGLE_CLIENT_ID_WEB', 'REMPLACER_PAR_LE_CLIENT_ID_WEB.apps.googleusercontent.com');
+
+/**
  * FACULTATIF — chemin du fichier JSON du compte de service Firebase (envoi des notifications push,
  * voir `api/push/FcmSender.php`). Sans cette constante, le serveur utilise
  * `$HOME/firebase-service-account.json` : même dossier privé que ce fichier-ci, HORS de
