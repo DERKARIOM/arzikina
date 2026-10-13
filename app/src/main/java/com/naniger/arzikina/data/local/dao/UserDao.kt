@@ -103,4 +103,14 @@ interface UserDao {
         securityQuestion: SecurityQuestion,
         securityAnswerHash: String
     )
+
+    /**
+     * Suppression PHYSIQUE et DÉFINITIVE du compte — réservée à
+     * [com.naniger.arzikina.data.local.database.AccountDataWiper] ("Supprimer mon compte"), TOUJOURS
+     * appelée en dernier dans sa transaction (une fois toutes les tables filles déjà purgées via
+     * leurs `deleteAllForUser` respectifs, voir sa doc de tête) — jamais la déconnexion, qui ne
+     * touche jamais à cette table (voir [SessionManager.clearSession][com.naniger.arzikina.domain.repository.SessionManager.clearSession]).
+     */
+    @Query("DELETE FROM users WHERE id = :userId")
+    suspend fun deleteUser(userId: Long)
 }

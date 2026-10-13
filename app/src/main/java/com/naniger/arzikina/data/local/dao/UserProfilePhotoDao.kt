@@ -26,4 +26,11 @@ interface UserProfilePhotoDao {
      *  principe que [com.naniger.arzikina.data.local.dao.UserServerLinkDao.upsert]. */
     @Upsert
     suspend fun upsert(photo: UserProfilePhotoEntity)
+
+    /** Réservé à [com.naniger.arzikina.data.local.database.AccountDataWiper] ("Supprimer mon
+     *  compte") — voir sa doc de tête. Ne supprime QUE la ligne Room : le fichier physique
+     *  référencé par `localPath` est supprimé séparément par l'appelant (même principe que
+     *  `ReceiptDao.deleteById`), APRÈS le succès de la transaction qui appelle cette méthode. */
+    @Query("DELETE FROM user_profile_photos WHERE userId = :userId")
+    suspend fun deleteAllForUser(userId: Long)
 }

@@ -319,6 +319,19 @@
                 android:textColor="?attr/colorError"
                 app:strokeColor="?attr/colorError" />
 
+            <!-- Zone destructive, nettement séparée de logoutButton ci-dessus (plein, pas juste
+                 contouré) : une suppression de compte n'a pas la même gravité qu'une déconnexion
+                 (voir DeleteAccountFragment, écran dédié avec re-saisie du mot de passe). -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/deleteAccountButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_m"
+                android:backgroundTint="?attr/colorError"
+                android:textColor="?attr/colorOnError"
+                app:cornerRadius="10dp"
+                android:text="@string/profile_delete_account_action" />
+
         </LinearLayout>
 
     </androidx.core.widget.NestedScrollView>

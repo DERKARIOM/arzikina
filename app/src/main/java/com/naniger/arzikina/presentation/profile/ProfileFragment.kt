@@ -132,6 +132,9 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
         }
 
         viewBinding.logoutButton.setOnClickListener { confirmLogout() }
+        viewBinding.deleteAccountButton.setOnClickListener {
+            findNavController().navigate(R.id.deleteAccountFragment, null, NavAnimations.push)
+        }
 
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {

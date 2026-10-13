@@ -2,10 +2,13 @@ package com.naniger.arzikina.data.repository
 
 import com.naniger.arzikina.data.local.dao.UserDao
 import com.naniger.arzikina.data.local.dao.UserServerLinkDao
+import com.naniger.arzikina.data.local.database.AccountDataWiper
 import com.naniger.arzikina.data.local.database.NewUserDefaultDataSeeder
 import com.naniger.arzikina.data.local.entity.UserEntity
 import com.naniger.arzikina.data.local.entity.UserServerLinkEntity
 import com.naniger.arzikina.di.IoDispatcher
+import com.naniger.arzikina.domain.model.AccountDeletionError
+import com.naniger.arzikina.domain.model.AccountDeletionResult
 import com.naniger.arzikina.domain.model.SecurityQuestion
 import com.naniger.arzikina.domain.model.SyncAuthError
 import com.naniger.arzikina.domain.model.SyncAuthResult
@@ -54,7 +57,8 @@ class UnifiedAuthRepositoryImpl @Inject constructor(
     private val userServerLinkDao: UserServerLinkDao,
     private val newUserDefaultDataSeeder: NewUserDefaultDataSeeder,
     @IoDispatcher private val ioDispatcher: CoroutineDispatcher,
-    private val sessionManager: SessionManager
+    private val sessionManager: SessionManager,
+    private val accountDataWiper: AccountDataWiper
 ) : UnifiedAuthRepository {
 
     /** Ordre volontaire : serveur d'abord (effacement local immédiat du token, voir
@@ -63,6 +67,41 @@ class UnifiedAuthRepositoryImpl @Inject constructor(
     override suspend fun logout(): Unit = withContext(ioDispatcher) {
         syncAuthRepository.logout()
         sessionManager.clearSession()
+    }
+
+    /** Voir la KDoc de l'interface pour l'ordre complet et son raisonnement. */
+    override suspend fun deleteAccount(currentRawPassword: String): AccountDeletionResult = withContext(ioDispatcher) {
+        val userId = sessionManager.getCurrentUserIdOnce()
+        val localUser = userId?.let { userDao.findById(it) }
+        if (userId == null || localUser == null || !PasswordHasher.verify(currentRawPassword, localUser.passwordHash)) {
+            return@withContext AccountDeletionResult.Failure(AccountDeletionError.IncorrectPassword)
+        }
+
+        // Étape 2 (voir la KDoc de l'interface) : UNIQUEMENT si une session serveur est active —
+        // un utilisateur 100% local n'a rien à supprimer côté serveur.
+        if (syncAuthRepository.getActiveSession() != null) {
+            when (val result = syncAuthRepository.deleteAccount(currentRawPassword)) {
+                is SyncAuthResult.Failure -> return@withContext AccountDeletionResult.Failure(result.error.toAccountDeletionError())
+                is SyncAuthResult.Success -> Unit
+            }
+        }
+
+        accountDataWiper.wipeAllLocalData(userId)
+        sessionManager.clearSession()
+        AccountDeletionResult.Success
+    }
+
+    /** Traduit l'échec SERVEUR en l'équivalent côté [AccountDeletionError] — voir la KDoc de
+     *  [AccountDeletionError] : une session expirée/invalide ([SyncAuthError.InvalidCredentials],
+     *  en pratique un Bearer périmé puisque le mot de passe est déjà revérifié localement avant cet
+     *  appel) est traitée comme [AccountDeletionError.IncorrectPassword], le message le plus
+     *  honnête disponible sans distinguer les deux à l'utilisateur. */
+    private fun SyncAuthError.toAccountDeletionError(): AccountDeletionError = when (this) {
+        SyncAuthError.InvalidCredentials -> AccountDeletionError.IncorrectPassword
+        SyncAuthError.NetworkUnavailable -> AccountDeletionError.NetworkUnavailable
+        is SyncAuthError.ServerError -> AccountDeletionError.ServerError(message)
+        is SyncAuthError.Unknown -> AccountDeletionError.Unknown(cause)
+        SyncAuthError.UsernameTaken, SyncAuthError.EmailTaken -> AccountDeletionError.ServerError(null)
     }
 
     override suspend fun login(email: String, rawPassword: String): UnifiedAuthResult = withContext(ioDispatcher) {

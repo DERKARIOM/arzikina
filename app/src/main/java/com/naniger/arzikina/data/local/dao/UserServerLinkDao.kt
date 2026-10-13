@@ -23,4 +23,11 @@ interface UserServerLinkDao {
      *  changement de compte serveur sur un appareil déjà lié), sans jamais dupliquer de ligne. */
     @Upsert
     suspend fun upsert(link: UserServerLinkEntity)
+
+    /** Réservé à [com.naniger.arzikina.data.local.database.AccountDataWiper] ("Supprimer mon
+     *  compte") — voir sa doc de tête. [localUserId], pas `serverUserId` : cette table est purgée
+     *  pour LE COMPTE LOCAL de cet appareil, jamais pour un `serverUserId` (hors de propos ici, ce
+     *  rattachement n'a de sens que sur cet appareil, voir la doc de tête de [UserServerLinkEntity]). */
+    @Query("DELETE FROM user_server_links WHERE localUserId = :localUserId")
+    suspend fun deleteAllForUser(localUserId: Long)
 }

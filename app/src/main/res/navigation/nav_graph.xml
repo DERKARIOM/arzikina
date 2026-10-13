@@ -303,6 +303,12 @@
         android:label="@string/change_password_title"
         tools:layout="@layout/fragment_change_password" />
 
+    <fragment
+        android:id="@+id/deleteAccountFragment"
+        android:name="com.naniger.arzikina.presentation.profile.DeleteAccountFragment"
+        android:label="@string/delete_account_title"
+        tools:layout="@layout/fragment_delete_account" />
+
     <!--
         Bloc Utilitaires (voir fragment_dashboard.xml, juste avant le bloc Budget) : raccourcis
         vers des fonctionnalités annexes. Catégories réutilise categoriesFragment ci-dessus, déjà

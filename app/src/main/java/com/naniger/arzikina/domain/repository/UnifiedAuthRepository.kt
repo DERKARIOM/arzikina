@@ -1,5 +1,6 @@
 package com.naniger.arzikina.domain.repository
 
+import com.naniger.arzikina.domain.model.AccountDeletionResult
 import com.naniger.arzikina.domain.model.SecurityQuestion
 import com.naniger.arzikina.domain.model.UnifiedAuthResult
 
@@ -69,4 +70,25 @@ interface UnifiedAuthRepository {
      * token de synchronisation et des notifications push du compte précédent.
      */
     suspend fun logout()
+
+    /**
+     * Suppression DÉFINITIVE et IMMÉDIATE du compte (Profil, « Supprimer mon compte ») —
+     * [currentRawPassword] RE-DEMANDÉ, par analogie avec [AuthRepository.changePassword] : un
+     * accès physique temporaire à un appareil déjà connecté ne doit jamais suffire à détruire le
+     * compte.
+     *
+     * Ordre strict, voir l'implémentation pour le détail complet :
+     * 1. Mot de passe vérifié LOCALEMENT d'abord (échec immédiat, aucun appel réseau si incorrect).
+     * 2. Si une session de synchronisation est active, suppression SERVEUR d'abord
+     *    ([SyncAuthRepository.deleteAccount]) — si elle échoue (hors ligne, erreur serveur), TOUT
+     *    s'arrête ici : aucune donnée locale n'est touchée, pour ne jamais détruire la seule copie
+     *    locale en laissant une copie serveur intacte sous le même mot de passe.
+     * 3. Toutes les données LOCALES de l'utilisateur (comptes, transactions, catégories... et son
+     *    propre compte) sont effacées (voir [com.naniger.arzikina.data.local.database.AccountDataWiper]).
+     * 4. Session locale effacée ([SessionManager.clearSession]).
+     *
+     * Si aucune session de synchronisation n'est active (utilisateur 100% local, jamais connecté
+     * au serveur), l'étape 2 est simplement sautée : rien à supprimer côté serveur.
+     */
+    suspend fun deleteAccount(currentRawPassword: String): AccountDeletionResult
 }

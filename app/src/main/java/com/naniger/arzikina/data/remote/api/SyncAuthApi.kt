@@ -1,6 +1,7 @@
 package com.naniger.arzikina.data.remote.api
 
 import com.naniger.arzikina.data.remote.RemoteConfig
+import com.naniger.arzikina.data.remote.dto.DeleteAccountRequestDto
 import com.naniger.arzikina.data.remote.dto.LoginRequestDto
 import com.naniger.arzikina.data.remote.dto.LoginResponseDto
 import com.naniger.arzikina.data.remote.dto.RegisterRequestDto
@@ -69,6 +70,25 @@ class SyncAuthApi @Inject constructor(
             .url(RemoteConfig.BASE_URL + "api/auth/logout.php")
             .header("Authorization", "Bearer $rawToken")
             .post("".toRequestBody(jsonMediaType))
+            .build()
+        okHttpClient.awaitBody(httpRequest)
+    }
+
+    /**
+     * Supprime DÉFINITIVEMENT le compte serveur de [rawToken] et toutes ses données (voir
+     * `server/api/auth/delete_account.php` — un seul `DELETE FROM users` y cascade sur tout le
+     * reste du schéma). [rawPassword] RE-DEMANDÉ dans le corps (voir [DeleteAccountRequestDto]) :
+     * le serveur refuse avec un 401 (`HttpFailureException`) si le mot de passe ne correspond pas,
+     * même avec un Bearer valide — voir [com.naniger.arzikina.data.repository.SyncAuthRepositoryImpl.deleteAccount]
+     * pour l'interprétation de cette erreur.
+     */
+    suspend fun deleteAccount(rawToken: String, rawPassword: String) {
+        val body = json.encodeToString(DeleteAccountRequestDto.serializer(), DeleteAccountRequestDto(rawPassword))
+            .toRequestBody(jsonMediaType)
+        val httpRequest = Request.Builder()
+            .url(RemoteConfig.BASE_URL + "api/auth/delete_account.php")
+            .header("Authorization", "Bearer $rawToken")
+            .post(body)
             .build()
         okHttpClient.awaitBody(httpRequest)
     }

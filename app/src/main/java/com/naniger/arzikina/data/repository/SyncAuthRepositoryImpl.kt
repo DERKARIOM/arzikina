@@ -163,6 +163,35 @@ class SyncAuthRepositoryImpl @Inject constructor(
         }
     }
 
+    /**
+     * Contrairement à [logout] (local immédiat + serveur "au mieux" en arrière-plan), ceci attend
+     * RÉELLEMENT la réponse du serveur avant de toucher à quoi que ce soit en local (voir la KDoc
+     * de l'interface) : [UnifiedAuthRepositoryImpl.deleteAccount][com.naniger.arzikina.data.repository.UnifiedAuthRepositoryImpl.deleteAccount]
+     * ne doit jamais effacer les données locales tant que la suppression serveur n'est pas
+     * confirmée.
+     */
+    override suspend fun deleteAccount(rawPassword: String): SyncAuthResult<Unit> = withContext(ioDispatcher) {
+        val rawToken = store.getValidRawToken()
+            ?: return@withContext SyncAuthResult.Failure(SyncAuthError.Unknown(null))
+        try {
+            authApi.deleteAccount(rawToken, rawPassword)
+            // Session serveur de CET appareil : effacée seulement maintenant, la suppression étant
+            // confirmée (contrairement à [logout], qui l'efface AVANT même d'appeler le serveur).
+            store.clear()
+            pushRegistrationRepository.onSignedOut()
+            SyncAuthResult.Success(Unit)
+        } catch (e: HttpFailureException) {
+            when (e.code) {
+                401 -> SyncAuthResult.Failure(SyncAuthError.InvalidCredentials)
+                else -> SyncAuthResult.Failure(SyncAuthError.ServerError(e.message))
+            }
+        } catch (e: IOException) {
+            SyncAuthResult.Failure(SyncAuthError.NetworkUnavailable)
+        } catch (e: Exception) {
+            SyncAuthResult.Failure(SyncAuthError.Unknown(e))
+        }
+    }
+
     override suspend fun getActiveSession(): SyncSession? = store.getActiveSession()
 
     override fun observeActiveSession(): Flow<SyncSession?> = store.observeActiveSession()

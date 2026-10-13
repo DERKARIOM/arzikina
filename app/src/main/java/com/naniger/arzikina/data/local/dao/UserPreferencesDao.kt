@@ -36,4 +36,9 @@ interface UserPreferencesDao {
     /** Retourne l'id de la ligne insérée, ou -1 en cas de mise à jour (voir `AccountDao.upsert`). */
     @Upsert
     suspend fun upsert(preferences: UserPreferencesEntity): Long
+
+    /** Réservé à [com.naniger.arzikina.data.local.database.AccountDataWiper] ("Supprimer mon
+     *  compte") — voir sa doc de tête. Au plus une ligne concernée (voir la doc de classe). */
+    @Query("DELETE FROM user_preferences WHERE userId = :userId")
+    suspend fun deleteAllForUser(userId: Long)
 }

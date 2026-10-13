@@ -289,6 +289,11 @@
     <string name="profile_logout_action">Se déconnecter</string>
     <string name="profile_logout_confirm_title">Se déconnecter ?</string>
     <string name="profile_logout_confirm_message">Tu devras te reconnecter avec ton mot de passe pour accéder à nouveau à tes données. Aucune donnée n\'est supprimée.</string>
+    <string name="profile_delete_account_action">Supprimer mon compte</string>
+    <string name="delete_account_title">Supprimer mon compte</string>
+    <string name="delete_account_warning_message">Cette action est définitive et irréversible. Toutes tes données (comptes, transactions, budgets, prêts/emprunts, planifications...) seront supprimées, sur cet appareil et sur nos serveurs si la synchronisation est active. Saisis ton mot de passe pour confirmer.</string>
+    <string name="delete_account_submit_action">Supprimer définitivement mon compte</string>
+    <string name="delete_account_error_network_unavailable">Impossible de supprimer ton compte hors connexion : réessaie une fois en ligne, pour que tes données soient aussi effacées de nos serveurs.</string>
 
     <!-- Cahier des charges "Gestion de la photo de profil" — voir ChangeProfilePhotoBottomSheet,
          ProfileFragment, ProfilePhotoPreviewDialogFragment. -->

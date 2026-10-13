@@ -47,6 +47,19 @@ interface SyncAuthRepository {
      *  synchronisées côté serveur. */
     suspend fun logout()
 
+    /**
+     * Supprime DÉFINITIVEMENT le compte serveur (et toutes ses données, voir
+     * `server/api/auth/delete_account.php`) — [rawPassword] RE-DEMANDÉ (même principe que [login])
+     * : un token seul ne suffit jamais à détruire le compte. Contrairement à [logout], une
+     * [SyncAuthResult.Failure] ici ne touche à RIEN (ni session serveur, ni session locale) — voir
+     * [com.naniger.arzikina.domain.repository.UnifiedAuthRepository.deleteAccount], seul appelant
+     * prévu, pour le raisonnement complet (jamais effacer les données locales si le serveur n'a pas
+     * confirmé la suppression). En cas de [SyncAuthResult.Success], la session serveur locale
+     * (token) est déjà effacée au retour de cet appel — le Bearer utilisé n'a de toute façon plus
+     * aucune ligne `auth_tokens` valide côté serveur (voir la KDoc de `delete_account.php`).
+     */
+    suspend fun deleteAccount(rawPassword: String): SyncAuthResult<Unit>
+
     /** Lecture ponctuelle. `null` si aucune connexion au serveur n'a jamais été faite, ou si le
      *  token stocké est expiré (pas de rafraîchissement automatique à ce stade — voir
      *  `api/auth/refresh.php`, à écrire dans une étape ultérieure). */
