@@ -110,6 +110,42 @@ class LoginViewModel @Inject constructor(
     }
 
     /**
+     * Affiche l'indicateur de chargement DÈS le clic sur « Continuer avec Google » (cahier des
+     * charges : "Afficher un indicateur de chargement pendant l'authentification" / "Désactiver
+     * les clics multiples pendant le traitement") — avant même que [LoginFragment] n'ait obtenu un
+     * jeton, pendant que le sélecteur de compte Google est affiché. [onGoogleSignInCancelled] (Cas
+     * D) ou [submitWithGoogle] suit toujours, jamais les deux.
+     */
+    fun onGoogleSignInStarted() {
+        if (_formState.value.isSubmitting) return
+        _formState.update { it.copy(stage = LoginStage.AUTHENTICATING, formError = null) }
+    }
+
+    /** Cahier des charges, Cas D : l'utilisateur a fermé la fenêtre Google - retour à IDLE, aucune
+     *  erreur affichée (voir [LoginFragment]). */
+    fun onGoogleSignInCancelled() {
+        _formState.update { it.copy(stage = LoginStage.IDLE) }
+    }
+
+    /**
+     * Authentification via Google — voir [onGoogleSignInStarted] (déjà appelé par [LoginFragment]
+     * avant celui-ci, le `stage` est donc déjà [LoginStage.AUTHENTICATING]). Partage ensuite
+     * EXACTEMENT la même suite que [submit] ([onLoginSuccess]/[runPostLoginSync]) : la
+     * synchronisation post-connexion ne dépend jamais du moyen d'authentification utilisé.
+     */
+    fun submitWithGoogle(idToken: String) {
+        viewModelScope.launch {
+            when (val result = unifiedAuthRepository.loginWithGoogle(idToken)) {
+                is UnifiedAuthResult.Success -> onLoginSuccess(result)
+                is UnifiedAuthResult.Failure -> {
+                    _formState.update { it.copy(stage = LoginStage.IDLE) }
+                    handleFailure(result.error)
+                }
+            }
+        }
+    }
+
+    /**
      * Démarre la session locale puis, hors repli hors-ligne (voir
      * [UnifiedAuthResult.Success.usedLocalFallback]), enchaîne la synchronisation complète. Le
      * message final ([LoginStage.SYNC_DONE]/[SYNC_FAILED]/[OFFLINE]) reste affiché brièvement
@@ -177,6 +213,9 @@ class LoginViewModel @Inject constructor(
             // renvoyées par login() en pratique ; filet de sécurité pour rester exhaustif.
             UnifiedAuthError.EmailAlreadyExists -> R.string.register_error_email_taken
             UnifiedAuthError.UsernameAlreadyExists -> R.string.register_error_username_taken
+            // Authentification Google (voir submitWithGoogle) : un compte Arzikina existe déjà
+            // avec cet e-mail, créé par mot de passe — cahier des charges, Cas C.
+            UnifiedAuthError.AccountExistsLinkRequired -> R.string.login_error_google_account_exists_link_required
         }
         _formState.update { it.copy(formError = messageRes) }
     }

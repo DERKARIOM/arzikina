@@ -53,4 +53,14 @@ sealed class UnifiedAuthError {
     data class ServerError(val message: String? = null) : UnifiedAuthError()
 
     data class Unknown(val cause: Throwable? = null) : UnifiedAuthError()
+
+    /**
+     * Authentification Google (voir
+     * [com.naniger.arzikina.domain.repository.UnifiedAuthRepository.loginWithGoogle]) : un compte
+     * Arzikina existe déjà avec cette adresse e-mail, créé par mot de passe, pas encore lié à ce
+     * compte Google — cahier des charges, Cas C. Jamais de fusion automatique : l'utilisateur doit
+     * se connecter classiquement puis lier son compte Google (voir
+     * [com.naniger.arzikina.domain.repository.UnifiedAuthRepository.linkGoogleAccount]).
+     */
+    data object AccountExistsLinkRequired : UnifiedAuthError()
 }

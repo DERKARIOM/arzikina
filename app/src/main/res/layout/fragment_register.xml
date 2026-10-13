@@ -71,6 +71,55 @@
                 style="@style/TextAppearance.Material3.BodyMedium" />
 
             <!--
+                "Continuer avec Google" (cahier des charges "Intégrer l'authentification Google") :
+                placé EN HAUT, avant le formulaire complet — le chemin le plus rapide pour créer un
+                compte, cohérent avec la pratique courante (voir fragment_login.xml pour le même
+                bouton côté Connexion). Bouton OUTLINED neutre, jamais recoloré avec #42B998 (règles
+                de marque Google, voir ic_google_logo_24.xml).
+            -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/googleSignInButton"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_l"
+                android:text="@string/auth_continue_with_google"
+                android:textColor="?attr/colorOnSurface"
+                app:icon="@drawable/ic_google_logo_24"
+                app:iconGravity="textStart"
+                app:iconTint="@null"
+                app:strokeColor="?attr/colorOutlineVariant" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_l"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <View
+                    android:layout_width="0dp"
+                    android:layout_height="1dp"
+                    android:layout_weight="1"
+                    android:background="?attr/colorOutlineVariant" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginHorizontal="@dimen/spacing_s"
+                    android:text="@string/auth_or_create_with_email_divider"
+                    android:textColor="?attr/colorOnSurfaceVariant"
+                    style="@style/TextAppearance.Material3.BodySmall" />
+
+                <View
+                    android:layout_width="0dp"
+                    android:layout_height="1dp"
+                    android:layout_weight="1"
+                    android:background="?attr/colorOutlineVariant" />
+
+            </LinearLayout>
+
+            <!--
                 Avatar circulaire (photo de profil, optionnelle) : image de remplacement
                 (ic_person_24) tant qu'aucune photo n'est choisie, badge appareil photo superposé
                 en bas à droite — inchangé fonctionnellement (voir RegisterFragment.kt,

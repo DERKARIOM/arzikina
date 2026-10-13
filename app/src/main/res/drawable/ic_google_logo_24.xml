@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Logo officiel Google ("G" multicolore), requis tel quel par les règles de marque de Google
+    pour tout bouton "Sign in with Google"/"Continuer avec Google" (cahier des charges : "Afficher
+    le logo Google officiel conformément à ses règles d'utilisation") — jamais recoloré, jamais
+    stylisé avec la couleur primaire Arzikina (#42B998), contrairement au reste de l'écran.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="48"
+    android:viewportHeight="48">
+    <path
+        android:fillColor="#4285F4"
+        android:pathData="M45.12,24.5c0,-1.56 -0.14,-3.06 -0.4,-4.5H24v8.51h11.84c-0.51,2.75 -2.06,5.08 -4.39,6.64v5.52h7.11C42.73,36.9 45.12,31.18 45.12,24.5z" />
+    <path
+        android:fillColor="#34A853"
+        android:pathData="M24,46c5.94,0 10.92,-1.97 14.56,-5.33l-7.11,-5.52c-1.97,1.32 -4.49,2.1 -7.45,2.1 -5.73,0 -10.58,-3.87 -12.32,-9.07l-7.36,5.68C7.51,40.98 15.17,46 24,46z" />
+    <path
+        android:fillColor="#FBBC05"
+        android:pathData="M11.68,28.18c-0.46,-1.32 -0.72,-2.74 -0.72,-4.18c0,-1.44 0.26,-2.86 0.72,-4.18l-7.36,-5.68C2.86,16.73 2,20.24 2,24c0,3.76 0.86,7.27 2.32,10.86z" />
+    <path
+        android:fillColor="#EA4335"
+        android:pathData="M24,10.75c3.23,0 6.13,1.11 8.41,3.28l6.31,-6.31C34.91,4.18 29.93,2 24,2 15.17,2 7.51,7.02 4.32,14.14l7.36,5.68C13.42,14.62 18.27,10.75 24,10.75z" />
+</vector>

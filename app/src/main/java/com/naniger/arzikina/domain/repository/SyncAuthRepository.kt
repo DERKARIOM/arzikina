@@ -1,5 +1,6 @@
 package com.naniger.arzikina.domain.repository
 
+import com.naniger.arzikina.domain.model.GoogleSyncSession
 import com.naniger.arzikina.domain.model.SyncAuthResult
 import com.naniger.arzikina.domain.model.SyncSession
 import kotlinx.coroutines.flow.Flow
@@ -64,6 +65,29 @@ interface SyncAuthRepository {
      *  token stocké est expiré (pas de rafraîchissement automatique à ce stade — voir
      *  `api/auth/refresh.php`, à écrire dans une étape ultérieure). */
     suspend fun getActiveSession(): SyncSession?
+
+    /**
+     * Authentification Google (« Continuer avec Google ») — voir `server/api/auth/google_login.php`.
+     * [idToken] : jeton d'identité Google obtenu côté présentation (Credential Manager), jamais
+     * vérifié ici : la vérification réelle (signature, audience, e-mail vérifié) est faite PAR LE
+     * SERVEUR, jamais fait confiance côté client (cahier des charges : "Ne considère jamais qu'un
+     * simple e-mail ou un nom transmis par le client suffit à authentifier un utilisateur").
+     *
+     * [SyncAuthResult.Failure] avec [com.naniger.arzikina.domain.model.SyncAuthError.AccountExistsLinkRequired] :
+     * un compte Arzikina existe déjà avec cet e-mail, créé par mot de passe, pas encore lié à ce
+     * compte Google (cahier des charges, Cas C) — voir [linkGoogleAccount].
+     */
+    suspend fun loginWithGoogle(idToken: String, deviceLabel: String? = null): SyncAuthResult<GoogleSyncSession>
+
+    /**
+     * Lie le compte Google (jeton [idToken]) au compte Arzikina de la session active — voir
+     * `server/api/auth/link_google_account.php` et le cahier des charges, Cas C. Échoue avec
+     * [com.naniger.arzikina.domain.model.SyncAuthError.Unknown] si aucune session de synchronisation
+     * n'est active (l'utilisateur doit être connecté classiquement au moment de l'appel, voir
+     * [com.naniger.arzikina.domain.repository.UnifiedAuthRepository.linkGoogleAccount] pour la
+     * vérification explicite faite AVANT cet appel). Ne touche à aucune donnée locale.
+     */
+    suspend fun linkGoogleAccount(idToken: String): SyncAuthResult<Unit>
 
     /** Pour un futur indicateur de statut de synchronisation / écran Réglages. */
     fun observeActiveSession(): Flow<SyncSession?>

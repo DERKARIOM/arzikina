@@ -19,6 +19,7 @@ import com.naniger.arzikina.presentation.components.animateElevationOnFocus
 import com.naniger.arzikina.presentation.components.playEntranceAnimation
 import com.naniger.arzikina.presentation.components.playPressScaleFeedback
 import com.naniger.arzikina.presentation.components.setVisibleAnimated
+import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.textfield.TextInputLayout
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
@@ -43,6 +44,10 @@ class LoginFragment : Fragment(R.layout.fragment_login) {
 
     private val viewModel: LoginViewModel by viewModels()
     private var binding: FragmentLoginBinding? = null
+
+    /** Instancié paresseusement avec le contexte de l'Activity (voir sa doc) — jamais avant
+     *  [onViewCreated], `requireContext()` n'est valide qu'une fois la vue créée. */
+    private val googleSignInLauncher by lazy { GoogleSignInLauncher(requireContext()) }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -76,11 +81,38 @@ class LoginFragment : Fragment(R.layout.fragment_login) {
         viewBinding.forgotPasswordActionText.setOnClickListener {
             findNavController().navigate(R.id.forgotPasswordFragment, null, NavAnimations.push)
         }
+        viewBinding.googleSignInButton.setOnClickListener { onGoogleSignInClicked(viewBinding) }
 
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch { viewModel.formState.collect { state -> render(state) } }
                 launch { viewModel.events.collect { event -> handleEvent(event) } }
+            }
+        }
+    }
+
+    /**
+     * « Continuer avec Google » (cahier des charges) — [GoogleSignInLauncher.signInWithFallback]
+     * fait le travail Android (sélecteur de compte, retente avec tous les comptes si nécessaire) ;
+     * seul le RÉSULTAT (jeton, annulation ou erreur) est transmis au [viewModel], qui ne connaît
+     * jamais Credential Manager (couche présentation uniquement, voir la doc de
+     * [GoogleSignInLauncher]).
+     *
+     * [LoginViewModel.onGoogleSignInStarted] est appelé AVANT l'attente (affiche l'indicateur de
+     * chargement dès le clic, cahier des charges) ; [LoginViewModel.onGoogleSignInCancelled] (Cas
+     * D) ou [LoginViewModel.submitWithGoogle] suit toujours, jamais les deux.
+     */
+    private fun onGoogleSignInClicked(binding: FragmentLoginBinding) {
+        if (viewModel.formState.value.isSubmitting) return
+        viewModel.onGoogleSignInStarted()
+        viewLifecycleOwner.lifecycleScope.launch {
+            when (val result = googleSignInLauncher.signInWithFallback()) {
+                is GoogleSignInLauncher.Result.Success -> viewModel.submitWithGoogle(result.idToken)
+                is GoogleSignInLauncher.Result.Cancelled -> viewModel.onGoogleSignInCancelled()
+                is GoogleSignInLauncher.Result.Error -> {
+                    viewModel.onGoogleSignInCancelled()
+                    Snackbar.make(binding.root, R.string.login_error_google_unavailable, Snackbar.LENGTH_LONG).show()
+                }
             }
         }
     }
@@ -143,6 +175,10 @@ class LoginFragment : Fragment(R.layout.fragment_login) {
         binding.loginButton.isEnabled = !state.isSubmitting
         binding.loginButton.text = if (state.isSubmitting) "" else getString(R.string.login_submit_action)
         binding.progressIndicator.visibility = if (state.isSubmitting) View.VISIBLE else View.GONE
+        // Même état que loginButton (cahier des charges : "Désactiver les clics multiples pendant
+        // le traitement") — qu'il s'agisse d'une connexion classique OU via Google, un seul
+        // mécanisme d'authentification peut être en cours à la fois sur cet écran.
+        binding.googleSignInButton.isEnabled = !state.isSubmitting
 
         val stageMessageRes = state.stage.messageRes()
         if (stageMessageRes != null) {

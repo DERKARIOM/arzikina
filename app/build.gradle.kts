@@ -144,6 +144,13 @@ dependencies {
     // cahier des charges "Gestion des reçus" et la doc de ReceiptDetailViewModel).
     implementation(libs.pdfbox.android)
 
+    // Authentification Google (« Continuer avec Google », voir presentation/auth/GoogleSignInLauncher.kt)
+    // — Credential Manager + bibliothèque d'identité Google dédiée, SANS Firebase Authentication
+    // (voir gradle/libs.versions.toml pour le détail du choix).
+    implementation(libs.androidx.credentials)
+    implementation(libs.androidx.credentials.play.services.auth)
+    implementation(libs.googleid)
+
     // Mises à jour de l'application via Google Play (mécanisme officiel In-App Updates, voir
     // presentation/update/PlayStoreUpdateManager.kt) — Google Play reste la seule source de vérité,
     // aucune comparaison de version locale ni API maison.

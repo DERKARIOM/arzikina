@@ -1,6 +1,7 @@
 package com.naniger.arzikina.domain.repository
 
 import com.naniger.arzikina.domain.model.AccountDeletionResult
+import com.naniger.arzikina.domain.model.AccountLinkResult
 import com.naniger.arzikina.domain.model.SecurityQuestion
 import com.naniger.arzikina.domain.model.UnifiedAuthResult
 
@@ -91,4 +92,34 @@ interface UnifiedAuthRepository {
      * au serveur), l'étape 2 est simplement sautée : rien à supprimer côté serveur.
      */
     suspend fun deleteAccount(currentRawPassword: String): AccountDeletionResult
+
+    /**
+     * Authentification via Google (« Continuer avec Google », pages Connexion ET Inscription —
+     * les deux appellent la MÊME méthode, voir [com.naniger.arzikina.presentation.auth.GoogleSignInLauncher]) :
+     * voir `server/api/auth/google_login.php`. [idToken] est le jeton d'identité Google obtenu
+     * côté présentation (Credential Manager), jamais vérifié ici — la vérification réelle
+     * (signature, audience, e-mail vérifié) est faite PAR LE SERVEUR (cahier des charges : "Ne
+     * considère jamais qu'un simple e-mail ou un nom transmis par le client suffit à authentifier
+     * un utilisateur").
+     *
+     * Résout/crée le compte LOCAL exactement comme [login]/[register] (même table
+     * `UserServerLinkEntity`, voir [com.naniger.arzikina.data.repository.UnifiedAuthRepositoryImpl]) :
+     * un compte Google et un compte classique du même utilisateur convergent vers le MÊME
+     * `UserEntity` local dès qu'ils partagent le même compte serveur.
+     *
+     * [UnifiedAuthError.AccountExistsLinkRequired] : le serveur a trouvé un compte existant avec
+     * cet e-mail, créé par mot de passe, pas encore lié à ce compte Google — cahier des charges,
+     * Cas C : aucune fusion automatique, l'utilisateur doit se connecter classiquement puis lier
+     * son compte Google (voir [linkGoogleAccount]).
+     */
+    suspend fun loginWithGoogle(idToken: String): UnifiedAuthResult
+
+    /**
+     * Lie le compte Google (jeton [idToken]) au compte Arzikina actuellement connecté — voir
+     * `server/api/auth/link_google_account.php` et le cahier des charges, Cas C. Nécessite une
+     * session de synchronisation active (l'utilisateur doit être connecté classiquement au moment
+     * de l'appel, voir [AccountLinkError.NoActiveSession][com.naniger.arzikina.domain.model.AccountLinkError.NoActiveSession]) ;
+     * ne touche à aucune donnée locale, uniquement à l'association côté serveur.
+     */
+    suspend fun linkGoogleAccount(idToken: String): AccountLinkResult
 }

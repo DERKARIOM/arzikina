@@ -4,11 +4,14 @@ import android.content.Context
 import android.provider.Settings
 import com.naniger.arzikina.data.remote.api.HttpFailureException
 import com.naniger.arzikina.data.remote.api.SyncAuthApi
+import com.naniger.arzikina.data.remote.dto.GoogleLoginRequestDto
+import com.naniger.arzikina.data.remote.dto.LinkGoogleAccountRequestDto
 import com.naniger.arzikina.data.remote.dto.LoginRequestDto
 import com.naniger.arzikina.data.remote.dto.LoginResponseDto
 import com.naniger.arzikina.data.remote.dto.RegisterRequestDto
 import com.naniger.arzikina.di.ApplicationScope
 import com.naniger.arzikina.di.IoDispatcher
+import com.naniger.arzikina.domain.model.GoogleSyncSession
 import com.naniger.arzikina.domain.model.SyncAuthError
 import com.naniger.arzikina.domain.model.SyncAuthResult
 import com.naniger.arzikina.domain.model.SyncSession
@@ -195,6 +198,75 @@ class SyncAuthRepositoryImpl @Inject constructor(
     override suspend fun getActiveSession(): SyncSession? = store.getActiveSession()
 
     override fun observeActiveSession(): Flow<SyncSession?> = store.observeActiveSession()
+
+    /**
+     * Contrairement à [login]/[register] (voir [runCatchingAuthCall]), la réponse serveur porte
+     * ici deux informations supplémentaires ([GoogleLoginResponseDto.email]/[isNewAccount]) — pas
+     * de forme partagée possible avec [runCatchingAuthCall], d'où cette implémentation dédiée.
+     */
+    override suspend fun loginWithGoogle(idToken: String, deviceLabel: String?): SyncAuthResult<GoogleSyncSession> =
+        withContext(ioDispatcher) {
+            try {
+                val response = authApi.googleLogin(
+                    GoogleLoginRequestDto(idToken = idToken, deviceId = androidDeviceId(), deviceLabel = deviceLabel)
+                )
+                store.saveSession(
+                    userId = response.userId,
+                    rawToken = response.token,
+                    expiresAt = response.expiresAt,
+                    fullName = response.fullName
+                )
+                pushRegistrationRepository.requestRegistration()
+                SyncAuthResult.Success(
+                    GoogleSyncSession(
+                        session = SyncSession(serverUserId = response.userId, expiresAt = response.expiresAt, fullName = response.fullName),
+                        email = response.email,
+                        isNewAccount = response.isNewAccount
+                    )
+                )
+            } catch (e: HttpFailureException) {
+                SyncAuthResult.Failure(mapGoogleAuthError(e))
+            } catch (e: IOException) {
+                SyncAuthResult.Failure(SyncAuthError.NetworkUnavailable)
+            } catch (e: Exception) {
+                SyncAuthResult.Failure(SyncAuthError.Unknown(e))
+            }
+        }
+
+    /**
+     * Cahier des charges, Cas C : nécessite une session de synchronisation ACTIVE (l'utilisateur
+     * doit déjà être connecté classiquement) — [com.naniger.arzikina.domain.repository.UnifiedAuthRepository.linkGoogleAccount]
+     * vérifie déjà ce prérequis avant d'appeler cette méthode ; [store.getValidRawToken] rejoue la
+     * même garde ici, défense en profondeur plutôt que confiance aveugle dans l'appelant.
+     */
+    override suspend fun linkGoogleAccount(idToken: String): SyncAuthResult<Unit> = withContext(ioDispatcher) {
+        val rawToken = store.getValidRawToken()
+            ?: return@withContext SyncAuthResult.Failure(SyncAuthError.Unknown(null))
+        try {
+            authApi.linkGoogleAccount(rawToken, idToken)
+            SyncAuthResult.Success(Unit)
+        } catch (e: HttpFailureException) {
+            SyncAuthResult.Failure(mapGoogleAuthError(e))
+        } catch (e: IOException) {
+            SyncAuthResult.Failure(SyncAuthError.NetworkUnavailable)
+        } catch (e: Exception) {
+            SyncAuthResult.Failure(SyncAuthError.Unknown(e))
+        }
+    }
+
+    /** [HttpFailureException.message] porte le corps HTTP brut (voir [mapConflictError]) —
+     *  `google_login.php`/`link_google_account.php` renvoient un `error` JSON stable (voir
+     *  `google_token_verifier.php` et leur doc de tête), recherché ici par simple contenu textuel,
+     *  même idiome que [mapConflictError]. */
+    private fun mapGoogleAuthError(e: HttpFailureException): SyncAuthError = when {
+        e.message?.contains("account_exists_link_required") == true -> SyncAuthError.AccountExistsLinkRequired
+        e.message?.contains("google_account_already_linked") == true -> SyncAuthError.GoogleAccountAlreadyLinked
+        e.message?.contains("invalid_google_token") == true -> SyncAuthError.InvalidGoogleToken
+        e.message?.contains("google_email_not_verified") == true -> SyncAuthError.InvalidGoogleToken
+        e.message?.contains("missing_id_token") == true -> SyncAuthError.InvalidGoogleToken
+        e.code == 401 -> SyncAuthError.InvalidGoogleToken
+        else -> SyncAuthError.ServerError(e.message)
+    }
 
     /** Identifiant d'appareil best-effort pour `auth_tokens.device_id` (voir `login.php`) — utile
      *  à une future gestion des appareils connectés, jamais utilisé comme secret. */

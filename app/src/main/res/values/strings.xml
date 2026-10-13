@@ -201,6 +201,22 @@
     <string name="login_error_invalid_credentials">Identifiant ou mot de passe incorrect</string>
     <string name="login_forgot_password_action">Mot de passe oublié ?</string>
     <!--
+        Authentification Google (cahier des charges "Intégrer l'authentification Google") — bouton
+        et messages communs à Connexion ET Inscription, voir GoogleSignInLauncher/strings préfixées
+        "auth_" (partagées entre les deux écrans) plutôt que dupliquées sous deux noms différents.
+    -->
+    <string name="auth_continue_with_google">Continuer avec Google</string>
+    <string name="auth_or_divider">ou</string>
+    <string name="auth_or_create_with_email_divider">ou créez un compte avec e-mail</string>
+    <!-- Cas D (annulation) : géré sans texte (voir GoogleSignInLauncher.Result.Cancelled) — ce
+         message ne couvre qu'un échec RÉEL (Credential Manager indisponible, aucun compte Google
+         sur l'appareil, etc.), jamais une simple fermeture volontaire de la fenêtre. -->
+    <string name="login_error_google_unavailable">Connexion avec Google impossible pour le moment, réessaie.</string>
+    <!-- Cas C (cahier des charges) : un compte Arzikina existe déjà avec cette adresse e-mail,
+         créé par mot de passe — jamais de fusion automatique. -->
+    <string name="login_error_google_account_exists_link_required">Un compte existe déjà avec cette adresse e-mail. Connecte-toi avec ton mot de passe, puis lie ton compte Google depuis Paramètres.</string>
+    <string name="register_error_google_account_exists_link_required">Un compte existe déjà avec cette adresse e-mail. Connecte-toi avec ton mot de passe, puis lie ton compte Google depuis Paramètres.</string>
+    <!--
         Messages d'étape affichés pendant LoginViewModel.submit (voir sa KDoc et celle de
         LoginStage) — connexion désormais unifiée (UnifiedAuthRepository) : ces trois premiers
         libellés suivent le texte du cahier des charges "audit auth + sync + doublons" (étape D).

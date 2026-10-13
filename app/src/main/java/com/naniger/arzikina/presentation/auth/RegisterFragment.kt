@@ -49,6 +49,10 @@ class RegisterFragment : Fragment(R.layout.fragment_register) {
     private val viewModel: RegisterViewModel by viewModels()
     private var binding: FragmentRegisterBinding? = null
 
+    /** Voir [LoginFragment] — même raisonnement, instancié paresseusement avec le contexte de
+     *  l'Activity, jamais avant [onViewCreated]. */
+    private val googleSignInLauncher by lazy { GoogleSignInLauncher(requireContext()) }
+
     /**
      * `GetContent()` plutôt que le nouveau Photo Picker
      * (`PickVisualMedia`) : disponible nativement depuis la première version
@@ -90,6 +94,7 @@ class RegisterFragment : Fragment(R.layout.fragment_register) {
         viewBinding.contentContainer.playEntranceAnimation()
         viewBinding.registerButton.playPressScaleFeedback()
         viewBinding.registerButton.setOnClickListener { viewModel.submit() }
+        viewBinding.googleSignInButton.setOnClickListener { onGoogleSignInClicked(viewBinding) }
 
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -102,6 +107,24 @@ class RegisterFragment : Fragment(R.layout.fragment_register) {
     override fun onDestroyView() {
         super.onDestroyView()
         binding = null
+    }
+
+    /** « Continuer avec Google » — voir [LoginFragment.onGoogleSignInClicked], même raisonnement
+     *  et même [GoogleSignInLauncher] partagé entre Connexion et Inscription (cahier des charges :
+     *  bouton disponible sur les deux écrans). Ici, un succès crée directement le compte Arzikina
+     *  si nécessaire (voir [RegisterViewModel.submitWithGoogle]) — aucun des autres champs du
+     *  formulaire (nom d'utilisateur, question de sécurité...) n'est requis dans ce cas. */
+    private fun onGoogleSignInClicked(binding: FragmentRegisterBinding) {
+        if (viewModel.formState.value.isSubmitting) return
+        viewLifecycleOwner.lifecycleScope.launch {
+            when (val result = googleSignInLauncher.signInWithFallback()) {
+                is GoogleSignInLauncher.Result.Success -> viewModel.submitWithGoogle(result.idToken)
+                is GoogleSignInLauncher.Result.Cancelled -> Unit // Cas D : rien à faire, reste sur l'écran.
+                is GoogleSignInLauncher.Result.Error -> {
+                    Snackbar.make(binding.root, R.string.login_error_google_unavailable, Snackbar.LENGTH_LONG).show()
+                }
+            }
+        }
     }
 
     private fun setUpInputs(binding: FragmentRegisterBinding) {
@@ -268,6 +291,9 @@ class RegisterFragment : Fragment(R.layout.fragment_register) {
         binding.registerButton.text = if (state.isSubmitting) "" else getString(R.string.register_submit_action)
         binding.progressIndicator.visibility = if (state.isSubmitting) View.VISIBLE else View.GONE
         binding.loginActionText.isEnabled = !state.isSubmitting
+        // Cahier des charges : "Désactiver les clics multiples pendant le traitement" — même état
+        // que registerButton, qu'il s'agisse d'une inscription classique OU via Google.
+        binding.googleSignInButton.isEnabled = !state.isSubmitting
     }
 
     private fun handleEvent(event: RegisterEvent) {

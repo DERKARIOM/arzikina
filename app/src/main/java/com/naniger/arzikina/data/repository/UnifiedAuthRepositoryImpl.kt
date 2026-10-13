@@ -9,6 +9,8 @@ import com.naniger.arzikina.data.local.entity.UserServerLinkEntity
 import com.naniger.arzikina.di.IoDispatcher
 import com.naniger.arzikina.domain.model.AccountDeletionError
 import com.naniger.arzikina.domain.model.AccountDeletionResult
+import com.naniger.arzikina.domain.model.AccountLinkError
+import com.naniger.arzikina.domain.model.AccountLinkResult
 import com.naniger.arzikina.domain.model.SecurityQuestion
 import com.naniger.arzikina.domain.model.SyncAuthError
 import com.naniger.arzikina.domain.model.SyncAuthResult
@@ -101,7 +103,72 @@ class UnifiedAuthRepositoryImpl @Inject constructor(
         SyncAuthError.NetworkUnavailable -> AccountDeletionError.NetworkUnavailable
         is SyncAuthError.ServerError -> AccountDeletionError.ServerError(message)
         is SyncAuthError.Unknown -> AccountDeletionError.Unknown(cause)
-        SyncAuthError.UsernameTaken, SyncAuthError.EmailTaken -> AccountDeletionError.ServerError(null)
+        // Suppression de compte classique (voir sa KDoc) : ne passe jamais par l'authentification
+        // Google, ces trois cas ne peuvent donc pas survenir ici en pratique — seulement requis
+        // pour l'exhaustivité du `when` depuis l'ajout de [SyncAuthError.AccountExistsLinkRequired]/
+        // [SyncAuthError.GoogleAccountAlreadyLinked]/[SyncAuthError.InvalidGoogleToken].
+        SyncAuthError.UsernameTaken, SyncAuthError.EmailTaken,
+        SyncAuthError.AccountExistsLinkRequired, SyncAuthError.GoogleAccountAlreadyLinked,
+        SyncAuthError.InvalidGoogleToken -> AccountDeletionError.ServerError(null)
+    }
+
+    /**
+     * Voir la KDoc de l'interface. Pas de repli hors-ligne (contrairement à [login]) : il n'existe
+     * aucun mot de passe local à vérifier pour un compte Google, la vérification serveur est donc
+     * TOUJOURS requise - sans réseau, l'authentification Google échoue simplement.
+     */
+    override suspend fun loginWithGoogle(idToken: String): UnifiedAuthResult = withContext(ioDispatcher) {
+        when (val result = syncAuthRepository.loginWithGoogle(idToken)) {
+            is SyncAuthResult.Success -> {
+                val googleSession = result.data
+                val localUserId = resolveOrCreateLocalUser(
+                    serverUserId = googleSession.session.serverUserId,
+                    fullName = googleSession.session.fullName,
+                    email = googleSession.email,
+                    rawPassword = null,
+                    // Seule une Cas B réelle (compte serveur VENANT d'être créé, voir
+                    // [GoogleSyncSession.isNewAccount]) déclenche le semis - même raisonnement que
+                    // [register]/la KDoc de tête, anti-doublon.
+                    seedDefaultsIfNewLocalUser = googleSession.isNewAccount
+                )
+                UnifiedAuthResult.Success(localUserId, usedLocalFallback = false)
+            }
+
+            is SyncAuthResult.Failure -> when (result.error) {
+                SyncAuthError.AccountExistsLinkRequired -> UnifiedAuthResult.Failure(UnifiedAuthError.AccountExistsLinkRequired)
+                SyncAuthError.NetworkUnavailable -> UnifiedAuthResult.Failure(UnifiedAuthError.NetworkUnavailableNoLocalFallback)
+                is SyncAuthError.ServerError -> UnifiedAuthResult.Failure(UnifiedAuthError.ServerError(result.error.message))
+                is SyncAuthError.Unknown -> UnifiedAuthResult.Failure(UnifiedAuthError.Unknown(result.error.cause))
+                // InvalidGoogleToken (jeton invalide/expiré/e-mail non vérifié) : message générique,
+                // jamais de détail technique exposé à l'utilisateur (même principe que ServerError).
+                SyncAuthError.InvalidGoogleToken -> UnifiedAuthResult.Failure(UnifiedAuthError.ServerError(null))
+                // UsernameTaken/EmailTaken/GoogleAccountAlreadyLinked : jamais renvoyées par
+                // `google_login.php` - filet de sécurité si l'implémentation évolue.
+                else -> UnifiedAuthResult.Failure(UnifiedAuthError.ServerError(null))
+            }
+        }
+    }
+
+    /** Voir la KDoc de l'interface. Vérifie la session active AVANT tout appel réseau - défense en
+     *  profondeur en plus de la même garde côté [SyncAuthRepositoryImpl.linkGoogleAccount]. */
+    override suspend fun linkGoogleAccount(idToken: String): AccountLinkResult = withContext(ioDispatcher) {
+        if (syncAuthRepository.getActiveSession() == null) {
+            return@withContext AccountLinkResult.Failure(AccountLinkError.NoActiveSession)
+        }
+        when (val result = syncAuthRepository.linkGoogleAccount(idToken)) {
+            is SyncAuthResult.Success -> AccountLinkResult.Success
+            is SyncAuthResult.Failure -> AccountLinkResult.Failure(result.error.toAccountLinkError())
+        }
+    }
+
+    private fun SyncAuthError.toAccountLinkError(): AccountLinkError = when (this) {
+        SyncAuthError.GoogleAccountAlreadyLinked -> AccountLinkError.GoogleAccountAlreadyLinked
+        SyncAuthError.NetworkUnavailable -> AccountLinkError.NetworkUnavailable
+        is SyncAuthError.ServerError -> AccountLinkError.ServerError(message)
+        is SyncAuthError.Unknown -> AccountLinkError.Unknown(cause)
+        // InvalidGoogleToken/AccountExistsLinkRequired/UsernameTaken/EmailTaken/InvalidCredentials :
+        // jamais renvoyées par `link_google_account.php` en pratique - filet de sécurité.
+        else -> AccountLinkError.ServerError(null)
     }
 
     override suspend fun login(email: String, rawPassword: String): UnifiedAuthResult = withContext(ioDispatcher) {
@@ -292,7 +359,10 @@ class UnifiedAuthRepositoryImpl @Inject constructor(
         serverUserId: String,
         fullName: String,
         email: String,
-        rawPassword: String,
+        // Nullable UNIQUEMENT pour l'authentification Google (voir [loginWithGoogle]) : aucun mot
+        // de passe réel n'existe dans ce cas - repli documenté juste en dessous, même principe que
+        // `securityAnswer` ci-dessous (déjà nullable avant cet ajout).
+        rawPassword: String?,
         seedDefaultsIfNewLocalUser: Boolean,
         username: String? = null,
         phoneNumber: String? = null,
@@ -311,7 +381,14 @@ class UnifiedAuthRepositoryImpl @Inject constructor(
                 username = username ?: deriveLocalUsernameCandidate(email),
                 email = email,
                 phoneNumber = phoneNumber,
-                passwordHash = PasswordHasher.hash(rawPassword),
+                // `rawPassword` == null UNIQUEMENT pour un compte créé via Google (voir
+                // [loginWithGoogle]) : aucun mot de passe réel à hacher - repli ALÉATOIRE et donc
+                // jamais devinable, même principe que `securityAnswerHash` juste en dessous (déjà
+                // en place avant cet ajout). La connexion classique par mot de passe reste donc
+                // refusée tant que l'utilisateur n'en définit pas un réel (écran à venir, hors
+                // périmètre de cette étape).
+                passwordHash = rawPassword?.let { PasswordHasher.hash(it) }
+                    ?: PasswordHasher.hash(UUID.randomUUID().toString()),
                 profilePhotoUri = profilePhotoUri,
                 // `securityQuestion`/`securityAnswer` : uniquement fournis par [register] (inscription
                 // complète, voir sa doc) — `null` pour [login]/la migration silencieuse/le repli hors

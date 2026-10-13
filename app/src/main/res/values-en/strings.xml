@@ -122,6 +122,12 @@
     <string name="login_register_action">Create an account</string>
     <string name="login_error_invalid_credentials">Incorrect username or password</string>
     <string name="login_forgot_password_action">Forgot password?</string>
+    <string name="auth_continue_with_google">Continue with Google</string>
+    <string name="auth_or_divider">or</string>
+    <string name="auth_or_create_with_email_divider">or create an account with email</string>
+    <string name="login_error_google_unavailable">Couldn\'t sign in with Google right now, try again.</string>
+    <string name="login_error_google_account_exists_link_required">An account already exists with this email address. Sign in with your password, then link your Google account from Settings.</string>
+    <string name="register_error_google_account_exists_link_required">An account already exists with this email address. Sign in with your password, then link your Google account from Settings.</string>
     <string name="login_stage_authenticating">Signing in…</string>
     <string name="login_stage_syncing">Syncing your data…</string>
     <string name="login_stage_sync_done">✓ Sync complete</string>

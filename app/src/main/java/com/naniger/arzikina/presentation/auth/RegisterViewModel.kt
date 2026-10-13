@@ -141,6 +141,33 @@ class RegisterViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Authentification/inscription via Google (« Continuer avec Google ») — contourne
+     * [validateFormat] : aucun des champs du formulaire complet (nom d'utilisateur, téléphone,
+     * question de sécurité) n'est nécessaire, le profil provient entièrement du compte Google déjà
+     * vérifié par le serveur (voir `server/api/auth/google_login.php`). Réutilise [isSubmitting]
+     * et [RegisterEvent.Registered] à l'identique de [submit] : la suite (démarrage de session,
+     * navigation vers le Dashboard) est rigoureusement la même quel que soit le moyen
+     * d'authentification.
+     */
+    fun submitWithGoogle(idToken: String) {
+        if (_formState.value.isSubmitting) return
+        _formState.update { it.copy(isSubmitting = true) }
+        viewModelScope.launch {
+            when (val result = unifiedAuthRepository.loginWithGoogle(idToken)) {
+                is UnifiedAuthResult.Success -> {
+                    sessionManager.startSession(result.localUserId)
+                    _formState.update { it.copy(isSubmitting = false) }
+                    _events.emit(RegisterEvent.Registered)
+                }
+                is UnifiedAuthResult.Failure -> {
+                    _formState.update { it.copy(isSubmitting = false) }
+                    handleFailure(result.error)
+                }
+            }
+        }
+    }
+
     private fun validateFormat(): Boolean {
         val state = _formState.value
         val fullNameError = if (state.fullName.isBlank()) R.string.register_error_required_field else null
@@ -220,6 +247,10 @@ class RegisterViewModel @Inject constructor(
                 _events.emit(RegisterEvent.ShowError(R.string.sync_login_error_server))
             is UnifiedAuthError.Unknown, UnifiedAuthError.InvalidCredentials ->
                 _events.emit(RegisterEvent.ShowError(R.string.register_error_unknown))
+            // Authentification Google (voir submitWithGoogle) : un compte Arzikina existe déjà
+            // avec cet e-mail, créé par mot de passe — cahier des charges, Cas C.
+            UnifiedAuthError.AccountExistsLinkRequired ->
+                _events.emit(RegisterEvent.ShowError(R.string.register_error_google_account_exists_link_required))
         }
     }
 }

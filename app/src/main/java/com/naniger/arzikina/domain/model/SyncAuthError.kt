@@ -35,4 +35,23 @@ sealed class SyncAuthError {
 
     /** Erreur technique imprévue (désérialisation, etc.). */
     data class Unknown(val cause: Throwable? = null) : SyncAuthError()
+
+    /**
+     * Authentification Google (HTTP 409 `account_exists_link_required`, voir
+     * `server/api/auth/google_login.php`) : un compte Arzikina existe déjà avec cette adresse
+     * e-mail, créé par mot de passe — cahier des charges, Cas C : jamais de fusion automatique,
+     * l'utilisateur doit se connecter classiquement puis lier son compte Google (voir
+     * [com.naniger.arzikina.domain.repository.UnifiedAuthRepository.linkGoogleAccount]).
+     */
+    data object AccountExistsLinkRequired : SyncAuthError()
+
+    /** Authentification Google (HTTP 409 `google_account_already_linked`, voir
+     *  `server/api/auth/link_google_account.php`) : ce compte Google est déjà associé à un AUTRE
+     *  compte Arzikina. */
+    data object GoogleAccountAlreadyLinked : SyncAuthError()
+
+    /** Jeton Google invalide, expiré, mal destiné (mauvaise audience), ou e-mail Google non
+     *  vérifié (HTTP 401 `invalid_google_token`/`google_email_not_verified`/`missing_id_token`,
+     *  voir `server/api/utils/google_token_verifier.php`). */
+    data object InvalidGoogleToken : SyncAuthError()
 }

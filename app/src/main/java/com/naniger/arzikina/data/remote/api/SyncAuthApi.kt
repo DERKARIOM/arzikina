@@ -2,6 +2,9 @@ package com.naniger.arzikina.data.remote.api
 
 import com.naniger.arzikina.data.remote.RemoteConfig
 import com.naniger.arzikina.data.remote.dto.DeleteAccountRequestDto
+import com.naniger.arzikina.data.remote.dto.GoogleLoginRequestDto
+import com.naniger.arzikina.data.remote.dto.GoogleLoginResponseDto
+import com.naniger.arzikina.data.remote.dto.LinkGoogleAccountRequestDto
 import com.naniger.arzikina.data.remote.dto.LoginRequestDto
 import com.naniger.arzikina.data.remote.dto.LoginResponseDto
 import com.naniger.arzikina.data.remote.dto.RegisterRequestDto
@@ -87,6 +90,38 @@ class SyncAuthApi @Inject constructor(
             .toRequestBody(jsonMediaType)
         val httpRequest = Request.Builder()
             .url(RemoteConfig.BASE_URL + "api/auth/delete_account.php")
+            .header("Authorization", "Bearer $rawToken")
+            .post(body)
+            .build()
+        okHttpClient.awaitBody(httpRequest)
+    }
+
+    /**
+     * Authentification Google — voir `server/api/auth/google_login.php`. Réponse d'une forme
+     * PROCHE mais pas identique à [login]/[register] (voir [GoogleLoginResponseDto]), donc un DTO
+     * de réponse dédié plutôt qu'un partage forcé avec [LoginResponseDto].
+     */
+    suspend fun googleLogin(request: GoogleLoginRequestDto): GoogleLoginResponseDto {
+        val body = json.encodeToString(GoogleLoginRequestDto.serializer(), request).toRequestBody(jsonMediaType)
+        val httpRequest = Request.Builder()
+            .url(RemoteConfig.BASE_URL + "api/auth/google_login.php")
+            .post(body)
+            .build()
+
+        val responseBody = okHttpClient.awaitBody(httpRequest)
+        return json.decodeFromString(GoogleLoginResponseDto.serializer(), responseBody)
+    }
+
+    /**
+     * Lie un compte Google au compte Arzikina du Bearer fourni — voir
+     * `server/api/auth/link_google_account.php` (cahier des charges, Cas C). Réponse vide en cas
+     * de succès (`{"linked": true}`, jamais lue : un code HTTP 2xx suffit, voir `awaitBody`).
+     */
+    suspend fun linkGoogleAccount(rawToken: String, idToken: String) {
+        val body = json.encodeToString(LinkGoogleAccountRequestDto.serializer(), LinkGoogleAccountRequestDto(idToken))
+            .toRequestBody(jsonMediaType)
+        val httpRequest = Request.Builder()
+            .url(RemoteConfig.BASE_URL + "api/auth/link_google_account.php")
             .header("Authorization", "Bearer $rawToken")
             .post(body)
             .build()

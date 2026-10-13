@@ -140,6 +140,54 @@
             </FrameLayout>
 
             <!--
+                "Continuer avec Google" (cahier des charges "Intégrer l'authentification Google") :
+                séparateur "ou" + bouton OUTLINED neutre, jamais recoloré avec #42B998 (règles de
+                marque Google, voir ic_google_logo_24.xml) — s'intègre naturellement à côté du
+                bouton principal teal juste au-dessus, sans redesign de l'écran.
+            -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_l"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <View
+                    android:layout_width="0dp"
+                    android:layout_height="1dp"
+                    android:layout_weight="1"
+                    android:background="?attr/colorOutlineVariant" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginHorizontal="@dimen/spacing_s"
+                    android:text="@string/auth_or_divider"
+                    android:textColor="?attr/colorOnSurfaceVariant"
+                    style="@style/TextAppearance.Material3.BodySmall" />
+
+                <View
+                    android:layout_width="0dp"
+                    android:layout_height="1dp"
+                    android:layout_weight="1"
+                    android:background="?attr/colorOutlineVariant" />
+
+            </LinearLayout>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/googleSignInButton"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_m"
+                android:text="@string/auth_continue_with_google"
+                android:textColor="?attr/colorOnSurface"
+                app:icon="@drawable/ic_google_logo_24"
+                app:iconGravity="textStart"
+                app:iconTint="@null"
+                app:strokeColor="?attr/colorOutlineVariant" />
+
+            <!--
                 Message d'étape (LoginViewModel.LoginStage) pendant/après la connexion —
                 "Connexion…", "Synchronisation de vos données…", "✓ Synchronisation terminée"...
                 Couleur neutre (contrairement à formErrorText, réservé aux erreurs).
