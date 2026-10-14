@@ -92,7 +92,7 @@ class LoginFragment : Fragment(R.layout.fragment_login) {
     }
 
     /**
-     * « Continuer avec Google » (cahier des charges) — [GoogleSignInLauncher.signInWithFallback]
+     * « Continuer avec Google » (cahier des charges) — [GoogleSignInLauncher.chooseGoogleAccount]
      * fait le travail Android (sélecteur de compte, retente avec tous les comptes si nécessaire) ;
      * seul le RÉSULTAT (jeton, annulation ou erreur) est transmis au [viewModel], qui ne connaît
      * jamais Credential Manager (couche présentation uniquement, voir la doc de
@@ -106,7 +106,7 @@ class LoginFragment : Fragment(R.layout.fragment_login) {
         if (viewModel.formState.value.isSubmitting) return
         viewModel.onGoogleSignInStarted()
         viewLifecycleOwner.lifecycleScope.launch {
-            when (val result = googleSignInLauncher.signInWithFallback()) {
+            when (val result = googleSignInLauncher.chooseGoogleAccount()) {
                 is GoogleSignInLauncher.Result.Success -> viewModel.submitWithGoogle(result.idToken)
                 is GoogleSignInLauncher.Result.Cancelled -> viewModel.onGoogleSignInCancelled()
                 is GoogleSignInLauncher.Result.Error -> {

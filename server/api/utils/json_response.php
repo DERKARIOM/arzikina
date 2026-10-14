@@ -24,9 +24,21 @@ declare(strict_types=1);
  * rester dans le code versionné, contrairement aux identifiants de `config_arzikina_secrets.php`.
  * Sans slash final : un en-tête Origin de navigateur n'en a jamais.
  */
-const ALLOWED_WEB_ORIGIN = 'https://arziki.naniger.com';
+const ALLOWED_WEB_ORIGINS = [
+    'https://arzikina.com',
+    'https://www.arzikina.com',
+    // Ancien domaine : à retirer une fois la migration vers arzikina.com terminée et redirigée.
+    'https://arziki.naniger.com',
+];
 
-header('Access-Control-Allow-Origin: ' . ALLOWED_WEB_ORIGIN);
+// Une seule origine peut figurer dans `Access-Control-Allow-Origin` : on renvoie celle de la requête
+// si (et seulement si) elle fait partie de la liste blanche ci-dessus. `Vary: Origin` empêche un
+// cache intermédiaire de servir la réponse d'une origine à une autre.
+$requestOrigin = $_SERVER['HTTP_ORIGIN'] ?? '';
+if (in_array($requestOrigin, ALLOWED_WEB_ORIGINS, true)) {
+    header('Access-Control-Allow-Origin: ' . $requestOrigin);
+    header('Vary: Origin');
+}
 header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type, Authorization');
 

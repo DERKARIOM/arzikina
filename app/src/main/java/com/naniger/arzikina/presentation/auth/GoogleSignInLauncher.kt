@@ -41,19 +41,14 @@ class GoogleSignInLauncher(private val context: Context) {
     }
 
     /**
-     * Tente d'abord avec UNIQUEMENT les comptes Google déjà utilisés avec Arzikina sur cet
-     * appareil (expérience la plus fluide, recommandée par Google) ; si cette première tentative
-     * échoue (ex. aucun compte « déjà autorisé » trouvé — `NoCredentialException`, sous-type de
-     * [GetCredentialException]), retente automatiquement en proposant TOUS les comptes Google de
-     * l'appareil. Une seule fenêtre de sélection visible par l'utilisateur dans le cas courant
-     * (compte déjà utilisé), deux seulement si la première tentative échoue réellement — centralisé
-     * ici pour que [LoginFragment]/[RegisterFragment] n'aient pas à dupliquer cette logique de
-     * repli.
+     * Affiche TOUS les comptes Google de l'appareil (`filterByAuthorizedAccounts = false`), pas
+     * seulement ceux déjà utilisés avec Arzikina : sans cela, un utilisateur ayant déjà un compte
+     * lié ne verrait jamais les autres comptes de son téléphone et ne pourrait ni en choisir un
+     * autre pour se connecter, ni créer un nouveau compte avec une autre adresse. Le compte
+     * habituel reste proposé dans la liste. Une seule fenêtre de sélection, centralisée ici pour
+     * [LoginFragment], [RegisterFragment] et l'écran Paramètres.
      */
-    suspend fun signInWithFallback(): Result {
-        val firstAttempt = signIn(filterByAuthorizedAccounts = true)
-        return if (firstAttempt is Result.Error) signIn(filterByAuthorizedAccounts = false) else firstAttempt
-    }
+    suspend fun chooseGoogleAccount(): Result = signIn(filterByAuthorizedAccounts = false)
 
     private suspend fun signIn(filterByAuthorizedAccounts: Boolean): Result {
         val googleIdOption = GetGoogleIdOption.Builder()

@@ -117,7 +117,7 @@ class RegisterFragment : Fragment(R.layout.fragment_register) {
     private fun onGoogleSignInClicked(binding: FragmentRegisterBinding) {
         if (viewModel.formState.value.isSubmitting) return
         viewLifecycleOwner.lifecycleScope.launch {
-            when (val result = googleSignInLauncher.signInWithFallback()) {
+            when (val result = googleSignInLauncher.chooseGoogleAccount()) {
                 is GoogleSignInLauncher.Result.Success -> viewModel.submitWithGoogle(result.idToken)
                 is GoogleSignInLauncher.Result.Cancelled -> Unit // Cas D : rien à faire, reste sur l'écran.
                 is GoogleSignInLauncher.Result.Error -> {

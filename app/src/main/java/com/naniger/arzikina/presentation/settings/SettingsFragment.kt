@@ -289,7 +289,7 @@ class SettingsFragment : Fragment(R.layout.fragment_settings) {
      */
     private fun onLinkGoogleClicked() {
         viewLifecycleOwner.lifecycleScope.launch {
-            when (val result = googleSignInLauncher.signInWithFallback()) {
+            when (val result = googleSignInLauncher.chooseGoogleAccount()) {
                 is GoogleSignInLauncher.Result.Success -> viewModel.onLinkGoogleAccount(result.idToken)
                 is GoogleSignInLauncher.Result.Cancelled -> Unit
                 is GoogleSignInLauncher.Result.Error -> Unit
