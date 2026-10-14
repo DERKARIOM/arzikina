@@ -1371,4 +1371,24 @@
     <string name="push_loan_due_text">Un prêt ou un emprunt arrive à échéance. Ouvrez Arzikina pour le consulter.</string>
     <string name="push_security_alert_title">Sécurité du compte</string>
     <string name="push_security_alert_text">Une activité importante a eu lieu sur votre compte. Ouvrez Arzikina pour vérifier.</string>
+    <!-- Contrôle de version (voir domain/versioning, écran ForcedUpdateFragment). -->
+    <string name="forced_update_title">Mise à jour obligatoire</string>
+    <string name="forced_update_message">Cette version d\'Arzikina n\'est plus prise en charge. Mettez l\'application à jour pour continuer à l\'utiliser.</string>
+    <!-- %1$s = version installée, %2$s = version requise. -->
+    <string name="forced_update_versions">Version installée : %1$s\nVersion requise : %2$s</string>
+    <string name="forced_update_action">Mettre à jour maintenant</string>
+    <string name="forced_update_open_failed">Impossible d\'ouvrir le lien de mise à jour.</string>
+    <string name="maintenance_title">Maintenance en cours</string>
+    <string name="maintenance_message_default">Arzikina est momentanément indisponible. Réessayez dans quelques instants.</string>
+    <string name="maintenance_retry_action">Réessayer</string>
+    <!-- Utilitaire « Application web » (voir WebAppFragment). -->
+    <string name="utility_web_app_title">Application web</string>
+    <string name="web_app_description">Accédez à vos finances depuis un ordinateur. Scannez ce code avec un autre appareil, ou ouvrez le lien ci-dessous.</string>
+    <string name="web_app_qr_content_description">QR code de la page de connexion de la console web Arzikina</string>
+    <string name="web_app_link_label">Lien de la console web</string>
+    <string name="web_app_open_action">Ouvrir le lien</string>
+    <string name="web_app_copy_action">Copier le lien</string>
+    <string name="web_app_link_copied">Lien copié</string>
+    <string name="web_app_open_failed">Impossible d\'ouvrir le lien.</string>
+    <string name="web_app_hint">Connectez-vous avec le même compte que sur cette application.</string>
 </resources>

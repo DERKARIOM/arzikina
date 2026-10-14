@@ -20,7 +20,8 @@ require_once __DIR__ . '/../middleware/auth_middleware.php';
  */
 function requirePermission(PDO $pdo, string $permission): array
 {
-    $auth = requireAuthenticatedUser($pdo);
+    // false : la console d'administration n'est JAMAIS soumise au contrôle de version/maintenance.
+    $auth = requireAuthenticatedUser($pdo, false);
 
     $stmt = $pdo->prepare(
         'SELECT admin_role, email, full_name FROM users WHERE id = :id AND deleted_at IS NULL LIMIT 1'

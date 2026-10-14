@@ -892,4 +892,24 @@
     <string name="push_loan_due_text">A loan or borrowing is coming due. Open Arzikina to review it.</string>
     <string name="push_security_alert_title">Account security</string>
     <string name="push_security_alert_text">Important activity happened on your account. Open Arzikina to check.</string>
+    <!-- Version check (see domain/versioning, ForcedUpdateFragment screen). -->
+    <string name="forced_update_title">Update required</string>
+    <string name="forced_update_message">This version of Arzikina is no longer supported. Update the app to keep using it.</string>
+    <!-- %1$s = installed version, %2$s = required version. -->
+    <string name="forced_update_versions">Installed version: %1$s\nRequired version: %2$s</string>
+    <string name="forced_update_action">Update now</string>
+    <string name="forced_update_open_failed">Couldn\'t open the update link.</string>
+    <string name="maintenance_title">Maintenance in progress</string>
+    <string name="maintenance_message_default">Arzikina is temporarily unavailable. Please try again in a moment.</string>
+    <string name="maintenance_retry_action">Try again</string>
+    <!-- "Web app" utility (see WebAppFragment). -->
+    <string name="utility_web_app_title">Web app</string>
+    <string name="web_app_description">Access your finances from a computer. Scan this code with another device, or open the link below.</string>
+    <string name="web_app_qr_content_description">QR code for the Arzikina web console sign-in page</string>
+    <string name="web_app_link_label">Web console link</string>
+    <string name="web_app_open_action">Open link</string>
+    <string name="web_app_copy_action">Copy link</string>
+    <string name="web_app_link_copied">Link copied</string>
+    <string name="web_app_open_failed">Couldn\'t open the link.</string>
+    <string name="web_app_hint">Sign in with the same account you use in this app.</string>
 </resources>

@@ -59,6 +59,21 @@ function loadLatestPublishedVersion(PDO $pdo): ?array
 }
 
 /**
+ * Nom lisible (`versionName`) de la version portant ce `versionCode`, ou null si inconnue.
+ * Sert à afficher « version requise 1.3.0 » plutôt qu'un simple numéro dans l'app.
+ */
+function loadVersionNameByCode(PDO $pdo, int $versionCode): ?string
+{
+    if ($versionCode <= 0) {
+        return null;
+    }
+    $stmt = $pdo->prepare('SELECT version_name FROM android_versions WHERE version_code = :code LIMIT 1');
+    $stmt->execute(['code' => $versionCode]);
+    $name = $stmt->fetchColumn();
+    return $name === false ? null : (string) $name;
+}
+
+/**
  * Extrait le versionCode annoncé par le client (en-tête `X-App-Version-Code`), ou null s'il est
  * absent/invalide (anciennes installations, console Web, outils).
  */
@@ -94,4 +109,49 @@ function evaluateClientVersion(array $policy, ?array $latest, ?int $clientVersio
         'updateRequired' => $policy['forceUpdate'] && $clientVersionCode < $policy['minVersionCode'],
         'updateAvailable' => $latest !== null && $clientVersionCode < $latest['versionCode'],
     ];
+}
+
+/**
+ * Refuse la requête si cette version de l'app est obsolète (HTTP 426 `upgrade_required`) ou si le
+ * serveur est en maintenance (HTTP 503 `maintenance`). Appelée par les endpoints protégés
+ * (voir `requireAuthenticatedUser`) et par les routes de connexion/inscription.
+ *
+ * Même règle que l'endpoint public (`evaluateClientVersion`), donc une version que l'app croit
+ * autorisée l'est aussi pour le serveur. Les clients qui n'envoient pas `X-App-Version-Code`
+ * (anciennes installations, console Web) ne sont refusés que si `block_unversioned_clients` est actif.
+ *
+ * EXEMPTIONS VOLONTAIRES (ne jamais appeler cette fonction depuis) : l'endpoint public de politique,
+ * `auth/logout.php` et `auth/delete_account.php` (un utilisateur bloqué doit pouvoir se déconnecter
+ * et supprimer son compte), et tout `api/admin/*` (un administrateur doit pouvoir corriger la
+ * politique même après une erreur).
+ *
+ * Échec ouvert : si la politique est illisible (migration absente, base indisponible), la requête
+ * continue — une panne de ce contrôle ne doit pas couper toute l'API.
+ */
+function enforceClientVersionPolicy(PDO $pdo): void
+{
+    try {
+        $policy = loadVersionPolicy($pdo);
+    } catch (Throwable $e) {
+        error_log('Arzikina API — contrôle de version ignoré : ' . $e->getMessage());
+        return;
+    }
+
+    $status = evaluateClientVersion($policy, null, readClientVersionCode());
+    if ($status['updateRequired']) {
+        header('Cache-Control: no-store');
+        sendJson([
+            'error' => 'upgrade_required',
+            'message' => 'Cette version d\'Arzikina n\'est plus prise en charge. Mettez l\'application à jour.',
+            'minVersionCode' => $policy['minVersionCode'],
+            'updateUrl' => $policy['updateUrl'],
+        ], 426);
+    }
+    if ($policy['maintenanceEnabled']) {
+        header('Cache-Control: no-store');
+        sendJson([
+            'error' => 'maintenance',
+            'message' => $policy['maintenanceMessage'] ?? 'Arzikina est momentanément indisponible. Réessayez dans quelques instants.',
+        ], 503);
+    }
 }

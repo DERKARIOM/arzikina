@@ -19,7 +19,7 @@ require_once __DIR__ . '/../utils/version_policy.php';
  * `minVersionCode` (valeur entière officielle Android).
  *
  * Réponse 200 :
- *   { minVersionCode, latestVersionCode, latestVersionName, forceUpdate, updateRequired,
+ *   { minVersionCode, minVersionName, latestVersionCode, latestVersionName, forceUpdate, updateRequired,
  *     updateAvailable, updateUrl, releaseNotes, maintenance: {enabled, message}, serverTime }
  */
 
@@ -42,6 +42,7 @@ try {
     $pdo = getDatabaseConnection();
     $policy = loadVersionPolicy($pdo);
     $latest = loadLatestPublishedVersion($pdo);
+    $minVersionName = loadVersionNameByCode($pdo, $policy['minVersionCode']);
 } catch (Throwable $e) {
     error_log('Arzikina API — echec lecture politique de version : ' . $e->getMessage());
     sendError('server_error', 'Politique de version indisponible, réessaie plus tard.', 500);
@@ -54,6 +55,7 @@ header('Cache-Control: no-store');
 
 sendJson([
     'minVersionCode' => $policy['minVersionCode'],
+    'minVersionName' => $minVersionName,
     'latestVersionCode' => $latest['versionCode'] ?? null,
     'latestVersionName' => $latest['versionName'] ?? null,
     'forceUpdate' => $policy['forceUpdate'],

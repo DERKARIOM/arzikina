@@ -1,5 +1,6 @@
 package com.naniger.arzikina.data.remote
 
+import com.naniger.arzikina.data.remote.interceptor.AppVersionInterceptor
 import com.naniger.arzikina.data.remote.interceptor.SyncAuthInterceptor
 import dagger.Module
 import dagger.Provides
@@ -50,7 +51,10 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    fun provideOkHttpClient(): OkHttpClient = OkHttpClient.Builder()
+    fun provideOkHttpClient(appVersionInterceptor: AppVersionInterceptor): OkHttpClient = OkHttpClient.Builder()
+        // Contrôle de version : en-tête X-App-Version-Code + détection du 426. Posé sur le client de
+        // BASE, donc hérité par @SyncHttpClient (newBuilder) — voir AppVersionInterceptor.
+        .addInterceptor(appVersionInterceptor)
         .connectTimeout(TIMEOUT_SECONDS, TimeUnit.SECONDS)
         .readTimeout(TIMEOUT_SECONDS, TimeUnit.SECONDS)
         .writeTimeout(TIMEOUT_SECONDS, TimeUnit.SECONDS)

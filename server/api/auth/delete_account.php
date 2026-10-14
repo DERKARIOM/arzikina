@@ -47,7 +47,9 @@ if ($password === '') {
 }
 
 $pdo = getDatabaseConnection();
-$auth = requireAuthenticatedUser($pdo);
+// false : exempté du contrôle de version — un utilisateur dont l'app est obsolète doit pouvoir
+// se déconnecter / supprimer son compte (voir enforceClientVersionPolicy).
+$auth = requireAuthenticatedUser($pdo, false);
 $userId = $auth['userId'];
 
 try {

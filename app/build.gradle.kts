@@ -20,8 +20,8 @@ android {
         applicationId = "com.naniger.arzikina"
         minSdk = 26
         targetSdk = 36
-        versionCode = 7
-        versionName = "1.2.0"
+        versionCode = 8
+        versionName = "1.2.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -155,6 +155,7 @@ dependencies {
     // presentation/update/PlayStoreUpdateManager.kt) — Google Play reste la seule source de vérité,
     // aucune comparaison de version locale ni API maison.
     implementation(libs.play.app.update)
+    implementation(libs.zxing.core)
 
     // Notifications push (Firebase Cloud Messaging) — messages « data » uniquement, la notification
     // est construite par l'application (voir push/ArzikinaMessagingService.kt). Configuration

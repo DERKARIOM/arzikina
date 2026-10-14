@@ -28,7 +28,9 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
 }
 
 $pdo = getDatabaseConnection();
-$auth = requireAuthenticatedUser($pdo);
+// false : exempté du contrôle de version — un utilisateur dont l'app est obsolète doit pouvoir
+// se déconnecter / supprimer son compte (voir enforceClientVersionPolicy).
+$auth = requireAuthenticatedUser($pdo, false);
 $nowMillis = (int) round(microtime(true) * 1000);
 
 try {

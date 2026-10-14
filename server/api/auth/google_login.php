@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../utils/json_response.php';
+require_once __DIR__ . '/../utils/version_policy.php';
 require_once __DIR__ . '/../utils/uuid.php';
 require_once __DIR__ . '/../utils/google_token_verifier.php';
 
@@ -55,6 +56,7 @@ if ($idToken === '') {
 }
 
 $pdo = getDatabaseConnection();
+enforceClientVersionPolicy($pdo); // 426 si version obsolète, 503 si maintenance
 
 try {
     $claims = verifyGoogleIdToken($idToken, [GOOGLE_CLIENT_ID_ANDROID, GOOGLE_CLIENT_ID_WEB]);

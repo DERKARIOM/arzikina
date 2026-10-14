@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/../utils/json_response.php';
+require_once __DIR__ . '/../utils/version_policy.php';
 
 /**
  * Vérifie l'en-tête `Authorization: Bearer <token>` et retourne l'utilisateur authentifié.
@@ -18,8 +19,14 @@ require_once __DIR__ . '/../utils/json_response.php';
  * Le token n'est JAMAIS stocké en clair côté serveur (voir
  * `database/migrations/001_initial_schema.sql`, table `auth_tokens`, colonne `token_hash`) — seul
  * son hash SHA-256 est comparé, même principe que le hachage d'un mot de passe.
+ *
+ * Contrôle de version : par défaut, une version d'app obsolète est refusée ici (426) ou une
+ * maintenance annoncée (503), APRÈS validation du jeton (un jeton invalide reste un 401). Passer
+ * `$enforceVersionPolicy = false` UNIQUEMENT pour les routes qui doivent rester ouvertes aux versions
+ * bloquées : `auth/logout.php`, `auth/delete_account.php` et `api/admin/*` (voir
+ * `enforceClientVersionPolicy`).
  */
-function requireAuthenticatedUser(PDO $pdo): array
+function requireAuthenticatedUser(PDO $pdo, bool $enforceVersionPolicy = true): array
 {
     $header = $_SERVER['HTTP_AUTHORIZATION'] ?? '';
     if ($header === '' && function_exists('apache_request_headers')) {
@@ -45,6 +52,10 @@ function requireAuthenticatedUser(PDO $pdo): array
 
     if ($row === false || $row['revoked_at'] !== null || (int) $row['expires_at'] < $nowMillis) {
         sendError('invalid_token', 'Token invalide, révoqué ou expiré.', 401);
+    }
+
+    if ($enforceVersionPolicy) {
+        enforceClientVersionPolicy($pdo);
     }
 
     $update = $pdo->prepare('UPDATE auth_tokens SET last_used_at = :now WHERE id = :id');

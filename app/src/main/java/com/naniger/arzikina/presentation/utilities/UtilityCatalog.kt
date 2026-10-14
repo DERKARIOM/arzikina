@@ -56,6 +56,12 @@ object UtilityCatalog {
             iconRes = R.drawable.ic_storefront_24,
             titleRes = R.string.utility_marketplace_title,
             destinationId = R.id.marketplaceFragment
+        ),
+        // Console web : QR code + lien de connexion (voir presentation/utilities/webapp).
+        UtilityItem(
+            iconRes = R.drawable.ic_web_24,
+            titleRes = R.string.utility_web_app_title,
+            destinationId = R.id.webAppFragment
         )
     )
 }

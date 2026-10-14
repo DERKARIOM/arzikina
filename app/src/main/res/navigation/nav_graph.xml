@@ -69,6 +69,17 @@
 
     </fragment>
 
+    <!--
+        Écran de blocage « Mise à jour obligatoire » / « Maintenance » (voir
+        presentation/versioning/ForcedUpdateFragment). Aucun argument : il lit l'état de
+        AppVersionViewModel. Ouvert par MainActivity par-dessus l'écran courant, depuis n'importe où.
+    -->
+    <fragment
+        android:id="@+id/forcedUpdateFragment"
+        android:name="com.naniger.arzikina.presentation.versioning.ForcedUpdateFragment"
+        android:label="@string/forced_update_title"
+        tools:layout="@layout/fragment_forced_update" />
+
     <fragment
         android:id="@+id/dashboardFragment"
         android:name="com.naniger.arzikina.presentation.dashboard.DashboardFragment"
@@ -314,6 +325,13 @@
         vers des fonctionnalités annexes. Catégories réutilise categoriesFragment ci-dessus, déjà
         déclaré — seules les 2 destinations suivantes sont nouvelles pour ce bloc.
     -->
+    <!-- Utilitaire « Application web » : QR code + lien de la console (voir WebAppFragment). -->
+    <fragment
+        android:id="@+id/webAppFragment"
+        android:name="com.naniger.arzikina.presentation.utilities.webapp.WebAppFragment"
+        android:label="@string/utility_web_app_title"
+        tools:layout="@layout/fragment_web_app" />
+
     <fragment
         android:id="@+id/allUtilitiesFragment"
         android:name="com.naniger.arzikina.presentation.utilities.AllUtilitiesFragment"

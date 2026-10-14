@@ -88,6 +88,8 @@ pdfboxAndroid = "2.0.27.0"
 # "Play Core", dépréciée) — minSdk 21, compatible avec notre minSdk 26 / compileSdk 36.1. Variante
 # Java uniquement : la variante `-ktx` n'apporte que des extensions Flow non utilisées ici.
 appUpdate = "2.1.0"
+# Génération du QR code de la console web (voir util/qr/QrCodeGenerator.kt).
+zxingCore = "3.5.3"
 
 # Authentification Google (« Continuer avec Google », voir presentation/auth/GoogleSignInLauncher.kt)
 # — Credential Manager, API moderne recommandée par Google pour « Sign in with Google », remplace
@@ -180,6 +182,8 @@ googleid = { group = "com.google.android.libraries.identity.googleid", name = "g
 
 # Google Play In-App Updates (voir presentation/update/PlayStoreUpdateManager.kt)
 play-app-update = { group = "com.google.android.play", name = "app-update", version.ref = "appUpdate" }
+# ZXing core : Java pur, aucun service Google (QR code de l'écran « Application web »).
+zxing-core = { group = "com.google.zxing", name = "core", version.ref = "zxingCore" }
 firebase-bom = { group = "com.google.firebase", name = "firebase-bom", version.ref = "firebaseBom" }
 # Version fournie par firebase-bom (voir plus haut).
 firebase-messaging = { group = "com.google.firebase", name = "firebase-messaging" }

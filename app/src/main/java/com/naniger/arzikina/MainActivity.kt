@@ -9,12 +9,15 @@ import android.view.ViewGroup
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.IntentCompat
 import androidx.core.view.ViewCompat
+import androidx.activity.viewModels
 import androidx.core.widget.NestedScrollView
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
 import androidx.navigation.NavController
 import androidx.navigation.fragment.NavHostFragment
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import com.naniger.arzikina.data.receipts.ReceiptFileStorage
 import com.naniger.arzikina.databinding.ActivityMainBinding
 import com.naniger.arzikina.domain.repository.BiometricAuthenticator
@@ -26,6 +29,8 @@ import com.naniger.arzikina.presentation.components.NavAnimations
 import com.naniger.arzikina.presentation.security.BiometricLockFragment
 import com.naniger.arzikina.presentation.security.BiometricLockFragmentArgs
 import com.naniger.arzikina.presentation.update.PlayStoreUpdateManager
+import com.naniger.arzikina.domain.versioning.VersionGateResult
+import com.naniger.arzikina.presentation.versioning.AppVersionViewModel
 import com.naniger.arzikina.util.Constants
 import com.naniger.arzikina.util.SystemBars
 import com.naniger.arzikina.util.external.ExternalAppLauncher
@@ -73,6 +78,9 @@ class MainActivity : AppCompatActivity() {
      * sa doc ; l'Activity ne fait que l'attacher et lui signaler les écrans où il peut s'afficher. */
     @Inject
     lateinit var playStoreUpdateManager: PlayStoreUpdateManager
+
+    /** Contrôle de version (mise à jour obligatoire / maintenance) — voir [observeVersionGate]. */
+    private val appVersionViewModel: AppVersionViewModel by viewModels()
 
     private lateinit var binding: ActivityMainBinding
     private lateinit var navController: NavController
@@ -208,6 +216,8 @@ class MainActivity : AppCompatActivity() {
             playStoreUpdateManager.setPromptsAllowed(destination.id !in AUTH_DESTINATION_IDS)
         }
 
+        observeVersionGate()
+
         // Partage entrant à froid (app pas encore lancée, voir cahier des charges "Gestion des
         // reçus" section 1) : l'Intent de lancement est déjà celui du partage dans ce cas (PAS
         // besoin d'attendre onNewIntent, réservé aux partages reçus APP DÉJÀ EN COURS D'EXÉCUTION,
@@ -242,6 +252,27 @@ class MainActivity : AppCompatActivity() {
     override fun onStart() {
         super.onStart()
         checkBiometricReentryLock()
+        // Espacée par le ViewModel (pas de requête à chaque aller-retour très bref).
+        appVersionViewModel.check()
+    }
+
+    /**
+     * Ouvre l'écran de blocage dès que la politique de version l'exige (mise à jour obligatoire ou
+     * maintenance), depuis n'importe quel écran. L'écran se retire de lui-même quand l'état
+     * redevient « autorisé » (voir `ForcedUpdateFragment`). Aucune règle ici : voir `VersionGate`.
+     */
+    private fun observeVersionGate() {
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                appVersionViewModel.state.collect { state ->
+                    if (state !is VersionGateResult.Allowed &&
+                        navController.currentDestination?.id != R.id.forcedUpdateFragment
+                    ) {
+                        navController.navigate(R.id.forcedUpdateFragment)
+                    }
+                }
+            }
+        }
     }
 
     /**
@@ -569,7 +600,10 @@ class MainActivity : AppCompatActivity() {
             R.id.loginFragment,
             R.id.registerFragment,
             R.id.forgotPasswordFragment,
-            R.id.biometricLockFragment
+            R.id.biometricLockFragment,
+            // Écran de blocage de version : aucune donnée protégée, Bottom Navigation masquée,
+            // propositions Play différées (voir ForcedUpdateFragment).
+            R.id.forcedUpdateFragment
         )
 
         /** Les 4 onglets, mêmes id que menu/bottom_nav_menu.xml (voir sa doc et nav_graph.xml).

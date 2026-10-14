@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../utils/json_response.php';
+require_once __DIR__ . '/../utils/version_policy.php';
 
 /**
  * POST /api/auth/login.php
@@ -52,6 +53,7 @@ if ($identifier === '' || $password === '') {
 }
 
 $pdo = getDatabaseConnection();
+enforceClientVersionPolicy($pdo); // 426 si version obsolète, 503 si maintenance
 
 // try/catch AUTOUR DE TOUT LE BLOC métier — même raisonnement que `register.php`/`sync/push.php`/
 // `pull.php` (voir leur doc de tête) : une exception non attrapée ici (connexion DB perdue, etc.)
