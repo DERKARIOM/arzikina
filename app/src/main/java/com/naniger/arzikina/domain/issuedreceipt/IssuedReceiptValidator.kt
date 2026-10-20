@@ -13,15 +13,12 @@ import com.naniger.arzikina.domain.model.ReceiptDiscount
  */
 object IssuedReceiptValidator {
 
-    const val MAX_NAME_LENGTH = 120
-    const val MAX_ADDRESS_LENGTH = 250
+    const val MAX_NAME_LENGTH = IssuerValidator.MAX_NAME_LENGTH
     const val MAX_DESCRIPTION_LENGTH = 2_000
     const val MAX_NOTES_LENGTH = 1_000
-    const val MAX_SHORT_TEXT_LENGTH = 120
+    const val MAX_SHORT_TEXT_LENGTH = IssuerValidator.MAX_SHORT_TEXT_LENGTH
     const val MAX_LINES = 100
 
-    private val phone = Regex("^[0-9+()\\-. ]{5,30}$")
-    private val email = Regex("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$")
     private val currency = Regex("^[A-Z]{3}$")
 
     /** [receipt].number vide = « à générer » : valide à ce stade. */
@@ -29,32 +26,30 @@ object IssuedReceiptValidator {
         val errors = linkedSetOf<IssuedReceiptError>()
 
         val issuer = receipt.issuer
-        if (issuer.businessName.isBlank()) errors += IssuedReceiptError.BUSINESS_NAME_BLANK
-        if (issuer.address.isBlank()) errors += IssuedReceiptError.BUSINESS_ADDRESS_BLANK
-        if (!phone.matches(issuer.phone.trim())) errors += IssuedReceiptError.BUSINESS_PHONE_INVALID
-        issuer.email?.takeIf { it.isNotBlank() }?.let {
-            if (!email.matches(it.trim())) errors += IssuedReceiptError.BUSINESS_EMAIL_INVALID
-        }
+        errors += IssuerValidator.validate(
+            businessName = issuer.businessName,
+            address = issuer.address,
+            phone = issuer.phone,
+            email = issuer.email,
+            taxId = issuer.taxId
+        )
 
         if (receipt.number.isNotEmpty() && !ReceiptNumber.isValid(receipt.number)) {
             errors += IssuedReceiptError.NUMBER_INVALID
         }
         if (receipt.customerName.isBlank()) errors += IssuedReceiptError.CUSTOMER_NAME_BLANK
         receipt.customerPhone?.takeIf { it.isNotBlank() }?.let {
-            if (!phone.matches(it.trim())) errors += IssuedReceiptError.CUSTOMER_PHONE_INVALID
+            if (!IssuerValidator.isValidPhone(it)) errors += IssuedReceiptError.CUSTOMER_PHONE_INVALID
         }
         if (receipt.description.isBlank()) errors += IssuedReceiptError.DESCRIPTION_BLANK
         if (!currency.matches(receipt.currencyCode)) errors += IssuedReceiptError.CURRENCY_INVALID
 
         val tooLong = receipt.customerName.length > MAX_NAME_LENGTH ||
-            issuer.businessName.length > MAX_NAME_LENGTH ||
-            issuer.address.length > MAX_ADDRESS_LENGTH ||
             receipt.description.length > MAX_DESCRIPTION_LENGTH ||
             (receipt.notes?.length ?: 0) > MAX_NOTES_LENGTH ||
             (receipt.transactionReference?.length ?: 0) > MAX_SHORT_TEXT_LENGTH ||
             (receipt.issuedByName?.length ?: 0) > MAX_SHORT_TEXT_LENGTH ||
-            (receipt.issuedByTitle?.length ?: 0) > MAX_SHORT_TEXT_LENGTH ||
-            (issuer.taxId?.length ?: 0) > MAX_SHORT_TEXT_LENGTH
+            (receipt.issuedByTitle?.length ?: 0) > MAX_SHORT_TEXT_LENGTH
         if (tooLong) errors += IssuedReceiptError.TEXT_TOO_LONG
 
         val pricing = receipt.pricing

@@ -9,6 +9,7 @@ import com.naniger.arzikina.data.repository.BudgetRepositoryImpl
 import com.naniger.arzikina.data.repository.CategoryRepositoryImpl
 import com.naniger.arzikina.data.repository.FinancialPlanRepositoryImpl
 import com.naniger.arzikina.data.repository.IssuedReceiptRepositoryImpl
+import com.naniger.arzikina.data.repository.IssuerProfileRepositoryImpl
 import com.naniger.arzikina.data.repository.LoanRepositoryImpl
 import com.naniger.arzikina.data.repository.PersonRepositoryImpl
 import com.naniger.arzikina.data.repository.ProfilePhotoRepositoryImpl
@@ -34,6 +35,7 @@ import com.naniger.arzikina.domain.repository.BudgetRepository
 import com.naniger.arzikina.domain.repository.CategoryRepository
 import com.naniger.arzikina.domain.repository.FinancialPlanRepository
 import com.naniger.arzikina.domain.repository.IssuedReceiptRepository
+import com.naniger.arzikina.domain.repository.IssuerProfileRepository
 import com.naniger.arzikina.domain.repository.LoanRepository
 import com.naniger.arzikina.domain.repository.PersonRepository
 import com.naniger.arzikina.domain.repository.ProfilePhotoRepository
@@ -169,4 +171,9 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindIssuedReceiptRepository(impl: IssuedReceiptRepositoryImpl): IssuedReceiptRepository
+
+    /** Profil professionnel de l'émetteur de reçus (coordonnées + logo mémorisés). */
+    @Binds
+    @Singleton
+    abstract fun bindIssuerProfileRepository(impl: IssuerProfileRepositoryImpl): IssuerProfileRepository
 }
