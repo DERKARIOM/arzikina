@@ -6,6 +6,8 @@ import com.naniger.arzikina.data.local.dao.BudgetDao
 import com.naniger.arzikina.data.local.dao.CategoryDao
 import com.naniger.arzikina.data.local.dao.FinancialPlanDao
 import com.naniger.arzikina.data.local.dao.FinancialPlanItemDao
+import com.naniger.arzikina.data.local.dao.IssuedReceiptDao
+import com.naniger.arzikina.data.local.dao.IssuerProfileDao
 import com.naniger.arzikina.data.local.dao.LoanDao
 import com.naniger.arzikina.data.local.dao.LoanPaymentDao
 import com.naniger.arzikina.data.local.dao.PersonDao
@@ -67,6 +69,8 @@ class AccountDataWiper @Inject constructor(
     private val receiptDao: ReceiptDao,
     private val receiptFileStorage: ReceiptFileStorage,
     private val transactionTemplateDao: TransactionTemplateDao,
+    private val issuedReceiptDao: IssuedReceiptDao,
+    private val issuerProfileDao: IssuerProfileDao,
     private val userPreferencesDao: UserPreferencesDao,
     private val userProfilePhotoDao: UserProfilePhotoDao,
     private val profilePhotoFileStorage: ProfilePhotoFileStorage,
@@ -98,6 +102,10 @@ class AccountDataWiper @Inject constructor(
             accountDao.deleteAllForUser(userId)
             savingsGoalDao.deleteAllForUser(userId)
             receiptDao.deleteAllForUser(userId)
+            // Reçus émis et profil émetteur (utilitaire « Gestion de reçus »). Les fichiers PDF/logo
+            // associés seront supprimés avec leurs étapes respectives.
+            issuedReceiptDao.deleteAllForUser(userId)
+            issuerProfileDao.deleteAllForUser(userId)
             userPreferencesDao.deleteAllForUser(userId)
             userProfilePhotoDao.deleteAllForUser(userId)
             userServerLinkDao.deleteAllForUser(userId)

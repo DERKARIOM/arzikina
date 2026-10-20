@@ -9,6 +9,8 @@ import com.naniger.arzikina.data.local.dao.CardSecretDao
 import com.naniger.arzikina.data.local.dao.CategoryDao
 import com.naniger.arzikina.data.local.dao.FinancialPlanDao
 import com.naniger.arzikina.data.local.dao.FinancialPlanItemDao
+import com.naniger.arzikina.data.local.dao.IssuedReceiptDao
+import com.naniger.arzikina.data.local.dao.IssuerProfileDao
 import com.naniger.arzikina.data.local.dao.LoanDao
 import com.naniger.arzikina.data.local.dao.LoanPaymentDao
 import com.naniger.arzikina.data.local.dao.PersonDao
@@ -29,6 +31,8 @@ import com.naniger.arzikina.data.local.entity.CardSecretEntity
 import com.naniger.arzikina.data.local.entity.CategoryEntity
 import com.naniger.arzikina.data.local.entity.FinancialPlanEntity
 import com.naniger.arzikina.data.local.entity.FinancialPlanItemEntity
+import com.naniger.arzikina.data.local.entity.IssuedReceiptEntity
+import com.naniger.arzikina.data.local.entity.IssuerProfileEntity
 import com.naniger.arzikina.data.local.entity.LoanEntity
 import com.naniger.arzikina.data.local.entity.LoanPaymentEntity
 import com.naniger.arzikina.data.local.entity.PersonEntity
@@ -152,6 +156,9 @@ import com.naniger.arzikina.data.local.entity.UserServerLinkEntity
  * - 33 : « Transformer un prêt/emprunt en cadeau » — colonnes `giftedAmount` (défaut 0),
  *   `giftTransactionId`, `giftedAt` sur `loans` (voir [MIGRATION_32_33]) + statut `GIFTED`. Aucune
  *   modification de `transactions`.
+ * - 34 : Utilitaire « Gestion de reçus » (reçus ÉMIS) — tables `issued_receipts` et `issuer_profiles`
+ *   (voir [MIGRATION_33_34]/[IssuedReceiptEntity]/[IssuerProfileEntity]). Distinctes de `receipts`
+ *   (justificatifs importés). Migration purement additive.
  */
 @Database(
     entities = [
@@ -174,9 +181,11 @@ import com.naniger.arzikina.data.local.entity.UserServerLinkEntity
         UserPreferencesEntity::class,
         UserServerLinkEntity::class,
         UserProfilePhotoEntity::class,
-        TransactionTemplateEntity::class
+        TransactionTemplateEntity::class,
+        IssuedReceiptEntity::class,
+        IssuerProfileEntity::class
     ],
-    version = 33,
+    version = 34,
     exportSchema = true
 )
 @TypeConverters(Converters::class)
@@ -201,4 +210,6 @@ abstract class ArzikinaDatabase : RoomDatabase() {
     abstract fun userServerLinkDao(): UserServerLinkDao
     abstract fun userProfilePhotoDao(): UserProfilePhotoDao
     abstract fun transactionTemplateDao(): TransactionTemplateDao
+    abstract fun issuedReceiptDao(): IssuedReceiptDao
+    abstract fun issuerProfileDao(): IssuerProfileDao
 }

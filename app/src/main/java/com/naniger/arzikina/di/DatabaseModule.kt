@@ -8,6 +8,8 @@ import com.naniger.arzikina.data.local.dao.CardSecretDao
 import com.naniger.arzikina.data.local.dao.CategoryDao
 import com.naniger.arzikina.data.local.dao.FinancialPlanDao
 import com.naniger.arzikina.data.local.dao.FinancialPlanItemDao
+import com.naniger.arzikina.data.local.dao.IssuedReceiptDao
+import com.naniger.arzikina.data.local.dao.IssuerProfileDao
 import com.naniger.arzikina.data.local.dao.LoanDao
 import com.naniger.arzikina.data.local.dao.LoanPaymentDao
 import com.naniger.arzikina.data.local.dao.PersonDao
@@ -55,6 +57,7 @@ import com.naniger.arzikina.data.local.database.MIGRATION_29_30
 import com.naniger.arzikina.data.local.database.MIGRATION_30_31
 import com.naniger.arzikina.data.local.database.MIGRATION_31_32
 import com.naniger.arzikina.data.local.database.MIGRATION_32_33
+import com.naniger.arzikina.data.local.database.MIGRATION_33_34
 import com.naniger.arzikina.util.Constants
 import dagger.Module
 import dagger.Provides
@@ -92,7 +95,7 @@ object DatabaseModule {
                 MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21, MIGRATION_21_22,
                 MIGRATION_22_23, MIGRATION_23_24, MIGRATION_24_25, MIGRATION_25_26,
                 MIGRATION_26_27, MIGRATION_27_28, MIGRATION_28_29, MIGRATION_29_30,
-                MIGRATION_30_31, MIGRATION_31_32, MIGRATION_32_33
+                MIGRATION_30_31, MIGRATION_31_32, MIGRATION_32_33, MIGRATION_33_34
             )
             .build()
 
@@ -158,4 +161,10 @@ object DatabaseModule {
     @Provides
     fun provideTransactionTemplateDao(database: ArzikinaDatabase): TransactionTemplateDao =
         database.transactionTemplateDao()
+
+    @Provides
+    fun provideIssuedReceiptDao(database: ArzikinaDatabase): IssuedReceiptDao = database.issuedReceiptDao()
+
+    @Provides
+    fun provideIssuerProfileDao(database: ArzikinaDatabase): IssuerProfileDao = database.issuerProfileDao()
 }
