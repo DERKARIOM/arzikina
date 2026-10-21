@@ -9,7 +9,6 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
-import androidx.core.view.doOnLayout
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -36,6 +35,13 @@ class CategoryFormFragment : Fragment(R.layout.fragment_category_form) {
     private val viewModel: CategoryFormViewModel by viewModels()
     private var binding: FragmentCategoryFormBinding? = null
 
+    /** Colonnes de la grille (connues après la mesure) et état du bouton « Voir plus ». */
+    private var iconColumns = MIN_ICON_COLUMNS
+
+    /** `null` tant que l'utilisateur n'a pas touché au bouton : l'état dépend alors de l'icône choisie. */
+    private var iconsExpanded: Boolean? = null
+    private var shownIcon: CategoryIcon = CategoryIcon.OTHER
+
     private val iconPickerAdapter = IconPickerAdapter(
         items = CategoryIcon.entries,
         iconRes = CategoryIconMapper::iconFor,
@@ -53,6 +59,7 @@ class CategoryFormFragment : Fragment(R.layout.fragment_category_form) {
         val viewBinding = FragmentCategoryFormBinding.bind(view)
         binding = viewBinding
 
+        iconsExpanded = savedInstanceState?.takeIf { it.containsKey(STATE_ICONS_EXPANDED) }?.getBoolean(STATE_ICONS_EXPANDED)
         setUpToolbar(viewBinding)
         setUpPickers(viewBinding)
 
@@ -72,6 +79,11 @@ class CategoryFormFragment : Fragment(R.layout.fragment_category_form) {
                 launch { viewModel.events.collect { event -> handleEvent(event) } }
             }
         }
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        iconsExpanded?.let { outState.putBoolean(STATE_ICONS_EXPANDED, it) }
     }
 
     override fun onDestroyView() {
@@ -113,10 +125,42 @@ class CategoryFormFragment : Fragment(R.layout.fragment_category_form) {
         picker.layoutManager = grid
         picker.adapter = iconPickerAdapter
         picker.isNestedScrollingEnabled = false
-        picker.doOnLayout {
-            val columns = ((it.width - it.paddingStart - it.paddingEnd) / cellPx).coerceAtLeast(MIN_ICON_COLUMNS)
+        // Écouteur PERMANENT (pas doOnLayout, qui ne se déclenche qu'une fois) : le nombre de colonnes
+        // suit la largeur réelle (rotation, écran partagé). Une largeur nulle (première passe) est ignorée.
+        picker.addOnLayoutChangeListener { view, left, _, right, _, _, _, _, _ ->
+            val usable = right - left - view.paddingStart - view.paddingEnd
+            if (usable <= 0) return@addOnLayoutChangeListener
+            val columns = (usable / cellPx).coerceAtLeast(MIN_ICON_COLUMNS)
             if (grid.spanCount != columns) grid.spanCount = columns
+            if (iconColumns != columns) {
+                iconColumns = columns
+                // Pas de notifyDataSetChanged pendant une passe de mise en page : on reporte d'un cran.
+                view.post { refreshIcons() }
+            }
         }
+        binding?.iconToggleButton?.setOnClickListener {
+            iconsExpanded = !currentExpanded()
+            refreshIcons()
+        }
+        refreshIcons()
+    }
+
+    /**
+     * Déplié si l'utilisateur l'a demandé ; sinon replié (2 lignes), SAUF en modification d'une
+     * catégorie dont l'icône serait cachée. Une NOUVELLE catégorie s'ouvre toujours repliée, même si
+     * son icône par défaut ne tient pas dans les premières cases (elle est alors ajoutée à la liste).
+     */
+    private fun currentExpanded(): Boolean = iconsExpanded
+        ?: (viewModel.isEditMode && CategoryIconVisibility.startsExpanded(CategoryIcon.entries, shownIcon, iconColumns))
+
+    /** Applique « Voir plus / Voir moins » : liste visible et libellé du bouton. */
+    private fun refreshIcons() {
+        val binding = binding ?: return
+        val expanded = currentExpanded()
+        iconPickerAdapter.setItems(CategoryIconVisibility.visible(CategoryIcon.entries, shownIcon, expanded, iconColumns))
+        binding.iconToggleButton.visibility =
+            if (CategoryIconVisibility.needsToggle(CategoryIcon.entries.size, iconColumns)) View.VISIBLE else View.GONE
+        binding.iconToggleButton.setText(if (expanded) R.string.category_form_icons_less else R.string.category_form_icons_more)
     }
 
     private fun render(state: CategoryFormState) {
@@ -133,6 +177,12 @@ class CategoryFormFragment : Fragment(R.layout.fragment_category_form) {
         }
 
         iconPickerAdapter.setSelected(state.icon)
+        // Icône chargée (modification) ou changée : on réévalue ce qui doit être montré, sans recomposer la grille à chaque clic visible.
+        if (state.icon != shownIcon) {
+            val hidden = state.icon !in CategoryIconVisibility.visible(CategoryIcon.entries, shownIcon, currentExpanded(), iconColumns)
+            shownIcon = state.icon
+            if (hidden) refreshIcons()
+        }
         colorPickerAdapter.setSelected(state.colorArgb)
     }
 
@@ -156,6 +206,7 @@ class CategoryFormFragment : Fragment(R.layout.fragment_category_form) {
     }
 
     private companion object {
+        const val STATE_ICONS_EXPANDED = "category_icons_expanded"
         const val MIN_ICON_COLUMNS = 4
     }
 }
