@@ -315,4 +315,53 @@ const ENTITY_CONFIGS = [
             ['db' => 'source_transaction_id', 'payload' => 'sourceTransactionSyncId', 'type' => 'string', 'nullable' => true],
         ],
     ],
+    // « Gestion de reçus » (reçus ÉMIS) — voir database/migrations/011_issued_receipts.sql. Aucune
+    // référence croisée vers une autre entité synchronisée (un reçu est autonome) : pas de
+    // `*SyncId`, donc aucune contrainte d'ordre entre ces deux entrées et le reste du registre.
+    //
+    // `issuer_profiles` : au plus une ligne par utilisateur (`uq_issuer_profiles_user`) ; les
+    // clients utilisent un `id` DÉTERMINISTE (dérivé de l'utilisateur) pour que deux appareils
+    // visent la même ligne. `logoFileName` : NOM du fichier ; l'image passe par
+    // `api/issuer/upload_logo.php`/`get_logo.php`, jamais par ce registre (JSON uniquement).
+    'issuer_profiles' => [
+        'table' => 'issuer_profiles',
+        'columns' => [
+            ['db' => 'business_name', 'payload' => 'businessName', 'type' => 'string', 'nullable' => false],
+            ['db' => 'address', 'payload' => 'address', 'type' => 'string', 'nullable' => false],
+            ['db' => 'phone', 'payload' => 'phone', 'type' => 'string', 'nullable' => false],
+            ['db' => 'email', 'payload' => 'email', 'type' => 'string', 'nullable' => true],
+            ['db' => 'tax_id', 'payload' => 'taxId', 'type' => 'string', 'nullable' => true],
+            ['db' => 'logo_file_name', 'payload' => 'logoFileName', 'type' => 'string', 'nullable' => true],
+            ['db' => 'default_issued_by_name', 'payload' => 'defaultIssuedByName', 'type' => 'string', 'nullable' => true],
+            ['db' => 'default_issued_by_title', 'payload' => 'defaultIssuedByTitle', 'type' => 'string', 'nullable' => true],
+        ],
+    ],
+    // `issued_receipts` : montants en unités mineures (`int` PHP = 64 bits). `pricingJson` : JSON
+    // TEXTE (lignes/remise/taxe), `null` = reçu simple — transporté tel quel, jamais interprété par
+    // le serveur. `issuer*` : instantané figé des coordonnées de l'émetteur au moment de l'émission.
+    // Le PDF n'est PAS synchronisé (régénérable à partir de ces données).
+    'issued_receipts' => [
+        'table' => 'issued_receipts',
+        'columns' => [
+            ['db' => 'number', 'payload' => 'number', 'type' => 'string', 'nullable' => false],
+            ['db' => 'issued_at', 'payload' => 'issuedAt', 'type' => 'int', 'nullable' => false],
+            ['db' => 'customer_name', 'payload' => 'customerName', 'type' => 'string', 'nullable' => false],
+            ['db' => 'customer_phone', 'payload' => 'customerPhone', 'type' => 'string', 'nullable' => true],
+            ['db' => 'description', 'payload' => 'description', 'type' => 'string', 'nullable' => false],
+            ['db' => 'amount_minor', 'payload' => 'amountMinor', 'type' => 'int', 'nullable' => false],
+            ['db' => 'currency_code', 'payload' => 'currencyCode', 'type' => 'string', 'nullable' => false],
+            ['db' => 'payment_method', 'payload' => 'paymentMethod', 'type' => 'string', 'nullable' => false],
+            ['db' => 'transaction_reference', 'payload' => 'transactionReference', 'type' => 'string', 'nullable' => true],
+            ['db' => 'notes', 'payload' => 'notes', 'type' => 'string', 'nullable' => true],
+            ['db' => 'issued_by_name', 'payload' => 'issuedByName', 'type' => 'string', 'nullable' => true],
+            ['db' => 'issued_by_title', 'payload' => 'issuedByTitle', 'type' => 'string', 'nullable' => true],
+            ['db' => 'pricing_json', 'payload' => 'pricingJson', 'type' => 'string', 'nullable' => true],
+            ['db' => 'issuer_business_name', 'payload' => 'issuerBusinessName', 'type' => 'string', 'nullable' => false],
+            ['db' => 'issuer_address', 'payload' => 'issuerAddress', 'type' => 'string', 'nullable' => false],
+            ['db' => 'issuer_phone', 'payload' => 'issuerPhone', 'type' => 'string', 'nullable' => false],
+            ['db' => 'issuer_email', 'payload' => 'issuerEmail', 'type' => 'string', 'nullable' => true],
+            ['db' => 'issuer_tax_id', 'payload' => 'issuerTaxId', 'type' => 'string', 'nullable' => true],
+            ['db' => 'issuer_logo_file_name', 'payload' => 'issuerLogoFileName', 'type' => 'string', 'nullable' => true],
+        ],
+    ],
 ];

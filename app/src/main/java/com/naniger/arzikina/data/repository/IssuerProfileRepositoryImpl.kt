@@ -12,6 +12,7 @@ import com.naniger.arzikina.domain.issuedreceipt.IssuedReceiptException
 import com.naniger.arzikina.domain.issuedreceipt.IssuerValidator
 import com.naniger.arzikina.domain.issuedreceipt.LogoChange
 import com.naniger.arzikina.domain.model.IssuerProfile
+import com.naniger.arzikina.domain.model.SyncOperation
 import com.naniger.arzikina.domain.repository.IssuerProfileRepository
 import com.naniger.arzikina.domain.repository.SessionManager
 import kotlinx.coroutines.CoroutineDispatcher
@@ -23,8 +24,9 @@ import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 /**
- * Implémentation Room de [IssuerProfileRepository]. Pas encore de mise en file de synchronisation
- * (étape « Synchronisation ») : `syncId` reste `null`.
+ * Implémentation Room de [IssuerProfileRepository]. Chaque enregistrement est mis en file de
+ * synchronisation (voir [IssuedReceiptSyncHandler]) dans la même transaction. Tant que le compte n'est
+ * pas lié à un utilisateur serveur, `syncId` reste `null` et `enqueueUnsyncedLocalData` rattrape plus tard.
  *
  * Ordre sûr pour le logo : 1) traiter la nouvelle image (peut échouer, rien n'est encore écrit),
  * 2) écrire le nouveau fichier, 3) enregistrer la ligne en transaction, 4) seulement alors supprimer
@@ -37,6 +39,7 @@ class IssuerProfileRepositoryImpl @Inject constructor(
     private val logoProcessor: IssuerLogoProcessor,
     private val logoStorage: IssuerLogoStorage,
     private val sessionManager: SessionManager,
+    private val syncHandler: IssuedReceiptSyncHandler,
     @IoDispatcher private val ioDispatcher: CoroutineDispatcher
 ) : IssuerProfileRepository {
 
@@ -79,7 +82,9 @@ class IssuerProfileRepositoryImpl @Inject constructor(
                     is LogoChange.Replace -> newLogoFile
                 }
                 val now = System.currentTimeMillis()
-                profileDao.upsert(
+                // `syncId` déterministe (un profil par compte) ; nul tant que le compte n'est pas lié au serveur.
+                val syncId = existing?.syncId ?: syncHandler.profileSyncIdFor(userId)
+                val entity =
                     IssuerProfileEntity(
                         id = existing?.id ?: 0L,
                         userId = userId,
@@ -93,11 +98,17 @@ class IssuerProfileRepositoryImpl @Inject constructor(
                         defaultIssuedByTitle = normalized.defaultIssuedByTitle,
                         createdAt = existing?.createdAt ?: now,
                         updatedAt = now,
-                        syncId = existing?.syncId,
+                        syncId = syncId,
                         deletedAt = null,
                         version = existing?.version ?: 1
                     )
-                )
+                profileDao.upsert(entity)
+                if (syncId != null) {
+                    syncHandler.enqueueProfile(
+                        entity.copy(id = existing?.id ?: 0L),
+                        if (existing?.syncId == null) SyncOperation.CREATE else SyncOperation.UPDATE
+                    )
+                }
             }
         } catch (e: Throwable) {
             newLogoFile?.let { logoStorage.delete(it) }

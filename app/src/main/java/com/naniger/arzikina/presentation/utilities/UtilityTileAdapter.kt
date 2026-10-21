@@ -20,7 +20,7 @@ import com.naniger.arzikina.R
  * (item_utility_tile_card.xml, même convention que item_loan.xml/item_account.xml) — demande
  * explicitement limitée à l'écran "Tous les utilitaires", le Dashboard n'est pas concerné. Les
  * deux mises en page partagent EXACTEMENT les mêmes ID (`utilityIcon`/`utilityBadge`/
- * `utilityTitle`), [ViewHolder] les lit donc sans se soucier de laquelle a été inflée — pas de
+ * `utilityTitle`/`utilityNewPill`), [ViewHolder] les lit donc sans se soucier de laquelle a été inflée — pas de
  * `ViewBinding` ici (deux fichiers XML à racines différentes ne peuvent pas partager une classe
  * de binding générée), `findViewById` classique à la place.
  *
@@ -59,6 +59,7 @@ class UtilityTileAdapter(
         private val icon: ImageView = itemView.findViewById(R.id.utilityIcon)
         private val badge: TextView = itemView.findViewById(R.id.utilityBadge)
         private val title: TextView = itemView.findViewById(R.id.utilityTitle)
+        private val newPill: View = itemView.findViewById(R.id.utilityNewPill)
 
         fun bind(item: UtilityItem, onClick: (UtilityItem) -> Unit) {
             icon.setImageResource(item.iconRes)
@@ -66,6 +67,7 @@ class UtilityTileAdapter(
             val count = item.badgeCount ?: 0
             badge.visibility = if (count > 0) View.VISIBLE else View.GONE
             badge.text = if (count > MAX_BADGE_COUNT) "$MAX_BADGE_COUNT+" else count.toString()
+            newPill.visibility = if (item.isNew) View.VISIBLE else View.GONE
             itemView.setOnClickListener { onClick(item) }
         }
 

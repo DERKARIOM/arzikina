@@ -28,11 +28,14 @@ import androidx.annotation.StringRes
  * renvoie toujours `null` ici (catalogue statique) : c'est à l'écran appelant (voir
  * `DashboardFragment.render`) de reconstruire la liste avec la valeur à jour pour l'entrée
  * concernée, [UtilityTileAdapter] se contentant d'afficher ce qu'on lui donne.
+ * @param isNew affiche la pastille « NEW » sur la tuile (nouveauté à mettre en avant). Drapeau
+ * statique posé dans [UtilityCatalog] : à retirer de l'entrée quand elle n'est plus récente.
  */
 data class UtilityItem(
     @DrawableRes val iconRes: Int,
     @StringRes val titleRes: Int,
     @IdRes val destinationId: Int,
     @StringRes val descriptionRes: Int? = null,
-    val badgeCount: Int? = null
+    val badgeCount: Int? = null,
+    val isNew: Boolean = false
 )

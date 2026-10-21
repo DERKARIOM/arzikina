@@ -16,6 +16,15 @@ import com.naniger.arzikina.R
  */
 object UtilityCatalog {
     fun all(): List<UtilityItem> = listOf(
+        // « Gestion de reçus » : reçus ÉMIS par l'utilisateur (formulaire, aperçu, PDF). Distinct de
+        // l'entrée « Justificatifs » (import de PDF reçus d'ailleurs). Placée en PREMIER et marquée « NEW ».
+        UtilityItem(
+            iconRes = R.drawable.ic_receipt_issue_24,
+            titleRes = R.string.utility_issued_receipts_title,
+            destinationId = R.id.issuedReceiptHistoryFragment,
+            descriptionRes = R.string.utility_issued_receipts_description,
+            isNew = true
+        ),
         UtilityItem(
             iconRes = R.drawable.categorie_24,
             titleRes = R.string.more_menu_categories,
@@ -47,14 +56,6 @@ object UtilityCatalog {
             iconRes = R.drawable.ic_receipt_long_24,
             titleRes = R.string.utility_receipts_title,
             destinationId = R.id.receiptsFragment
-        ),
-        // « Gestion de reçus » : reçus ÉMIS par l'utilisateur (formulaire, aperçu, PDF). Distinct de
-        // l'entrée précédente (« Justificatifs », import de PDF reçus d'ailleurs).
-        UtilityItem(
-            iconRes = R.drawable.ic_receipt_issue_24,
-            titleRes = R.string.utility_issued_receipts_title,
-            destinationId = R.id.issuedReceiptHistoryFragment,
-            descriptionRes = R.string.utility_issued_receipts_description
         ),
         // Cahier des charges "Marketplace personnelle" — voir
         // presentation/utilities/marketplace/MarketplaceFragment. ic_storefront_24 déjà utilisée

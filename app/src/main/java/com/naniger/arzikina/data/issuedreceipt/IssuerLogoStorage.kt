@@ -30,6 +30,25 @@ class IssuerLogoStorage @Inject constructor(
         return fileName
     }
 
+    /**
+     * Écrit un logo reçu par synchronisation SOUS SON NOM (celui référencé par le profil/les reçus).
+     * Ne remplace jamais un fichier existant (nom = UUID, donc même contenu) ; écriture atomique
+     * (fichier temporaire puis renommage) pour qu'un téléchargement interrompu ne laisse jamais un
+     * logo tronqué. @return `false` si le nom est dangereux ; `true` si le fichier est présent après l'appel.
+     */
+    fun writeNamed(fileName: String, bytes: ByteArray): Boolean {
+        if (!IssuerLogoPolicy.isSafeFileName(fileName)) return false
+        val target = File(directory, fileName)
+        if (target.isFile) return true
+        val temp = File(directory, "$fileName.part")
+        return try {
+            temp.writeBytes(bytes)
+            temp.renameTo(target) || target.isFile
+        } finally {
+            if (temp.exists()) temp.delete()
+        }
+    }
+
     /** Fichier du logo, ou `null` si le nom est dangereux ou si le fichier n'existe pas. */
     fun resolveFile(fileName: String): File? {
         if (!IssuerLogoPolicy.isSafeFileName(fileName)) return null

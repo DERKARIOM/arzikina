@@ -16,6 +16,10 @@ interface IssuerProfileDao {
     @Query("SELECT * FROM issuer_profiles WHERE userId = :userId AND deletedAt IS NULL LIMIT 1")
     suspend fun getForUser(userId: Long): IssuerProfileEntity?
 
+    /** Ligne de [userId], supprimée ou non (index unique sur `userId`) — voir `IssuedReceiptSyncHandler`. */
+    @Query("SELECT * FROM issuer_profiles WHERE userId = :userId LIMIT 1")
+    suspend fun getAnyForUser(userId: Long): IssuerProfileEntity?
+
     @Query("SELECT * FROM issuer_profiles WHERE syncId = :syncId LIMIT 1")
     suspend fun getBySyncId(syncId: String): IssuerProfileEntity?
 

@@ -17,6 +17,15 @@ object ReceiptNumber {
 
     fun isValid(number: String): Boolean = allowed.matches(number)
 
+    private val adjusted = Regex("^$PREFIX-\\d{4}-\\d{3,9}-\\d{1,4}$")
+
+    /**
+     * `true` si [number] a la forme d'un numéro GÉNÉRÉ puis suffixé par [disambiguated] (« Recu-2026-005-2 »),
+     * c'est-à-dire renuméroté par la synchronisation après un doublon. Heuristique sur la forme seule (aucune
+     * colonne en plus) : un numéro personnalisé suffixé est traité comme un numéro libre.
+     */
+    fun isAdjusted(number: String): Boolean = adjusted.matches(number)
+
     /** Préfixe commun des numéros générés pour [year] : « Recu-2026- ». */
     fun yearPrefix(year: Int): String = "$PREFIX-$year-"
 
@@ -36,6 +45,40 @@ object ReceiptNumber {
     fun next(year: Int, existingNumbers: Collection<String>): String {
         val highest = existingNumbers.mapNotNull { parseSequence(it, year) }.maxOrNull() ?: 0
         return format(year, highest + 1)
+    }
+
+    /**
+     * Variante libre de [number] quand il est déjà pris (doublon issu de deux appareils hors ligne) :
+     * « Recu-2026-004 » → « Recu-2026-004-2 », puis « -3 », etc. Le numéro d'origine est tronqué si besoin
+     * pour que le résultat reste valide (≤ [MAX_LENGTH]) ; [taken] est comparé sans tenir compte de la casse
+     * pour rester sûr même si le serveur compare ainsi.
+     */
+    fun disambiguated(number: String, taken: Collection<String>): String {
+        val used = taken.map { it.lowercase() }.toHashSet()
+        var n = 2
+        while (true) {
+            val suffix = "-$n"
+            val candidate = number.take(MAX_LENGTH - suffix.length) + suffix
+            if (candidate.lowercase() !in used) return candidate
+            n++
+        }
+    }
+
+    /**
+     * Prétention d'un reçu à un numéro, pour départager un doublon (deux appareils hors ligne ont
+     * attribué le même numéro). [syncId] vide = pas encore synchronisé.
+     */
+    data class Claim(val deleted: Boolean, val createdAt: Long, val syncId: String)
+
+    /**
+     * `true` si [a] doit perdre le numéro face à [b] (et être renuméroté). Règle déterministe, donc
+     * identique sur tous les appareils : un reçu supprimé perd toujours face à un reçu actif ; sinon
+     * le plus récemment créé perd ; à égalité de date, le plus grand `syncId`.
+     */
+    fun loses(a: Claim, b: Claim): Boolean = when {
+        a.deleted != b.deleted -> a.deleted
+        a.createdAt != b.createdAt -> a.createdAt > b.createdAt
+        else -> a.syncId > b.syncId
     }
 
     /** Nom du fichier PDF d'un reçu : « Recu-2026-001.pdf » (le numéro validé ne contient que `[A-Za-z0-9._-]`, jamais modifié). */

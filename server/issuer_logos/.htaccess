@@ -1,0 +1,10 @@
+# Logos d'émetteur de reçus : fichiers PRIVÉS, jamais servis directement. Lecture uniquement par
+# `api/issuer/get_logo.php` (authentifié, filtré par utilisateur), qui lit le disque sans passer par
+# une URL. Double syntaxe : Apache 2.4 / LiteSpeed (Hostinger) et anciens Apache 2.2.
+<IfModule mod_authz_core.c>
+    Require all denied
+</IfModule>
+<IfModule !mod_authz_core.c>
+    Order allow,deny
+    Deny from all
+</IfModule>

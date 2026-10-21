@@ -42,6 +42,8 @@ import com.naniger.arzikina.data.remote.dto.FinancialPlanItemServerStateDto
 import com.naniger.arzikina.data.remote.dto.FinancialPlanItemSyncPayload
 import com.naniger.arzikina.data.remote.dto.FinancialPlanServerStateDto
 import com.naniger.arzikina.data.remote.dto.FinancialPlanSyncPayload
+import com.naniger.arzikina.data.remote.dto.IssuedReceiptServerStateDto
+import com.naniger.arzikina.data.remote.dto.IssuerProfileServerStateDto
 import com.naniger.arzikina.data.remote.dto.LoanPaymentServerStateDto
 import com.naniger.arzikina.data.remote.dto.LoanServerStateDto
 import com.naniger.arzikina.data.remote.dto.PersonServerStateDto
@@ -140,6 +142,7 @@ class SyncEngineImpl @Inject constructor(
     private val syncQueueEnqueuer: SyncQueueEnqueuer,
     private val transactionSyncEnqueuer: TransactionSyncEnqueuer,
     private val loanSyncEnqueuer: LoanSyncEnqueuer,
+    private val issuedReceiptSyncHandler: IssuedReceiptSyncHandler,
     private val sessionManager: SessionManager,
     private val legacySavingsGoalMigrator: LegacySavingsGoalMigrator,
     private val json: Json
@@ -187,6 +190,19 @@ class SyncEngineImpl @Inject constructor(
         if (entityType !in SUPPORTED_ENTITY_TYPES) return 0 to 0
 
         markSyncing(entries)
+
+        // Profil émetteur / reçus émis : les images de logo citées par ce lot partent AVANT le JSON
+        // (voir IssuedReceiptSyncHandler.uploadLogos). Panne réseau/serveur : tout le lot repasse FAILED.
+        if (entityType in IssuedReceiptSyncHandler.ENTITY_TYPES) {
+            try {
+                issuedReceiptSyncHandler.uploadLogos(entries)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                markFailed(entries, errorMessage = e.message)
+                return 0 to entries.size
+            }
+        }
 
         // Bloc volontairement large (construction de la requête ET appel réseau ET décodage de la
         // réponse) sous UN SEUL `catch (e: Exception)` — pas seulement `IOException` comme avant.
@@ -275,6 +291,15 @@ class SyncEngineImpl @Inject constructor(
             val (entityReceived, entityApplied) = pullEntityType(entityType)
             received += entityReceived
             applied += entityApplied
+        }
+        // Logos du profil émetteur / des reçus reçus pendant ce pull (voir IssuedReceiptSyncHandler) :
+        // jamais bloquant pour les données, retenté au prochain pull.
+        try {
+            issuedReceiptSyncHandler.downloadMissingLogos()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            // Ignoré : les données sont déjà synchronisées.
         }
         // Un ancien objectif d'épargne (`savings_goals`) peut encore arriver par pull depuis un
         // appareil pas encore mis à jour : converti aussitôt en compte `SAVINGS_GOAL` (voir
@@ -400,6 +425,10 @@ class SyncEngineImpl @Inject constructor(
                 applyUserPreferencesServerState(json.decodeFromJsonElement(UserPreferencesServerStateDto.serializer(), element), allowCreate)
             "transaction_templates" ->
                 applyTransactionTemplateServerState(json.decodeFromJsonElement(TransactionTemplateServerStateDto.serializer(), element), allowCreate)
+            IssuedReceiptSyncHandler.ENTITY_TYPE_PROFILE ->
+                issuedReceiptSyncHandler.applyProfile(json.decodeFromJsonElement(IssuerProfileServerStateDto.serializer(), element), allowCreate)
+            IssuedReceiptSyncHandler.ENTITY_TYPE_RECEIPT ->
+                issuedReceiptSyncHandler.applyReceipt(json.decodeFromJsonElement(IssuedReceiptServerStateDto.serializer(), element), allowCreate)
         }
     }
 
@@ -530,6 +559,9 @@ class SyncEngineImpl @Inject constructor(
         // AUCUNE contrainte d'ordre (voir la KDoc de tête de [applyUserPreferencesServerState]) :
         // seule entité de ce registre sans la moindre référence croisée, sa place ici est arbitraire.
         enqueueUnsyncedUserPreferences(userId)
+        // Profil émetteur et reçus émis : documents autonomes, aucune référence croisée, ordre libre
+        // (voir IssuedReceiptSyncHandler.enqueueUnsynced).
+        issuedReceiptSyncHandler.enqueueUnsynced(userId)
     }
 
     /**
@@ -1502,12 +1534,15 @@ class SyncEngineImpl @Inject constructor(
          *  `transaction_templates` (Marketplace personnelle) : DOIT rester APRÈS `accounts`/
          *  `categories` (les deux référencées, voir [applyTransactionTemplateServerState]) — sans
          *  contrainte vis-à-vis du reste, aucune autre entité de ce registre ne référence à son tour
-         *  un modèle par son `syncId`. */
+         *  un modèle par son `syncId`.
+         *
+         *  `issuer_profiles` et `issued_receipts` (module « Gestion de reçus ») : aucune référence
+         *  croisée, place libre — traités par [IssuedReceiptSyncHandler], pas par ce fichier. */
         val SUPPORTED_ENTITY_TYPES = setOf(
             "categories", "budgets", "savings_goals", "financial_plans", "persons", "accounts",
             "transactions", "loans", "loan_payments", "recurring_transactions",
             "recurring_transaction_occurrences", "financial_plan_items", "user_preferences",
-            "transaction_templates"
+            "transaction_templates", "issuer_profiles", "issued_receipts"
         )
         const val MAX_ERROR_MESSAGE_LENGTH = 200
 

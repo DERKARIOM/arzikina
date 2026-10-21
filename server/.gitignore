@@ -12,3 +12,7 @@ secrets.php
 firebase-service-account.json
 *-service-account*.json
 .arzikina-fcm-access-token.json
+# Logos d'émetteur de reçus envoyés par les utilisateurs (voir api/utils/issuer_logo.php) : jamais versionnés,
+# seul le .htaccess qui protège le dossier l'est.
+issuer_logos/*
+!issuer_logos/.htaccess

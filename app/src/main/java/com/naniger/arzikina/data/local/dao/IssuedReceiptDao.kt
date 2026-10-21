@@ -62,6 +62,10 @@ interface IssuedReceiptDao {
     @Query("SELECT * FROM issued_receipts WHERE syncId = :syncId LIMIT 1")
     suspend fun getBySyncId(syncId: String): IssuedReceiptEntity?
 
+    /** Ligne portant [number], supprimée ou non (l'index unique `(userId, number)` les couvre toutes) — voir `IssuedReceiptSyncHandler`. */
+    @Query("SELECT * FROM issued_receipts WHERE userId = :userId AND number = :number LIMIT 1")
+    suspend fun getByNumber(userId: Long, number: String): IssuedReceiptEntity?
+
     @Query("SELECT * FROM issued_receipts WHERE userId = :userId AND deletedAt IS NULL AND syncId IS NULL")
     suspend fun getUnsyncedForUser(userId: Long): List<IssuedReceiptEntity>
 

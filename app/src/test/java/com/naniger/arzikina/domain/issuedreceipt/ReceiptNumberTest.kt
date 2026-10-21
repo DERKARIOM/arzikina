@@ -56,4 +56,57 @@ class ReceiptNumberTest {
         assertEquals("Recu-2026-001.pdf", ReceiptNumber.pdfFileName("Recu-2026-001"))
         assertEquals("FAC-2026.7.pdf", ReceiptNumber.pdfFileName("FAC-2026.7"))
     }
+
+    @Test
+    fun `disambiguated appends the first free suffix`() {
+        assertEquals("Recu-2026-004-2", ReceiptNumber.disambiguated("Recu-2026-004", listOf("Recu-2026-004")))
+        assertEquals(
+            "Recu-2026-004-3",
+            ReceiptNumber.disambiguated("Recu-2026-004", listOf("Recu-2026-004", "recu-2026-004-2")),
+        )
+    }
+
+    @Test
+    fun `disambiguated stays valid and within the max length`() {
+        val long = "a".repeat(ReceiptNumber.MAX_LENGTH)
+        val result = ReceiptNumber.disambiguated(long, listOf(long))
+        assertEquals(ReceiptNumber.MAX_LENGTH, result.length)
+        assertTrue(ReceiptNumber.isValid(result))
+        assertTrue(result.endsWith("-2"))
+    }
+
+    @Test
+    fun `loses picks the most recent creation then the greatest syncId`() {
+        fun claim(createdAt: Long, syncId: String, deleted: Boolean = false) =
+            ReceiptNumber.Claim(deleted, createdAt, syncId)
+        assertTrue(ReceiptNumber.loses(claim(200, "a"), claim(100, "z")))
+        assertFalse(ReceiptNumber.loses(claim(100, "z"), claim(200, "a")))
+        assertTrue(ReceiptNumber.loses(claim(100, "b"), claim(100, "a")))
+        assertFalse(ReceiptNumber.loses(claim(100, "a"), claim(100, "b")))
+    }
+
+    @Test
+    fun `a deleted receipt always loses against an active one`() {
+        val old = ReceiptNumber.Claim(deleted = false, createdAt = 500, syncId = "z")
+        val newDeleted = ReceiptNumber.Claim(deleted = true, createdAt = 100, syncId = "a")
+        assertTrue(ReceiptNumber.loses(newDeleted, old))
+        assertFalse(ReceiptNumber.loses(old, newDeleted))
+    }
+
+    @Test
+    fun `the verdict is antisymmetric so every device designates the same loser`() {
+        val a = ReceiptNumber.Claim(false, 100, "a")
+        val b = ReceiptNumber.Claim(false, 100, "b")
+        assertTrue(ReceiptNumber.loses(a, b) != ReceiptNumber.loses(b, a))
+    }
+
+
+    @Test
+    fun `isAdjusted recognises only generated numbers with a disambiguation suffix`() {
+        assertTrue(ReceiptNumber.isAdjusted("Recu-2026-005-2"))
+        assertTrue(ReceiptNumber.isAdjusted(ReceiptNumber.disambiguated("Recu-2026-005", listOf("Recu-2026-005"))))
+        assertTrue(!ReceiptNumber.isAdjusted("Recu-2026-005"))
+        assertTrue(!ReceiptNumber.isAdjusted("FACT-12-2"))
+        assertTrue(!ReceiptNumber.isAdjusted("Recu-26-005-2"))
+    }
 }

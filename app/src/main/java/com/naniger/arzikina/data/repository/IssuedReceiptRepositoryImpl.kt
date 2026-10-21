@@ -13,6 +13,7 @@ import com.naniger.arzikina.domain.issuedreceipt.ReceiptNumber
 import com.naniger.arzikina.domain.model.IssuedReceipt
 import com.naniger.arzikina.domain.model.IssuedReceiptFilter
 import com.naniger.arzikina.domain.model.IssuedReceiptSummary
+import com.naniger.arzikina.domain.model.SyncOperation
 import com.naniger.arzikina.domain.repository.IssuedReceiptRepository
 import com.naniger.arzikina.domain.repository.SessionManager
 import kotlinx.coroutines.CoroutineDispatcher
@@ -22,15 +23,17 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 import java.util.Calendar
+import java.util.UUID
 import javax.inject.Inject
 
 /**
  * Implémentation Room de [IssuedReceiptRepository]. Isolation multi-utilisateurs : voir
  * `AccountRepositoryImpl`.
  *
- * Pas encore de mise en file de synchronisation : l'entité n'est enregistrée ni côté serveur ni dans
- * le Sync Engine (étape « Synchronisation »). `IssuedReceiptEntity.syncId` reste donc `null`, et
- * cette étape-là l'attribuera à toutes les lignes existantes.
+ * Synchronisation : chaque écriture (création, modification, suppression douce) est mise en file par
+ * [IssuedReceiptSyncHandler] DANS la même transaction que l'écriture (jamais de ligne modifiée sans
+ * opération en file, ni l'inverse). Les lignes antérieures à la synchronisation (`syncId` nul) sont
+ * rattrapées par `SyncEngine.enqueueUnsyncedLocalData`.
  *
  * Les écritures passent par `database.withTransaction` : le calcul du prochain numéro et
  * l'insertion sont atomiques, deux enregistrements simultanés ne peuvent pas obtenir le même numéro.
@@ -39,6 +42,7 @@ class IssuedReceiptRepositoryImpl @Inject constructor(
     private val database: ArzikinaDatabase,
     private val receiptDao: IssuedReceiptDao,
     private val sessionManager: SessionManager,
+    private val syncHandler: IssuedReceiptSyncHandler,
     @IoDispatcher private val ioDispatcher: CoroutineDispatcher
 ) : IssuedReceiptRepository {
 
@@ -75,9 +79,13 @@ class IssuedReceiptRepositoryImpl @Inject constructor(
             if (normalized.id == 0L) {
                 val number = normalized.number.ifEmpty { nextNumberFor(userId, normalized.issuedAt) }
                 if (receiptDao.countByNumber(userId, number) > 0) throw IssuedReceiptException.DuplicateNumber(number)
-                receiptDao.upsert(
-                    normalized.copy(number = number, pdfFileName = null, createdAt = now, updatedAt = now).toEntity(userId)
-                )
+                val entity = normalized
+                    .copy(number = number, pdfFileName = null, createdAt = now, updatedAt = now)
+                    .toEntity(userId)
+                    .copy(syncId = UUID.randomUUID().toString())
+                val newId = receiptDao.upsert(entity)
+                syncHandler.enqueueReceipt(entity.copy(id = newId), SyncOperation.CREATE)
+                newId
             } else {
                 val existing = receiptDao.getById(normalized.id, userId)
                     ?: throw IssuedReceiptException.NotFound(normalized.id)
@@ -85,8 +93,17 @@ class IssuedReceiptRepositoryImpl @Inject constructor(
                 val updated = normalized
                     .copy(number = existing.number, createdAt = existing.createdAt, updatedAt = now, pdfFileName = null)
                     .toEntity(userId)
-                    .copy(syncId = existing.syncId, deletedAt = existing.deletedAt, version = existing.version)
+                    .copy(
+                        // Ligne antérieure à la synchronisation : jamais envoyée, donc CREATE.
+                        syncId = existing.syncId ?: UUID.randomUUID().toString(),
+                        deletedAt = existing.deletedAt,
+                        version = existing.version
+                    )
                 receiptDao.update(updated)
+                syncHandler.enqueueReceipt(
+                    updated.copy(id = existing.id),
+                    if (existing.syncId == null) SyncOperation.CREATE else SyncOperation.UPDATE
+                )
                 existing.id
             }
         }
@@ -97,7 +114,16 @@ class IssuedReceiptRepositoryImpl @Inject constructor(
     }
 
     override suspend fun deleteReceipt(id: Long): Unit = withContext(ioDispatcher) {
-        receiptDao.softDeleteById(id, requireCurrentUserId(), System.currentTimeMillis())
+        val userId = requireCurrentUserId()
+        database.withTransaction {
+            val existing = receiptDao.getById(id, userId) ?: return@withTransaction
+            val now = System.currentTimeMillis()
+            receiptDao.softDeleteById(id, userId, now)
+            // Jamais synchronisé (syncId nul) : le serveur ne connaît pas cette ligne, rien à supprimer là-bas.
+            if (existing.syncId != null) {
+                syncHandler.enqueueReceipt(existing.copy(deletedAt = now, updatedAt = now), SyncOperation.DELETE)
+            }
+        }
     }
 
     /**

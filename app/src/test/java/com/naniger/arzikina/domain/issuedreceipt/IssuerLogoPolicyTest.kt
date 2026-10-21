@@ -57,4 +57,18 @@ class IssuerLogoPolicyTest {
         assertFalse(IssuerLogoPolicy.isSafeFileName("logo.gif"))
         assertFalse(IssuerLogoPolicy.isSafeFileName(""))
     }
+
+    @Test
+    fun `synced logo must match its name, type and size`() {
+        val png = byteArrayOf(0x89.toByte(), 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0, 0, 0, 0)
+        val jpg = byteArrayOf(0xFF.toByte(), 0xD8.toByte(), 0xFF.toByte(), 0xE0.toByte(), 0, 0)
+        assertTrue(IssuerLogoPolicy.isValidSyncedLogo("abc-123.png", png))
+        assertTrue(IssuerLogoPolicy.isValidSyncedLogo("abc-123.jpg", jpg))
+        assertFalse(IssuerLogoPolicy.isValidSyncedLogo("abc-123.jpg", png))
+        assertFalse(IssuerLogoPolicy.isValidSyncedLogo("abc-123.png", jpg))
+        assertFalse(IssuerLogoPolicy.isValidSyncedLogo("../abc.png", png))
+        assertFalse(IssuerLogoPolicy.isValidSyncedLogo("abc.png", ByteArray(0)))
+        assertFalse(IssuerLogoPolicy.isValidSyncedLogo("abc.png", png + ByteArray(IssuerLogoPolicy.MAX_SYNCED_BYTES)))
+        assertFalse(IssuerLogoPolicy.isValidSyncedLogo("abc.png", "<svg/>".toByteArray()))
+    }
 }

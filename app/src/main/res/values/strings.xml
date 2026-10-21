@@ -1396,6 +1396,7 @@
         Utilitaire « Gestion de reçus » (reçus ÉMIS : formulaire, aperçu, PDF). À ne pas confondre avec
         l'ancien utilitaire d'import « Justificatifs » (utility_receipts_title).
     -->
+    <string name="utility_badge_new">NEW</string>
     <string name="utility_issued_receipts_title">Gestion de reçus</string>
     <string name="utility_issued_receipts_description">Créez, personnalisez et exportez vos reçus en PDF.</string>
     <string name="issued_receipt_form_title">Nouveau reçu</string>
@@ -1485,6 +1486,7 @@
     <string name="issued_receipt_history_to_empty">Date de fin</string>
     <string name="issued_receipt_history_clear_dates">Effacer les dates</string>
     <string name="issued_receipt_history_status_ready">PDF prêt</string>
+    <string name="issued_receipt_history_number_adjusted">%1$s · Numéro ajusté</string>
     <string name="issued_receipt_history_status_todo">PDF à générer</string>
     <string name="issued_receipt_history_empty_title">Aucun reçu pour le moment</string>
     <string name="issued_receipt_history_empty_message">Créez votre premier reçu et exportez-le en PDF.</string>

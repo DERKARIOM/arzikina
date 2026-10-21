@@ -63,4 +63,18 @@ object IssuerLogoPolicy {
      * empêche toute traversée de répertoire (`../`) si un nom venait un jour d'ailleurs (synchronisation).
      */
     fun isSafeFileName(name: String): Boolean = safeFileName.matches(name)
+
+    /** Taille maximale d'un logo reçu par synchronisation (même plafond que le serveur : 2 Mo). */
+    const val MAX_SYNCED_BYTES: Int = 2_000_000
+
+    /**
+     * Un logo téléchargé du serveur n'est JAMAIS cru sur parole : nom sûr, taille bornée, et type RÉEL
+     * (octets magiques) PNG/JPEG cohérent avec l'extension du nom.
+     */
+    fun isValidSyncedLogo(fileName: String, bytes: ByteArray): Boolean {
+        if (!isSafeFileName(fileName) || bytes.isEmpty() || bytes.size > MAX_SYNCED_BYTES) return false
+        val mime = detectMimeType(bytes.copyOf(minOf(bytes.size, 16)))
+        return (mime == "image/png" && fileName.endsWith(".png")) ||
+            (mime == "image/jpeg" && fileName.endsWith(".jpg"))
+    }
 }
