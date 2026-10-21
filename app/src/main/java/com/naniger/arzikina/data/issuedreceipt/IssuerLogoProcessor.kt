@@ -72,7 +72,9 @@ class IssuerLogoProcessor @Inject constructor(
         }
     }
 
-    /** Lit au plus [IssuerLogoPolicy.MAX_SOURCE_BYTES] octets ; au-delà, refus (sans charger la suite). */
+    /** Lit au plus [IssuerLogoPolicy.MAX_SOURCE_BYTES] octets ; au-delà, refus (sans charger la suite). Partagé avec la signature. */
+    fun readSourceBytes(sourceUri: String): ByteArray = readBounded(Uri.parse(sourceUri))
+
     private fun readBounded(uri: Uri): ByteArray {
         try {
             val input = context.contentResolver.openInputStream(uri) ?: throw LogoImportException(Reason.UNREADABLE)
@@ -97,7 +99,8 @@ class IssuerLogoProcessor @Inject constructor(
         }
     }
 
-    private fun applyOrientation(bitmap: Bitmap, bytes: ByteArray): Bitmap {
+    /** Applique la rotation EXIF d'un JPEG (photo prise en portrait). Partagé avec la signature. */
+    internal fun applyOrientation(bitmap: Bitmap, bytes: ByteArray): Bitmap {
         val orientation = try {
             ExifInterface(bytes.inputStream()).getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL)
         } catch (_: IOException) {

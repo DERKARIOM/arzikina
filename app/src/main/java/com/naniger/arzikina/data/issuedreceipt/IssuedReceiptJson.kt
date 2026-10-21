@@ -41,7 +41,8 @@ internal object IssuedReceiptJson {
         val phone: String = "",
         val email: String? = null,
         val taxId: String? = null,
-        val logoFileName: String? = null
+        val logoFileName: String? = null,
+        val signatureFileName: String? = null
     )
 
     fun encodePricing(pricing: ReceiptPricing): String {
@@ -79,7 +80,7 @@ internal object IssuedReceiptJson {
 
     fun encodeIssuer(issuer: IssuerSnapshot): String = json.encodeToString(
         IssuerJson.serializer(),
-        IssuerJson(issuer.businessName, issuer.address, issuer.phone, issuer.email, issuer.taxId, issuer.logoFileName)
+        IssuerJson(issuer.businessName, issuer.address, issuer.phone, issuer.email, issuer.taxId, issuer.logoFileName, issuer.signatureFileName)
     )
 
     fun decodeIssuer(raw: String): IssuerSnapshot {
@@ -90,7 +91,8 @@ internal object IssuedReceiptJson {
             phone = parsed.phone,
             email = parsed.email,
             taxId = parsed.taxId,
-            logoFileName = parsed.logoFileName
+            logoFileName = parsed.logoFileName,
+            signatureFileName = parsed.signatureFileName
         )
     }
 

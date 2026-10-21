@@ -18,14 +18,14 @@ internal class PdfCanvasRenderer(paints: PdfPaints) {
 
     private val painter = PdfOpsPainter(paints)
 
-    fun render(pages: List<PdfPagePlan>, logo: Bitmap?, out: OutputStream) {
+    fun render(pages: List<PdfPagePlan>, logo: Bitmap?, signature: Bitmap?, out: OutputStream) {
         val document = PdfDocument()
         try {
             pages.forEachIndexed { index, plan ->
                 val info = PdfDocument.PageInfo.Builder(ReceiptPdfSpec.PAGE_WIDTH.toInt(), ReceiptPdfSpec.PAGE_HEIGHT.toInt(), index + 1).create()
                 val page = document.startPage(info)
                 try {
-                    painter.draw(page.canvas, plan.ops, logo)
+                    painter.draw(page.canvas, plan.ops, logo, signature)
                 } finally {
                     document.finishPage(page)
                 }

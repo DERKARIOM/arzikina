@@ -29,6 +29,7 @@ class ReceiptPreviewView @JvmOverloads constructor(
     private val painter = PdfOpsPainter(paints)
     private var pages: List<PdfPagePlan> = emptyList()
     private var logo: Bitmap? = null
+    private var signature: Bitmap? = null
 
     private val density = resources.displayMetrics.density
     private val gap = 12f * density
@@ -40,8 +41,9 @@ class ReceiptPreviewView @JvmOverloads constructor(
     }
 
     /** Recalcule la mise en page puis redessine. Appelé à chaque modification du formulaire. */
-    fun show(content: ReceiptPdfContent, logo: Bitmap?) {
+    fun show(content: ReceiptPdfContent, logo: Bitmap?, signature: Bitmap? = null) {
         this.logo = logo
+        this.signature = signature
         val newPages = ReceiptPdfLayoutEngine.layout(content, paints)
         val heightChanged = newPages.size != pages.size
         pages = newPages
@@ -69,7 +71,7 @@ class ReceiptPreviewView @JvmOverloads constructor(
             canvas.translate(gap, top)
             canvas.scale(scale, scale)
             canvas.clipRect(0f, 0f, ReceiptPdfSpec.PAGE_WIDTH, ReceiptPdfSpec.PAGE_HEIGHT)
-            painter.draw(canvas, page.ops, logo)
+            painter.draw(canvas, page.ops, logo, signature)
             canvas.restoreToCount(save)
         }
     }

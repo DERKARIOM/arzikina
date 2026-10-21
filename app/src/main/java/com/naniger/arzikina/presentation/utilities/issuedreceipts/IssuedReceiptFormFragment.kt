@@ -2,6 +2,7 @@ package com.naniger.arzikina.presentation.utilities.issuedreceipts
 
 import android.content.Intent
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Bundle
 import android.text.InputType
@@ -19,6 +20,7 @@ import com.google.android.material.datepicker.MaterialDatePicker
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import com.naniger.arzikina.R
+import com.naniger.arzikina.databinding.DialogSignaturePadBinding
 import com.naniger.arzikina.databinding.FragmentIssuedReceiptFormBinding
 import com.naniger.arzikina.databinding.ItemIssuedReceiptLineBinding
 import com.naniger.arzikina.domain.issuedreceipt.IssuedReceiptError
@@ -38,11 +40,13 @@ import com.naniger.arzikina.util.Money
 import com.naniger.arzikina.util.MoneyInputFormatter
 import com.naniger.arzikina.util.appLocale
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.time.Instant
 import java.time.ZoneId
 import java.time.ZoneOffset
@@ -62,11 +66,19 @@ class IssuedReceiptFormFragment : Fragment(R.layout.fragment_issued_receipt_form
     private var previewLogo: Bitmap? = null
     private var previewLogoKey: String? = null
 
+    /** Signature de l'aperçu et l'objet qui l'identifie (image en attente ou nom du fichier mémorisé). */
+    private var previewSignature: Bitmap? = null
+    private var previewSignatureKey: Any? = null
+
     /** Vues des lignes de détail, par id de ligne (voir [renderLines]). */
     private val lineViews = LinkedHashMap<Long, ItemIssuedReceiptLineBinding>()
 
     private val pickLogo = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         uri?.let { viewModel.onLogoPicked(it.toString()) }
+    }
+
+    private val pickSignature = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        uri?.let { viewModel.onSignatureImported(it.toString()) }
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -79,6 +91,7 @@ class IssuedReceiptFormFragment : Fragment(R.layout.fragment_issued_receipt_form
         setUpFields(b)
         setUpDetail(b)
         setUpLogoButtons(b)
+        setUpSignatureControls(b)
         b.generateButton.setOnClickListener { viewModel.save(generatePdf = true, language = language()) }
         b.saveButton.setOnClickListener { viewModel.save(generatePdf = false, language = language()) }
 
@@ -97,6 +110,8 @@ class IssuedReceiptFormFragment : Fragment(R.layout.fragment_issued_receipt_form
         lineViews.clear()
         previewLogo = null
         previewLogoKey = null
+        previewSignature = null
+        previewSignatureKey = null
     }
 
     private fun language(): String = requireContext().appLocale().language
@@ -192,6 +207,46 @@ class IssuedReceiptFormFragment : Fragment(R.layout.fragment_issued_receipt_form
     }
 
     /** Même conversion que les autres formulaires : jour choisi (UTC côté MaterialDatePicker) relu en date LOCALE. */
+    private fun setUpSignatureControls(b: FragmentIssuedReceiptFormBinding) {
+        b.signatureDrawButton.setOnClickListener { showSignaturePad() }
+        b.signatureImportButton.setOnClickListener { pickSignature.launch("image/*") }
+        b.signatureRemoveButton.setOnClickListener { viewModel.onSignatureRemoved() }
+        b.signatureSwitch.setOnCheckedChangeListener { _, checked -> viewModel.onSignReceiptChange(checked) }
+    }
+
+    /** Boîte de dialogue de dessin : le tracé est exporté puis traité (recadré, réduit) par le ViewModel. */
+    private fun showSignaturePad() {
+        val pad = DialogSignaturePadBinding.inflate(layoutInflater)
+        fun updateButtons() {
+            val hasInk = pad.signaturePad.hasInk
+            pad.signatureUndoButton.isEnabled = hasInk
+            pad.signatureClearButton.isEnabled = hasInk
+        }
+        pad.signaturePad.onInkChanged = ::updateButtons
+        pad.signatureUndoButton.setOnClickListener { pad.signaturePad.undo() }
+        pad.signatureClearButton.setOnClickListener { pad.signaturePad.clear() }
+        updateButtons()
+        val dialog = MaterialAlertDialogBuilder(requireContext())
+            .setTitle(R.string.issued_receipt_signature_pad_title)
+            .setView(pad.root)
+            .setNegativeButton(R.string.issued_receipt_signature_pad_cancel, null)
+            .setPositiveButton(R.string.issued_receipt_signature_pad_apply, null)
+            .create()
+        dialog.setOnShowListener {
+            // Bouton géré à la main : un tracé vide ne ferme pas la boîte (sinon l'action semblerait perdue).
+            dialog.getButton(android.content.DialogInterface.BUTTON_POSITIVE).setOnClickListener {
+                val png = pad.signaturePad.exportPng()
+                if (png == null) {
+                    Snackbar.make(pad.root, R.string.issued_receipt_signature_error_empty, Snackbar.LENGTH_SHORT).show()
+                } else {
+                    viewModel.onSignatureDrawn(png)
+                    dialog.dismiss()
+                }
+            }
+        }
+        dialog.show()
+    }
+
     private fun showDatePicker() {
         val current = viewModel.state.value.input.issuedAt
         val localDate = Instant.ofEpochMilli(current).atZone(ZoneId.systemDefault()).toLocalDate()
@@ -246,6 +301,7 @@ class IssuedReceiptFormFragment : Fragment(R.layout.fragment_issued_receipt_form
 
         renderDetail(b, state)
         renderLogoControls(b, state)
+        renderSignatureControls(b, state)
         renderErrors(b, state)
         b.generateButton.isEnabled = !state.isSaving
         b.saveButton.isEnabled = !state.isSaving
@@ -348,6 +404,15 @@ class IssuedReceiptFormFragment : Fragment(R.layout.fragment_issued_receipt_form
         b.logoChooseButton.setText(if (hasLogo) R.string.issued_receipt_logo_change else R.string.issued_receipt_logo_choose)
     }
 
+    private fun renderSignatureControls(b: FragmentIssuedReceiptFormBinding, state: IssuedReceiptFormState) {
+        // En modification, la signature ne peut être qu'activée/désactivée : le profil mémorisé n'est pas touché.
+        b.signatureDrawButton.isEnabled = !state.editing
+        b.signatureImportButton.isEnabled = !state.editing
+        b.signatureRemoveButton.visibility = if (state.hasSignature && !state.editing) View.VISIBLE else View.GONE
+        b.signatureSwitchRow.visibility = if (state.hasSignature) View.VISIBLE else View.GONE
+        if (b.signatureSwitch.isChecked != state.signReceipt) b.signatureSwitch.isChecked = state.signReceipt
+    }
+
     private fun renderErrors(b: FragmentIssuedReceiptFormBinding, state: IssuedReceiptFormState) {
         val e = state.errors
         fun err(vararg codes: IssuedReceiptError): String? =
@@ -390,7 +455,10 @@ class IssuedReceiptFormFragment : Fragment(R.layout.fragment_issued_receipt_form
 
     /** Clé de l'aperçu : seuls les champs qui changent le document comptent (pas `isSaving`, les erreurs…). */
     private data class PreviewKey(val state: IssuedReceiptFormState) {
-        private val fields = listOf(state.input, state.suggestedNumber, state.pendingLogoUri, state.storedLogoFileName, state.logoRemoved)
+        private val fields = listOf(
+            state.input, state.suggestedNumber, state.pendingLogoUri, state.storedLogoFileName, state.logoRemoved,
+            state.pendingSignature, state.storedSignatureFileName, state.signatureRemoved, state.signReceipt
+        )
         override fun equals(other: Any?) = other is PreviewKey && other.fields == fields
         override fun hashCode() = fields.hashCode()
     }
@@ -398,13 +466,21 @@ class IssuedReceiptFormFragment : Fragment(R.layout.fragment_issued_receipt_form
     private suspend fun renderPreview(state: IssuedReceiptFormState) {
         val b = binding ?: return
         updatePreviewLogo(b, state)
+        updatePreviewSignature(b, state)
         val input = state.input
         val receipt = IssuedReceiptDraftFactory.toReceipt(
             input.copy(numberInput = input.numberInput.ifBlank { state.suggestedNumber })
         )
         val logo = previewLogo
-        val content = ReceiptPdfContentBuilder.build(receipt, language(), logo?.let { PdfLogo(it.width, it.height) })
-        b.receiptPreview.show(content, logo)
+        // Comme dans le PDF : la signature n'apparaît que si l'interrupteur « Signer ce reçu » est actif.
+        val signature = previewSignature?.takeIf { state.signsReceipt }
+        val content = ReceiptPdfContentBuilder.build(
+            receipt,
+            language(),
+            logo?.let { PdfLogo(it.width, it.height) },
+            signature?.let { PdfLogo(it.width, it.height) }
+        )
+        b.receiptPreview.show(content, logo, signature)
     }
 
     /** Charge (ou retire) le logo de l'aperçu seulement quand la source change. */
@@ -419,6 +495,22 @@ class IssuedReceiptFormFragment : Fragment(R.layout.fragment_issued_receipt_form
             else -> null
         }
         if (previewLogo != null) b.logoImage.setImageBitmap(previewLogo) else b.logoImage.setImageResource(R.drawable.ic_storefront_24)
+    }
+
+    /** Charge (ou retire) la signature seulement quand sa source change ; met aussi à jour la miniature du formulaire. */
+    private suspend fun updatePreviewSignature(b: FragmentIssuedReceiptFormBinding, state: IssuedReceiptFormState) {
+        val storedName = state.storedSignatureFileName?.takeIf { !state.signatureRemoved }
+        val key: Any? = state.pendingSignature ?: storedName
+        if (key == previewSignatureKey) return
+        previewSignatureKey = key
+        previewSignature = withContext(Dispatchers.IO) {
+            when {
+                state.pendingSignature != null -> state.pendingSignature.pngBytes.let { BitmapFactory.decodeByteArray(it, 0, it.size) }
+                storedName != null -> viewModel.logoFile(storedName)?.let { BitmapFactory.decodeFile(it.path) }
+                else -> null
+            }
+        }
+        if (previewSignature != null) b.signatureImage.setImageBitmap(previewSignature) else b.signatureImage.setImageResource(R.drawable.ic_signature_24)
     }
 
     // --- Événements --------------------------------------------------------------------------

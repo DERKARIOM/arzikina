@@ -23,6 +23,7 @@ data class IssuerProfileSyncPayload(
     val email: String?,
     val taxId: String?,
     val logoFileName: String?,
+    val signatureFileName: String?,
     val defaultIssuedByName: String?,
     val defaultIssuedByTitle: String?,
     val createdAt: Long,
@@ -39,6 +40,7 @@ data class IssuerProfileServerStateDto(
     val email: String? = null,
     val taxId: String? = null,
     val logoFileName: String? = null,
+    val signatureFileName: String? = null,
     val defaultIssuedByName: String? = null,
     val defaultIssuedByTitle: String? = null,
     val createdAt: Long,
@@ -74,6 +76,7 @@ data class IssuedReceiptSyncPayload(
     val issuerEmail: String?,
     val issuerTaxId: String?,
     val issuerLogoFileName: String?,
+    val issuerSignatureFileName: String?,
     val createdAt: Long,
     val updatedAt: Long
 )
@@ -101,6 +104,7 @@ data class IssuedReceiptServerStateDto(
     val issuerEmail: String? = null,
     val issuerTaxId: String? = null,
     val issuerLogoFileName: String? = null,
+    val issuerSignatureFileName: String? = null,
     val createdAt: Long,
     val updatedAt: Long,
     val deletedAt: Long? = null,

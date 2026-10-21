@@ -77,5 +77,7 @@ data class IssuerSnapshot(
     val phone: String,
     val email: String? = null,
     val taxId: String? = null,
-    val logoFileName: String? = null
+    val logoFileName: String? = null,
+    /** Signature figée dans CE reçu (`null` = reçu non signé) : copie du nom, le fichier reste immuable. */
+    val signatureFileName: String? = null
 )

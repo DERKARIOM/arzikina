@@ -8,7 +8,7 @@ import java.util.Calendar
 /** Transforme un [IssuedReceipt] en [ReceiptPdfContent] (textes et montants formatés). Logique pure. */
 object ReceiptPdfContentBuilder {
 
-    fun build(receipt: IssuedReceipt, language: String, logo: PdfLogo?): ReceiptPdfContent {
+    fun build(receipt: IssuedReceipt, language: String, logo: PdfLogo?, signature: PdfLogo? = null): ReceiptPdfContent {
         val labels = ReceiptPdfLabels.forLanguage(language)
         val currency = receipt.currencyCode
         val totals = receipt.pricing?.let { ReceiptCalculator.totalsOrNull(it) }
@@ -75,7 +75,8 @@ object ReceiptPdfContentBuilder {
             details = details,
             notes = receipt.notes,
             issuedByName = receipt.issuedByName,
-            issuedByTitle = receipt.issuedByTitle
+            issuedByTitle = receipt.issuedByTitle,
+            signature = signature
         )
     }
 

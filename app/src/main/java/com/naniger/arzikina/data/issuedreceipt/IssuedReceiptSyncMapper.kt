@@ -36,6 +36,7 @@ internal object IssuedReceiptSyncMapper {
             email = entity.email,
             taxId = entity.taxId,
             logoFileName = entity.logoFileName,
+            signatureFileName = entity.signatureFileName,
             defaultIssuedByName = entity.defaultIssuedByName,
             defaultIssuedByTitle = entity.defaultIssuedByTitle,
             createdAt = entity.createdAt,
@@ -66,6 +67,7 @@ internal object IssuedReceiptSyncMapper {
             issuerEmail = issuer.email,
             issuerTaxId = issuer.taxId,
             issuerLogoFileName = issuer.logoFileName,
+            issuerSignatureFileName = issuer.signatureFileName,
             createdAt = entity.createdAt,
             updatedAt = entity.updatedAt
         )
@@ -82,6 +84,7 @@ internal object IssuedReceiptSyncMapper {
             email = state.email,
             taxId = state.taxId,
             logoFileName = state.logoFileName,
+            signatureFileName = state.signatureFileName,
             defaultIssuedByName = state.defaultIssuedByName,
             defaultIssuedByTitle = state.defaultIssuedByTitle,
             createdAt = state.createdAt,
@@ -109,7 +112,8 @@ internal object IssuedReceiptSyncMapper {
                 phone = state.issuerPhone,
                 email = state.issuerEmail,
                 taxId = state.issuerTaxId,
-                logoFileName = state.issuerLogoFileName
+                logoFileName = state.issuerLogoFileName,
+                signatureFileName = state.issuerSignatureFileName
             )
         )
         val keepPdf = local != null && local.number == number && local.updatedAt == state.updatedAt
@@ -139,10 +143,16 @@ internal object IssuedReceiptSyncMapper {
         )
     }
 
-    /** Noms de logo référencés par une charge utile de profil ou de reçu (JSON de la file d'envoi). */
-    fun logoNames(profile: IssuerProfileSyncPayload): List<String> = listOfNotNull(profile.logoFileName)
+    /**
+     * Noms de fichiers image (logo ET signature) référencés par une charge utile de profil ou de reçu
+     * (JSON de la file d'envoi). Les deux partagent le même stockage, les mêmes règles de nom et les
+     * mêmes endpoints : ils voyagent donc ensemble.
+     */
+    fun logoNames(profile: IssuerProfileSyncPayload): List<String> =
+        listOfNotNull(profile.logoFileName, profile.signatureFileName)
 
-    fun logoNames(receipt: IssuedReceiptSyncPayload): List<String> = listOfNotNull(receipt.issuerLogoFileName)
+    fun logoNames(receipt: IssuedReceiptSyncPayload): List<String> =
+        listOfNotNull(receipt.issuerLogoFileName, receipt.issuerSignatureFileName)
 }
 
 /** Règles pures du transfert des logos (testées sans réseau). */

@@ -9,6 +9,8 @@ import com.naniger.arzikina.domain.issuedreceipt.GenerateIssuedReceiptPdfUseCase
 import com.naniger.arzikina.domain.issuedreceipt.IssuedReceiptError
 import com.naniger.arzikina.domain.issuedreceipt.IssuedReceiptException
 import com.naniger.arzikina.domain.issuedreceipt.LogoChange
+import com.naniger.arzikina.domain.issuedreceipt.SignatureChange
+import com.naniger.arzikina.domain.issuedreceipt.SignatureImage
 import com.naniger.arzikina.domain.issuedreceipt.IssuedReceiptValidator
 import com.naniger.arzikina.domain.issuedreceipt.LogoImportException
 import com.naniger.arzikina.domain.issuedreceipt.pdf.IssuedReceiptPdfWriter
@@ -38,6 +40,10 @@ import javax.inject.Inject
  * choisie mais pas encore enregistrée ; [logoRemoved] une suppression demandée. Rien n'est écrit
  * avant l'enregistrement.
  *
+ * Signature : même principe ([storedSignatureFileName], [pendingSignature] déjà traitée, [signatureRemoved]).
+ * [signReceipt] est l'interrupteur « Signer ce reçu » : il ne vaut que s'il existe une signature
+ * ([hasSignature]) ; la copie figée dans le reçu est faite à l'enregistrement.
+ *
  * [savedReceiptId]/[savedNumber] : dès la première sauvegarde, le reçu EXISTE. Toute sauvegarde ou
  * génération suivante le met à jour (même id, même numéro) au lieu d'en créer un second : générer le
  * PDF plusieurs fois ne crée jamais de doublon.
@@ -47,6 +53,10 @@ data class IssuedReceiptFormState(
     val storedLogoFileName: String? = null,
     val pendingLogoUri: String? = null,
     val logoRemoved: Boolean = false,
+    val storedSignatureFileName: String? = null,
+    val pendingSignature: SignatureImage? = null,
+    val signatureRemoved: Boolean = false,
+    val signReceipt: Boolean = false,
     val suggestedNumber: String = "",
     val showErrors: Boolean = false,
     val errors: Set<IssuedReceiptError> = emptySet(),
@@ -60,6 +70,12 @@ data class IssuedReceiptFormState(
 ) {
     /** Le numéro n'est plus modifiable une fois le reçu enregistré (il a pu être remis au client). */
     val numberLocked: Boolean get() = savedNumber != null
+
+    /** Une signature est disponible (en attente ou mémorisée et non retirée). */
+    val hasSignature: Boolean get() = pendingSignature != null || (storedSignatureFileName != null && !signatureRemoved)
+
+    /** Le reçu sera effectivement signé. */
+    val signsReceipt: Boolean get() = signReceipt && hasSignature
 }
 
 sealed interface IssuedReceiptFormEvent {
@@ -117,6 +133,9 @@ class IssuedReceiptFormViewModel @Inject constructor(
                         currencyCode = currency
                     ),
                     storedLogoFileName = profile?.logoFileName,
+                    storedSignatureFileName = profile?.signatureFileName,
+                    // Signature mémorisée : le reçu est signé par défaut, l'utilisateur peut décocher.
+                    signReceipt = profile?.signatureFileName != null,
                     suggestedNumber = suggested,
                     loaded = true
                 )
@@ -132,10 +151,15 @@ class IssuedReceiptFormViewModel @Inject constructor(
     private suspend fun loadForEdit(id: Long): Boolean {
         val receipt = receipts.getReceipt(id) ?: return false
         val editable = IssuedReceiptDraftFactory.inputFrom(receipt)
+        // Modification : on propose la signature figée du reçu, à défaut celle du profil (jamais modifiée ici).
+        val frozenSignature = receipt.issuer.signatureFileName
+        val profileSignature = profiles.getProfile()?.signatureFileName
         _state.update {
             it.copy(
                 input = editable.input,
                 storedLogoFileName = receipt.issuer.logoFileName,
+                storedSignatureFileName = frozenSignature ?: profileSignature,
+                signReceipt = frozenSignature != null,
                 nextLineId = editable.nextLineId,
                 savedReceiptId = receipt.id,
                 savedNumber = receipt.number,
@@ -239,6 +263,32 @@ class IssuedReceiptFormViewModel @Inject constructor(
         _state.update { it.copy(pendingLogoUri = null, logoRemoved = it.storedLogoFileName != null) }
     }
 
+    /** Image choisie comme signature : traitée tout de suite (fond transparent, recadrage) pour l'aperçu. */
+    fun onSignatureImported(uri: String) = prepareSignature { profiles.prepareSignature(uri) }
+
+    /** Tracé dessiné (PNG transparent exporté par le pad). */
+    fun onSignatureDrawn(png: ByteArray) = prepareSignature { profiles.prepareDrawnSignature(png) }
+
+    private fun prepareSignature(block: suspend () -> SignatureImage) {
+        viewModelScope.launch {
+            try {
+                val image = block()
+                // Une nouvelle signature est choisie pour signer : l'interrupteur passe sur « oui ».
+                _state.update { it.copy(pendingSignature = image, signatureRemoved = false, signReceipt = true) }
+            } catch (e: LogoImportException) {
+                _events.tryEmit(IssuedReceiptFormEvent.Message(e.reason.messageRes()))
+            }
+        }
+    }
+
+    fun onSignatureRemoved() {
+        _state.update { it.copy(pendingSignature = null, signatureRemoved = it.storedSignatureFileName != null, signReceipt = false) }
+    }
+
+    fun onSignReceiptChange(enabled: Boolean) {
+        _state.update { if (it.hasSignature) it.copy(signReceipt = enabled) else it }
+    }
+
     // --- Enregistrement ----------------------------------------------------------------------
 
     /** [generatePdf] : génère aussi le PDF après l'enregistrement. [language] : langue du document (« fr »/« en »). */
@@ -270,16 +320,23 @@ class IssuedReceiptFormViewModel @Inject constructor(
 
         // 1) Profil (mémorisation de l'émetteur + logo). Inutile en modification : l'émetteur reste celui du reçu.
         val logoFileName: String?
+        val signatureFileName: String?
         if (current.editing) {
             logoFileName = current.storedLogoFileName
+            signatureFileName = current.storedSignatureFileName
         } else {
             val logoChange = when {
                 current.pendingLogoUri != null -> LogoChange.Replace(current.pendingLogoUri)
                 current.logoRemoved -> LogoChange.Remove
                 else -> LogoChange.Keep
             }
+            val signatureChange = when {
+                current.pendingSignature != null -> SignatureChange.Replace(current.pendingSignature)
+                current.signatureRemoved -> SignatureChange.Remove
+                else -> SignatureChange.Keep
+            }
             try {
-                profiles.saveProfile(draft.profile, logoChange)
+                profiles.saveProfile(draft.profile, logoChange, signatureChange)
             } catch (e: LogoImportException) {
                 _events.tryEmit(IssuedReceiptFormEvent.Message(e.reason.messageRes()))
                 return
@@ -287,15 +344,30 @@ class IssuedReceiptFormViewModel @Inject constructor(
                 _state.update { it.copy(showErrors = true, errors = e.errors) }
                 return
             }
-            logoFileName = profiles.getProfile()?.logoFileName
-            _state.update { it.copy(storedLogoFileName = logoFileName, pendingLogoUri = null, logoRemoved = false) }
+            val saved = profiles.getProfile()
+            logoFileName = saved?.logoFileName
+            signatureFileName = saved?.signatureFileName
+            _state.update {
+                it.copy(
+                    storedLogoFileName = logoFileName,
+                    pendingLogoUri = null,
+                    logoRemoved = false,
+                    storedSignatureFileName = signatureFileName,
+                    pendingSignature = null,
+                    signatureRemoved = false
+                )
+            }
         }
 
         // 2) Reçu : création la première fois, mise à jour ensuite (jamais de doublon).
         val receipt = draft.receipt.copy(
             id = current.savedReceiptId ?: 0L,
             number = current.savedNumber ?: draft.receipt.number,
-            issuer = draft.receipt.issuer.copy(logoFileName = logoFileName)
+            // Copie figée : le reçu garde SA signature même si le profil change plus tard.
+            issuer = draft.receipt.issuer.copy(
+                logoFileName = logoFileName,
+                signatureFileName = signatureFileName.takeIf { current.signReceipt }
+            )
         )
         val id = try {
             receipts.saveReceipt(receipt)
@@ -361,5 +433,6 @@ class IssuedReceiptFormViewModel @Inject constructor(
         LogoImportException.Reason.UNSUPPORTED_TYPE -> R.string.issued_receipt_logo_error_type
         LogoImportException.Reason.TOO_LARGE -> R.string.issued_receipt_logo_error_size
         LogoImportException.Reason.UNREADABLE -> R.string.issued_receipt_logo_error_unreadable
+        LogoImportException.Reason.EMPTY -> R.string.issued_receipt_signature_error_empty
     }
 }

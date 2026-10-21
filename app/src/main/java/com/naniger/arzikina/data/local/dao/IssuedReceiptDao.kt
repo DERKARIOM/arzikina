@@ -91,6 +91,10 @@ interface IssuedReceiptDao {
     @Query("SELECT pdfFileName FROM issued_receipts WHERE userId = :userId AND deletedAt IS NULL AND pdfFileName IS NOT NULL")
     suspend fun getReferencedPdfFileNames(userId: Long): List<String>
 
+    /** JSON d'émetteur des reçus qui MENTIONNENT une signature (filtre SQL large, le tri exact se fait en code). */
+    @Query("SELECT issuerJson FROM issued_receipts WHERE userId = :userId AND issuerJson LIKE '%signatureFileName%'")
+    suspend fun getIssuerJsonsMentioningSignature(userId: Long): List<String>
+
     /** Purge TOUTES les lignes de [userId] (restauration de sauvegarde, suppression du compte). */
     @Query("DELETE FROM issued_receipts WHERE userId = :userId")
     suspend fun deleteAllForUser(userId: Long)

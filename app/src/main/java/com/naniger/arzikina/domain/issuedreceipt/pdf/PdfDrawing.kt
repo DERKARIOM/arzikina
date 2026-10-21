@@ -29,6 +29,9 @@ sealed interface PdfOp {
 
     /** Emplacement du logo (ratio d'origine déjà respecté par le moteur). */
     data class Logo(val x: Float, val y: Float, val width: Float, val height: Float) : PdfOp
+
+    /** Emplacement de la signature manuscrite (ratio d'origine déjà respecté par le moteur). */
+    data class Signature(val x: Float, val y: Float, val width: Float, val height: Float) : PdfOp
 }
 
 /** Contenu dessiné d'une page. */

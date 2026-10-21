@@ -332,6 +332,10 @@ const ENTITY_CONFIGS = [
             ['db' => 'email', 'payload' => 'email', 'type' => 'string', 'nullable' => true],
             ['db' => 'tax_id', 'payload' => 'taxId', 'type' => 'string', 'nullable' => true],
             ['db' => 'logo_file_name', 'payload' => 'logoFileName', 'type' => 'string', 'nullable' => true],
+            // Signature manuscrite : NOM de fichier, même stockage/endpoints que le logo
+            // (voir database/migrations/012_issuer_signature.sql). NULLABLE : un ancien client qui
+            // n'envoie pas ce champ ne l'efface pas.
+            ['db' => 'signature_file_name', 'payload' => 'signatureFileName', 'type' => 'string', 'nullable' => true],
             ['db' => 'default_issued_by_name', 'payload' => 'defaultIssuedByName', 'type' => 'string', 'nullable' => true],
             ['db' => 'default_issued_by_title', 'payload' => 'defaultIssuedByTitle', 'type' => 'string', 'nullable' => true],
         ],
@@ -362,6 +366,8 @@ const ENTITY_CONFIGS = [
             ['db' => 'issuer_email', 'payload' => 'issuerEmail', 'type' => 'string', 'nullable' => true],
             ['db' => 'issuer_tax_id', 'payload' => 'issuerTaxId', 'type' => 'string', 'nullable' => true],
             ['db' => 'issuer_logo_file_name', 'payload' => 'issuerLogoFileName', 'type' => 'string', 'nullable' => true],
+            // Signature figée dans CE reçu (`null` = reçu non signé), voir 012_issuer_signature.sql.
+            ['db' => 'issuer_signature_file_name', 'payload' => 'issuerSignatureFileName', 'type' => 'string', 'nullable' => true],
         ],
     ],
 ];

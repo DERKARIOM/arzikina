@@ -1,6 +1,8 @@
 package com.naniger.arzikina.domain.repository
 
 import com.naniger.arzikina.domain.issuedreceipt.LogoChange
+import com.naniger.arzikina.domain.issuedreceipt.SignatureChange
+import com.naniger.arzikina.domain.issuedreceipt.SignatureImage
 import com.naniger.arzikina.domain.model.IssuerProfile
 import kotlinx.coroutines.flow.Flow
 
@@ -21,10 +23,17 @@ interface IssuerProfileRepository {
      * écriture ; l'ancien fichier n'est supprimé qu'une fois le profil enregistré, donc une erreur ne
      * fait jamais perdre le logo existant.
      *
+     * [signature] suit la même logique mais l'ancien fichier de signature n'est JAMAIS supprimé : les
+     * reçus déjà signés en gardent une copie figée dont ils ont besoin pour régénérer leur PDF.
+     *
      * @throws com.naniger.arzikina.domain.issuedreceipt.IssuedReceiptException.Invalid champs invalides
      * @throws com.naniger.arzikina.domain.issuedreceipt.LogoImportException logo refusé
      */
-    suspend fun saveProfile(profile: IssuerProfile, logo: LogoChange = LogoChange.Keep)
+    suspend fun saveProfile(
+        profile: IssuerProfile,
+        logo: LogoChange = LogoChange.Keep,
+        signature: SignatureChange = SignatureChange.Keep
+    )
 
     /**
      * Vérifie qu'une image peut servir de logo (type réel, taille, lisibilité) SANS rien enregistrer :
@@ -34,6 +43,21 @@ interface IssuerProfileRepository {
      */
     suspend fun validateLogo(sourceUri: String)
 
-    /** Fichier du logo mémorisé [fileName] (pour l'afficher), `null` s'il n'existe plus. */
+    /**
+     * Transforme une image choisie en signature prête à stocker (fond blanc transparent, recadrée) SANS
+     * rien enregistrer : permet d'afficher le résultat tout de suite et de refuser un mauvais fichier.
+     *
+     * @throws com.naniger.arzikina.domain.issuedreceipt.LogoImportException
+     */
+    suspend fun prepareSignature(sourceUri: String): SignatureImage
+
+    /**
+     * Idem pour un tracé à main levée, fourni en PNG transparent par le pad de dessin.
+     *
+     * @throws com.naniger.arzikina.domain.issuedreceipt.LogoImportException
+     */
+    suspend fun prepareDrawnSignature(png: ByteArray): SignatureImage
+
+    /** Fichier image mémorisé [fileName] (logo OU signature : même dossier), `null` s'il n'existe plus. */
     fun logoFile(fileName: String): java.io.File?
 }

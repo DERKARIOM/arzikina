@@ -1,6 +1,6 @@
 package com.naniger.arzikina.domain.issuedreceipt
 
-/** Échec d'import d'un logo ; [reason] est traduit en message FR/EN par la présentation. */
+/** Échec d'import d'une image de logo OU de signature ; [reason] est traduit en message FR/EN par la présentation. */
 class LogoImportException(val reason: Reason, cause: Throwable? = null) : Exception("Import du logo refusé : $reason", cause) {
 
     enum class Reason {
@@ -11,6 +11,9 @@ class LogoImportException(val reason: Reason, cause: Throwable? = null) : Except
         TOO_LARGE,
 
         /** Fichier illisible ou corrompu. */
-        UNREADABLE
+        UNREADABLE,
+
+        /** Signature importée sans aucune encre détectée (image vide ou entièrement blanche). */
+        EMPTY
     }
 }

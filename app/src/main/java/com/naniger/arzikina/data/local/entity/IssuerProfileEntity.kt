@@ -11,6 +11,8 @@ import androidx.room.PrimaryKey
  * jour. Aucun profil professionnel n'existait dans l'application, d'où cette table dédiée.
  *
  * [logoFileName] : fichier du logo dans le stockage privé de l'application (jamais une URI externe).
+ * [signatureFileName] : fichier de la signature manuscrite (même stockage et mêmes règles de nom que le
+ * logo, voir `IssuerLogoStorage`) ; `null` = pas de signature. Ajoutée en v35.
  *
  * Colonnes de synchronisation : voir [IssuedReceiptEntity]. [deletedAt] ne devrait jamais être
  * renseigné en pratique (on modifie le profil, on ne le supprime pas) mais reste présent par
@@ -36,5 +38,6 @@ data class IssuerProfileEntity(
     val updatedAt: Long,
     val syncId: String? = null,
     val deletedAt: Long? = null,
-    val version: Int = 1
+    val version: Int = 1,
+    val signatureFileName: String? = null
 )

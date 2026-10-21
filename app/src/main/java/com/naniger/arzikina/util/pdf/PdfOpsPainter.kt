@@ -19,7 +19,7 @@ class PdfOpsPainter(private val paints: PdfPaints) {
     private val bitmapPaint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
     private val logoBounds = RectF()
 
-    fun draw(canvas: Canvas, ops: List<PdfOp>, logo: Bitmap?) {
+    fun draw(canvas: Canvas, ops: List<PdfOp>, logo: Bitmap?, signature: Bitmap? = null) {
         for (op in ops) {
             when (op) {
                 is PdfOp.Text -> {
@@ -36,11 +36,15 @@ class PdfOpsPainter(private val paints: PdfPaints) {
                     strokePaint.strokeWidth = op.widthPt
                     canvas.drawLine(op.x1, op.y1, op.x2, op.y2, strokePaint)
                 }
-                is PdfOp.Logo -> if (logo != null && !logo.isRecycled) {
-                    logoBounds.set(op.x, op.y, op.x + op.width, op.y + op.height)
-                    canvas.drawBitmap(logo, null, logoBounds, bitmapPaint)
-                }
+                is PdfOp.Logo -> drawImage(canvas, logo, op.x, op.y, op.width, op.height)
+                is PdfOp.Signature -> drawImage(canvas, signature, op.x, op.y, op.width, op.height)
             }
         }
+    }
+
+    private fun drawImage(canvas: Canvas, bitmap: Bitmap?, x: Float, y: Float, width: Float, height: Float) {
+        if (bitmap == null || bitmap.isRecycled) return
+        logoBounds.set(x, y, x + width, y + height)
+        canvas.drawBitmap(bitmap, null, logoBounds, bitmapPaint)
     }
 }

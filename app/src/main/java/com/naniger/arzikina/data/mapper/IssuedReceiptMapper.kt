@@ -72,5 +72,6 @@ fun IssuerProfileEntity.toDomain(): IssuerProfile = IssuerProfile(
     taxId = taxId,
     logoFileName = logoFileName,
     defaultIssuedByName = defaultIssuedByName,
-    defaultIssuedByTitle = defaultIssuedByTitle
+    defaultIssuedByTitle = defaultIssuedByTitle,
+    signatureFileName = signatureFileName
 )

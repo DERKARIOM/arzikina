@@ -38,17 +38,25 @@ class IssuedReceiptPdfWriterImpl @Inject constructor(
     override suspend fun write(receipt: IssuedReceipt, logoCandidates: List<String>, language: String): String =
         withContext(ioDispatcher) {
             var logo: Bitmap? = null
+            var signature: Bitmap? = null
             try {
                 require(ReceiptNumber.isValid(receipt.number)) { "Le reçu doit être enregistré (numéro attribué) avant son PDF." }
                 val userId = sessionManager.getCurrentUserIdOnce() ?: error("Aucun utilisateur connecté.")
                 logo = logoCandidates.firstNotNullOfOrNull { name ->
                     logoStorage.resolveFile(name)?.let { runCatching { BitmapFactory.decodeFile(it.path) }.getOrNull() }
                 }
-                val content = ReceiptPdfContentBuilder.build(receipt, language, logo?.let { PdfLogo(it.width, it.height) })
+                // Signature : UNIQUEMENT celle figée dans le reçu, jamais remplacée par celle du profil (ce serait
+                // signer à la place de l'émetteur un reçu qu'il n'a pas signé). Fichier absent = reçu sans image.
+                signature = receipt.issuer.signatureFileName?.let { name ->
+                    logoStorage.resolveFile(name)?.let { runCatching { BitmapFactory.decodeFile(it.path) }.getOrNull() }
+                }
+                val content = ReceiptPdfContentBuilder.build(
+                    receipt, language, logo?.let { PdfLogo(it.width, it.height) }, signature?.let { PdfLogo(it.width, it.height) }
+                )
                 val paints = PdfPaints()
                 val pages = ReceiptPdfLayoutEngine.layout(content, paints)
                 val fileName = ReceiptNumber.pdfFileName(receipt.number)
-                pdfStorage.writeAtomically(userId, fileName) { out -> PdfCanvasRenderer(paints).render(pages, logo, out) }
+                pdfStorage.writeAtomically(userId, fileName) { out -> PdfCanvasRenderer(paints).render(pages, logo, signature, out) }
                 fileName
             } catch (e: CancellationException) {
                 throw e
@@ -58,6 +66,7 @@ class IssuedReceiptPdfWriterImpl @Inject constructor(
                 throw IssuedReceiptException.PdfFailed(e)
             } finally {
                 logo?.recycle()
+                signature?.recycle()
             }
         }
 

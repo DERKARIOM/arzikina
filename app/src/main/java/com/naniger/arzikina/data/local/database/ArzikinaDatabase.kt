@@ -159,6 +159,8 @@ import com.naniger.arzikina.data.local.entity.UserServerLinkEntity
  * - 34 : Utilitaire « Gestion de reçus » (reçus ÉMIS) — tables `issued_receipts` et `issuer_profiles`
  *   (voir [MIGRATION_33_34]/[IssuedReceiptEntity]/[IssuerProfileEntity]). Distinctes de `receipts`
  *   (justificatifs importés). Migration purement additive.
+ * - 35 : Signature manuscrite de l'émetteur — colonne nullable `signatureFileName` sur
+ *   `issuer_profiles` (voir [MIGRATION_34_35]). Migration purement additive.
  */
 @Database(
     entities = [
@@ -185,7 +187,7 @@ import com.naniger.arzikina.data.local.entity.UserServerLinkEntity
         IssuedReceiptEntity::class,
         IssuerProfileEntity::class
     ],
-    version = 34,
+    version = 35,
     exportSchema = true
 )
 @TypeConverters(Converters::class)

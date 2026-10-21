@@ -1,6 +1,6 @@
 package com.naniger.arzikina.domain.issuedreceipt.pdf
 
-/** Dimensions d'origine du logo en pixels : seul le RATIO compte pour la mise en page. */
+/** Dimensions d'origine d'une image (logo, signature) en pixels : seul le RATIO compte pour la mise en page. */
 data class PdfLogo(val widthPx: Int, val heightPx: Int)
 
 data class PdfKeyValue(val label: String, val value: String)
@@ -29,5 +29,7 @@ data class ReceiptPdfContent(
     val details: List<PdfKeyValue>,
     val notes: String?,
     val issuedByName: String?,
-    val issuedByTitle: String?
+    val issuedByTitle: String?,
+    /** Dimensions de la signature à poser (`null` = reçu non signé ou image introuvable). */
+    val signature: PdfLogo? = null
 )

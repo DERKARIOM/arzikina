@@ -7,6 +7,8 @@ package com.naniger.arzikina.domain.model
  *
  * [logoFileName] : nom du fichier du logo dans le stockage privé de l'application, jamais une URI
  * externe (voir l'étape « Profil émetteur et logo »).
+ * [signatureFileName] : idem pour la signature manuscrite (même stockage que le logo) ; `null` = aucune.
+ * [toSnapshot] ne la copie JAMAIS d'office : signer un reçu est un choix, fait à l'émission.
  */
 data class IssuerProfile(
     val businessName: String,
@@ -16,7 +18,8 @@ data class IssuerProfile(
     val taxId: String? = null,
     val logoFileName: String? = null,
     val defaultIssuedByName: String? = null,
-    val defaultIssuedByTitle: String? = null
+    val defaultIssuedByTitle: String? = null,
+    val signatureFileName: String? = null
 ) {
     fun toSnapshot(): IssuerSnapshot = IssuerSnapshot(
         businessName = businessName,

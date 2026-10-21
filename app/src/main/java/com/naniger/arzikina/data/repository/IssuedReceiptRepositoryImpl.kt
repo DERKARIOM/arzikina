@@ -152,7 +152,8 @@ class IssuedReceiptRepositoryImpl @Inject constructor(
                 phone = receipt.issuer.phone.trim(),
                 email = receipt.issuer.email.cleaned(),
                 taxId = receipt.issuer.taxId.cleaned(),
-                logoFileName = receipt.issuer.logoFileName.cleaned()
+                logoFileName = receipt.issuer.logoFileName.cleaned(),
+                signatureFileName = receipt.issuer.signatureFileName.cleaned()
             )
         )
     }

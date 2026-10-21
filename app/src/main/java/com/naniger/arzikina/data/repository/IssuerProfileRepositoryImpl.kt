@@ -3,6 +3,7 @@ package com.naniger.arzikina.data.repository
 import androidx.room.withTransaction
 import com.naniger.arzikina.data.issuedreceipt.IssuerLogoProcessor
 import com.naniger.arzikina.data.issuedreceipt.IssuerLogoStorage
+import com.naniger.arzikina.data.issuedreceipt.IssuerSignatureProcessor
 import com.naniger.arzikina.data.local.dao.IssuerProfileDao
 import com.naniger.arzikina.data.local.database.ArzikinaDatabase
 import com.naniger.arzikina.data.local.entity.IssuerProfileEntity
@@ -11,6 +12,8 @@ import com.naniger.arzikina.di.IoDispatcher
 import com.naniger.arzikina.domain.issuedreceipt.IssuedReceiptException
 import com.naniger.arzikina.domain.issuedreceipt.IssuerValidator
 import com.naniger.arzikina.domain.issuedreceipt.LogoChange
+import com.naniger.arzikina.domain.issuedreceipt.SignatureChange
+import com.naniger.arzikina.domain.issuedreceipt.SignatureImage
 import com.naniger.arzikina.domain.model.IssuerProfile
 import com.naniger.arzikina.domain.model.SyncOperation
 import com.naniger.arzikina.domain.repository.IssuerProfileRepository
@@ -38,6 +41,7 @@ class IssuerProfileRepositoryImpl @Inject constructor(
     private val profileDao: IssuerProfileDao,
     private val logoProcessor: IssuerLogoProcessor,
     private val logoStorage: IssuerLogoStorage,
+    private val signatureProcessor: IssuerSignatureProcessor,
     private val sessionManager: SessionManager,
     private val syncHandler: IssuedReceiptSyncHandler,
     @IoDispatcher private val ioDispatcher: CoroutineDispatcher
@@ -52,7 +56,11 @@ class IssuerProfileRepositoryImpl @Inject constructor(
         profileDao.getForUser(requireCurrentUserId())?.toDomain()
     }
 
-    override suspend fun saveProfile(profile: IssuerProfile, logo: LogoChange) = withContext(ioDispatcher) {
+    override suspend fun saveProfile(
+        profile: IssuerProfile,
+        logo: LogoChange,
+        signature: SignatureChange
+    ) = withContext(ioDispatcher) {
         val userId = requireCurrentUserId()
         val normalized = profile.normalized()
         val errors = IssuerValidator.validate(
@@ -70,6 +78,9 @@ class IssuerProfileRepositoryImpl @Inject constructor(
             val processed = logoProcessor.process(it.sourceUri)
             logoStorage.write(processed.bytes, processed.extension)
         }
+
+        // La signature arrive déjà traitée (prepareSignature) : seule l'écriture du fichier reste à faire.
+        val newSignatureFile = (signature as? SignatureChange.Replace)?.let { logoStorage.write(it.image.pngBytes, "png") }
 
         var oldLogoFile: String? = null
         try {
@@ -94,6 +105,11 @@ class IssuerProfileRepositoryImpl @Inject constructor(
                         email = normalized.email,
                         taxId = normalized.taxId,
                         logoFileName = logoFileName,
+                        signatureFileName = when (signature) {
+                            SignatureChange.Keep -> existing?.signatureFileName
+                            SignatureChange.Remove -> null
+                            is SignatureChange.Replace -> newSignatureFile
+                        },
                         defaultIssuedByName = normalized.defaultIssuedByName,
                         defaultIssuedByTitle = normalized.defaultIssuedByTitle,
                         createdAt = existing?.createdAt ?: now,
@@ -112,6 +128,7 @@ class IssuerProfileRepositoryImpl @Inject constructor(
             }
         } catch (e: Throwable) {
             newLogoFile?.let { logoStorage.delete(it) }
+            newSignatureFile?.let { logoStorage.delete(it) }
             throw e
         }
 
@@ -119,12 +136,19 @@ class IssuerProfileRepositoryImpl @Inject constructor(
         // Les instantanés de reçus déjà émis peuvent encore citer ce nom : l'étape PDF retombe alors
         // sur le logo ACTUEL du profil (décision d'audit n°2), ou n'en met aucun.
         oldLogoFile?.takeIf { it != newLogoFile && logo != LogoChange.Keep }?.let { logoStorage.delete(it) }
+        // Ancienne signature volontairement conservée sur disque (voir la documentation du contrat).
         Unit
     }
 
     override suspend fun validateLogo(sourceUri: String) {
         withContext(ioDispatcher) { logoProcessor.process(sourceUri) }
     }
+
+    override suspend fun prepareSignature(sourceUri: String): SignatureImage =
+        withContext(ioDispatcher) { signatureProcessor.fromUri(sourceUri) }
+
+    override suspend fun prepareDrawnSignature(png: ByteArray): SignatureImage =
+        withContext(ioDispatcher) { signatureProcessor.fromDrawnPng(png) }
 
     override fun logoFile(fileName: String): java.io.File? = logoStorage.resolveFile(fileName)
 

@@ -21,9 +21,9 @@ require_once __DIR__ . '/uuid.php';
 /** 2 Mo : un logo est réduit à 512 px maximum côté client (quelques dizaines de Ko en pratique). */
 const ISSUER_LOGO_MAX_BYTES = 2_000_000;
 
-/** Plafond de fichiers par utilisateur (anti-abus) : les anciens logos restent référencés par les
+/** Plafond de fichiers par utilisateur (anti-abus) : les anciens logos et signatures restent référencés par les
  *  anciens reçus, il n'y a donc pas de purge automatique. */
-const ISSUER_LOGO_MAX_FILES_PER_USER = 50;
+const ISSUER_LOGO_MAX_FILES_PER_USER = 100;
 
 /** Même règle que `IssuerLogoPolicy.isSafeFileName` (Android) : empêche toute traversée de dossier. */
 function isValidIssuerLogoName(string $name): bool

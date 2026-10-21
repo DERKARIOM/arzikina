@@ -21,6 +21,7 @@ import com.naniger.arzikina.data.local.dao.UserDao
 import com.naniger.arzikina.data.local.dao.UserPreferencesDao
 import com.naniger.arzikina.data.local.dao.UserProfilePhotoDao
 import com.naniger.arzikina.data.local.dao.UserServerLinkDao
+import com.naniger.arzikina.data.issuedreceipt.IssuedReceiptJson
 import com.naniger.arzikina.data.issuedreceipt.IssuerLogoStorage
 import com.naniger.arzikina.data.issuedreceipt.pdf.IssuedReceiptPdfStorage
 import com.naniger.arzikina.data.profile.ProfilePhotoFileStorage
@@ -86,7 +87,14 @@ class AccountDataWiper @Inject constructor(
         // (voir la doc de tête).
         val oldReceiptFilePaths = receiptDao.observeAllForUser(userId).first().map { it.localPath }
         val oldProfilePhotoPath = userProfilePhotoDao.findByUserId(userId)?.localPath
-        val oldIssuerLogoFile = issuerProfileDao.getForUser(userId)?.logoFileName
+        val oldIssuerProfile = issuerProfileDao.getForUser(userId)
+        val oldIssuerLogoFile = oldIssuerProfile?.logoFileName
+        // Signatures : celle du profil + celles figées dans les reçus (anciens noms inclus).
+        val oldSignatureFiles = (
+            listOfNotNull(oldIssuerProfile?.signatureFileName) +
+                issuedReceiptDao.getIssuerJsonsMentioningSignature(userId)
+                    .mapNotNull { IssuedReceiptJson.decodeIssuer(it).signatureFileName }
+            ).distinct()
 
         database.withTransaction {
             // Même ordre que `BackupRepositoryImpl.importBackup` (voir sa doc : enfants avant
@@ -121,6 +129,7 @@ class AccountDataWiper @Inject constructor(
         oldReceiptFilePaths.forEach { path -> runCatching { receiptFileStorage.deleteFile(path) } }
         oldProfilePhotoPath?.let { runCatching { profilePhotoFileStorage.deleteFile(it) } }
         oldIssuerLogoFile?.let { runCatching { issuerLogoStorage.delete(it) } }
+        oldSignatureFiles.forEach { runCatching { issuerLogoStorage.delete(it) } }
         runCatching { issuedReceiptPdfStorage.deleteAllForUser(userId) }
     }
 }

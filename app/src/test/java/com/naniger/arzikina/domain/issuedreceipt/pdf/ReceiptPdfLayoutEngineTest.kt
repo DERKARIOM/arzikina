@@ -24,8 +24,8 @@ class ReceiptPdfLayoutEngineTest {
         pricing = pricing, notes = notes, issuedByName = "Aïssa", issuedByTitle = "Gérante"
     )
 
-    private fun layout(r: IssuedReceipt, logo: PdfLogo? = null) =
-        ReceiptPdfLayoutEngine.layout(ReceiptPdfContentBuilder.build(r, "fr", logo), measurer)
+    private fun layout(r: IssuedReceipt, logo: PdfLogo? = null, signature: PdfLogo? = null) =
+        ReceiptPdfLayoutEngine.layout(ReceiptPdfContentBuilder.build(r, "fr", logo, signature), measurer)
 
     private fun texts(page: PdfPagePlan) = page.ops.filterIsInstance<PdfOp.Text>()
 
@@ -86,6 +86,41 @@ class ReceiptPdfLayoutEngineTest {
         assertWithinPage(layout(r))
     }
 
+    @Test fun signatureIsScaledCenteredAndSitsAboveTheRule() {
+        val pages = layout(receipt(), signature = PdfLogo(600, 200))
+        val sign = pages[0].ops.filterIsInstance<PdfOp.Signature>().single()
+        val right = ReceiptPdfSpec.MARGIN_X + ReceiptPdfSpec.CONTENT_WIDTH
+        val boxLeft = ReceiptPdfSpec.MARGIN_X + ReceiptPdfSpec.CONTENT_WIDTH / 2f + 12f
+        // Ratio d'origine conservé, jamais plus haut que le cadre.
+        assertEquals(3f, sign.width / sign.height, 0.001f)
+        assertTrue(sign.height <= ReceiptPdfSpec.SIGNATURE_MAX_HEIGHT + 0.001f)
+        // Dans la moitié droite, centrée horizontalement.
+        assertTrue(sign.x >= boxLeft - 0.001f && sign.x + sign.width <= right + 0.001f)
+        assertEquals((boxLeft + right) / 2f, sign.x + sign.width / 2f, 0.01f)
+        // Au-dessus du filet de signature, sous le libellé « Signature ».
+        val rule = pages[0].ops.filterIsInstance<PdfOp.Line>().last { it.x1 == boxLeft }
+        assertTrue(sign.y + sign.height <= rule.y1)
+        val label = texts(pages[0]).first { it.text == "Signature" }
+        assertTrue(sign.y >= label.baselineY)
+    }
+
+    @Test fun tallSignatureIsLimitedByHeightAndNoSignatureMeansNoOp() {
+        val tall = layout(receipt(), signature = PdfLogo(100, 400))[0].ops.filterIsInstance<PdfOp.Signature>().single()
+        assertEquals(ReceiptPdfSpec.SIGNATURE_MAX_HEIGHT, tall.height, 0.001f)
+        assertEquals(0.25f, tall.width / tall.height, 0.001f)
+        assertTrue(layout(receipt())[0].ops.none { it is PdfOp.Signature })
+        assertTrue(layout(receipt(), signature = PdfLogo(0, 0))[0].ops.none { it is PdfOp.Signature })
+    }
+
+    @Test fun signatureStaysWithItsBlockWhenTheReceiptSpansPages() {
+        val pages = layout(receipt(notes = "Observation. ".repeat(600)), signature = PdfLogo(500, 200))
+        assertWithinPage(pages)
+        val withSignature = pages.filter { p -> p.ops.any { it is PdfOp.Signature } }
+        assertEquals(1, withSignature.size)
+        assertTrue(texts(withSignature[0]).any { it.text == "Signature" })
+    }
+
+
     private fun assertWithinPage(pages: List<PdfPagePlan>) {
         val right = ReceiptPdfSpec.MARGIN_X + ReceiptPdfSpec.CONTENT_WIDTH
         pages.forEach { page ->
@@ -99,6 +134,7 @@ class ReceiptPdfLayoutEngineTest {
                         assertTrue("texte hors marges : ${op.text}", l >= ReceiptPdfSpec.MARGIN_X - 0.01f && r <= right + 0.01f)
                     }
                     is PdfOp.Rect -> assertTrue(op.y + op.height <= ReceiptPdfSpec.CONTENT_BOTTOM + 0.01f)
+                    is PdfOp.Signature -> assertTrue(op.x + op.width <= right + 0.01f && op.y + op.height <= ReceiptPdfSpec.CONTENT_BOTTOM + 0.01f)
                     else -> Unit
                 }
             }

@@ -142,4 +142,39 @@ class IssuedReceiptSyncMapperTest {
         assertFalse(LogoSyncPolicy.isPermanentFailure(500))
         assertFalse(LogoSyncPolicy.isPermanentFailure(503))
     }
+
+    @Test
+    fun `signature travels with the profile and with a signed receipt`() {
+        val profile = IssuerProfileEntity(
+            id = 3L, userId = 1L, businessName = "Boutique", address = "x", phone = "1", email = null, taxId = null,
+            logoFileName = "logo-1.png", defaultIssuedByName = null, defaultIssuedByTitle = null,
+            createdAt = 1L, updatedAt = 2L, signatureFileName = "sig-1.png"
+        )
+        val payload = IssuedReceiptSyncMapper.toPayload(profile, "p", SyncOperation.UPDATE)
+        assertEquals("sig-1.png", payload.signatureFileName)
+        assertEquals(listOf("logo-1.png", "sig-1.png"), IssuedReceiptSyncMapper.logoNames(payload))
+
+        val signedIssuer = IssuedReceiptJson.encodeIssuer(
+            IssuerSnapshot("Boutique", "Niamey", "1", null, null, "logo-1.png", "sig-1.png")
+        )
+        val signed = IssuedReceiptSyncMapper.toPayload(receipt().copy(issuerJson = signedIssuer), "sync-1", SyncOperation.UPDATE)
+        assertEquals("sig-1.png", signed.issuerSignatureFileName)
+        assertEquals(listOf("logo-1.png", "sig-1.png"), IssuedReceiptSyncMapper.logoNames(signed))
+    }
+
+    @Test
+    fun `an unsigned receipt has no signature and server state round-trips it`() {
+        val unsigned = IssuedReceiptSyncMapper.toPayload(receipt(), "sync-1", SyncOperation.UPDATE)
+        assertNull(unsigned.issuerSignatureFileName)
+        assertEquals(listOf("logo-1.png"), IssuedReceiptSyncMapper.logoNames(unsigned))
+
+        val fromServer = IssuedReceiptSyncMapper.toEntity(state().copy(issuerSignatureFileName = "sig-2.png"), 1L, null)
+        assertEquals("sig-2.png", IssuedReceiptJson.decodeIssuer(fromServer.issuerJson).signatureFileName)
+    }
+
+    @Test
+    fun `an issuer stored before signatures existed still decodes as unsigned`() {
+        val legacy = "{\"businessName\":\"Boutique\",\"address\":\"Niamey\",\"phone\":\"1\",\"logoFileName\":\"logo-1.png\"}"
+        assertNull(IssuedReceiptJson.decodeIssuer(legacy).signatureFileName)
+    }
 }

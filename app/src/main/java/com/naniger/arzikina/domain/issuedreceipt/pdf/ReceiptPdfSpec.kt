@@ -24,6 +24,15 @@ object ReceiptPdfSpec {
     const val LOGO_MAX_WIDTH = 120f
     const val LOGO_MAX_HEIGHT = 64f
 
+    /**
+     * Cadre de la signature manuscrite, dans la moitié droite du bloc « Signature » : l'image tient
+     * sous le libellé (décalage [SIGNATURE_TOP_OFFSET]), au-dessus du filet, et est centrée. Sa hauteur
+     * maximale est [SIGNATURE_MAX_HEIGHT] ; sa largeur, celle de la moitié droite.
+     */
+    const val SIGNATURE_TOP_OFFSET = 14f
+    const val SIGNATURE_BOTTOM_GAP = 10f
+    const val SIGNATURE_MAX_HEIGHT = 60f
+
     val ACCENT: Int = 0xFF42B998.toInt()
     val TEXT: Int = 0xFF111827.toInt()
     val MUTED: Int = 0xFF6B7280.toInt()

@@ -2,6 +2,7 @@ package com.naniger.arzikina.data.repository
 
 import androidx.room.withTransaction
 import com.naniger.arzikina.data.issuedreceipt.IssuedReceiptSyncMapper
+import com.naniger.arzikina.data.issuedreceipt.IssuedReceiptJson
 import com.naniger.arzikina.data.issuedreceipt.IssuerLogoStorage
 import com.naniger.arzikina.data.issuedreceipt.LogoSyncPolicy
 import com.naniger.arzikina.data.local.dao.IssuedReceiptDao
@@ -129,6 +130,7 @@ class IssuedReceiptSyncHandler @Inject constructor(
         if (local == null && !allowCreate) return
         profileDao.upsert(IssuedReceiptSyncMapper.toEntity(state, userId, local))
         rememberLogo(state.logoFileName)
+        rememberLogo(state.signatureFileName)
     }
 
     /** Voir [applyProfile] ; en plus, résout un éventuel doublon de numéro (voir la doc de la classe). */
@@ -142,6 +144,7 @@ class IssuedReceiptSyncHandler @Inject constructor(
             Unit
         }
         rememberLogo(state.issuerLogoFileName)
+        rememberLogo(state.issuerSignatureFileName)
     }
 
     /** Numéro sous lequel ranger [state] localement ; libère le numéro si c'est la ligne locale qui perd. */
@@ -197,14 +200,20 @@ class IssuedReceiptSyncHandler @Inject constructor(
     }
 
     /**
-     * Télécharge les logos manquants (celui du profil courant + ceux cités par les données reçues ce
+     * Télécharge les logos et signatures manquants (ceux du profil courant, les signatures figées dans
+     * les reçus + les noms cités par les données reçues ce
      * processus). Ne lève pas pour une panne réseau : on s'arrête, la prochaine synchronisation
      * reprend. Limite assumée : la liste des logos de reçus à récupérer vit en mémoire ; après un
      * redémarrage du processus seul le logo du profil est retrouvé (le PDF d'un ancien reçu retombe
      * de toute façon sur le logo actuel du profil).
      */
     suspend fun downloadMissingLogos() {
-        sessionManager.getCurrentUserIdOnce()?.let { profileDao.getForUser(it) }?.logoFileName?.let(::rememberLogo)
+        sessionManager.getCurrentUserIdOnce()?.let { userId ->
+            profileDao.getForUser(userId)?.let { rememberLogo(it.logoFileName); rememberLogo(it.signatureFileName) }
+            // Les signatures figées dans les reçus survivent à un redémarrage : retrouvées depuis la base.
+            receiptDao.getIssuerJsonsMentioningSignature(userId)
+                .forEach { rememberLogo(IssuedReceiptJson.decodeIssuer(it).signatureFileName) }
+        }
         for (name in pendingLogoDownloads.toList()) {
             if (logoStorage.resolveFile(name) != null) {
                 pendingLogoDownloads.remove(name)

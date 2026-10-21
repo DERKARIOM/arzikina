@@ -172,6 +172,14 @@ object ReceiptPdfLayoutEngine {
         val signX = S.MARGIN_X + half + 12f
         flow.add(textOp(signX, top, c.labels.signature, S.LABEL))
         flow.add(PdfOp.Line(signX, top + SIGNATURE_HEIGHT - 8f, RIGHT, top + SIGNATURE_HEIGHT - 8f, S.RULE, 0.8f))
+        c.signature?.takeIf { it.widthPx > 0 && it.heightPx > 0 }?.let { image ->
+            // Image mise à l'échelle sans déformation dans le cadre, centrée, posée juste au-dessus du filet.
+            val boxWidth = RIGHT - signX
+            val scale = minOf(boxWidth / image.widthPx, S.SIGNATURE_MAX_HEIGHT / image.heightPx)
+            val width = image.widthPx * scale
+            val height = image.heightPx * scale
+            flow.add(PdfOp.Signature(signX + (boxWidth - width) / 2f, top + SIGNATURE_HEIGHT - S.SIGNATURE_BOTTOM_GAP - height, width, height))
+        }
         flow.advance(SIGNATURE_HEIGHT)
     }
 
