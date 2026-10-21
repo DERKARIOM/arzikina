@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Une ligne de détail du formulaire de reçu (désignation, quantité, prix unitaire, total de la
+    ligne, suppression). Ajoutée/retirée dynamiquement par IssuedReceiptFormFragment.
+-->
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="@dimen/spacing_s"
+    android:theme="@style/ThemeOverlay.Arzikina.OnBalanceCard"
+    app:cardBackgroundColor="@color/arzikina_postcart_background"
+    app:cardCornerRadius="@dimen/corner_radius_medium"
+    app:cardElevation="@dimen/elevation_raised">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="@dimen/spacing_xs">
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/lineLabelLayout"
+            style="@style/Widget.Arzikina.TextInputLayout.OutlinedBox.PostCard"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="@string/issued_receipt_line_label">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/lineLabelInput"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="textCapSentences"
+                android:maxLines="2" />
+
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/lineQuantityLayout"
+                style="@style/Widget.Arzikina.TextInputLayout.OutlinedBox.PostCard"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="2"
+                android:hint="@string/issued_receipt_line_quantity">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/lineQuantityInput"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="numberDecimal"
+                    android:maxLines="1" />
+
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/linePriceLayout"
+                style="@style/Widget.Arzikina.TextInputLayout.OutlinedBox.PostCard"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="3"
+                android:hint="@string/issued_receipt_line_price">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/linePriceInput"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="numberDecimal"
+                    android:maxLines="1" />
+
+            </com.google.android.material.textfield.TextInputLayout>
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingStart="@dimen/spacing_s"
+            android:paddingEnd="@dimen/spacing_xs">
+
+            <TextView
+                android:id="@+id/lineTotalText"
+                style="@style/TextAppearance.Material3.BodyMedium"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:textColor="?attr/colorOnSurface"
+                tools:text="Total : 25 000 XOF" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/lineRemoveButton"
+                style="@style/Widget.Material3.Button.TextButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/issued_receipt_line_remove"
+                android:textColor="@color/expense_red" />
+
+        </LinearLayout>
+    </LinearLayout>
+</com.google.android.material.card.MaterialCardView>

@@ -593,6 +593,39 @@
         tools:layout="@layout/fragment_security_question" />
 
     <!--
+        Utilitaire « Gestion de reçus » (reçus ÉMIS, voir presentation/utilities/issuedreceipts) :
+        formulaire « Nouveau reçu » avec aperçu en temps réel et génération du PDF. À ne pas
+        confondre avec receiptsFragment (« Justificatifs », import de PDF reçus). L'historique des
+        reçus s'intercalera devant ce formulaire à l'étape suivante.
+    -->
+    <fragment
+        android:id="@+id/issuedReceiptHistoryFragment"
+        android:name="com.naniger.arzikina.presentation.utilities.issuedreceipts.history.IssuedReceiptHistoryFragment"
+        android:label="@string/issued_receipt_history_title"
+        tools:layout="@layout/fragment_issued_receipt_history" />
+
+    <fragment
+        android:id="@+id/issuedReceiptFormFragment"
+        android:name="com.naniger.arzikina.presentation.utilities.issuedreceipts.IssuedReceiptFormFragment"
+        android:label="@string/issued_receipt_form_title"
+        tools:layout="@layout/fragment_issued_receipt_form">
+        <argument
+            android:name="receiptId"
+            android:defaultValue="0L"
+            app:argType="long" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/issuedReceiptDetailFragment"
+        android:name="com.naniger.arzikina.presentation.utilities.issuedreceipts.detail.IssuedReceiptDetailFragment"
+        android:label="@string/issued_receipt_history_title"
+        tools:layout="@layout/fragment_issued_receipt_detail">
+        <argument
+            android:name="receiptId"
+            app:argType="long" />
+    </fragment>
+
+    <!--
         "Marketplace personnelle" (voir presentation/utilities/marketplace/MarketplaceFragment,
         cahier des charges du même nom), même principe que loansFragment/receiptsFragment
         ci-dessus. PAS encore d'entrée dans UtilityCatalog (étape "Navigation" à venir) : ces deux

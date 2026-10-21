@@ -111,6 +111,12 @@ class IssuerProfileRepositoryImpl @Inject constructor(
         Unit
     }
 
+    override suspend fun validateLogo(sourceUri: String) {
+        withContext(ioDispatcher) { logoProcessor.process(sourceUri) }
+    }
+
+    override fun logoFile(fileName: String): java.io.File? = logoStorage.resolveFile(fileName)
+
     private fun IssuerProfile.normalized() = copy(
         businessName = businessName.trim(),
         address = address.trim(),

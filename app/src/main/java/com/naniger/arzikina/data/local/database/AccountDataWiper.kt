@@ -22,6 +22,7 @@ import com.naniger.arzikina.data.local.dao.UserPreferencesDao
 import com.naniger.arzikina.data.local.dao.UserProfilePhotoDao
 import com.naniger.arzikina.data.local.dao.UserServerLinkDao
 import com.naniger.arzikina.data.issuedreceipt.IssuerLogoStorage
+import com.naniger.arzikina.data.issuedreceipt.pdf.IssuedReceiptPdfStorage
 import com.naniger.arzikina.data.profile.ProfilePhotoFileStorage
 import com.naniger.arzikina.data.receipts.ReceiptFileStorage
 import kotlinx.coroutines.flow.first
@@ -73,6 +74,7 @@ class AccountDataWiper @Inject constructor(
     private val issuedReceiptDao: IssuedReceiptDao,
     private val issuerProfileDao: IssuerProfileDao,
     private val issuerLogoStorage: IssuerLogoStorage,
+    private val issuedReceiptPdfStorage: IssuedReceiptPdfStorage,
     private val userPreferencesDao: UserPreferencesDao,
     private val userProfilePhotoDao: UserProfilePhotoDao,
     private val profilePhotoFileStorage: ProfilePhotoFileStorage,
@@ -106,7 +108,7 @@ class AccountDataWiper @Inject constructor(
             savingsGoalDao.deleteAllForUser(userId)
             receiptDao.deleteAllForUser(userId)
             // Reçus émis et profil émetteur (utilitaire « Gestion de reçus »). Le fichier du logo est
-            // supprimé après la transaction ; les PDF suivront avec leur étape.
+            // supprimé après la transaction, ainsi que le dossier des PDF de l'utilisateur.
             issuedReceiptDao.deleteAllForUser(userId)
             issuerProfileDao.deleteAllForUser(userId)
             userPreferencesDao.deleteAllForUser(userId)
@@ -119,5 +121,6 @@ class AccountDataWiper @Inject constructor(
         oldReceiptFilePaths.forEach { path -> runCatching { receiptFileStorage.deleteFile(path) } }
         oldProfilePhotoPath?.let { runCatching { profilePhotoFileStorage.deleteFile(it) } }
         oldIssuerLogoFile?.let { runCatching { issuerLogoStorage.delete(it) } }
+        runCatching { issuedReceiptPdfStorage.deleteAllForUser(userId) }
     }
 }

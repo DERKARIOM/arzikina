@@ -7,7 +7,7 @@ import com.naniger.arzikina.R
  * ([com.naniger.arzikina.presentation.dashboard.DashboardFragment]) et l'écran complet
  * ([AllUtilitiesFragment]) ne divergent en dupliquant chacun leur propre liste.
  *
- * Aujourd'hui les deux écrans affichent la totalité de [all] (8 entrées). Quand
+ * Aujourd'hui les deux écrans affichent la totalité de [all] (9 entrées). Quand
  * d'autres utilitaires seront ajoutés (calculateur d'intérêts, convertisseur de devises,
  * rappels...), il faudra probablement que le Dashboard n'en affiche plus qu'une sélection
  * restreinte (les plus utilisés) plutôt que la totalité — à ce moment-là, ajouter ici un
@@ -47,6 +47,14 @@ object UtilityCatalog {
             iconRes = R.drawable.ic_receipt_long_24,
             titleRes = R.string.utility_receipts_title,
             destinationId = R.id.receiptsFragment
+        ),
+        // « Gestion de reçus » : reçus ÉMIS par l'utilisateur (formulaire, aperçu, PDF). Distinct de
+        // l'entrée précédente (« Justificatifs », import de PDF reçus d'ailleurs).
+        UtilityItem(
+            iconRes = R.drawable.ic_receipt_issue_24,
+            titleRes = R.string.utility_issued_receipts_title,
+            destinationId = R.id.issuedReceiptHistoryFragment,
+            descriptionRes = R.string.utility_issued_receipts_description
         ),
         // Cahier des charges "Marketplace personnelle" — voir
         // presentation/utilities/marketplace/MarketplaceFragment. ic_storefront_24 déjà utilisée

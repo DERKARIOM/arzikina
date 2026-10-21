@@ -12,4 +12,11 @@ sealed class IssuedReceiptException(message: String) : Exception(message) {
         IssuedReceiptException("Numéro de reçu déjà utilisé : $number")
 
     class NotFound(val id: Long) : IssuedReceiptException("Reçu introuvable : $id")
+
+    /** Le PDF n'a pas pu être généré ou écrit (le reçu, lui, reste intact). */
+    class PdfFailed(cause: Throwable) : IssuedReceiptException("Génération du PDF impossible : ${cause.message}") {
+        init {
+            initCause(cause)
+        }
+    }
 }

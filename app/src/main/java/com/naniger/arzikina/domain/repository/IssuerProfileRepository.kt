@@ -25,4 +25,15 @@ interface IssuerProfileRepository {
      * @throws com.naniger.arzikina.domain.issuedreceipt.LogoImportException logo refusé
      */
     suspend fun saveProfile(profile: IssuerProfile, logo: LogoChange = LogoChange.Keep)
+
+    /**
+     * Vérifie qu'une image peut servir de logo (type réel, taille, lisibilité) SANS rien enregistrer :
+     * permet de refuser tout de suite un mauvais fichier choisi.
+     *
+     * @throws com.naniger.arzikina.domain.issuedreceipt.LogoImportException
+     */
+    suspend fun validateLogo(sourceUri: String)
+
+    /** Fichier du logo mémorisé [fileName] (pour l'afficher), `null` s'il n'existe plus. */
+    fun logoFile(fileName: String): java.io.File?
 }

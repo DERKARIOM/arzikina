@@ -5,14 +5,15 @@ package com.naniger.arzikina.domain.issuedreceipt
  * minimum). Logique pure, testée unitairement.
  *
  * Un numéro personnalisé est accepté tant qu'il respecte [isValid] (caractères sûrs pour un nom de
- * fichier) ; l'unicité est garantie par le repository (index unique `(userId, number)`).
+ * fichier : le `/` est refusé pour que « numéro → nom de PDF » reste injectif, deux numéros distincts ne
+ * pouvant jamais partager un fichier) ; l'unicité est garantie par le repository (index unique `(userId, number)`).
  */
 object ReceiptNumber {
 
     const val PREFIX = "Recu"
     const val MAX_LENGTH = 30
 
-    private val allowed = Regex("^[A-Za-z0-9][A-Za-z0-9._/\\-]{0,${MAX_LENGTH - 1}}$")
+    private val allowed = Regex("^[A-Za-z0-9][A-Za-z0-9._\\-]{0,${MAX_LENGTH - 1}}$")
 
     fun isValid(number: String): Boolean = allowed.matches(number)
 
@@ -37,7 +38,7 @@ object ReceiptNumber {
         return format(year, highest + 1)
     }
 
-    /** Nom du fichier PDF d'un reçu : « Recu-2026-001.pdf » (caractères hors `[A-Za-z0-9._-]` remplacés par « - »). */
+    /** Nom du fichier PDF d'un reçu : « Recu-2026-001.pdf » (le numéro validé ne contient que `[A-Za-z0-9._-]`, jamais modifié). */
     fun pdfFileName(number: String): String =
         number.map { if (it.isLetterOrDigit() && it.code < 128 || it in "._-") it else '-' }
             .joinToString("") + ".pdf"

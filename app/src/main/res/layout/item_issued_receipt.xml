@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Ligne de l'historique des reçus émis (voir IssuedReceiptHistoryAdapter). Postcard sombre FIXE,
+    comme item_loan.xml. Toute la carte ouvre le PDF ; les actions fréquentes (ouvrir, partager,
+    supprimer) sont des boutons texte visibles plutôt qu'un menu caché.
+-->
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/receiptCard"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginHorizontal="@dimen/spacing_m"
+    android:layout_marginTop="@dimen/spacing_m"
+    android:checkable="false"
+    android:clickable="true"
+    android:focusable="true"
+    android:theme="@style/ThemeOverlay.Arzikina.OnBalanceCard"
+    app:cardBackgroundColor="@color/arzikina_postcart_background"
+    app:cardCornerRadius="@dimen/corner_radius_medium"
+    app:cardElevation="@dimen/elevation_raised"
+    app:rippleColor="@android:color/white">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="@dimen/spacing_m">
+
+        <TextView
+            android:id="@+id/receiptNumber"
+            style="@style/TextAppearance.Material3.TitleSmall"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textColor="@color/arzikina_on_balance_card"
+            android:textStyle="bold"
+            app:layout_constraintEnd_toStartOf="@id/receiptStatus"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:text="Recu-2026-001" />
+
+        <TextView
+            android:id="@+id/receiptStatus"
+            style="@style/TextAppearance.Material3.LabelSmall"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_pill"
+            android:backgroundTint="#42B998"
+            android:paddingHorizontal="@dimen/spacing_s"
+            android:paddingVertical="3dp"
+            android:textColor="@android:color/white"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:text="PDF prêt" />
+
+        <TextView
+            android:id="@+id/receiptCustomer"
+            style="@style/TextAppearance.Material3.BodyMedium"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/spacing_xs"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textColor="@color/arzikina_on_balance_card"
+            app:layout_constraintTop_toBottomOf="@id/receiptNumber"
+            tools:text="Aminata Diallo" />
+
+        <TextView
+            android:id="@+id/receiptDate"
+            style="@style/TextAppearance.Material3.BodySmall"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:textColor="@color/arzikina_on_balance_card_variant"
+            app:layout_constraintEnd_toStartOf="@id/receiptAmount"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/receiptCustomer"
+            tools:text="20 oct. 2026" />
+
+        <TextView
+            android:id="@+id/receiptAmount"
+            style="@style/TextAppearance.Material3.TitleMedium"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="@color/arzikina_on_balance_card"
+            android:textStyle="bold"
+            app:layout_constraintBottom_toBottomOf="@id/receiptDate"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/receiptCustomer"
+            tools:text="13 806 F CFA" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/spacing_s"
+            android:gravity="end"
+            android:orientation="horizontal"
+            app:layout_constraintTop_toBottomOf="@id/receiptDate">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/deleteButton"
+                style="@style/Widget.Material3.Button.TextButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/action_delete"
+                android:textColor="@color/arzikina_on_balance_card_variant" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/shareButton"
+                style="@style/Widget.Material3.Button.TextButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/issued_receipt_action_share"
+                android:textColor="@android:color/white" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/openButton"
+                style="@style/Widget.Material3.Button.TextButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/issued_receipt_action_open"
+                android:textColor="@android:color/white" />
+        </LinearLayout>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</com.google.android.material.card.MaterialCardView>

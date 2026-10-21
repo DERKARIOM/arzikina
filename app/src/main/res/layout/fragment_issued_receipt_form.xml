@@ -1,0 +1,557 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Formulaire « Nouveau reçu » (utilitaire « Gestion de reçus », voir
+    presentation/utilities/issuedreceipts/IssuedReceiptFormFragment). Même structure que les autres
+    formulaires (postcards empilées dans un NestedScrollView) ; les champs texte réutilisent
+    item_postcard_text_input et les listes item_dropdown_field (libellés/types posés par le code).
+    Deux vues exclusives sous la barre : « Formulaire » et « Aperçu » (receiptPreview, dessiné par le
+    même moteur que le PDF). Boutons d'action fixés en bas, toujours visibles.
+-->
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="?attr/colorSurface">
+
+    <com.google.android.material.appbar.MaterialToolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:background="?attr/colorSurface"
+        app:layout_constraintTop_toTopOf="parent"
+        app:navigationContentDescription="@string/action_back"
+        app:navigationIcon="@drawable/ic_arrow_back_24"
+        app:title="@string/issued_receipt_form_title"
+        app:titleTextColor="?attr/colorOnSurface" />
+
+    <com.google.android.material.button.MaterialButtonToggleGroup
+        android:id="@+id/tabGroup"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/spacing_m"
+        android:layout_marginTop="@dimen/spacing_xs"
+        android:layout_marginEnd="@dimen/spacing_m"
+        app:layout_constraintTop_toBottomOf="@id/toolbar"
+        app:selectionRequired="true"
+        app:singleSelection="true">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/tabFormButton"
+            style="?attr/materialButtonOutlinedStyle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:checkable="true"
+            android:checked="true"
+            android:text="@string/issued_receipt_tab_form"
+            app:cornerRadius="10dp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/tabPreviewButton"
+            style="?attr/materialButtonOutlinedStyle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:checkable="true"
+            android:text="@string/issued_receipt_tab_preview"
+            app:cornerRadius="10dp" />
+
+    </com.google.android.material.button.MaterialButtonToggleGroup>
+
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/formScroll"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:clipToPadding="false"
+        app:layout_constraintBottom_toTopOf="@id/actionBar"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tabGroup">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="@dimen/spacing_m">
+
+            <TextView
+                style="@style/TextAppearance.Material3.TitleSmall"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_l"
+                android:text="@string/issued_receipt_section_issuer"
+                android:textColor="?attr/colorOnSurface" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_s"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <ImageView
+                    android:id="@+id/logoImage"
+                    android:layout_width="72dp"
+                    android:layout_height="72dp"
+                    android:background="@color/arzikina_postcart_background"
+                    android:contentDescription="@string/issued_receipt_logo_label"
+                    android:padding="@dimen/spacing_xs"
+                    android:scaleType="fitCenter"
+                    android:src="@drawable/ic_storefront_24" />
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="@dimen/spacing_m"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        style="@style/TextAppearance.Material3.BodySmall"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/issued_receipt_logo_hint"
+                        android:textColor="?attr/colorOnSurfaceVariant" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/spacing_xs"
+                        android:orientation="horizontal">
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/logoChooseButton"
+                            style="?attr/materialButtonOutlinedStyle"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="@string/issued_receipt_logo_choose"
+                            app:cornerRadius="10dp" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/logoRemoveButton"
+                            style="?attr/materialButtonOutlinedStyle"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="@dimen/spacing_xs"
+                            android:text="@string/issued_receipt_logo_remove"
+                            android:visibility="gone"
+                            app:cornerRadius="10dp"
+                            tools:visibility="visible" />
+
+                    </LinearLayout>
+                </LinearLayout>
+            </LinearLayout>
+
+            <include
+                android:id="@+id/businessNameField"
+                layout="@layout/item_postcard_text_input"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_s" />
+
+            <include
+                android:id="@+id/addressField"
+                layout="@layout/item_postcard_text_input"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_s" />
+
+            <include
+                android:id="@+id/phoneField"
+                layout="@layout/item_postcard_text_input"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_s" />
+
+            <include
+                android:id="@+id/emailField"
+                layout="@layout/item_postcard_text_input"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_s" />
+
+            <include
+                android:id="@+id/taxIdField"
+                layout="@layout/item_postcard_text_input"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_s" />
+
+            <TextView
+                style="@style/TextAppearance.Material3.BodySmall"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_xs"
+                android:text="@string/issued_receipt_issuer_remembered"
+                android:textColor="?attr/colorOnSurfaceVariant" />
+
+            <TextView
+                style="@style/TextAppearance.Material3.TitleSmall"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_l"
+                android:text="@string/issued_receipt_section_receipt"
+                android:textColor="?attr/colorOnSurface" />
+
+            <include
+                android:id="@+id/numberField"
+                layout="@layout/item_postcard_text_input"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_s" />
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/dateCard"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_s"
+                android:theme="@style/ThemeOverlay.Arzikina.OnBalanceCard"
+                app:cardBackgroundColor="@color/arzikina_postcart_background"
+                app:cardCornerRadius="@dimen/corner_radius_medium"
+                app:cardElevation="@dimen/elevation_raised">
+
+                <FrameLayout
+                    android:id="@+id/dateRow"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="?attr/selectableItemBackground"
+                    android:clickable="true"
+                    android:focusable="true">
+
+                    <include
+                        android:id="@+id/dateField"
+                        layout="@layout/item_date_field" />
+
+                </FrameLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <TextView
+                style="@style/TextAppearance.Material3.TitleSmall"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_l"
+                android:text="@string/issued_receipt_section_customer"
+                android:textColor="?attr/colorOnSurface" />
+
+            <include
+                android:id="@+id/customerNameField"
+                layout="@layout/item_postcard_text_input"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_s" />
+
+            <include
+                android:id="@+id/customerPhoneField"
+                layout="@layout/item_postcard_text_input"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_s" />
+
+            <TextView
+                style="@style/TextAppearance.Material3.TitleSmall"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_l"
+                android:text="@string/issued_receipt_section_payment"
+                android:textColor="?attr/colorOnSurface" />
+
+            <include
+                android:id="@+id/descriptionField"
+                layout="@layout/item_postcard_text_input"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_s" />
+
+            <include
+                android:id="@+id/amountField"
+                layout="@layout/item_postcard_text_input"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_s" />
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/currencyFieldCard"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_s"
+                android:theme="@style/ThemeOverlay.Arzikina.OnBalanceCard"
+                app:cardBackgroundColor="@color/arzikina_postcart_background"
+                app:cardCornerRadius="@dimen/corner_radius_medium"
+                app:cardElevation="@dimen/elevation_raised">
+
+                <include
+                    android:id="@+id/currencyField"
+                    layout="@layout/item_dropdown_field" />
+            </com.google.android.material.card.MaterialCardView>
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/paymentFieldCard"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_s"
+                android:theme="@style/ThemeOverlay.Arzikina.OnBalanceCard"
+                app:cardBackgroundColor="@color/arzikina_postcart_background"
+                app:cardCornerRadius="@dimen/corner_radius_medium"
+                app:cardElevation="@dimen/elevation_raised">
+
+                <include
+                    android:id="@+id/paymentField"
+                    layout="@layout/item_dropdown_field" />
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Détail optionnel : quantités, prix unitaires, remise et taxe. Quand il est activé, le
+                 montant n'est plus saisi (amountField masqué) : il est calculé. -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_m"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    style="@style/TextAppearance.Material3.BodyMedium"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/issued_receipt_detail_toggle"
+                    android:textColor="?attr/colorOnSurface" />
+
+                <com.google.android.material.materialswitch.MaterialSwitch
+                    android:id="@+id/detailSwitch"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    app:thumbTint="@color/switch_thumb_tint"
+                    app:trackTint="@color/switch_track_tint" />
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/detailGroup"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone"
+                tools:visibility="visible">
+
+                <LinearLayout
+                    android:id="@+id/linesContainer"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/addLineButton"
+                    style="?attr/materialButtonOutlinedStyle"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/spacing_s"
+                    android:text="@string/issued_receipt_detail_add_line"
+                    app:cornerRadius="10dp" />
+
+                <com.google.android.material.button.MaterialButtonToggleGroup
+                    android:id="@+id/discountGroup"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/spacing_m"
+                    app:selectionRequired="true"
+                    app:singleSelection="true">
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/discountNoneButton"
+                        style="?attr/materialButtonOutlinedStyle"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:checkable="true"
+                        android:checked="true"
+                        android:text="@string/issued_receipt_discount_none"
+                        app:cornerRadius="10dp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/discountPercentButton"
+                        style="?attr/materialButtonOutlinedStyle"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:checkable="true"
+                        android:text="@string/issued_receipt_discount_percent"
+                        app:cornerRadius="10dp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/discountFixedButton"
+                        style="?attr/materialButtonOutlinedStyle"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:checkable="true"
+                        android:text="@string/issued_receipt_discount_fixed"
+                        app:cornerRadius="10dp" />
+
+                </com.google.android.material.button.MaterialButtonToggleGroup>
+
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/discountCard"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/spacing_s"
+                    android:theme="@style/ThemeOverlay.Arzikina.OnBalanceCard"
+                    android:visibility="gone"
+                    app:cardBackgroundColor="@color/arzikina_postcart_background"
+                    app:cardCornerRadius="@dimen/corner_radius_medium"
+                    app:cardElevation="@dimen/elevation_raised"
+                    tools:visibility="visible">
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:id="@+id/discountLayout"
+                        style="@style/Widget.Arzikina.TextInputLayout.OutlinedBox.PostCard"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_margin="@dimen/spacing_xs"
+                        android:hint="@string/issued_receipt_discount_percent_label">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/discountInput"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:inputType="numberDecimal"
+                            android:maxLines="1" />
+
+                    </com.google.android.material.textfield.TextInputLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/spacing_s"
+                    android:theme="@style/ThemeOverlay.Arzikina.OnBalanceCard"
+                    app:cardBackgroundColor="@color/arzikina_postcart_background"
+                    app:cardCornerRadius="@dimen/corner_radius_medium"
+                    app:cardElevation="@dimen/elevation_raised">
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:id="@+id/taxLayout"
+                        style="@style/Widget.Arzikina.TextInputLayout.OutlinedBox.PostCard"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_margin="@dimen/spacing_xs"
+                        android:hint="@string/issued_receipt_tax_label">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/taxInput"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:inputType="numberDecimal"
+                            android:maxLines="1" />
+
+                    </com.google.android.material.textfield.TextInputLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <TextView
+                    android:id="@+id/totalsText"
+                    style="@style/TextAppearance.Material3.BodyMedium"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/spacing_m"
+                    android:textColor="?attr/colorOnSurface"
+                    tools:text="Sous-total : 13 000 XOF\nTotal à payer : 13 806 XOF" />
+
+            </LinearLayout>
+
+            <include
+                android:id="@+id/referenceField"
+                layout="@layout/item_postcard_text_input"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_s" />
+
+            <include
+                android:id="@+id/notesField"
+                layout="@layout/item_postcard_text_input"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_s" />
+
+            <TextView
+                style="@style/TextAppearance.Material3.TitleSmall"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_l"
+                android:text="@string/issued_receipt_section_signature"
+                android:textColor="?attr/colorOnSurface" />
+
+            <include
+                android:id="@+id/issuedByNameField"
+                layout="@layout/item_postcard_text_input"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_s" />
+
+            <include
+                android:id="@+id/issuedByTitleField"
+                layout="@layout/item_postcard_text_input"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_s" />
+
+            <TextView
+                android:id="@+id/errorBanner"
+                style="@style/TextAppearance.Material3.BodySmall"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_m"
+                android:textColor="@color/expense_red"
+                android:visibility="gone"
+                tools:text="Un texte est trop long."
+                tools:visibility="visible" />
+
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/previewScroll"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:visibility="gone"
+        app:layout_constraintBottom_toTopOf="@id/actionBar"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tabGroup">
+
+        <com.naniger.arzikina.presentation.utilities.issuedreceipts.preview.ReceiptPreviewView
+            android:id="@+id/receiptPreview"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+
+    </androidx.core.widget.NestedScrollView>
+
+    <LinearLayout
+        android:id="@+id/actionBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="?attr/colorSurface"
+        android:orientation="vertical"
+        android:padding="@dimen/spacing_m"
+        app:layout_constraintBottom_toBottomOf="parent">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/generateButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/forme_radius_10dp"
+            android:text="@string/issued_receipt_generate_pdf"
+            android:textColor="@color/white" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/saveButton"
+            style="?attr/materialButtonOutlinedStyle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/spacing_xs"
+            android:text="@string/action_save"
+            app:cornerRadius="10dp" />
+
+    </LinearLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

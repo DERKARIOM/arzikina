@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Action « Filtres » de l'historique des reçus (même icône/libellé que loans_menu.xml). -->
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <item
+        android:id="@+id/action_toggle_filters"
+        android:icon="@drawable/ic_filter_24"
+        android:title="@string/transactions_filters_action"
+        app:showAsAction="always" />
+</menu>

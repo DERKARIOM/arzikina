@@ -42,7 +42,8 @@ class ReceiptNumberTest {
     @Test
     fun `isValid accepts safe numbers and rejects unsafe ones`() {
         assertTrue(ReceiptNumber.isValid("Recu-2026-001"))
-        assertTrue(ReceiptNumber.isValid("FAC/2026/7"))
+        assertTrue(ReceiptNumber.isValid("FAC-2026.7"))
+        assertFalse(ReceiptNumber.isValid("FAC/2026/7"))
         assertFalse(ReceiptNumber.isValid(""))
         assertFalse(ReceiptNumber.isValid("-abc"))
         assertFalse(ReceiptNumber.isValid("a b"))
@@ -53,6 +54,6 @@ class ReceiptNumberTest {
     @Test
     fun `pdfFileName is a safe file name`() {
         assertEquals("Recu-2026-001.pdf", ReceiptNumber.pdfFileName("Recu-2026-001"))
-        assertEquals("FAC-2026-7.pdf", ReceiptNumber.pdfFileName("FAC/2026/7"))
+        assertEquals("FAC-2026.7.pdf", ReceiptNumber.pdfFileName("FAC-2026.7"))
     }
 }

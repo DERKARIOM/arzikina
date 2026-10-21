@@ -8,6 +8,7 @@ import com.naniger.arzikina.data.security.BiometricAuthenticatorImpl
 import com.naniger.arzikina.data.repository.BudgetRepositoryImpl
 import com.naniger.arzikina.data.repository.CategoryRepositoryImpl
 import com.naniger.arzikina.data.repository.FinancialPlanRepositoryImpl
+import com.naniger.arzikina.data.issuedreceipt.pdf.IssuedReceiptPdfWriterImpl
 import com.naniger.arzikina.data.repository.IssuedReceiptRepositoryImpl
 import com.naniger.arzikina.data.repository.IssuerProfileRepositoryImpl
 import com.naniger.arzikina.data.repository.LoanRepositoryImpl
@@ -34,6 +35,7 @@ import com.naniger.arzikina.domain.repository.BiometricAuthenticator
 import com.naniger.arzikina.domain.repository.BudgetRepository
 import com.naniger.arzikina.domain.repository.CategoryRepository
 import com.naniger.arzikina.domain.repository.FinancialPlanRepository
+import com.naniger.arzikina.domain.issuedreceipt.pdf.IssuedReceiptPdfWriter
 import com.naniger.arzikina.domain.repository.IssuedReceiptRepository
 import com.naniger.arzikina.domain.repository.IssuerProfileRepository
 import com.naniger.arzikina.domain.repository.LoanRepository
@@ -176,4 +178,9 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindIssuerProfileRepository(impl: IssuerProfileRepositoryImpl): IssuerProfileRepository
+
+    /** Génération des PDF de reçus émis (`PdfDocument`, hors ligne). */
+    @Binds
+    @Singleton
+    abstract fun bindIssuedReceiptPdfWriter(impl: IssuedReceiptPdfWriterImpl): IssuedReceiptPdfWriter
 }

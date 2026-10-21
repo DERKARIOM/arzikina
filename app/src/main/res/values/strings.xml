@@ -652,7 +652,7 @@
     <!-- Réutilisée comme titre d'écran par ReceiptsFragment (voir plus bas, section "Gestion des
          reçus") — même principe que utility_loans_title/utility_financial_plans_title. La tuile
          Utilitaires elle-même n'est ajoutée qu'à l'Étape 8 (voir UtilityCatalog). -->
-    <string name="utility_receipts_title">Gestion des reçus</string>
+    <string name="utility_receipts_title">Justificatifs</string>
     <string name="all_utilities_title">Tous les utilitaires</string>
     <!-- Écran "en cours de développement" (voir LoansFragment) : générique, réutilisable pour
          tout futur utilitaire pas encore implémenté. -->
@@ -1391,4 +1391,114 @@
     <string name="web_app_link_copied">Lien copié</string>
     <string name="web_app_open_failed">Impossible d\'ouvrir le lien.</string>
     <string name="web_app_hint">Connectez-vous avec le même compte que sur cette application.</string>
+
+    <!--
+        Utilitaire « Gestion de reçus » (reçus ÉMIS : formulaire, aperçu, PDF). À ne pas confondre avec
+        l'ancien utilitaire d'import « Justificatifs » (utility_receipts_title).
+    -->
+    <string name="utility_issued_receipts_title">Gestion de reçus</string>
+    <string name="utility_issued_receipts_description">Créez, personnalisez et exportez vos reçus en PDF.</string>
+    <string name="issued_receipt_form_title">Nouveau reçu</string>
+    <string name="issued_receipt_tab_form">Formulaire</string>
+    <string name="issued_receipt_tab_preview">Aperçu</string>
+    <string name="issued_receipt_section_issuer">Émetteur</string>
+    <string name="issued_receipt_section_receipt">Reçu</string>
+    <string name="issued_receipt_section_customer">Client</string>
+    <string name="issued_receipt_section_payment">Paiement</string>
+    <string name="issued_receipt_section_signature">Signature (facultatif)</string>
+    <string name="issued_receipt_logo_label">Logo</string>
+    <string name="issued_receipt_logo_hint">PNG, JPEG ou WebP, 5 Mo maximum. Affiché sans déformation.</string>
+    <string name="issued_receipt_logo_choose">Choisir un logo</string>
+    <string name="issued_receipt_logo_change">Changer le logo</string>
+    <string name="issued_receipt_logo_remove">Retirer</string>
+    <string name="issued_receipt_issuer_remembered">Ces informations sont mémorisées et préremplies à chaque nouveau reçu.</string>
+    <string name="issued_receipt_business_name_label">Nom de l\'entreprise, du commerce ou de l\'activité</string>
+    <string name="issued_receipt_address_label">Adresse</string>
+    <string name="issued_receipt_phone_label">Téléphone</string>
+    <string name="issued_receipt_email_label">E-mail (facultatif)</string>
+    <string name="issued_receipt_tax_id_label">Identifiant fiscal ou référence professionnelle (facultatif)</string>
+    <string name="issued_receipt_number_label">Numéro du reçu</string>
+    <string name="issued_receipt_number_auto">Automatique : %1$s</string>
+    <string name="issued_receipt_number_helper">Laissez vide pour un numéro automatique. Lettres, chiffres, « . », « - » et « _ ».</string>
+    <string name="issued_receipt_date_label">Date d\'émission</string>
+    <string name="issued_receipt_customer_name_label">Nom du client ou du bénéficiaire</string>
+    <string name="issued_receipt_customer_phone_label">Téléphone du client (facultatif)</string>
+    <string name="issued_receipt_description_label">Description du paiement ou de la prestation</string>
+    <string name="issued_receipt_amount_label">Montant payé</string>
+    <string name="issued_receipt_currency_label">Devise</string>
+    <string name="issued_receipt_payment_method_label">Mode de paiement</string>
+    <string name="issued_receipt_reference_label">Référence de la transaction (facultatif)</string>
+    <string name="issued_receipt_notes_label">Observations (facultatif)</string>
+    <string name="issued_receipt_issued_by_name_label">Émis par — nom (facultatif)</string>
+    <string name="issued_receipt_issued_by_title_label">Fonction (facultatif)</string>
+    <string name="issued_receipt_generate_pdf">Générer le reçu PDF</string>
+    <string name="issued_receipt_error_business_name">Indiquez le nom de l\'entreprise ou de l\'activité.</string>
+    <string name="issued_receipt_error_business_address">Indiquez l\'adresse.</string>
+    <string name="issued_receipt_error_phone">Numéro de téléphone invalide.</string>
+    <string name="issued_receipt_error_email">Adresse e-mail invalide.</string>
+    <string name="issued_receipt_error_number_invalid">Numéro invalide (30 caractères maximum : lettres, chiffres, « . », « - », « _ »).</string>
+    <string name="issued_receipt_error_number_taken">Ce numéro est déjà utilisé par un autre reçu.</string>
+    <string name="issued_receipt_error_customer_name">Indiquez le nom du client.</string>
+    <string name="issued_receipt_error_description">Décrivez le paiement ou la prestation.</string>
+    <string name="issued_receipt_error_amount">Saisissez un montant supérieur à zéro.</string>
+    <string name="issued_receipt_error_amount_too_large">Ce montant est trop élevé.</string>
+    <string name="issued_receipt_error_currency">Devise invalide.</string>
+    <string name="issued_receipt_error_text_too_long">Un des textes est trop long.</string>
+    <string name="issued_receipt_error_pricing">Le détail du reçu est invalide.</string>
+    <string name="issued_receipt_logo_error_type">Ce fichier n\'est pas une image PNG, JPEG ou WebP.</string>
+    <string name="issued_receipt_logo_error_size">Cette image est trop lourde ou trop grande (5 Mo maximum).</string>
+    <string name="issued_receipt_logo_error_unreadable">Impossible de lire cette image.</string>
+    <string name="issued_receipt_save_failed">L\'enregistrement a échoué. Réessayez.</string>
+    <string name="issued_receipt_fix_errors">Corrigez les champs signalés.</string>
+    <string name="issued_receipt_saved">Reçu %1$s enregistré.</string>
+    <string name="issued_receipt_pdf_failed">Le reçu est enregistré, mais le PDF n\'a pas pu être généré. Réessayez.</string>
+    <string name="issued_receipt_pdf_ready_title">Reçu %1$s prêt</string>
+    <string name="issued_receipt_pdf_ready_message">Le PDF « %1$s » a été généré.</string>
+    <string name="issued_receipt_action_open">Ouvrir</string>
+    <string name="issued_receipt_action_share">Partager</string>
+    <string name="issued_receipt_no_pdf_app">Aucune application ne peut ouvrir un PDF.</string>
+    <string name="issued_receipt_detail_toggle">Détailler quantités, prix, remise et taxe</string>
+    <string name="issued_receipt_line_label">Désignation</string>
+    <string name="issued_receipt_line_quantity">Quantité</string>
+    <string name="issued_receipt_line_price">Prix unitaire</string>
+    <string name="issued_receipt_line_total">Total : %1$s</string>
+    <string name="issued_receipt_line_remove">Supprimer</string>
+    <string name="issued_receipt_detail_add_line">Ajouter une ligne</string>
+    <string name="issued_receipt_discount_none">Sans remise</string>
+    <string name="issued_receipt_discount_percent">Remise %</string>
+    <string name="issued_receipt_discount_fixed">Remise fixe</string>
+    <string name="issued_receipt_discount_percent_label">Remise (%)</string>
+    <string name="issued_receipt_discount_fixed_label">Montant de la remise</string>
+    <string name="issued_receipt_tax_label">Taxe (%) — facultatif</string>
+    <string name="issued_receipt_totals_subtotal">Sous-total : %1$s</string>
+    <string name="issued_receipt_totals_discount">Remise : -%1$s</string>
+    <string name="issued_receipt_totals_tax">Taxe : %1$s</string>
+    <string name="issued_receipt_totals_total">Total à payer : %1$s</string>
+    <string name="issued_receipt_totals_invalid">Total indisponible : vérifiez les lignes, la remise et la taxe.</string>
+    <!-- Historique des reçus émis (étape 5a) -->
+    <string name="issued_receipt_history_title">Gestion de reçus</string>
+    <string name="issued_receipt_history_search">Numéro, client ou description</string>
+    <string name="issued_receipt_history_add">Nouveau reçu</string>
+    <string name="issued_receipt_history_from">Du %1$s</string>
+    <string name="issued_receipt_history_to">Au %1$s</string>
+    <string name="issued_receipt_history_from_empty">Date de début</string>
+    <string name="issued_receipt_history_to_empty">Date de fin</string>
+    <string name="issued_receipt_history_clear_dates">Effacer les dates</string>
+    <string name="issued_receipt_history_status_ready">PDF prêt</string>
+    <string name="issued_receipt_history_status_todo">PDF à générer</string>
+    <string name="issued_receipt_history_empty_title">Aucun reçu pour le moment</string>
+    <string name="issued_receipt_history_empty_message">Créez votre premier reçu et exportez-le en PDF.</string>
+    <string name="issued_receipt_history_no_results_title">Aucun résultat</string>
+    <string name="issued_receipt_history_no_results_message">Modifiez la recherche ou la période.</string>
+    <string name="issued_receipt_history_error">Impossible de charger les reçus.</string>
+    <string name="issued_receipt_history_pdf_failed">Le PDF n\'a pas pu être généré. Réessayez.</string>
+    <string name="issued_receipt_history_delete_title">Supprimer le reçu %1$s ?</string>
+    <string name="issued_receipt_history_delete_message">Le reçu et son PDF seront supprimés. Son numéro ne sera pas réutilisé.</string>
+    <string name="issued_receipt_history_deleted">Reçu supprimé.</string>
+    <string name="issued_receipt_history_delete_failed">Suppression impossible. Réessayez.</string>
+    <!-- Consultation / modification d'un reçu (étape 5b) -->
+    <string name="issued_receipt_form_title_edit">Modifier le reçu</string>
+    <string name="issued_receipt_detail_edit">Modifier</string>
+    <string name="issued_receipt_detail_open_pdf">Ouvrir le PDF</string>
+    <string name="issued_receipt_detail_not_found">Ce reçu n\'existe plus.</string>
 </resources>

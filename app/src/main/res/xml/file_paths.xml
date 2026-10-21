@@ -16,6 +16,11 @@
     <files-path
         name="profile_photos"
         path="profile_photos/" />
+    <!-- PDF des reçus émis (voir data/issuedreceipt/pdf/IssuedReceiptPdfStorage) : un sous-dossier par
+         utilisateur, partagés via FileProvider pour « Ouvrir »/« Partager ». -->
+    <files-path
+        name="issued_receipts"
+        path="issued_receipts/" />
     <!-- Photo de profil prise avec l'appareil photo, AVANT recadrage (voir
          presentation/profile/CameraCaptureFile) : fichier temporaire du cache, écrasé à chaque
          prise de vue. Seul ce sous-dossier du cache est exposé. -->

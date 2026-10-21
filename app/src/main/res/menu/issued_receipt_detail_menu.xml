@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Actions de la consultation d'un reçu émis (voir IssuedReceiptDetailFragment). -->
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <item
+        android:id="@+id/action_edit"
+        android:title="@string/issued_receipt_detail_edit"
+        app:showAsAction="ifRoom|withText" />
+    <item
+        android:id="@+id/action_delete"
+        android:title="@string/action_delete"
+        app:showAsAction="never" />
+</menu>
