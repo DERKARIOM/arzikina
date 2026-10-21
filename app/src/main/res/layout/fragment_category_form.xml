@@ -106,7 +106,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/spacing_s"
                 android:clipToPadding="false"
-                android:orientation="horizontal"
+                android:nestedScrollingEnabled="false"
                 android:overScrollMode="never" />
 
             <TextView

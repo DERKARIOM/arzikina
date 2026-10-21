@@ -9,7 +9,10 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
+import androidx.core.view.doOnLayout
+import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.naniger.arzikina.R
 import com.naniger.arzikina.databinding.FragmentCategoryFormBinding
 import com.naniger.arzikina.domain.model.CategoryIcon
@@ -94,10 +97,26 @@ class CategoryFormFragment : Fragment(R.layout.fragment_category_form) {
     }
 
     private fun setUpPickers(binding: FragmentCategoryFormBinding) {
-        binding.iconPicker.layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
-        binding.iconPicker.adapter = iconPickerAdapter
+        setUpIconGrid(binding.iconPicker)
         binding.colorPicker.layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
         binding.colorPicker.adapter = colorPickerAdapter
+    }
+
+    /**
+     * Les icônes sont nombreuses : grille qui s'adapte à la largeur (autant de colonnes que de cases
+     * entières). Pas de défilement imbriqué : la grille s'étale dans le formulaire, qui défile.
+     */
+    private fun setUpIconGrid(picker: RecyclerView) {
+        val cellPx = resources.getDimensionPixelSize(R.dimen.icon_size_large) +
+            2 * resources.getDimensionPixelSize(R.dimen.spacing_xs)
+        val grid = GridLayoutManager(requireContext(), MIN_ICON_COLUMNS)
+        picker.layoutManager = grid
+        picker.adapter = iconPickerAdapter
+        picker.isNestedScrollingEnabled = false
+        picker.doOnLayout {
+            val columns = ((it.width - it.paddingStart - it.paddingEnd) / cellPx).coerceAtLeast(MIN_ICON_COLUMNS)
+            if (grid.spanCount != columns) grid.spanCount = columns
+        }
     }
 
     private fun render(state: CategoryFormState) {
@@ -134,5 +153,9 @@ class CategoryFormFragment : Fragment(R.layout.fragment_category_form) {
             message = getString(R.string.categories_delete_message, viewModel.formState.value.name),
             onConfirm = { viewModel.delete() }
         )
+    }
+
+    private companion object {
+        const val MIN_ICON_COLUMNS = 4
     }
 }
