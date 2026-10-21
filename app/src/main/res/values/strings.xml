@@ -531,6 +531,8 @@
     <string name="category_form_title_edit">Modifier la catégorie</string>
     <string name="category_form_name_label">Nom de la catégorie</string>
     <string name="category_form_icon_label">Icône</string>
+    <string name="category_form_icons_more">Voir plus</string>
+    <string name="category_form_icons_less">Voir moins</string>
     <string name="category_form_color_label">Couleur</string>
     <!-- Lecteur d'écran (TalkBack) : position dans les sélecteurs d'icône et de couleur (IconPickerAdapter, ColorPickerAdapter). L'état « sélectionné » est annoncé automatiquement. -->
     <string name="icon_picker_item_description">Icône %1$d sur %2$d</string>

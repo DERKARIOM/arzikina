@@ -109,6 +109,14 @@
                 android:nestedScrollingEnabled="false"
                 android:overScrollMode="never" />
 
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/iconToggleButton"
+                style="@style/Widget.Material3.Button.TextButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:text="@string/category_form_icons_more" />
+
             <TextView
                 style="@style/TextAppearance.Material3.LabelLarge"
                 android:layout_width="wrap_content"

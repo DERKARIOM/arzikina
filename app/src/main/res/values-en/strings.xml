@@ -330,6 +330,8 @@
     <string name="category_form_title_edit">Edit category</string>
     <string name="category_form_name_label">Category name</string>
     <string name="category_form_icon_label">Icon</string>
+    <string name="category_form_icons_more">Show more</string>
+    <string name="category_form_icons_less">Show less</string>
     <string name="category_form_color_label">Color</string>
     <string name="icon_picker_item_description">Icon %1$d of %2$d</string>
     <string name="color_picker_item_description">Color %1$d of %2$d</string>

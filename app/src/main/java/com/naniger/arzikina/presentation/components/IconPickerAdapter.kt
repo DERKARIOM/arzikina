@@ -15,11 +15,18 @@ import com.naniger.arzikina.databinding.ItemIconPickerBinding
  * et [com.naniger.arzikina.domain.model.CategoryIcon] sans dupliquer l'adapter.
  */
 class IconPickerAdapter<T>(
-    private val items: List<T>,
+    private var items: List<T>,
     private val iconRes: (T) -> Int,
     private var selected: T,
     private val onSelect: (T) -> Unit
 ) : RecyclerView.Adapter<IconPickerAdapter.ViewHolder>() {
+
+    /** Remplace la liste affichée (ex. « Voir plus » / « Voir moins »). Quelques dizaines de cases : un rafraîchissement complet suffit. */
+    fun setItems(newItems: List<T>) {
+        if (newItems == items) return
+        items = newItems
+        notifyDataSetChanged()
+    }
 
     fun setSelected(value: T) {
         if (value == selected) return
