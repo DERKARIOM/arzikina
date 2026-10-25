@@ -1,0 +1,191 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Saisie d'un mouvement de stock (voir ShopStockMovementFragment). Les champs affichés dépendent du type :
+    coût et référence pour un réapprovisionnement seulement ; le libellé de la quantité et l'obligation du
+    motif sont posés par code.
+-->
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="?attr/colorSurface">
+
+    <com.google.android.material.appbar.MaterialToolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:background="?attr/colorSurface"
+        app:layout_constraintTop_toTopOf="parent"
+        app:navigationContentDescription="@string/action_back"
+        app:navigationIcon="@drawable/ic_arrow_back_24"
+        app:titleTextColor="?attr/colorOnSurface" />
+
+    <com.google.android.material.progressindicator.LinearProgressIndicator
+        android:id="@+id/progress"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:indeterminate="true"
+        android:visibility="invisible"
+        app:layout_constraintTop_toBottomOf="@id/toolbar" />
+
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/content"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:fillViewport="true"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/progress">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="@dimen/spacing_m">
+
+            <TextView
+                android:id="@+id/productName"
+                style="@style/TextAppearance.Material3.TitleMedium"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textColor="?attr/colorOnSurface"
+                android:textStyle="bold"
+                tools:text="Sucre en poudre 1 kg" />
+
+            <TextView
+                android:id="@+id/currentStock"
+                style="@style/TextAppearance.Material3.BodyMedium"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textColor="?attr/colorOnSurfaceVariant"
+                tools:text="Stock actuel : 24 pce" />
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/quantityCard"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_m"
+                android:theme="@style/ThemeOverlay.Arzikina.OnBalanceCard"
+                app:cardBackgroundColor="@color/arzikina_postcart_background"
+                app:cardCornerRadius="@dimen/corner_radius_medium"
+                app:cardElevation="@dimen/elevation_raised">
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/quantityLayout"
+                    style="@style/Widget.Arzikina.TextInputLayout.OutlinedBox.PostCard"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="@dimen/spacing_xs"
+                    android:hint="@string/shop_stock_qty_restock">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/quantityInput"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="numberDecimal"
+                        android:maxLines="1" />
+                </com.google.android.material.textfield.TextInputLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/unitCostCard"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_m"
+                android:theme="@style/ThemeOverlay.Arzikina.OnBalanceCard"
+                app:cardBackgroundColor="@color/arzikina_postcart_background"
+                app:cardCornerRadius="@dimen/corner_radius_medium"
+                app:cardElevation="@dimen/elevation_raised">
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/unitCostLayout"
+                    style="@style/Widget.Arzikina.TextInputLayout.OutlinedBox.PostCard"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="@dimen/spacing_xs"
+                    android:hint="@string/shop_stock_unit_cost">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/unitCostInput"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="numberDecimal"
+                        android:maxLines="1" />
+                </com.google.android.material.textfield.TextInputLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <com.google.android.material.checkbox.MaterialCheckBox
+                android:id="@+id/updatePriceCheck"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/shop_stock_update_price"
+                android:textColor="?attr/colorOnSurface" />
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/referenceCard"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_m"
+                android:theme="@style/ThemeOverlay.Arzikina.OnBalanceCard"
+                app:cardBackgroundColor="@color/arzikina_postcart_background"
+                app:cardCornerRadius="@dimen/corner_radius_medium"
+                app:cardElevation="@dimen/elevation_raised">
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/referenceLayout"
+                    style="@style/Widget.Arzikina.TextInputLayout.OutlinedBox.PostCard"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="@dimen/spacing_xs"
+                    android:hint="@string/shop_stock_reference">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/referenceInput"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="text"
+                        android:maxLines="1" />
+                </com.google.android.material.textfield.TextInputLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/reasonCard"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_m"
+                android:theme="@style/ThemeOverlay.Arzikina.OnBalanceCard"
+                app:cardBackgroundColor="@color/arzikina_postcart_background"
+                app:cardCornerRadius="@dimen/corner_radius_medium"
+                app:cardElevation="@dimen/elevation_raised">
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/reasonLayout"
+                    style="@style/Widget.Arzikina.TextInputLayout.OutlinedBox.PostCard"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="@dimen/spacing_xs"
+                    android:hint="@string/shop_stock_reason">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/reasonInput"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="textMultiLine|textCapSentences"
+                        android:minLines="2"
+                        android:maxLines="4" />
+                </com.google.android.material.textfield.TextInputLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/saveButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_l"
+                android:background="@drawable/forme_radius_10dp"
+                android:text="@string/shop_stock_save"
+                android:textColor="@color/white" />
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+</androidx.constraintlayout.widget.ConstraintLayout>

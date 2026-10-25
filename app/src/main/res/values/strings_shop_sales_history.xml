@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Module Boutique — historique, reçus et annulation (étape 6). -->
+    <string name="category_system_shop_refunds">Ventes annulées</string>
+    <string name="shop_history_title">Historique des ventes</string>
+    <string name="shop_history_search">Référence ou client</string>
+    <string name="shop_history_period_all">Tout</string>
+    <string name="shop_history_period_today">Aujourd\'hui</string>
+    <string name="shop_history_period_7">7 jours</string>
+    <string name="shop_history_period_30">30 jours</string>
+    <string name="shop_history_status_all">Toutes</string>
+    <string name="shop_sale_status_confirmed">Validée</string>
+    <string name="shop_sale_status_cancelled">Annulée</string>
+    <string name="shop_history_error">Impossible de charger l\'historique.</string>
+    <string name="shop_history_empty_title">Aucune vente pour le moment</string>
+    <string name="shop_history_empty_message">Vos ventes validées apparaîtront ici, avec leur reçu.</string>
+    <string name="shop_history_no_results_title">Aucun résultat</string>
+    <string name="shop_history_no_results_message">Modifiez la recherche ou les filtres pour voir d\'autres ventes.</string>
+    <string name="shop_history_sort_date">Date (plus récentes d\'abord)</string>
+    <string name="shop_history_sort_amount">Montant (plus élevés d\'abord)</string>
+    <string name="shop_history_has_receipt">Reçu émis</string>
+    <string name="shop_history_no_details">Vente au comptant</string>
+    <string name="shop_action_sales_history">Historique des ventes</string>
+    <string name="shop_sale_payment_method">Mode de paiement</string>
+    <string name="shop_sale_cancelled_headline">Vente annulée</string>
+    <string name="shop_sale_cancelled_on">Annulée le</string>
+    <string name="shop_sale_cancel_reason">Motif d\'annulation</string>
+    <string name="shop_sale_cancel_action">Annuler la vente</string>
+    <string name="shop_sale_cancel_title">Annuler cette vente ?</string>
+    <string name="shop_sale_cancel_message">Le stock sera réintégré et le montant retiré du compte crédité par une écriture de remboursement. La vente reste dans l\'historique, marquée comme annulée. Cette action est définitive.</string>
+    <string name="shop_sale_cancel_reason_hint">Motif (facultatif)</string>
+    <string name="shop_sale_cancel_confirm">Annuler la vente</string>
+    <string name="shop_sale_cancel_done">Vente annulée : stock réintégré et remboursement enregistré.</string>
+    <string name="shop_sale_cancel_failed">Impossible d\'annuler la vente.</string>
+    <string name="shop_receipt_generate">Générer le reçu</string>
+    <string name="shop_receipt_view">Voir le reçu</string>
+    <string name="shop_receipt_failed">Impossible de générer le reçu.</string>
+    <string name="shop_receipt_profile_incomplete">Complétez d\'abord votre profil émetteur pour générer un reçu.</string>
+    <string name="shop_receipt_profile_hint">Le reçu n\'a pas pu être généré : le nom, l\'adresse et le téléphone de votre boutique sont nécessaires.</string>
+    <string name="shop_receipt_complete_profile">Compléter mon profil émetteur</string>
+    <string name="shop_receipt_default_customer">Client</string>
+    <string name="shop_receipt_description_prefix">Vente</string>
+</resources>

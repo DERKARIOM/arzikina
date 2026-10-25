@@ -13,10 +13,16 @@ import com.naniger.arzikina.data.repository.IssuedReceiptRepositoryImpl
 import com.naniger.arzikina.data.repository.IssuerProfileRepositoryImpl
 import com.naniger.arzikina.data.repository.LoanRepositoryImpl
 import com.naniger.arzikina.data.repository.PersonRepositoryImpl
+import com.naniger.arzikina.data.repository.ProductRepositoryImpl
 import com.naniger.arzikina.data.repository.ProfilePhotoRepositoryImpl
 import com.naniger.arzikina.data.repository.ReceiptRepositoryImpl
 import com.naniger.arzikina.data.repository.RecurringTransactionRepositoryImpl
 import com.naniger.arzikina.data.repository.SessionManagerImpl
+import com.naniger.arzikina.data.repository.ShopRepositoryImpl
+import com.naniger.arzikina.data.repository.SaleRepositoryImpl
+import com.naniger.arzikina.data.repository.SalesStatsRepositoryImpl
+import com.naniger.arzikina.data.shop.ProductImageStore
+import com.naniger.arzikina.data.repository.StockRepositoryImpl
 import com.naniger.arzikina.data.repository.SyncAuthRepositoryImpl
 import com.naniger.arzikina.data.repository.SyncEngineImpl
 import com.naniger.arzikina.data.repository.TokenProvider
@@ -40,10 +46,16 @@ import com.naniger.arzikina.domain.repository.IssuedReceiptRepository
 import com.naniger.arzikina.domain.repository.IssuerProfileRepository
 import com.naniger.arzikina.domain.repository.LoanRepository
 import com.naniger.arzikina.domain.repository.PersonRepository
+import com.naniger.arzikina.domain.repository.ProductRepository
 import com.naniger.arzikina.domain.repository.ProfilePhotoRepository
 import com.naniger.arzikina.domain.repository.ReceiptRepository
 import com.naniger.arzikina.domain.repository.RecurringTransactionRepository
 import com.naniger.arzikina.domain.repository.SessionManager
+import com.naniger.arzikina.domain.repository.ShopRepository
+import com.naniger.arzikina.domain.repository.SaleRepository
+import com.naniger.arzikina.domain.repository.SalesStatsRepository
+import com.naniger.arzikina.domain.shop.ProductImageFiles
+import com.naniger.arzikina.domain.repository.StockRepository
 import com.naniger.arzikina.domain.repository.SyncAuthRepository
 import com.naniger.arzikina.domain.repository.SyncEngine
 import com.naniger.arzikina.domain.repository.TransactionRepository
@@ -183,4 +195,32 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindIssuedReceiptPdfWriter(impl: IssuedReceiptPdfWriterImpl): IssuedReceiptPdfWriter
+
+    /** Module « Boutique » : la boutique de l'utilisateur (une seule en V1, voir [ShopRepository]). */
+    @Binds
+    @Singleton
+    abstract fun bindShopRepository(impl: ShopRepositoryImpl): ShopRepository
+
+    /** Module « Boutique » : produits et catégories de produits (voir [ProductRepository]). */
+    @Binds
+    @Singleton
+    abstract fun bindProductRepository(impl: ProductRepositoryImpl): ProductRepository
+
+    /** Module « Boutique » : mouvements de stock manuels (voir [StockRepository]). */
+    @Binds
+    @Singleton
+    abstract fun bindStockRepository(impl: StockRepositoryImpl): StockRepository
+
+    /** Module « Boutique » : ventes et encaissements (voir [SaleRepository]). */
+    @Binds
+    @Singleton
+    abstract fun bindSaleRepository(impl: SaleRepositoryImpl): SaleRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindSalesStatsRepository(impl: SalesStatsRepositoryImpl): SalesStatsRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindProductImageFiles(impl: ProductImageStore): ProductImageFiles
 }

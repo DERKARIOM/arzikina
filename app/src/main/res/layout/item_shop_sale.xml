@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Ligne de l'historique des ventes (voir ShopSalesAdapter). Postcard sombre fixe.
+-->
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/saleCard"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginHorizontal="@dimen/spacing_m"
+    android:layout_marginTop="@dimen/spacing_s"
+    android:checkable="false"
+    android:clickable="true"
+    android:focusable="true"
+    android:theme="@style/ThemeOverlay.Arzikina.OnBalanceCard"
+    app:cardBackgroundColor="@color/arzikina_postcart_background"
+    app:cardCornerRadius="@dimen/corner_radius_medium"
+    app:cardElevation="@dimen/elevation_raised"
+    app:rippleColor="@android:color/white">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="@dimen/spacing_m">
+
+        <TextView
+            android:id="@+id/saleReference"
+            style="@style/TextAppearance.Material3.TitleSmall"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="@dimen/spacing_s"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textColor="@color/arzikina_on_balance_card"
+            android:textStyle="bold"
+            app:layout_constraintEnd_toStartOf="@id/saleTotal"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:text="V-20261025-AB3D" />
+
+        <TextView
+            android:id="@+id/saleTotal"
+            style="@style/TextAppearance.Material3.TitleSmall"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="@color/arzikina_on_balance_card"
+            android:textStyle="bold"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:text="8 000 F CFA" />
+
+        <TextView
+            android:id="@+id/saleDate"
+            style="@style/TextAppearance.Material3.BodySmall"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:layout_marginEnd="@dimen/spacing_s"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textColor="@color/arzikina_on_balance_card_variant"
+            app:layout_constraintEnd_toStartOf="@id/saleStatus"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/saleReference"
+            tools:text="25 oct. 2026 · 21:45" />
+
+        <TextView
+            android:id="@+id/saleStatus"
+            style="@style/TextAppearance.Material3.LabelSmall"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_chip_success"
+            android:paddingHorizontal="8dp"
+            android:paddingVertical="2dp"
+            android:textColor="@color/white"
+            app:layout_constraintBottom_toBottomOf="@id/saleDate"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="@id/saleDate"
+            tools:text="Validée" />
+
+        <TextView
+            android:id="@+id/saleMeta"
+            style="@style/TextAppearance.Material3.BodySmall"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/spacing_xs"
+            android:ellipsize="end"
+            android:maxLines="2"
+            android:textColor="@color/arzikina_on_balance_card_variant"
+            app:layout_constraintTop_toBottomOf="@id/saleDate"
+            tools:text="Awa Diallo · Espèces · Compte Boutique · Reçu" />
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</com.google.android.material.card.MaterialCardView>

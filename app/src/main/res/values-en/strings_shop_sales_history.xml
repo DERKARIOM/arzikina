@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Shop module — history, receipts and cancellation (step 6). -->
+    <string name="category_system_shop_refunds">Cancelled sales</string>
+    <string name="shop_history_title">Sales history</string>
+    <string name="shop_history_search">Reference or customer</string>
+    <string name="shop_history_period_all">All</string>
+    <string name="shop_history_period_today">Today</string>
+    <string name="shop_history_period_7">7 days</string>
+    <string name="shop_history_period_30">30 days</string>
+    <string name="shop_history_status_all">All</string>
+    <string name="shop_sale_status_confirmed">Confirmed</string>
+    <string name="shop_sale_status_cancelled">Cancelled</string>
+    <string name="shop_history_error">Unable to load the history.</string>
+    <string name="shop_history_empty_title">No sales yet</string>
+    <string name="shop_history_empty_message">Your confirmed sales will show up here, along with their receipt.</string>
+    <string name="shop_history_no_results_title">No results</string>
+    <string name="shop_history_no_results_message">Change the search or the filters to see other sales.</string>
+    <string name="shop_history_sort_date">Date (newest first)</string>
+    <string name="shop_history_sort_amount">Amount (highest first)</string>
+    <string name="shop_history_has_receipt">Receipt issued</string>
+    <string name="shop_history_no_details">Cash sale</string>
+    <string name="shop_action_sales_history">Sales history</string>
+    <string name="shop_sale_payment_method">Payment method</string>
+    <string name="shop_sale_cancelled_headline">Sale cancelled</string>
+    <string name="shop_sale_cancelled_on">Cancelled on</string>
+    <string name="shop_sale_cancel_reason">Cancellation reason</string>
+    <string name="shop_sale_cancel_action">Cancel sale</string>
+    <string name="shop_sale_cancel_title">Cancel this sale?</string>
+    <string name="shop_sale_cancel_message">Stock will be restored and the amount taken back from the credited account through a refund entry. The sale stays in the history, marked as cancelled. This cannot be undone.</string>
+    <string name="shop_sale_cancel_reason_hint">Reason (optional)</string>
+    <string name="shop_sale_cancel_confirm">Cancel sale</string>
+    <string name="shop_sale_cancel_done">Sale cancelled: stock restored and refund recorded.</string>
+    <string name="shop_sale_cancel_failed">Unable to cancel the sale.</string>
+    <string name="shop_receipt_generate">Generate receipt</string>
+    <string name="shop_receipt_view">View receipt</string>
+    <string name="shop_receipt_failed">Unable to generate the receipt.</string>
+    <string name="shop_receipt_profile_incomplete">Complete your issuer profile first to generate a receipt.</string>
+    <string name="shop_receipt_profile_hint">The receipt could not be generated: your shop\'s name, address and phone number are required.</string>
+    <string name="shop_receipt_complete_profile">Complete my issuer profile</string>
+    <string name="shop_receipt_default_customer">Customer</string>
+    <string name="shop_receipt_description_prefix">Sale</string>
+</resources>

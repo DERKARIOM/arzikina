@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Ligne produit (liste et alertes du tableau de bord, voir ShopProductAdapter). Postcard sombre fixe.
+    Miniature de la photo à gauche (pictogramme neutre sans photo).
+-->
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/productCard"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginHorizontal="@dimen/spacing_m"
+    android:layout_marginTop="@dimen/spacing_s"
+    android:checkable="false"
+    android:clickable="true"
+    android:focusable="true"
+    android:theme="@style/ThemeOverlay.Arzikina.OnBalanceCard"
+    app:cardBackgroundColor="@color/arzikina_postcart_background"
+    app:cardCornerRadius="@dimen/corner_radius_medium"
+    app:cardElevation="@dimen/elevation_raised"
+    app:rippleColor="@android:color/white">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="@dimen/spacing_m">
+
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/productImageCard"
+            android:layout_width="56dp"
+            android:layout_height="56dp"
+            app:cardBackgroundColor="#1FFFFFFF"
+            app:cardCornerRadius="10dp"
+            app:cardElevation="0dp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent">
+
+            <ImageView
+                android:id="@+id/productImage"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:contentDescription="@null"
+                android:importantForAccessibility="no"
+                android:padding="12dp"
+                android:scaleType="centerInside"
+                tools:src="@drawable/ic_storefront_24" />
+        </com.google.android.material.card.MaterialCardView>
+
+        <TextView
+            android:id="@+id/productName"
+            style="@style/TextAppearance.Material3.TitleSmall"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/spacing_s"
+            android:layout_marginEnd="@dimen/spacing_s"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textColor="@color/arzikina_on_balance_card"
+            android:textStyle="bold"
+            app:layout_constraintEnd_toStartOf="@id/productPrice"
+            app:layout_constraintStart_toEndOf="@id/productImageCard"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:text="Sucre en poudre 1 kg" />
+
+        <TextView
+            android:id="@+id/productPrice"
+            style="@style/TextAppearance.Material3.TitleSmall"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="@color/shop_stock_normal"
+            android:textStyle="bold"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:text="1 200 F CFA" />
+
+        <TextView
+            android:id="@+id/productReference"
+            style="@style/TextAppearance.Material3.BodySmall"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/spacing_s"
+            android:layout_marginTop="2dp"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textColor="@color/arzikina_on_balance_card_variant"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@id/productImageCard"
+            app:layout_constraintTop_toBottomOf="@id/productName"
+            tools:text="REF-001" />
+
+        <TextView
+            android:id="@+id/productQuantity"
+            style="@style/TextAppearance.Material3.BodyMedium"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/spacing_s"
+            android:layout_marginTop="@dimen/spacing_s"
+            android:layout_marginEnd="@dimen/spacing_s"
+            android:textColor="@color/arzikina_on_balance_card"
+            app:layout_constraintBottom_toBottomOf="@id/productStatus"
+            app:layout_constraintEnd_toStartOf="@id/productStatus"
+            app:layout_constraintStart_toEndOf="@id/productImageCard"
+            app:layout_constraintTop_toTopOf="@id/productStatus"
+            tools:text="24 pce" />
+
+        <TextView
+            android:id="@+id/productStatus"
+            style="@style/TextAppearance.Material3.LabelSmall"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/spacing_s"
+            android:background="@drawable/bg_pill"
+            android:paddingHorizontal="@dimen/spacing_s"
+            android:paddingVertical="3dp"
+            android:textColor="@android:color/white"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/productReference"
+            tools:text="En stock" />
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</com.google.android.material.card.MaterialCardView>

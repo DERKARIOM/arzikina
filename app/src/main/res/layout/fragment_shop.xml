@@ -1,0 +1,454 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Onglet Boutique : tableau de bord (voir ShopFragment). Étape 3 : indicateurs de STOCK réels ; les
+    indicateurs de ventes (chiffre d'affaires, dernières ventes, meilleures ventes) ont un état vide
+    explicite jusqu'à l'étape Ventes — jamais une valeur inventée.
+-->
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="?attr/colorSurface">
+
+    <TextView
+        android:id="@+id/title"
+        style="@style/TextAppearance.Material3.HeadlineSmall"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="@dimen/spacing_m"
+        android:layout_marginTop="@dimen/spacing_m"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:text="@string/shop_dashboard_title"
+        android:textColor="?attr/colorOnSurface"
+        android:textStyle="bold"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/content"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginTop="@dimen/spacing_s"
+        android:clipToPadding="false"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/title"
+        tools:visibility="visible">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="@dimen/spacing_m">
+
+            <TextView
+                style="@style/TextAppearance.Material3.TitleMedium"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/shop_section_stock"
+                android:textColor="?attr/colorOnSurface"
+                android:textStyle="bold" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_s"
+                android:orientation="horizontal">
+
+                <include
+                    android:id="@+id/statTotal"
+                    layout="@layout/item_shop_stat"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="@dimen/spacing_xs"
+                    android:layout_weight="1" />
+
+                <include
+                    android:id="@+id/statInStock"
+                    layout="@layout/item_shop_stat"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="@dimen/spacing_xs"
+                    android:layout_weight="1" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_s"
+                android:orientation="horizontal">
+
+                <include
+                    android:id="@+id/statLow"
+                    layout="@layout/item_shop_stat"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="@dimen/spacing_xs"
+                    android:layout_weight="1" />
+
+                <include
+                    android:id="@+id/statOut"
+                    layout="@layout/item_shop_stat"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="@dimen/spacing_xs"
+                    android:layout_weight="1" />
+            </LinearLayout>
+
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_m"
+                android:theme="@style/ThemeOverlay.Arzikina.OnBalanceCard"
+                app:cardBackgroundColor="@color/arzikina_postcart_background"
+                app:cardCornerRadius="@dimen/corner_radius_medium"
+                app:cardElevation="@dimen/elevation_raised">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="@dimen/spacing_m">
+
+                    <TextView
+                        style="@style/TextAppearance.Material3.TitleSmall"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/shop_stock_value_title"
+                        android:textColor="@color/arzikina_on_balance_card"
+                        android:textStyle="bold" />
+
+                    <include
+                        android:id="@+id/valueCostRow"
+                        layout="@layout/item_shop_info_row"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content" />
+
+                    <TextView
+                        android:id="@+id/valueCostNote"
+                        style="@style/TextAppearance.Material3.BodySmall"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textColor="@color/arzikina_on_balance_card_variant"
+                        android:visibility="gone"
+                        tools:text="Partielle : 2 produit(s) sans prix d'achat"
+                        tools:visibility="visible" />
+
+                    <include
+                        android:id="@+id/valueSaleRow"
+                        layout="@layout/item_shop_info_row"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_m"
+                android:theme="@style/ThemeOverlay.Arzikina.OnBalanceCard"
+                app:cardBackgroundColor="@color/arzikina_postcart_background"
+                app:cardCornerRadius="@dimen/corner_radius_medium"
+                app:cardElevation="@dimen/elevation_raised">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="@dimen/spacing_m">
+
+                    <TextView
+                        style="@style/TextAppearance.Material3.TitleSmall"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/shop_sales_title"
+                        android:textColor="@color/arzikina_on_balance_card"
+                        android:textStyle="bold" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/spacing_s"
+                        android:orientation="horizontal">
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:id="@+id/todayCountValue"
+                            style="@style/TextAppearance.Material3.HeadlineSmall"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textColor="@color/arzikina_on_balance_card"
+                            android:textStyle="bold"
+                            tools:text="12" />
+
+                        <TextView
+                            android:id="@+id/todayCountLabel"
+                            style="@style/TextAppearance.Material3.BodySmall"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/shop_dash_sales_today"
+                            android:textColor="@color/arzikina_on_balance_card_variant" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:id="@+id/todayRevenueValue"
+                            style="@style/TextAppearance.Material3.HeadlineSmall"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textColor="@color/arzikina_on_balance_card"
+                            android:textStyle="bold"
+                            tools:text="12" />
+
+                        <TextView
+                            android:id="@+id/todayRevenueLabel"
+                            style="@style/TextAppearance.Material3.BodySmall"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/shop_dash_revenue_today"
+                            android:textColor="@color/arzikina_on_balance_card_variant" />
+                    </LinearLayout>
+                    </LinearLayout>
+
+                    <com.google.android.material.chip.ChipGroup
+                        android:id="@+id/periodChips"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/spacing_m"
+                        app:selectionRequired="true"
+                        app:singleSelection="true">
+
+                        <com.google.android.material.chip.Chip
+                            android:id="@+id/chipPeriodToday"
+                            style="@style/Widget.Material3.Chip.Filter"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/shop_history_period_today" />
+
+                        <com.google.android.material.chip.Chip
+                            android:id="@+id/chipPeriod7"
+                            style="@style/Widget.Material3.Chip.Filter"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:checked="true"
+                            android:text="@string/shop_history_period_7" />
+
+                        <com.google.android.material.chip.Chip
+                            android:id="@+id/chipPeriod30"
+                            style="@style/Widget.Material3.Chip.Filter"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/shop_history_period_30" />
+                    </com.google.android.material.chip.ChipGroup>
+
+                    <include
+                        android:id="@+id/periodRevenueRow"
+                        layout="@layout/item_shop_info_row"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content" />
+
+                    <include
+                        android:id="@+id/periodCountRow"
+                        layout="@layout/item_shop_info_row"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content" />
+
+                    <include
+                        android:id="@+id/periodBasketRow"
+                        layout="@layout/item_shop_info_row"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content" />
+
+                    <TextView
+                        android:id="@+id/salesEmpty"
+                        style="@style/TextAppearance.Material3.BodyMedium"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/spacing_s"
+                        android:text="@string/shop_sales_empty"
+                        android:textColor="@color/arzikina_on_balance_card_variant" />
+
+                    <TextView
+                        android:id="@+id/recentTitle"
+                        style="@style/TextAppearance.Material3.TitleSmall"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/spacing_m"
+                        android:text="@string/shop_dash_recent_sales"
+                        android:textColor="@color/arzikina_on_balance_card"
+                        android:textStyle="bold" />
+
+                    <LinearLayout
+                        android:id="@+id/recentRows"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical" />
+
+                    <TextView
+                        android:id="@+id/topTitle"
+                        style="@style/TextAppearance.Material3.TitleSmall"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/spacing_m"
+                        android:text="@string/shop_dash_top_products"
+                        android:textColor="@color/arzikina_on_balance_card"
+                        android:textStyle="bold" />
+
+                    <LinearLayout
+                        android:id="@+id/topRows"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical" />
+
+                    <TextView
+                        android:id="@+id/topEmpty"
+                        style="@style/TextAppearance.Material3.BodySmall"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/shop_dash_top_empty"
+                        android:textColor="@color/arzikina_on_balance_card_variant" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <TextView
+                style="@style/TextAppearance.Material3.TitleMedium"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_l"
+                android:text="@string/shop_actions_title"
+                android:textColor="?attr/colorOnSurface"
+                android:textStyle="bold" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/newSaleButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_s"
+                android:background="@drawable/forme_radius_10dp"
+                android:text="@string/shop_action_new_sale"
+                android:textColor="@color/white"
+                app:icon="@drawable/ic_payments_24" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/statsButton"
+                style="?attr/materialButtonOutlinedStyle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_s"
+                android:text="@string/shop_action_stats"
+                android:textColor="?attr/colorOnSurface"
+                app:icon="@drawable/ic_payments_24"
+                app:iconTint="?attr/colorOnSurface" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/salesHistoryButton"
+                style="?attr/materialButtonOutlinedStyle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_s"
+                android:text="@string/shop_action_sales_history"
+                android:textColor="?attr/colorOnSurface"
+                app:icon="@drawable/ic_receipt_long_24"
+                app:iconTint="?attr/colorOnSurface" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/addProductButton"
+                style="?attr/materialButtonOutlinedStyle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_s"
+                android:text="@string/shop_action_add_product"
+                android:textColor="?attr/colorOnSurface"
+                app:icon="@drawable/ic_add_24"
+                app:iconTint="?attr/colorOnSurface" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/productsButton"
+                style="?attr/materialButtonOutlinedStyle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_s"
+                android:text="@string/shop_action_products"
+                android:textColor="?attr/colorOnSurface" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/alertsButton"
+                style="?attr/materialButtonOutlinedStyle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_s"
+                android:textColor="?attr/colorOnSurface"
+                tools:text="Alertes de stock (3)" />
+
+            <TextView
+                style="@style/TextAppearance.Material3.TitleMedium"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_l"
+                android:text="@string/shop_alerts_title"
+                android:textColor="?attr/colorOnSurface"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/alertsEmpty"
+                style="@style/TextAppearance.Material3.BodyMedium"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_s"
+                android:text="@string/shop_alerts_empty"
+                android:textColor="?attr/colorOnSurfaceVariant"
+                android:visibility="gone" />
+
+            <!-- Au plus 5 lignes (voir ShopViewModel.ALERT_PREVIEW_LIMIT) : pas de défilement imbriqué. -->
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/alertsList"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="-16dp"
+                android:nestedScrollingEnabled="false"
+                android:overScrollMode="never"
+                tools:itemCount="2"
+                tools:listitem="@layout/item_shop_product" />
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+
+    <com.google.android.material.progressindicator.CircularProgressIndicator
+        android:id="@+id/loading"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:indeterminate="true"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/errorText"
+        style="@style/TextAppearance.Material3.BodyMedium"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:padding="@dimen/spacing_l"
+        android:text="@string/shop_dashboard_error"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+</androidx.constraintlayout.widget.ConstraintLayout>

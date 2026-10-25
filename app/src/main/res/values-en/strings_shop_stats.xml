@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Shop module — statistics and sales dashboard (step 7). -->
+    <string name="shop_action_stats">Statistics</string>
+    <string name="shop_stats_title">Statistics</string>
+    <string name="shop_dash_sales_today">Sales today</string>
+    <string name="shop_dash_revenue_today">Today\'s revenue</string>
+    <string name="shop_dash_revenue_period">Revenue</string>
+    <string name="shop_dash_sales_period">Number of sales</string>
+    <string name="shop_dash_recent_sales">Latest sales</string>
+    <string name="shop_dash_top_products">Best-selling products</string>
+    <string name="shop_dash_top_empty">No product sold in this period.</string>
+    <string name="shop_stats_summary">Period indicators</string>
+    <string name="shop_stats_revenue">Revenue</string>
+    <string name="shop_stats_sales_count">Number of sales</string>
+    <string name="shop_stats_average_basket">Average basket</string>
+    <string name="shop_stats_collected">Amount collected</string>
+    <string name="shop_stats_remaining_due">Remaining due</string>
+    <string name="shop_stats_cancelled">Cancelled sales</string>
+    <string name="shop_stats_cancelled_value">%1$d · %2$s</string>
+    <string name="shop_stats_note">Revenue counts confirmed sales before costs are deducted: it is not profit. Cancelled sales are excluded and shown separately.</string>
+    <string name="shop_stats_evolution">Revenue over time</string>
+    <string name="shop_stats_no_sales">No sales in this period.</string>
+    <string name="shop_stats_chart_description">Bar chart of revenue over %1$d days</string>
+    <string name="shop_stats_products">Products</string>
+    <string name="shop_stats_rank_best">Best sellers</string>
+    <string name="shop_stats_rank_least">Least sold</string>
+    <string name="shop_stats_rank_profit">Most profitable</string>
+    <string name="shop_stats_products_empty">No product sales in this period.</string>
+    <string name="shop_stats_profit_empty">No margin can be computed: enter your products\' purchase price.</string>
+    <string name="shop_stats_profit_note">Gross margin before discounts, computed on sales whose purchase price is known. This is not net profit.</string>
+    <string name="shop_stats_least_note">Ranking among the products sold in the period.</string>
+    <string name="shop_stats_error">Unable to load the statistics.</string>
+</resources>

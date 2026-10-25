@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <item
+        android:id="@+id/action_shop_layout"
+        android:icon="@drawable/ic_view_list_24"
+        android:title="@string/shop_menu_layout_list"
+        app:showAsAction="ifRoom" />
+    <item
+        android:id="@+id/action_shop_sort"
+        android:title="@string/shop_menu_sort"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/action_shop_category"
+        android:title="@string/shop_menu_category"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/action_shop_archived"
+        android:checkable="true"
+        android:title="@string/shop_menu_archived"
+        app:showAsAction="never" />
+</menu>

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    4 onglets : Accueil, Compte, Rapports, Paramètres. Budget, Catégories,
+    5 onglets : Accueil, Compte, Boutique (au centre), Rapports, Paramètres. Budget, Catégories,
     Profil et désormais Transactions restent des destinations du graphe
     de navigation (voir navigation/nav_graph.xml) mais ne sont plus des
     onglets directs — tous atteignables depuis l'onglet Paramètres
@@ -20,6 +20,10 @@
         android:id="@+id/accountsFragment"
         android:icon="@drawable/comptes"
         android:title="@string/nav_accounts" />
+    <item
+        android:id="@+id/shopFragment"
+        android:icon="@drawable/ic_storefront_24"
+        android:title="@string/nav_shop" />
     <item
         android:id="@+id/statisticsFragment"
         android:icon="@drawable/rapport"

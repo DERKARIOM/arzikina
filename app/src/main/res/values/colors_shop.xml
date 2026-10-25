@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Module Boutique : états de stock. « Normal » reprend la couleur principale d'Arzikina (#42B998,
+         voir arzikina_primary). Teintes lisibles sur la carte « postcard » claire comme sombre. -->
+    <color name="shop_stock_normal">#42B998</color>
+    <color name="shop_stock_low">#E8A100</color>
+    <color name="shop_stock_out">#E5484D</color>
+    <color name="shop_stock_archived">#64748B</color>
+</resources>

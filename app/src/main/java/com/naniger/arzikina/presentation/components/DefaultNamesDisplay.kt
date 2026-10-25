@@ -57,6 +57,8 @@ val SystemCategoryKey.labelRes: Int
         SystemCategoryKey.LOAN_DISBURSEMENT_BORROWED -> R.string.category_system_loan_disbursement_borrowed
         SystemCategoryKey.LOAN_REPAYMENT_BORROWED -> R.string.category_system_loan_repayment_borrowed
         SystemCategoryKey.FEES -> R.string.category_system_fees
+        SystemCategoryKey.SHOP_SALES -> R.string.category_system_shop_sales
+        SystemCategoryKey.SHOP_REFUNDS -> R.string.category_system_shop_refunds
     }
 
 @get:StringRes

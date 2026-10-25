@@ -176,7 +176,7 @@ class MainActivity : AppCompatActivity() {
             // SystemBars.updateStatusBarIconAppearance).
             SystemBars.updateStatusBarIconAppearance(this)
             // Ne surligne un item de la Bottom Navigation QUE si la destination courante EST
-            // littéralement l'un des 4 onglets (voir TAB_DESTINATION_IDS) : un écran secondaire
+            // littéralement l'un des 5 onglets (voir TAB_DESTINATION_IDS) : un écran secondaire
             // (formulaire, détail, Budget/Catégories/Profil/Transactions depuis Paramètres/le
             // Dashboard...) laisse volontairement l'onglet déjà sélectionné en surbrillance, sans
             // qu'aucun ne corresponde à sa propre destination (voir aussi
@@ -606,12 +606,13 @@ class MainActivity : AppCompatActivity() {
             R.id.forcedUpdateFragment
         )
 
-        /** Les 4 onglets, mêmes id que menu/bottom_nav_menu.xml (voir sa doc et nav_graph.xml).
+        /** Les 5 onglets, mêmes id que menu/bottom_nav_menu.xml (voir sa doc et nav_graph.xml).
          * transactionsFragment n'en fait plus partie (voir sa doc dans bottom_nav_menu.xml) :
          * atteint désormais depuis le Dashboard, sans jamais recocher d'onglet. */
         val TAB_DESTINATION_IDS = setOf(
             R.id.dashboardFragment,
             R.id.accountsFragment,
+            R.id.shopFragment,
             R.id.statisticsFragment,
             R.id.settingsFragment
         )

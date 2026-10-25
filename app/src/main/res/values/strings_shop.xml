@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Module Boutique (onglet, tableau de bord, produits). Étape 3. -->
+    <string name="nav_shop">Boutique</string>
+    <string name="shop_default_name">Ma boutique</string>
+
+    <!-- Unités -->
+    <string name="shop_unit_piece">Pièce</string>
+    <string name="shop_unit_pack">Paquet</string>
+    <string name="shop_unit_carton">Carton</string>
+    <string name="shop_unit_kilogram">Kilogramme</string>
+    <string name="shop_unit_liter">Litre</string>
+    <string name="shop_unit_other">Autre unité</string>
+    <string name="shop_unit_piece_short">pce</string>
+    <string name="shop_unit_pack_short">paq.</string>
+    <string name="shop_unit_carton_short">ctn</string>
+    <string name="shop_unit_kilogram_short">kg</string>
+    <string name="shop_unit_liter_short">L</string>
+    <string name="shop_unit_other_short">u.</string>
+
+    <!-- Niveaux de stock -->
+    <string name="shop_stock_level_normal">En stock</string>
+    <string name="shop_stock_level_low">Stock faible</string>
+    <string name="shop_stock_level_out">Épuisé</string>
+    <string name="shop_product_archived">Archivé</string>
+
+    <!-- Tableau de bord -->
+    <string name="shop_dashboard_title">Boutique</string>
+    <string name="shop_dashboard_error">Impossible de charger la boutique. Réessaie.</string>
+    <string name="shop_section_stock">Stock</string>
+    <string name="shop_stat_total">Produits</string>
+    <string name="shop_stat_in_stock">Disponibles</string>
+    <string name="shop_stat_low">Stock faible</string>
+    <string name="shop_stat_out">En rupture</string>
+    <string name="shop_stock_value_title">Valeur du stock</string>
+    <string name="shop_stock_value_cost">Au prix d\'achat</string>
+    <string name="shop_stock_value_sale">Au prix de vente</string>
+    <string name="shop_stock_value_cost_missing">Renseigne les prix d\'achat pour la connaître</string>
+    <string name="shop_stock_value_cost_partial">Partielle : %1$d produit(s) sans prix d\'achat</string>
+    <string name="shop_stock_value_empty">Aucun produit en stock</string>
+    <string name="shop_sales_title">Ventes</string>
+    <string name="shop_sales_empty">Aucune vente pour le moment. Le chiffre d\'affaires du jour et les dernières ventes apparaîtront ici dès l\'enregistrement de la première vente.</string>
+    <string name="shop_actions_title">Actions rapides</string>
+    <string name="shop_action_add_product">Ajouter un produit</string>
+    <string name="shop_action_products">Voir les produits</string>
+    <string name="shop_action_alerts">Alertes de stock (%1$d)</string>
+    <string name="shop_alerts_title">Alertes de stock</string>
+    <string name="shop_alerts_empty">Aucune alerte : tous vos produits ont un stock suffisant.</string>
+    <string name="shop_alerts_see_all">Tout voir</string>
+
+    <!-- Liste des produits -->
+    <string name="shop_products_title">Produits</string>
+    <string name="shop_products_search">Nom, référence ou code-barres</string>
+    <string name="shop_products_add">Ajouter un produit</string>
+    <string name="shop_products_error">Impossible de charger les produits.</string>
+    <string name="shop_products_empty_title">Aucun produit</string>
+    <string name="shop_products_empty_message">Ajoute les produits que tu vends pour suivre ton stock et préparer tes ventes.</string>
+    <string name="shop_products_no_results_title">Aucun résultat</string>
+    <string name="shop_products_no_results_message">Aucun produit ne correspond à ces critères.</string>
+    <string name="shop_filter_all">Tous</string>
+    <string name="shop_filter_in_stock">En stock</string>
+    <string name="shop_filter_low">Stock faible</string>
+    <string name="shop_filter_out">Épuisés</string>
+    <string name="shop_menu_sort">Trier par</string>
+    <string name="shop_menu_category">Catégorie</string>
+    <string name="shop_menu_archived">Produits archivés</string>
+    <string name="shop_sort_name">Nom</string>
+    <string name="shop_sort_price">Prix de vente</string>
+    <string name="shop_sort_quantity">Quantité en stock</string>
+    <string name="shop_sort_newest">Plus récents</string>
+    <string name="shop_category_all">Toutes les catégories</string>
+    <string name="shop_product_row_price">%1$s / %2$s</string>
+
+    <!-- Formulaire -->
+    <string name="shop_form_title_add">Nouveau produit</string>
+    <string name="shop_form_title_edit">Modifier le produit</string>
+    <string name="shop_form_name">Nom du produit</string>
+    <string name="shop_form_sku">Référence interne (facultatif)</string>
+    <string name="shop_form_barcode">Code-barres (facultatif)</string>
+    <string name="shop_form_category">Catégorie</string>
+    <string name="shop_form_category_none">Aucune catégorie</string>
+    <string name="shop_form_category_new">+ Nouvelle catégorie…</string>
+    <string name="shop_form_category_new_title">Nouvelle catégorie</string>
+    <string name="shop_form_category_new_hint">Nom de la catégorie</string>
+    <string name="shop_form_unit">Unité de vente</string>
+    <string name="shop_form_purchase_price">Prix d\'achat unitaire (facultatif)</string>
+    <string name="shop_form_sale_price">Prix de vente unitaire</string>
+    <string name="shop_form_initial_stock">Quantité initiale en stock</string>
+    <string name="shop_form_initial_stock_help">Enregistrée comme premier mouvement de stock. Elle ne pourra plus être modifiée ici : utilise ensuite les mouvements de stock.</string>
+    <string name="shop_form_min_stock">Quantité minimale souhaitée</string>
+    <string name="shop_form_min_stock_help">Une alerte « stock faible » apparaît à partir de ce seuil. 0 = pas d\'alerte.</string>
+    <string name="shop_form_expiry">Date de péremption (facultatif)</string>
+    <string name="shop_form_expiry_none">Aucune date</string>
+    <string name="shop_form_expiry_clear">Retirer la date</string>
+    <string name="shop_form_description">Description (facultatif)</string>
+    <string name="shop_form_save_failed">Impossible d\'enregistrer le produit. Réessaie.</string>
+    <string name="shop_form_not_found">Produit introuvable.</string>
+    <string name="shop_form_error_name_required">Le nom est obligatoire.</string>
+    <string name="shop_form_error_name_too_long">Nom trop long.</string>
+    <string name="shop_form_error_description_too_long">Description trop longue.</string>
+    <string name="shop_form_error_code_too_long">64 caractères maximum.</string>
+    <string name="shop_form_error_sale_price">Saisis un prix de vente supérieur à 0.</string>
+    <string name="shop_form_error_purchase_price">Prix d\'achat invalide.</string>
+    <string name="shop_form_error_quantity">Quantité invalide (entier pour cette unité).</string>
+    <string name="shop_form_error_duplicate_barcode">Ce code-barres est déjà utilisé par un autre produit.</string>
+    <string name="shop_form_error_duplicate_sku">Cette référence est déjà utilisée par un autre produit.</string>
+    <string name="shop_form_open_existing">Voir</string>
+
+    <!-- Fiche produit -->
+    <string name="shop_detail_title">Produit</string>
+    <string name="shop_detail_not_found">Ce produit n\'existe plus.</string>
+    <string name="shop_detail_stock">Stock</string>
+    <string name="shop_detail_min_stock">Seuil minimal</string>
+    <string name="shop_detail_no_min_stock">Aucune alerte</string>
+    <string name="shop_detail_sale_price">Prix de vente</string>
+    <string name="shop_detail_purchase_price">Prix d\'achat</string>
+    <string name="shop_detail_purchase_unknown">Non renseigné</string>
+    <string name="shop_detail_margin">Marge unitaire</string>
+    <string name="shop_detail_category">Catégorie</string>
+    <string name="shop_detail_sku">Référence</string>
+    <string name="shop_detail_barcode">Code-barres</string>
+    <string name="shop_detail_expiry">Péremption</string>
+    <string name="shop_detail_created">Ajouté le</string>
+    <string name="shop_detail_description">Description</string>
+    <string name="shop_detail_archive">Archiver</string>
+    <string name="shop_detail_restore">Restaurer</string>
+    <string name="shop_detail_archive_title">Archiver « %1$s » ?</string>
+    <string name="shop_detail_archive_message">Le produit disparaît de la liste et des ventes, mais son historique est conservé. Tu pourras le restaurer.</string>
+    <string name="shop_detail_archived_done">Produit archivé.</string>
+    <string name="shop_detail_restored_done">Produit restauré.</string>
+    <string name="shop_detail_action_failed">Action impossible. Réessaie.</string>
+
+    <!-- Étape 4 : mouvements de stock -->
+    <string name="shop_stock_move_button">Mouvement de stock</string>
+    <string name="shop_stock_history_button">Historique des mouvements</string>
+    <string name="shop_stock_move_choose">Quel mouvement ?</string>
+    <string name="shop_stock_type_initial">Stock initial</string>
+    <string name="shop_stock_type_restock">Réapprovisionnement</string>
+    <string name="shop_stock_type_sale">Vente</string>
+    <string name="shop_stock_type_return">Retour client</string>
+    <string name="shop_stock_type_damaged">Perte / casse</string>
+    <string name="shop_stock_type_adjustment">Correction de stock</string>
+    <string name="shop_stock_type_cancellation">Annulation de vente</string>
+    <string name="shop_stock_type_other">Autre mouvement</string>
+    <string name="shop_stock_current">Stock actuel : %1$s</string>
+    <string name="shop_stock_qty_restock">Quantité reçue</string>
+    <string name="shop_stock_qty_return">Quantité retournée</string>
+    <string name="shop_stock_qty_damaged">Quantité perdue ou cassée</string>
+    <string name="shop_stock_qty_adjustment">Quantité comptée (stock réel)</string>
+    <string name="shop_stock_unit_cost">Coût d\'achat unitaire (facultatif)</string>
+    <string name="shop_stock_update_price">Mettre à jour le prix d\'achat du produit</string>
+    <string name="shop_stock_reference">Référence de livraison (facultatif)</string>
+    <string name="shop_stock_reason">Motif</string>
+    <string name="shop_stock_reason_optional">Motif (facultatif)</string>
+    <string name="shop_stock_save">Enregistrer le mouvement</string>
+    <string name="shop_stock_failed">Impossible d\'enregistrer le mouvement. Réessaie.</string>
+    <string name="shop_stock_err_quantity">Saisis une quantité supérieure à 0.</string>
+    <string name="shop_stock_err_adjust_same">Saisis une quantité différente du stock actuel.</string>
+    <string name="shop_stock_err_too_large">Quantité trop grande.</string>
+    <string name="shop_stock_err_fraction">Cette unité n\'accepte que des quantités entières.</string>
+    <string name="shop_stock_err_insufficient">Stock insuffisant : tu ne peux pas retirer plus que le stock disponible.</string>
+    <string name="shop_stock_err_overflow">Le stock dépasserait la limite autorisée.</string>
+    <string name="shop_stock_err_reason">Le motif est obligatoire.</string>
+    <string name="shop_stock_err_cost">Coût invalide.</string>
+    <string name="shop_stock_history_title">Historique du stock</string>
+    <string name="shop_stock_history_empty">Aucun mouvement enregistré pour ce produit.</string>
+    <string name="shop_stock_history_error">Impossible de charger l\'historique.</string>
+    <string name="shop_stock_history_cost">Coût unitaire : %1$s</string>
+    <string name="shop_stock_history_reference">Réf. %1$s</string>
+</resources>

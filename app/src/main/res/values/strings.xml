@@ -401,6 +401,7 @@
     <string name="account_type_wallet">Portefeuille</string>
     <string name="account_type_credit_card">Carte de crédit</string>
     <string name="account_type_savings_goal">Objectif d\'épargne</string>
+    <string name="account_type_boutique">Boutique</string>
     <string name="account_type_other">Autre</string>
     <!-- Repère bas-droite de la carte de compte (voir maquette, badge "VISA"
          remplacé par le nom de l'app pour ne pas laisser croire à un lien

@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Module Boutique — statistiques et tableau de bord des ventes (étape 7). -->
+    <string name="shop_action_stats">Statistiques</string>
+    <string name="shop_stats_title">Statistiques</string>
+    <string name="shop_dash_sales_today">Ventes aujourd\'hui</string>
+    <string name="shop_dash_revenue_today">CA du jour</string>
+    <string name="shop_dash_revenue_period">Chiffre d\'affaires</string>
+    <string name="shop_dash_sales_period">Nombre de ventes</string>
+    <string name="shop_dash_recent_sales">Dernières ventes</string>
+    <string name="shop_dash_top_products">Produits les plus vendus</string>
+    <string name="shop_dash_top_empty">Aucun produit vendu sur cette période.</string>
+    <string name="shop_stats_summary">Indicateurs de la période</string>
+    <string name="shop_stats_revenue">Chiffre d\'affaires</string>
+    <string name="shop_stats_sales_count">Nombre de ventes</string>
+    <string name="shop_stats_average_basket">Panier moyen</string>
+    <string name="shop_stats_collected">Montant encaissé</string>
+    <string name="shop_stats_remaining_due">Reste dû</string>
+    <string name="shop_stats_cancelled">Ventes annulées</string>
+    <string name="shop_stats_cancelled_value">%1$d · %2$s</string>
+    <string name="shop_stats_note">Le chiffre d\'affaires compte les ventes validées, avant déduction des coûts : ce n\'est pas un bénéfice. Les ventes annulées sont exclues et affichées à part.</string>
+    <string name="shop_stats_evolution">Évolution du chiffre d\'affaires</string>
+    <string name="shop_stats_no_sales">Aucune vente sur cette période.</string>
+    <string name="shop_stats_chart_description">Histogramme du chiffre d\'affaires sur %1$d jours</string>
+    <string name="shop_stats_products">Produits</string>
+    <string name="shop_stats_rank_best">Plus vendus</string>
+    <string name="shop_stats_rank_least">Moins vendus</string>
+    <string name="shop_stats_rank_profit">Plus rentables</string>
+    <string name="shop_stats_products_empty">Aucune vente de produit sur cette période.</string>
+    <string name="shop_stats_profit_empty">Aucune marge calculable : renseignez le prix d\'achat de vos produits.</string>
+    <string name="shop_stats_profit_note">Marge brute avant remise, calculée sur les ventes dont le prix d\'achat est connu. Ce n\'est pas un bénéfice net.</string>
+    <string name="shop_stats_least_note">Classement parmi les produits vendus sur la période.</string>
+    <string name="shop_stats_error">Impossible de charger les statistiques.</string>
+</resources>

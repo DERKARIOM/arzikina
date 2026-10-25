@@ -247,6 +247,7 @@
     <string name="account_type_wallet">Wallet</string>
     <string name="account_type_credit_card">Credit card</string>
     <string name="account_type_savings_goal">Savings goal</string>
+    <string name="account_type_boutique">Shop</string>
     <string name="account_type_other">Other</string>
     <string name="accounts_card_badge">ARZIKINA</string>
     <string name="account_card_masked_expiry">••/••</string>

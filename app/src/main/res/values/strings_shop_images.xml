@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Boutique : photos des produits et bascule liste/grille. -->
+<resources>
+    <string name="shop_photo_title">Photo du produit</string>
+    <string name="shop_photo_add">Ajouter une photo</string>
+    <string name="shop_photo_change">Changer la photo</string>
+    <string name="shop_photo_remove">Retirer la photo</string>
+    <string name="shop_photo_gallery">Choisir dans la galerie</string>
+    <string name="shop_photo_camera">Prendre une photo</string>
+    <string name="shop_photo_no_camera">Aucun appareil photo disponible sur cet appareil.</string>
+    <string name="shop_photo_error_type">Format non pris en charge. Choisissez une image JPEG, PNG ou WebP.</string>
+    <string name="shop_photo_error_large">Cette image est trop volumineuse.</string>
+    <string name="shop_photo_error_unreadable">Impossible de lire cette image.</string>
+    <string name="shop_menu_layout_list">Affichage en liste</string>
+    <string name="shop_menu_layout_grid">Affichage en grille</string>
+</resources>

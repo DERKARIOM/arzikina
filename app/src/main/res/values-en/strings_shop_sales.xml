@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="category_system_shop_sales">Sales</string>
+
+    <string name="shop_action_new_sale">New sale</string>
+
+    <string name="shop_cart_title">New sale</string>
+    <string name="shop_cart_pick_title">Choose a product</string>
+    <string name="shop_cart_add_product">Add a product</string>
+    <string name="shop_cart_empty">Add the products sold to start the sale.</string>
+    <string name="shop_cart_remove">Remove from cart</string>
+    <string name="shop_cart_decrease">Decrease quantity</string>
+    <string name="shop_cart_increase">Increase quantity</string>
+    <string name="shop_cart_edit_quantity">Edit quantity</string>
+    <string name="shop_cart_quantity_dialog_message">Quantity sold</string>
+    <string name="shop_cart_quantity_apply">Apply</string>
+    <string name="shop_cart_line_unavailable_name">Unavailable product</string>
+    <string name="shop_cart_problem_unavailable">This product is no longer available. Remove it from the cart.</string>
+    <string name="shop_cart_problem_stock">Not enough stock: %1$s available.</string>
+    <string name="shop_cart_problem_quantity">Invalid quantity for this unit.</string>
+
+    <string name="shop_cart_discount">Discount</string>
+    <string name="shop_cart_discount_none">None</string>
+    <string name="shop_cart_discount_percent">Percentage</string>
+    <string name="shop_cart_discount_fixed">Amount</string>
+    <string name="shop_cart_discount_value">Discount value</string>
+    <string name="shop_cart_discount_invalid">Invalid value.</string>
+
+    <string name="shop_cart_customer">Customer (optional)</string>
+    <string name="shop_cart_customer_name">Customer name</string>
+    <string name="shop_cart_customer_phone">Phone</string>
+
+    <string name="shop_cart_account">Paid into account</string>
+    <string name="shop_cart_no_account">No account in the shop currency. Create a Shop account to collect your sales.</string>
+
+    <string name="shop_cart_subtotal">Subtotal</string>
+    <string name="shop_cart_total">Total</string>
+    <string name="shop_cart_confirm">Confirm sale</string>
+
+    <string name="shop_cart_err_unavailable">A product is no longer available.</string>
+    <string name="shop_cart_err_out_of_stock">This product is out of stock.</string>
+    <string name="shop_cart_err_stock_limit">All available stock is already in the cart.</string>
+    <string name="shop_cart_err_insufficient">Not enough stock for at least one product.</string>
+    <string name="shop_cart_err_quantity">Invalid quantity.</string>
+    <string name="shop_cart_err_amount">Amount out of range or invalid discount.</string>
+    <string name="shop_cart_err_zero_total">The sale total must be greater than 0.</string>
+    <string name="shop_cart_err_account">The selected account is no longer available.</string>
+    <string name="shop_cart_err_currency">The account currency differs from the shop currency.</string>
+    <string name="shop_cart_err_shop">The shop is not set up yet.</string>
+    <string name="shop_cart_err_generic">Could not save the sale. Try again.</string>
+
+    <string name="shop_sale_title">Sale</string>
+    <string name="shop_sale_recorded">Sale recorded</string>
+    <string name="shop_sale_new">New sale</string>
+    <string name="shop_sale_done">Done</string>
+    <string name="shop_sale_not_found">Sale not found.</string>
+    <string name="shop_sale_date">Date</string>
+    <string name="shop_sale_account">Account credited</string>
+</resources>

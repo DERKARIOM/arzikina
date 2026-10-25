@@ -6,7 +6,7 @@
     app:startDestination="@id/dashboardFragment">
 
     <!--
-        Les 4 onglets de la Bottom Navigation (Accueil, Compte, Rapports,
+        Les 5 onglets de la Bottom Navigation (Accueil, Compte, Boutique, Rapports,
         Paramètres). Les identifiants (@+id/...) correspondent exactement à
         ceux de menu/bottom_nav_menu.xml : MainActivity.setUpBottomNavigation
         s'en sert pour le câblage manuel (voir MainActivity.TAB_DESTINATION_IDS).
@@ -16,7 +16,7 @@
         onglets directs : Budget/Catégories/Profil depuis l'onglet
         "Paramètres" (voir presentation/settings/SettingsFragment.kt),
         Transactions depuis le Dashboard ("Dernières transactions" → "Voir
-        tout", voir DashboardFragment.kt) — pour ne garder que 4 onglets.
+        tout", voir DashboardFragment.kt) — pour ne garder que 5 onglets.
     -->
 
     <!--
@@ -660,5 +660,121 @@
             android:defaultValue="0L"
             app:argType="long" />
     </fragment>
+
+    <!--
+        Module Boutique (étape 3). shopFragment est le 5e onglet de la Bottom Navigation (id identique à
+        menu/bottom_nav_menu.xml, voir MainActivity.TAB_DESTINATION_IDS). Les autres écrans sont des
+        destinations secondaires : l'onglet Boutique reste coché pendant qu'on les parcourt.
+    -->
+    <fragment
+        android:id="@+id/shopFragment"
+        android:name="com.naniger.arzikina.presentation.shop.ShopFragment"
+        android:label="@string/nav_shop"
+        tools:layout="@layout/fragment_shop" />
+
+    <!-- availability : code de ProductAvailability (0 tous, 1 en stock, 2 faible, 3 épuisé). -->
+    <fragment
+        android:id="@+id/shopProductsFragment"
+        android:name="com.naniger.arzikina.presentation.shop.products.ShopProductsFragment"
+        android:label="@string/shop_products_title"
+        tools:layout="@layout/fragment_shop_products">
+        <argument
+            android:name="availability"
+            android:defaultValue="0"
+            app:argType="integer" />
+        <!-- true : liste ouverte depuis le panier de vente, un clic renvoie le produit (voir ShopPickResult). -->
+        <argument
+            android:name="pickMode"
+            android:defaultValue="false"
+            app:argType="boolean" />
+    </fragment>
+
+    <!-- productId = 0L (défaut) : nouveau produit, même convention que les autres formulaires. -->
+    <fragment
+        android:id="@+id/shopProductFormFragment"
+        android:name="com.naniger.arzikina.presentation.shop.form.ShopProductFormFragment"
+        android:label="@string/shop_form_title_add"
+        tools:layout="@layout/fragment_shop_product_form">
+        <argument
+            android:name="productId"
+            android:defaultValue="0L"
+            app:argType="long" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/shopProductDetailFragment"
+        android:name="com.naniger.arzikina.presentation.shop.detail.ShopProductDetailFragment"
+        android:label="@string/shop_detail_title"
+        tools:layout="@layout/fragment_shop_product_detail">
+        <argument
+            android:name="productId"
+            android:defaultValue="0L"
+            app:argType="long" />
+    </fragment>
+
+    <!-- Mouvement de stock manuel. type = nom d'un StockMovementType saisissable (RESTOCK par défaut). -->
+    <fragment
+        android:id="@+id/shopStockMovementFragment"
+        android:name="com.naniger.arzikina.presentation.shop.stock.ShopStockMovementFragment"
+        android:label="@string/shop_stock_type_restock"
+        tools:layout="@layout/fragment_shop_stock_movement">
+        <argument
+            android:name="productId"
+            android:defaultValue="0L"
+            app:argType="long" />
+        <argument
+            android:name="type"
+            android:defaultValue="RESTOCK"
+            app:argType="string" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/shopStockHistoryFragment"
+        android:name="com.naniger.arzikina.presentation.shop.stock.ShopStockHistoryFragment"
+        android:label="@string/shop_stock_history_title"
+        tools:layout="@layout/fragment_shop_stock_history">
+        <argument
+            android:name="productId"
+            android:defaultValue="0L"
+            app:argType="long" />
+    </fragment>
+
+    <!-- Panier de vente (module Boutique) : produits, remise, client, compte d'encaissement. -->
+    <fragment
+        android:id="@+id/saleCartFragment"
+        android:name="com.naniger.arzikina.presentation.shop.sales.SaleCartFragment"
+        android:label="@string/shop_cart_title"
+        tools:layout="@layout/fragment_shop_sale_cart" />
+
+    <!-- Confirmation / détail d'une vente enregistrée. -->
+    <fragment
+        android:id="@+id/shopSaleDetailFragment"
+        android:name="com.naniger.arzikina.presentation.shop.sales.ShopSaleDetailFragment"
+        android:label="@string/shop_sale_title"
+        tools:layout="@layout/fragment_shop_sale_detail">
+        <argument
+            android:name="saleId"
+            android:defaultValue="0L"
+            app:argType="long" />
+        <!-- true : juste après la validation, le reçu est émis automatiquement (une seule fois). -->
+        <argument
+            android:name="autoReceipt"
+            android:defaultValue="false"
+            app:argType="boolean" />
+    </fragment>
+
+    <!-- Statistiques commerciales : période, indicateurs, évolution, classement des produits. -->
+    <fragment
+        android:id="@+id/shopStatsFragment"
+        android:name="com.naniger.arzikina.presentation.shop.stats.ShopStatsFragment"
+        android:label="@string/shop_stats_title"
+        tools:layout="@layout/fragment_shop_stats" />
+
+    <!-- Historique des ventes : recherche, filtres période / statut, tri. -->
+    <fragment
+        android:id="@+id/shopSalesHistoryFragment"
+        android:name="com.naniger.arzikina.presentation.shop.sales.ShopSalesHistoryFragment"
+        android:label="@string/shop_history_title"
+        tools:layout="@layout/fragment_shop_sales_history" />
 
 </navigation>

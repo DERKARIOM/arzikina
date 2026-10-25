@@ -1,0 +1,190 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Confirmation / détail d'une vente (voir ShopSaleDetailFragment). Les lignes et informations sont
+    ajoutées par code à partir de item_shop_info_row.
+-->
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="?attr/colorSurface">
+
+    <com.google.android.material.appbar.MaterialToolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:background="?attr/colorSurface"
+        app:layout_constraintTop_toTopOf="parent"
+        app:navigationContentDescription="@string/action_back"
+        app:navigationIcon="@drawable/ic_arrow_back_24"
+        app:title="@string/shop_sale_title"
+        app:titleTextColor="?attr/colorOnSurface" />
+
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/content"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:visibility="invisible"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/toolbar"
+        tools:visibility="visible">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="@dimen/spacing_m">
+
+            <ImageView
+                android:id="@+id/successIcon"
+                android:layout_width="56dp"
+                android:layout_height="56dp"
+                android:layout_gravity="center_horizontal"
+                android:background="@drawable/bg_icon_circle"
+                android:backgroundTint="@color/shop_stock_normal"
+                android:contentDescription="@null"
+                android:padding="14dp"
+                android:src="@drawable/ic_check_24"
+                app:tint="@color/white" />
+
+            <TextView
+                android:id="@+id/headline"
+                style="@style/TextAppearance.Material3.TitleLarge"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_s"
+                android:gravity="center"
+                android:text="@string/shop_sale_recorded"
+                android:textColor="?attr/colorOnSurface"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/reference"
+                style="@style/TextAppearance.Material3.BodyMedium"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:textColor="?attr/colorOnSurfaceVariant"
+                tools:text="V-20261025-AB3D" />
+
+            <TextView
+                android:id="@+id/statusBadge"
+                style="@style/TextAppearance.Material3.LabelMedium"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="@dimen/spacing_xs"
+                android:background="@drawable/bg_chip_success"
+                android:paddingHorizontal="@dimen/spacing_s"
+                android:paddingVertical="2dp"
+                android:textColor="@color/white"
+                tools:text="Validée" />
+
+            <TextView
+                android:id="@+id/total"
+                style="@style/TextAppearance.Material3.DisplaySmall"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_m"
+                android:gravity="center"
+                android:textColor="@color/shop_stock_normal"
+                android:textStyle="bold"
+                tools:text="8 000 F CFA" />
+
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_l"
+                android:theme="@style/ThemeOverlay.Arzikina.OnBalanceCard"
+                app:cardBackgroundColor="@color/arzikina_postcart_background"
+                app:cardCornerRadius="@dimen/corner_radius_medium"
+                app:cardElevation="@dimen/elevation_raised">
+
+                <LinearLayout
+                    android:id="@+id/rows"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="@dimen/spacing_m" />
+            </com.google.android.material.card.MaterialCardView>
+
+            <TextView
+                android:id="@+id/profileHint"
+                style="@style/TextAppearance.Material3.BodySmall"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_m"
+                android:text="@string/shop_receipt_profile_hint"
+                android:textColor="@color/shop_stock_low"
+                android:visibility="gone" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/completeProfileButton"
+                style="?attr/materialButtonOutlinedStyle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_xs"
+                android:text="@string/shop_receipt_complete_profile"
+                android:textColor="?attr/colorOnSurface"
+                android:visibility="gone" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/receiptButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_l"
+                android:background="@drawable/forme_radius_10dp"
+                android:text="@string/shop_receipt_generate"
+                android:textColor="@color/white"
+                app:icon="@drawable/ic_receipt_long_24" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/cancelSaleButton"
+                style="?attr/materialButtonOutlinedStyle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_s"
+                android:text="@string/shop_sale_cancel_action"
+                android:textColor="@color/shop_stock_out"
+                app:icon="@drawable/ic_delete_24"
+                app:iconTint="@color/shop_stock_out" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/newSaleButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_s"
+                android:background="@drawable/forme_radius_10dp"
+                android:text="@string/shop_sale_new"
+                android:textColor="@color/white"
+                app:icon="@drawable/ic_add_24" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/doneButton"
+                style="?attr/materialButtonOutlinedStyle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_s"
+                android:text="@string/shop_sale_done"
+                android:textColor="?attr/colorOnSurface" />
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+
+    <TextView
+        android:id="@+id/notFoundText"
+        style="@style/TextAppearance.Material3.BodyMedium"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:padding="@dimen/spacing_m"
+        android:text="@string/shop_sale_not_found"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+</androidx.constraintlayout.widget.ConstraintLayout>

@@ -41,5 +41,17 @@ enum class AccountType {
      * son type depuis « Modifier le compte » : même ligne `accounts` (même id/syncId), mêmes
      * transactions, seul le montant cible est ajouté/retiré.
      */
-    SAVINGS_GOAL
+    SAVINGS_GOAL,
+
+    /**
+     * Compte d'une boutique (module « Boutique ») : un compte à part entière (solde = solde initial
+     * + transactions, transferts, statistiques… comme les autres types), destiné à recevoir les
+     * encaissements des ventes. Aucune colonne propre : le lien avec la boutique est porté par
+     * `shops.accountId`. Ne JAMAIS renommer cette entrée : elle est stockée, synchronisée et
+     * sauvegardée par son nom.
+     *
+     * Un appareil dont l'application est plus ancienne la lit comme `CASH` (voir
+     * `SyncEngineImpl`/`BackupMappers`) — voir la doc du module « Boutique » pour la parade.
+     */
+    BOUTIQUE
 }

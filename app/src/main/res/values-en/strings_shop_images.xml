@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Shop: product photos and list/grid toggle. -->
+<resources>
+    <string name="shop_photo_title">Product photo</string>
+    <string name="shop_photo_add">Add a photo</string>
+    <string name="shop_photo_change">Change photo</string>
+    <string name="shop_photo_remove">Remove photo</string>
+    <string name="shop_photo_gallery">Choose from gallery</string>
+    <string name="shop_photo_camera">Take a photo</string>
+    <string name="shop_photo_no_camera">No camera available on this device.</string>
+    <string name="shop_photo_error_type">Unsupported format. Choose a JPEG, PNG or WebP image.</string>
+    <string name="shop_photo_error_large">This image is too large.</string>
+    <string name="shop_photo_error_unreadable">This image could not be read.</string>
+    <string name="shop_menu_layout_list">List view</string>
+    <string name="shop_menu_layout_grid">Grid view</string>
+</resources>

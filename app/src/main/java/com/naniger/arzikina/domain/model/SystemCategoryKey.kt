@@ -38,7 +38,13 @@ enum class SystemCategoryKey(val canonicalName: String, val type: TransactionTyp
     LOAN_REPAYMENT_LENT(LoanCategoryNames.REPAYMENT_LENT, TransactionType.INCOME),
     LOAN_DISBURSEMENT_BORROWED(LoanCategoryNames.DISBURSEMENT_BORROWED, TransactionType.INCOME),
     LOAN_REPAYMENT_BORROWED(LoanCategoryNames.REPAYMENT_BORROWED, TransactionType.EXPENSE),
-    FEES(FeeCategoryNames.FEES, TransactionType.EXPENSE);
+    FEES(FeeCategoryNames.FEES, TransactionType.EXPENSE),
+    /** Revenu des ventes de la boutique (module « Boutique ») : catégorie système recréée à la volée
+     * si l'utilisateur l'a supprimée (voir `SystemCategoryResolver`). */
+    SHOP_SALES("Ventes", TransactionType.INCOME),
+    /** Contre-passation d'une vente annulée (module « Boutique ») : dépense qui neutralise l'encaissement
+     * initial sans le supprimer. Recréée à la volée comme [SHOP_SALES]. */
+    SHOP_REFUNDS("Ventes annulées", TransactionType.EXPENSE);
 
     companion object {
         /** Clé d'une catégorie dont le nom est encore exactement le nom canonique, sinon `null`. */

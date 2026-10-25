@@ -9,6 +9,13 @@ import com.naniger.arzikina.data.local.dao.CardSecretDao
 import com.naniger.arzikina.data.local.dao.CategoryDao
 import com.naniger.arzikina.data.local.dao.FinancialPlanDao
 import com.naniger.arzikina.data.local.dao.FinancialPlanItemDao
+import com.naniger.arzikina.data.local.dao.ProductCategoryDao
+import com.naniger.arzikina.data.local.dao.ProductDao
+import com.naniger.arzikina.data.local.dao.SaleDao
+import com.naniger.arzikina.data.local.dao.SaleLineDao
+import com.naniger.arzikina.data.local.dao.SalePaymentDao
+import com.naniger.arzikina.data.local.dao.ShopDao
+import com.naniger.arzikina.data.local.dao.StockMovementDao
 import com.naniger.arzikina.data.local.dao.IssuedReceiptDao
 import com.naniger.arzikina.data.local.dao.IssuerProfileDao
 import com.naniger.arzikina.data.local.dao.LoanDao
@@ -31,6 +38,13 @@ import com.naniger.arzikina.data.local.entity.CardSecretEntity
 import com.naniger.arzikina.data.local.entity.CategoryEntity
 import com.naniger.arzikina.data.local.entity.FinancialPlanEntity
 import com.naniger.arzikina.data.local.entity.FinancialPlanItemEntity
+import com.naniger.arzikina.data.local.entity.ProductCategoryEntity
+import com.naniger.arzikina.data.local.entity.ProductEntity
+import com.naniger.arzikina.data.local.entity.SaleEntity
+import com.naniger.arzikina.data.local.entity.SaleLineEntity
+import com.naniger.arzikina.data.local.entity.SalePaymentEntity
+import com.naniger.arzikina.data.local.entity.ShopEntity
+import com.naniger.arzikina.data.local.entity.StockMovementEntity
 import com.naniger.arzikina.data.local.entity.IssuedReceiptEntity
 import com.naniger.arzikina.data.local.entity.IssuerProfileEntity
 import com.naniger.arzikina.data.local.entity.LoanEntity
@@ -161,6 +175,9 @@ import com.naniger.arzikina.data.local.entity.UserServerLinkEntity
  *   (justificatifs importés). Migration purement additive.
  * - 35 : Signature manuscrite de l'émetteur — colonne nullable `signatureFileName` sur
  *   `issuer_profiles` (voir [MIGRATION_34_35]). Migration purement additive.
+ * - 36 : Module « Boutique » — tables `shops`, `product_categories`, `products`, `stock_movements`,
+ *   `sales`, `sale_lines`, `sale_payments` (voir [MIGRATION_35_36] et les entités du même nom). Migration
+ *   purement additive, aucune `ForeignKey` ; le type de compte `BOUTIQUE` n'exige aucune migration.
  */
 @Database(
     entities = [
@@ -185,9 +202,16 @@ import com.naniger.arzikina.data.local.entity.UserServerLinkEntity
         UserProfilePhotoEntity::class,
         TransactionTemplateEntity::class,
         IssuedReceiptEntity::class,
-        IssuerProfileEntity::class
+        IssuerProfileEntity::class,
+        ProductCategoryEntity::class,
+        ProductEntity::class,
+        SaleEntity::class,
+        SaleLineEntity::class,
+        SalePaymentEntity::class,
+        ShopEntity::class,
+        StockMovementEntity::class
     ],
-    version = 35,
+    version = 36,
     exportSchema = true
 )
 @TypeConverters(Converters::class)
@@ -214,4 +238,11 @@ abstract class ArzikinaDatabase : RoomDatabase() {
     abstract fun transactionTemplateDao(): TransactionTemplateDao
     abstract fun issuedReceiptDao(): IssuedReceiptDao
     abstract fun issuerProfileDao(): IssuerProfileDao
+    abstract fun productCategoryDao(): ProductCategoryDao
+    abstract fun productDao(): ProductDao
+    abstract fun saleDao(): SaleDao
+    abstract fun saleLineDao(): SaleLineDao
+    abstract fun salePaymentDao(): SalePaymentDao
+    abstract fun shopDao(): ShopDao
+    abstract fun stockMovementDao(): StockMovementDao
 }

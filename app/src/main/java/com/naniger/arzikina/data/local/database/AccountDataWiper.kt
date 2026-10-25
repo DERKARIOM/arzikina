@@ -8,6 +8,13 @@ import com.naniger.arzikina.data.local.dao.FinancialPlanDao
 import com.naniger.arzikina.data.local.dao.FinancialPlanItemDao
 import com.naniger.arzikina.data.local.dao.IssuedReceiptDao
 import com.naniger.arzikina.data.local.dao.IssuerProfileDao
+import com.naniger.arzikina.data.local.dao.ProductCategoryDao
+import com.naniger.arzikina.data.local.dao.ProductDao
+import com.naniger.arzikina.data.local.dao.SaleDao
+import com.naniger.arzikina.data.local.dao.SaleLineDao
+import com.naniger.arzikina.data.local.dao.SalePaymentDao
+import com.naniger.arzikina.data.local.dao.ShopDao
+import com.naniger.arzikina.data.local.dao.StockMovementDao
 import com.naniger.arzikina.data.local.dao.LoanDao
 import com.naniger.arzikina.data.local.dao.LoanPaymentDao
 import com.naniger.arzikina.data.local.dao.PersonDao
@@ -26,6 +33,7 @@ import com.naniger.arzikina.data.issuedreceipt.IssuerLogoStorage
 import com.naniger.arzikina.data.issuedreceipt.pdf.IssuedReceiptPdfStorage
 import com.naniger.arzikina.data.profile.ProfilePhotoFileStorage
 import com.naniger.arzikina.data.receipts.ReceiptFileStorage
+import com.naniger.arzikina.data.shop.ProductImageStore
 import kotlinx.coroutines.flow.first
 import javax.inject.Inject
 
@@ -50,7 +58,7 @@ import javax.inject.Inject
  * `CASCADE`, posée dès sa création — elle se déclenche automatiquement au `DELETE` physique de
  * [accountDao] ci-dessous.
  *
- * Fichiers physiques (reçus, photo de profil) : capturés AVANT la transaction puis supprimés
+ * Fichiers physiques (reçus, photo de profil, photos produits) : capturés AVANT la transaction puis supprimés
  * APRÈS son succès complet, jamais avant ni pendant — même principe que
  * `BackupRepositoryImpl.importBackup` (`oldReceiptFilePaths`) : si la transaction échoue pour une
  * raison quelconque, aucun fichier encore référencé par une ligne Room n'est perdu.
@@ -74,6 +82,14 @@ class AccountDataWiper @Inject constructor(
     private val transactionTemplateDao: TransactionTemplateDao,
     private val issuedReceiptDao: IssuedReceiptDao,
     private val issuerProfileDao: IssuerProfileDao,
+    private val productCategoryDao: ProductCategoryDao,
+    private val productDao: ProductDao,
+    private val saleDao: SaleDao,
+    private val saleLineDao: SaleLineDao,
+    private val salePaymentDao: SalePaymentDao,
+    private val shopDao: ShopDao,
+    private val stockMovementDao: StockMovementDao,
+    private val productImageStore: ProductImageStore,
     private val issuerLogoStorage: IssuerLogoStorage,
     private val issuedReceiptPdfStorage: IssuedReceiptPdfStorage,
     private val userPreferencesDao: UserPreferencesDao,
@@ -87,6 +103,7 @@ class AccountDataWiper @Inject constructor(
         // (voir la doc de tête).
         val oldReceiptFilePaths = receiptDao.observeAllForUser(userId).first().map { it.localPath }
         val oldProfilePhotoPath = userProfilePhotoDao.findByUserId(userId)?.localPath
+        val oldProductImages = productDao.imageFileNamesForUser(userId)
         val oldIssuerProfile = issuerProfileDao.getForUser(userId)
         val oldIssuerLogoFile = oldIssuerProfile?.logoFileName
         // Signatures : celle du profil + celles figées dans les reçus (anciens noms inclus).
@@ -119,6 +136,15 @@ class AccountDataWiper @Inject constructor(
             // supprimé après la transaction, ainsi que le dossier des PDF de l'utilisateur.
             issuedReceiptDao.deleteAllForUser(userId)
             issuerProfileDao.deleteAllForUser(userId)
+            // Module « Boutique » : lignes enfants avant parents (aucune `ForeignKey`, ordre sans conséquence
+            // technique mais cohérent avec le reste).
+            salePaymentDao.deleteAllForUser(userId)
+            saleLineDao.deleteAllForUser(userId)
+            saleDao.deleteAllForUser(userId)
+            stockMovementDao.deleteAllForUser(userId)
+            productDao.deleteAllForUser(userId)
+            productCategoryDao.deleteAllForUser(userId)
+            shopDao.deleteAllForUser(userId)
             userPreferencesDao.deleteAllForUser(userId)
             userProfilePhotoDao.deleteAllForUser(userId)
             userServerLinkDao.deleteAllForUser(userId)
@@ -130,6 +156,7 @@ class AccountDataWiper @Inject constructor(
         oldProfilePhotoPath?.let { runCatching { profilePhotoFileStorage.deleteFile(it) } }
         oldIssuerLogoFile?.let { runCatching { issuerLogoStorage.delete(it) } }
         oldSignatureFiles.forEach { runCatching { issuerLogoStorage.delete(it) } }
+        oldProductImages.forEach { runCatching { productImageStore.delete(it) } }
         runCatching { issuedReceiptPdfStorage.deleteAllForUser(userId) }
     }
 }

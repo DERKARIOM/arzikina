@@ -1,6 +1,7 @@
 package com.naniger.arzikina.data.repository
 
 import androidx.room.withTransaction
+import com.naniger.arzikina.data.local.SqlLike
 import com.naniger.arzikina.data.local.dao.IssuedReceiptDao
 import com.naniger.arzikina.data.local.database.ArzikinaDatabase
 import com.naniger.arzikina.data.mapper.toDomain
@@ -170,13 +171,7 @@ class IssuedReceiptRepositoryImpl @Inject constructor(
         sessionManager.getCurrentUserIdOnce() ?: error("Aucun utilisateur connecté.")
 
     internal companion object {
-        /** Motif `LIKE` : `\`, `%` et `_` saisis par l'utilisateur sont échappés (voir `IssuedReceiptDao.observeSummaries`). */
-        fun likePattern(query: String): String {
-            val escaped = query.trim()
-                .replace("\\", "\\\\")
-                .replace("%", "\\%")
-                .replace("_", "\\_")
-            return "%$escaped%"
-        }
+        /** Motif `LIKE` (voir `IssuedReceiptDao.observeSummaries`) : délègue à l'utilitaire partagé [SqlLike]. */
+        fun likePattern(query: String): String = SqlLike.containsPattern(query)
     }
 }

@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Module Boutique — ventes (étape 5). Catégorie de revenu système : voir SystemCategoryKey.SHOP_SALES. -->
+    <string name="category_system_shop_sales">Ventes</string>
+
+    <string name="shop_action_new_sale">Nouvelle vente</string>
+
+    <!-- Panier -->
+    <string name="shop_cart_title">Nouvelle vente</string>
+    <string name="shop_cart_pick_title">Choisir un produit</string>
+    <string name="shop_cart_add_product">Ajouter un produit</string>
+    <string name="shop_cart_empty">Ajoute les produits vendus pour commencer la vente.</string>
+    <string name="shop_cart_remove">Retirer du panier</string>
+    <string name="shop_cart_decrease">Diminuer la quantité</string>
+    <string name="shop_cart_increase">Augmenter la quantité</string>
+    <string name="shop_cart_edit_quantity">Modifier la quantité</string>
+    <string name="shop_cart_quantity_dialog_message">Quantité vendue</string>
+    <string name="shop_cart_quantity_apply">Appliquer</string>
+    <string name="shop_cart_line_unavailable_name">Produit indisponible</string>
+    <string name="shop_cart_problem_unavailable">Ce produit n\'est plus disponible. Retire-le du panier.</string>
+    <string name="shop_cart_problem_stock">Stock insuffisant : %1$s disponible(s).</string>
+    <string name="shop_cart_problem_quantity">Quantité invalide pour cette unité.</string>
+
+    <string name="shop_cart_discount">Remise</string>
+    <string name="shop_cart_discount_none">Aucune</string>
+    <string name="shop_cart_discount_percent">Pourcentage</string>
+    <string name="shop_cart_discount_fixed">Montant</string>
+    <string name="shop_cart_discount_value">Valeur de la remise</string>
+    <string name="shop_cart_discount_invalid">Valeur invalide.</string>
+
+    <string name="shop_cart_customer">Client (facultatif)</string>
+    <string name="shop_cart_customer_name">Nom du client</string>
+    <string name="shop_cart_customer_phone">Téléphone</string>
+
+    <string name="shop_cart_account">Encaissé sur le compte</string>
+    <string name="shop_cart_no_account">Aucun compte dans la devise de la boutique. Crée un compte de type Boutique pour encaisser tes ventes.</string>
+
+    <string name="shop_cart_subtotal">Sous-total</string>
+    <string name="shop_cart_total">Total</string>
+    <string name="shop_cart_confirm">Valider la vente</string>
+
+    <string name="shop_cart_err_unavailable">Un produit n\'est plus disponible.</string>
+    <string name="shop_cart_err_out_of_stock">Ce produit est en rupture de stock.</string>
+    <string name="shop_cart_err_stock_limit">Tout le stock disponible est déjà dans le panier.</string>
+    <string name="shop_cart_err_insufficient">Stock insuffisant pour au moins un produit.</string>
+    <string name="shop_cart_err_quantity">Quantité invalide.</string>
+    <string name="shop_cart_err_amount">Montant hors limites ou remise invalide.</string>
+    <string name="shop_cart_err_zero_total">Le total de la vente doit être supérieur à 0.</string>
+    <string name="shop_cart_err_account">Le compte choisi n\'est plus disponible.</string>
+    <string name="shop_cart_err_currency">La devise du compte diffère de celle de la boutique.</string>
+    <string name="shop_cart_err_shop">La boutique n\'est pas encore initialisée.</string>
+    <string name="shop_cart_err_generic">Impossible d\'enregistrer la vente. Réessaie.</string>
+
+    <!-- Confirmation / détail -->
+    <string name="shop_sale_title">Vente</string>
+    <string name="shop_sale_recorded">Vente enregistrée</string>
+    <string name="shop_sale_new">Nouvelle vente</string>
+    <string name="shop_sale_done">Terminer</string>
+    <string name="shop_sale_not_found">Vente introuvable.</string>
+    <string name="shop_sale_date">Date</string>
+    <string name="shop_sale_account">Compte crédité</string>
+</resources>

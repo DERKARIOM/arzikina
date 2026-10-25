@@ -34,6 +34,9 @@ internal object DefaultCategories {
         // Revenus
         category(SystemCategoryKey.SALARY.canonicalName, CategoryIcon.SALARY, 0xFF006C4FL, TransactionType.INCOME, now, userId),
         category(SystemCategoryKey.OTHER_INCOME.canonicalName, CategoryIcon.OTHER, 0xFF64748BL, TransactionType.INCOME, now, userId),
+        // Ventes de la boutique : voir SystemCategoryKey.SHOP_SALES. Absente des bases existantes,
+        // elle est créée à la première vente par SystemCategoryResolver (aucune migration).
+        category(SystemCategoryKey.SHOP_SALES.canonicalName, CategoryIcon.SHOPPING, 0xFF42B998L, TransactionType.INCOME, now, userId),
         // Cadeaux reçus (ex. emprunt transformé en cadeau) : même nom/icône/couleur que « Cadeaux »
         // côté dépenses, voir SystemCategoryKey.GIFTS_RECEIVED.
         category(SystemCategoryKey.GIFTS_RECEIVED.canonicalName, CategoryIcon.GIFTS, 0xFFEC4899L, TransactionType.INCOME, now, userId),
@@ -50,6 +53,8 @@ internal object DefaultCategories {
         category(SystemCategoryKey.EDUCATION.canonicalName, CategoryIcon.EDUCATION, 0xFF16A34AL, TransactionType.EXPENSE, now, userId),
         category(SystemCategoryKey.HOME.canonicalName, CategoryIcon.HOME, 0xFF10B981L, TransactionType.EXPENSE, now, userId),
         category(SystemCategoryKey.OTHER_EXPENSE.canonicalName, CategoryIcon.OTHER, 0xFF64748BL, TransactionType.EXPENSE, now, userId),
+        // Contre-passation des ventes annulées : voir SystemCategoryKey.SHOP_REFUNDS (créée à la première annulation).
+        category(SystemCategoryKey.SHOP_REFUNDS.canonicalName, CategoryIcon.SHOPPING, 0xFF64748BL, TransactionType.EXPENSE, now, userId),
 
         // Prêts/Emprunts (voir domain/model/Loan — ces 4 catégories couvrent les 2 sens de
         // domain/model/LoanType, chacun ayant sa jambe dépense ET sa jambe revenu).

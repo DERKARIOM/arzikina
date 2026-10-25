@@ -370,4 +370,94 @@ const ENTITY_CONFIGS = [
             ['db' => 'issuer_signature_file_name', 'payload' => 'issuerSignatureFileName', 'type' => 'string', 'nullable' => true],
         ],
     ],
+    // Module « Boutique » — voir database/migrations/013_shop.sql. Les colonnes `*_id` stockent le
+    // `syncId` de la ligne référencée (payload `*SyncId`), sans FOREIGN KEY. Le stock d'un produit
+    // (`stockMilli`) et l'image (`imageFileName`) sont VOLONTAIREMENT absents : cache local / V1 local.
+    'shops' => [
+        'table' => 'shops',
+        'columns' => [
+            ['db' => 'name', 'payload' => 'name', 'type' => 'string', 'nullable' => false],
+            ['db' => 'account_id', 'payload' => 'accountSyncId', 'type' => 'string', 'nullable' => true],
+            ['db' => 'currency_code', 'payload' => 'currencyCode', 'type' => 'string', 'nullable' => false],
+        ],
+    ],
+    'product_categories' => [
+        'table' => 'product_categories',
+        'columns' => [
+            ['db' => 'shop_id', 'payload' => 'shopSyncId', 'type' => 'string', 'nullable' => false],
+            ['db' => 'name', 'payload' => 'name', 'type' => 'string', 'nullable' => false],
+        ],
+    ],
+    'products' => [
+        'table' => 'products',
+        'columns' => [
+            ['db' => 'shop_id', 'payload' => 'shopSyncId', 'type' => 'string', 'nullable' => false],
+            ['db' => 'category_id', 'payload' => 'categorySyncId', 'type' => 'string', 'nullable' => true],
+            ['db' => 'name', 'payload' => 'name', 'type' => 'string', 'nullable' => false],
+            ['db' => 'description', 'payload' => 'description', 'type' => 'string', 'nullable' => true],
+            ['db' => 'sku', 'payload' => 'sku', 'type' => 'string', 'nullable' => true],
+            ['db' => 'barcode', 'payload' => 'barcode', 'type' => 'string', 'nullable' => true],
+            ['db' => 'unit', 'payload' => 'unit', 'type' => 'string', 'nullable' => false],
+            ['db' => 'purchase_price_minor', 'payload' => 'purchasePriceMinor', 'type' => 'int', 'nullable' => true],
+            ['db' => 'sale_price_minor', 'payload' => 'salePriceMinor', 'type' => 'int', 'nullable' => false],
+            ['db' => 'min_stock_milli', 'payload' => 'minStockMilli', 'type' => 'int', 'nullable' => false],
+            ['db' => 'expiry_date', 'payload' => 'expiryDate', 'type' => 'int', 'nullable' => true],
+            ['db' => 'is_archived', 'payload' => 'isArchived', 'type' => 'int', 'nullable' => false],
+        ],
+    ],
+    'stock_movements' => [
+        'table' => 'stock_movements',
+        'columns' => [
+            ['db' => 'product_id', 'payload' => 'productSyncId', 'type' => 'string', 'nullable' => false],
+            ['db' => 'type', 'payload' => 'type', 'type' => 'string', 'nullable' => false],
+            ['db' => 'delta_milli', 'payload' => 'deltaMilli', 'type' => 'int', 'nullable' => false],
+            ['db' => 'unit_cost_minor', 'payload' => 'unitCostMinor', 'type' => 'int', 'nullable' => true],
+            ['db' => 'reason', 'payload' => 'reason', 'type' => 'string', 'nullable' => true],
+            ['db' => 'reference', 'payload' => 'reference', 'type' => 'string', 'nullable' => true],
+            ['db' => 'sale_id', 'payload' => 'saleSyncId', 'type' => 'string', 'nullable' => true],
+            ['db' => 'occurred_at', 'payload' => 'occurredAt', 'type' => 'int', 'nullable' => false],
+        ],
+    ],
+    'sales' => [
+        'table' => 'sales',
+        'columns' => [
+            ['db' => 'shop_id', 'payload' => 'shopSyncId', 'type' => 'string', 'nullable' => false],
+            ['db' => 'reference', 'payload' => 'reference', 'type' => 'string', 'nullable' => false],
+            ['db' => 'sold_at', 'payload' => 'soldAt', 'type' => 'int', 'nullable' => false],
+            ['db' => 'currency_code', 'payload' => 'currencyCode', 'type' => 'string', 'nullable' => false],
+            ['db' => 'customer_name', 'payload' => 'customerName', 'type' => 'string', 'nullable' => true],
+            ['db' => 'customer_phone', 'payload' => 'customerPhone', 'type' => 'string', 'nullable' => true],
+            ['db' => 'subtotal_minor', 'payload' => 'subtotalMinor', 'type' => 'int', 'nullable' => false],
+            ['db' => 'discount_minor', 'payload' => 'discountMinor', 'type' => 'int', 'nullable' => false],
+            ['db' => 'total_minor', 'payload' => 'totalMinor', 'type' => 'int', 'nullable' => false],
+            ['db' => 'status', 'payload' => 'status', 'type' => 'string', 'nullable' => false],
+            ['db' => 'cancelled_at', 'payload' => 'cancelledAt', 'type' => 'int', 'nullable' => true],
+            ['db' => 'cancel_reason', 'payload' => 'cancelReason', 'type' => 'string', 'nullable' => true],
+            ['db' => 'issued_receipt_id', 'payload' => 'issuedReceiptSyncId', 'type' => 'string', 'nullable' => true],
+        ],
+    ],
+    'sale_lines' => [
+        'table' => 'sale_lines',
+        'columns' => [
+            ['db' => 'sale_id', 'payload' => 'saleSyncId', 'type' => 'string', 'nullable' => false],
+            ['db' => 'product_id', 'payload' => 'productSyncId', 'type' => 'string', 'nullable' => false],
+            ['db' => 'product_name', 'payload' => 'productName', 'type' => 'string', 'nullable' => false],
+            ['db' => 'unit_price_minor', 'payload' => 'unitPriceMinor', 'type' => 'int', 'nullable' => false],
+            ['db' => 'unit_cost_minor', 'payload' => 'unitCostMinor', 'type' => 'int', 'nullable' => true],
+            ['db' => 'quantity_milli', 'payload' => 'quantityMilli', 'type' => 'int', 'nullable' => false],
+            ['db' => 'line_total_minor', 'payload' => 'lineTotalMinor', 'type' => 'int', 'nullable' => false],
+        ],
+    ],
+    'sale_payments' => [
+        'table' => 'sale_payments',
+        'columns' => [
+            ['db' => 'sale_id', 'payload' => 'saleSyncId', 'type' => 'string', 'nullable' => false],
+            ['db' => 'account_id', 'payload' => 'accountSyncId', 'type' => 'string', 'nullable' => false],
+            ['db' => 'method', 'payload' => 'method', 'type' => 'string', 'nullable' => false],
+            ['db' => 'amount_minor', 'payload' => 'amountMinor', 'type' => 'int', 'nullable' => false],
+            ['db' => 'paid_at', 'payload' => 'paidAt', 'type' => 'int', 'nullable' => false],
+            ['db' => 'transaction_id', 'payload' => 'transactionSyncId', 'type' => 'string', 'nullable' => true],
+            ['db' => 'reversal_transaction_id', 'payload' => 'reversalTransactionSyncId', 'type' => 'string', 'nullable' => true],
+        ],
+    ],
 ];

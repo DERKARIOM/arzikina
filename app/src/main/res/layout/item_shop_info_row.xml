@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Ligne « libellé / valeur » de la fiche produit et du tableau de bord (remplie par code). -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:paddingVertical="6dp">
+
+    <TextView
+        android:id="@+id/rowLabel"
+        style="@style/TextAppearance.Material3.BodyMedium"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="@dimen/spacing_s"
+        android:layout_weight="1"
+        android:textColor="@color/arzikina_on_balance_card_variant"
+        tools:text="Prix de vente" />
+
+    <TextView
+        android:id="@+id/rowValue"
+        style="@style/TextAppearance.Material3.BodyMedium"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1.4"
+        android:gravity="end"
+        android:textColor="@color/arzikina_on_balance_card"
+        android:textStyle="bold"
+        tools:text="1 500 F CFA" />
+</LinearLayout>
