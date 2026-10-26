@@ -33,6 +33,7 @@ import com.naniger.arzikina.data.issuedreceipt.IssuerLogoStorage
 import com.naniger.arzikina.data.issuedreceipt.pdf.IssuedReceiptPdfStorage
 import com.naniger.arzikina.data.profile.ProfilePhotoFileStorage
 import com.naniger.arzikina.data.receipts.ReceiptFileStorage
+import com.naniger.arzikina.data.shop.CartLocalDataSource
 import com.naniger.arzikina.data.shop.ProductImageStore
 import kotlinx.coroutines.flow.first
 import javax.inject.Inject
@@ -89,6 +90,7 @@ class AccountDataWiper @Inject constructor(
     private val salePaymentDao: SalePaymentDao,
     private val shopDao: ShopDao,
     private val stockMovementDao: StockMovementDao,
+    private val cartLocalDataSource: CartLocalDataSource,
     private val productImageStore: ProductImageStore,
     private val issuerLogoStorage: IssuerLogoStorage,
     private val issuedReceiptPdfStorage: IssuedReceiptPdfStorage,
@@ -141,6 +143,7 @@ class AccountDataWiper @Inject constructor(
             salePaymentDao.deleteAllForUser(userId)
             saleLineDao.deleteAllForUser(userId)
             saleDao.deleteAllForUser(userId)
+            cartLocalDataSource.purge(userId)
             stockMovementDao.deleteAllForUser(userId)
             productDao.deleteAllForUser(userId)
             productCategoryDao.deleteAllForUser(userId)

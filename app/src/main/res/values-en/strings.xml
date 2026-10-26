@@ -865,6 +865,8 @@
     <string name="category_system_loan_disbursement_borrowed">Loan received</string>
     <string name="category_system_loan_repayment_borrowed">Loan repayment</string>
     <string name="category_system_fees">Fees and commissions</string>
+    <string name="category_system_shop_sales">Sales</string>
+    <string name="category_system_shop_refunds">Cancelled sales</string>
     <string name="account_default_cash">Cash</string>
     <string name="account_default_bank">Bank</string>
     <string name="account_default_mobile_money">Mobile Money</string>

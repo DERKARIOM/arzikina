@@ -1,8 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Module Boutique — ventes (étape 5). Catégorie de revenu système : voir SystemCategoryKey.SHOP_SALES. -->
-    <string name="category_system_shop_sales">Ventes</string>
-
+    <!-- Module Boutique — ventes (étape 5). Catégorie système « Ventes » : voir strings.xml (category_system_shop_sales). -->
     <string name="shop_action_new_sale">Nouvelle vente</string>
 
     <!-- Panier -->

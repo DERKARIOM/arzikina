@@ -23,6 +23,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import com.naniger.arzikina.data.shop.CartPersistenceCoordinator
 import javax.inject.Inject
 
 /**
@@ -99,6 +100,9 @@ class ArzikinaApplication : Application(), Configuration.Provider {
     @Inject
     lateinit var pushRegistrationRepository: PushRegistrationRepository
 
+    @Inject
+    lateinit var cartPersistenceCoordinator: CartPersistenceCoordinator
+
     override val workManagerConfiguration: Configuration
         get() = Configuration.Builder()
             .setWorkerFactory(workerFactory)
@@ -116,6 +120,8 @@ class ArzikinaApplication : Application(), Configuration.Provider {
         migrateLegacySavingsGoals()
         SyncWorkScheduler.schedulePeriodic(this)
         syncConnectivityObserver.start()
+        // Panier de vente : restauré depuis Room puis enregistré à chaque changement (voir CartPersistenceCoordinator).
+        cartPersistenceCoordinator.start()
         // Notifications : canaux visibles dans les réglages système dès l'installation, puis
         // (ré)enregistrement push en arrière-plan — sans effet si personne n'est connecté ou si
         // rien n'a changé (voir PushRegistrationRepositoryImpl). Aucun appel réseau ici.

@@ -1337,6 +1337,9 @@
     <string name="category_system_loan_disbursement_borrowed">Emprunt reçu</string>
     <string name="category_system_loan_repayment_borrowed">Remboursement d\'emprunt</string>
     <string name="category_system_fees">Frais et commissions</string>
+    <!-- Module Boutique : catégories système de revenu (ventes) et de dépense (ventes annulées). -->
+    <string name="category_system_shop_sales">Ventes</string>
+    <string name="category_system_shop_refunds">Ventes annulées</string>
     <string name="account_default_cash">Espèces</string>
     <string name="account_default_bank">Banque</string>
     <string name="account_default_mobile_money">Mobile Money</string>

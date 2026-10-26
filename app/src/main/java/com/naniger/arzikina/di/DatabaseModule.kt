@@ -5,6 +5,7 @@ import androidx.room.Room
 import com.naniger.arzikina.data.local.dao.AccountDao
 import com.naniger.arzikina.data.local.dao.BudgetDao
 import com.naniger.arzikina.data.local.dao.CardSecretDao
+import com.naniger.arzikina.data.local.dao.CartDao
 import com.naniger.arzikina.data.local.dao.CategoryDao
 import com.naniger.arzikina.data.local.dao.FinancialPlanDao
 import com.naniger.arzikina.data.local.dao.FinancialPlanItemDao
@@ -67,6 +68,7 @@ import com.naniger.arzikina.data.local.database.MIGRATION_32_33
 import com.naniger.arzikina.data.local.database.MIGRATION_33_34
 import com.naniger.arzikina.data.local.database.MIGRATION_34_35
 import com.naniger.arzikina.data.local.database.MIGRATION_35_36
+import com.naniger.arzikina.data.local.database.MIGRATION_36_37
 import com.naniger.arzikina.util.Constants
 import dagger.Module
 import dagger.Provides
@@ -105,7 +107,7 @@ object DatabaseModule {
                 MIGRATION_22_23, MIGRATION_23_24, MIGRATION_24_25, MIGRATION_25_26,
                 MIGRATION_26_27, MIGRATION_27_28, MIGRATION_28_29, MIGRATION_29_30,
                 MIGRATION_30_31, MIGRATION_31_32, MIGRATION_32_33, MIGRATION_33_34, MIGRATION_34_35,
-                MIGRATION_35_36
+                MIGRATION_35_36, MIGRATION_36_37
             )
             .build()
 
@@ -198,4 +200,7 @@ object DatabaseModule {
 
     @Provides
     fun provideStockMovementDao(database: ArzikinaDatabase): StockMovementDao = database.stockMovementDao()
+
+    @Provides
+    fun provideCartDao(database: ArzikinaDatabase): CartDao = database.cartDao()
 }

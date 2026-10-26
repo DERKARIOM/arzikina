@@ -6,6 +6,7 @@ import androidx.room.TypeConverters
 import com.naniger.arzikina.data.local.dao.AccountDao
 import com.naniger.arzikina.data.local.dao.BudgetDao
 import com.naniger.arzikina.data.local.dao.CardSecretDao
+import com.naniger.arzikina.data.local.dao.CartDao
 import com.naniger.arzikina.data.local.dao.CategoryDao
 import com.naniger.arzikina.data.local.dao.FinancialPlanDao
 import com.naniger.arzikina.data.local.dao.FinancialPlanItemDao
@@ -36,6 +37,8 @@ import com.naniger.arzikina.data.local.dao.UserServerLinkDao
 import com.naniger.arzikina.data.local.entity.AccountEntity
 import com.naniger.arzikina.data.local.entity.BudgetEntity
 import com.naniger.arzikina.data.local.entity.CardSecretEntity
+import com.naniger.arzikina.data.local.entity.CartDraftEntity
+import com.naniger.arzikina.data.local.entity.CartLineEntity
 import com.naniger.arzikina.data.local.entity.CategoryEntity
 import com.naniger.arzikina.data.local.entity.FinancialPlanEntity
 import com.naniger.arzikina.data.local.entity.FinancialPlanItemEntity
@@ -179,6 +182,9 @@ import com.naniger.arzikina.data.local.entity.UserServerLinkEntity
  * - 36 : Module « Boutique » — tables `shops`, `product_categories`, `products`, `stock_movements`,
  *   `sales`, `sale_lines`, `sale_payments` (voir [MIGRATION_35_36] et les entités du même nom). Migration
  *   purement additive, aucune `ForeignKey` ; le type de compte `BOUTIQUE` n'exige aucune migration.
+ * - 37 : Panier de vente persistant — tables `cart_drafts` et `cart_lines` (voir [MIGRATION_36_37],
+ *   [CartDraftEntity], [CartLineEntity]). Données locales uniquement (ni synchronisées ni sauvegardées) ;
+ *   migration purement additive, aucune `ForeignKey`.
  */
 @Database(
     entities = [
@@ -210,9 +216,11 @@ import com.naniger.arzikina.data.local.entity.UserServerLinkEntity
         SaleLineEntity::class,
         SalePaymentEntity::class,
         ShopEntity::class,
-        StockMovementEntity::class
+        StockMovementEntity::class,
+        CartDraftEntity::class,
+        CartLineEntity::class
     ],
-    version = 36,
+    version = 37,
     exportSchema = true
 )
 @TypeConverters(Converters::class)
@@ -249,4 +257,5 @@ abstract class ArzikinaDatabase : RoomDatabase() {
     /** Lectures / insertions en bloc de la Boutique pour la sauvegarde (aucune table propre, schéma inchangé). */
     abstract fun shopBackupDao(): ShopBackupDao
     abstract fun stockMovementDao(): StockMovementDao
+    abstract fun cartDao(): CartDao
 }

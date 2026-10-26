@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Shop module — history, receipts and cancellation (step 6). -->
-    <string name="category_system_shop_refunds">Cancelled sales</string>
     <string name="shop_history_title">Sales history</string>
     <string name="shop_history_search">Reference or customer</string>
     <string name="shop_history_period_all">All</string>

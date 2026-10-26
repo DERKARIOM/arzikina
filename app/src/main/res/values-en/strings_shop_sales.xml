@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="category_system_shop_sales">Sales</string>
 
     <string name="shop_action_new_sale">New sale</string>
 

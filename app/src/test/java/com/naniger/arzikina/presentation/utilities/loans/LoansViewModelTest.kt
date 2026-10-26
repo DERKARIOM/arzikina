@@ -21,6 +21,7 @@ import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -113,12 +114,12 @@ class LoansViewModelTest {
 
             viewModel.onStatusFilterChange(LoanStatusFilterOption.OVERDUE)
             advanceUntilIdle()
-            // Le filtre OVERDUE garde exactement la même liste (le seul prêt EST en retard) : l'état
-            // est identique au précédent, et un StateFlow n'émet jamais deux fois la même valeur.
-            // `awaitItem()` attendrait donc indéfiniment : on lit la valeur courante à la place.
-            expectNoEvents()
-            val filtered = viewModel.uiState.value as AppResult.Success
+            // Le filtre OVERDUE garde la même liste (le seul prêt EST en retard), mais l'état change quand
+            // même : le résumé est calculé sur les prêts affichés et signale `isFiltered` (voir
+            // LoansUiState.summary). Un nouvel état est donc émis.
+            val filtered = awaitItem() as AppResult.Success
             assertEquals(1, filtered.data.items.size)
+            assertTrue(filtered.data.summary.isFiltered)
 
             viewModel.onStatusFilterChange(LoanStatusFilterOption.REPAID)
             advanceUntilIdle()
@@ -128,7 +129,7 @@ class LoansViewModelTest {
     }
 
     @Test
-    fun `le filtre par type restreint la liste sans affecter le resume`() = runTest(testDispatcher) {
+    fun `le filtre par type restreint la liste et le resume, et le signale`() = runTest(testDispatcher) {
         val lent = loan(id = 1L, personId = personA.id, type = LoanType.LENT, dueDate = Long.MAX_VALUE / 2, storedStatus = LoanStatus.ONGOING)
         val borrowed = loan(id = 2L, personId = personB.id, type = LoanType.BORROWED, dueDate = Long.MAX_VALUE / 2, storedStatus = LoanStatus.ONGOING)
         every { loanRepository.observeLoans() } returns flowOf(listOf(lent, borrowed))
@@ -142,14 +143,17 @@ class LoansViewModelTest {
             val all = awaitItem() as AppResult.Success
             assertEquals(2, all.data.items.size)
             assertEquals(2, all.data.summary.totalCount)
+            assertFalse(all.data.summary.isFiltered)
 
             viewModel.onTypeFilterChange(LoanTypeFilterOption.LENT)
             advanceUntilIdle()
             val filtered = awaitItem() as AppResult.Success
             assertEquals(1, filtered.data.items.size)
             assertEquals(LoanType.LENT, filtered.data.items.single().type)
-            // Voir la doc de LoansUiState.summary : le résumé reste stable, indépendant du filtre.
-            assertEquals(2, filtered.data.summary.totalCount)
+            // Voir la doc de LoansUiState.summary : le résumé est calculé sur les SEULS prêts affichés
+            // et le signale par `isFiltered`.
+            assertEquals(1, filtered.data.summary.totalCount)
+            assertTrue(filtered.data.summary.isFiltered)
         }
     }
 

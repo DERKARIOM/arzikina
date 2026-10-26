@@ -8,6 +8,7 @@ import com.naniger.arzikina.data.local.dao.SalePaymentDao
 import com.naniger.arzikina.data.local.dao.ShopDao
 import com.naniger.arzikina.data.local.dao.StockMovementDao
 import com.naniger.arzikina.data.local.database.ArzikinaDatabase
+import com.naniger.arzikina.data.shop.CartLocalDataSource
 import com.naniger.arzikina.data.shop.ProductImageStore
 import java.util.Base64
 import javax.inject.Inject
@@ -36,7 +37,8 @@ class ShopBackupHandler @Inject constructor(
     private val stockMovementDao: StockMovementDao,
     private val saleDao: SaleDao,
     private val saleLineDao: SaleLineDao,
-    private val salePaymentDao: SalePaymentDao
+    private val salePaymentDao: SalePaymentDao,
+    private val cart: CartLocalDataSource
 ) {
     private val dao get() = database.shopBackupDao()
 
@@ -63,6 +65,8 @@ class ShopBackupHandler @Inject constructor(
         salePaymentDao.deleteAllForUser(userId)
         saleLineDao.deleteAllForUser(userId)
         saleDao.deleteAllForUser(userId)
+        // Les identifiants de produits changent à la restauration : un ancien panier pointerait vers d'autres produits.
+        cart.purge(userId)
         stockMovementDao.deleteAllForUser(userId)
         productDao.deleteAllForUser(userId)
         productCategoryDao.deleteAllForUser(userId)

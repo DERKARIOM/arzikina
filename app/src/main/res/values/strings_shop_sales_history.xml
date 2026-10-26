@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Module Boutique — historique, reçus et annulation (étape 6). -->
-    <string name="category_system_shop_refunds">Ventes annulées</string>
     <string name="shop_history_title">Historique des ventes</string>
     <string name="shop_history_search">Référence ou client</string>
     <string name="shop_history_period_all">Tout</string>

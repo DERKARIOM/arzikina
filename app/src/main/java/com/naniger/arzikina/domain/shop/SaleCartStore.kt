@@ -3,8 +3,6 @@ package com.naniger.arzikina.domain.shop
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
-import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -19,19 +17,25 @@ enum class CartAddResult { ADDED, UNAVAILABLE, OUT_OF_STOCK, STOCK_LIMIT }
  * [draftKey] identifie CE panier de façon stable : valider deux fois le même panier (double clic, nouvelle
  * tentative après une coupure) ne crée jamais deux ventes. [clear] (vente validée) en génère une nouvelle.
  *
- * Le panier vit en mémoire pour la durée du processus ; il n'est pas écrit sur disque.
+ * Persistance : ce store reste une simple structure en mémoire, synchrone et sans dépendance (domaine pur).
+ * Chaque changement est publié dans [snapshot] ; c'est `data.shop.CartPersistenceCoordinator` qui l'enregistre
+ * dans Room et qui le remplace ([replaceWith]) quand l'utilisateur ou la boutique active change. Le panier
+ * survit ainsi à la mort du processus, séparément pour chaque utilisateur et chaque boutique.
  */
 @Singleton
 class SaleCartStore @Inject constructor() {
 
+    private val lock = Any()
+    private val _snapshot = MutableStateFlow(CartSnapshot.fresh())
     private val _lines = MutableStateFlow<Map<Long, Long>>(emptyMap())
+
+    /** Lignes ET clé du brouillon, publiées ensemble (source de la persistance). */
+    val snapshot: StateFlow<CartSnapshot> = _snapshot.asStateFlow()
 
     /** Lignes du panier (produit -> quantité en milli-unités), dans l'ordre d'ajout. */
     val lines: StateFlow<Map<Long, Long>> = _lines.asStateFlow()
 
-    @Volatile
-    var draftKey: String = newKey()
-        private set
+    val draftKey: String get() = _snapshot.value.draftKey
 
     /**
      * Ajoute une unité de plus du produit si le stock actuel ([stockMilli]) le permet. Règle unique,
@@ -41,14 +45,14 @@ class SaleCartStore @Inject constructor() {
         if (isArchived) return CartAddResult.UNAVAILABLE
         if (stockMilli <= 0L) return CartAddResult.OUT_OF_STOCK
         var result = CartAddResult.ADDED
-        _lines.update { current ->
-            val next = (current[productId] ?: 0L) + StockRules.QUANTITY_UNIT_MILLI
+        mutate { current ->
+            val next = (current.lines[productId] ?: 0L) + StockRules.QUANTITY_UNIT_MILLI
             if (next > stockMilli) {
                 result = CartAddResult.STOCK_LIMIT
                 current
             } else {
                 result = CartAddResult.ADDED
-                current + (productId to next)
+                current.copy(lines = current.lines + (productId to next))
             }
         }
         return result
@@ -56,18 +60,26 @@ class SaleCartStore @Inject constructor() {
 
     /** Fixe la quantité exacte ; une quantité nulle ou négative retire la ligne. */
     fun setQuantity(productId: Long, quantityMilli: Long) {
-        if (quantityMilli <= 0L) remove(productId) else _lines.update { it + (productId to quantityMilli) }
+        if (quantityMilli <= 0L) remove(productId) else mutate { it.copy(lines = it.lines + (productId to quantityMilli)) }
     }
 
-    fun remove(productId: Long) = _lines.update { it - productId }
+    fun remove(productId: Long) = mutate { it.copy(lines = it.lines - productId) }
 
     /** Vide le panier et ouvre un nouveau brouillon (nouvelle clé d'idempotence). */
-    fun clear() {
-        draftKey = newKey()
-        _lines.value = emptyMap()
-    }
+    fun clear() = mutate { CartSnapshot.fresh() }
 
-    private companion object {
-        fun newKey(): String = UUID.randomUUID().toString()
+    /** Remplace tout le panier (restauration depuis le disque, changement d'utilisateur ou de boutique). */
+    fun replaceWith(snapshot: CartSnapshot) = mutate { snapshot }
+
+    /** Applique [transform] de façon atomique et publie lignes et clé ensemble ; sans effet si rien ne change. */
+    private inline fun mutate(transform: (CartSnapshot) -> CartSnapshot) {
+        synchronized(lock) {
+            val current = _snapshot.value
+            val next = transform(current)
+            if (next != current) {
+                _snapshot.value = next
+                _lines.value = next.lines
+            }
+        }
     }
 }
