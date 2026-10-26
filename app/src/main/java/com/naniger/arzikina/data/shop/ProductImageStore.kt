@@ -99,6 +99,25 @@ class ProductImageStore @Inject constructor(
         return File(directory, fileName).takeIf { it.isFile }
     }
 
+    /**
+     * Écrit une photo REÇUE du serveur sous son nom (le même sur tous les appareils). Jamais d'écrasement : un nom
+     * déjà présent est conservé (les noms sont immuables). Le contenu doit être validé par l'appelant
+     * ([ProductImagePolicy.isValidSyncedImage]).
+     * @return `true` si le fichier a été écrit.
+     */
+    fun writeNamed(fileName: String, bytes: ByteArray): Boolean {
+        if (!ProductImagePolicy.isSafeFileName(fileName)) return false
+        val target = File(directory, fileName)
+        if (target.exists()) return false
+        val temp = File(directory, "$fileName.part")
+        return try {
+            temp.writeBytes(bytes)
+            temp.renameTo(target)
+        } finally {
+            if (temp.exists()) temp.delete()
+        }
+    }
+
     /** Supprime le fichier s'il existe ; ne lève jamais (un fichier déjà absent n'est pas une erreur). */
     fun delete(fileName: String): Boolean {
         if (!ProductImagePolicy.isSafeFileName(fileName)) return false

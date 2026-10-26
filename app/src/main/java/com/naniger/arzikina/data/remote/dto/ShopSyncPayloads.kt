@@ -73,6 +73,8 @@ data class ProductSyncPayload(
     val salePriceMinor: Long,
     val minStockMilli: Long,
     val expiryDate: Long?,
+    /** Nom de la photo (UUID + `.jpg`), `null` explicite pour la retirer. L'image passe par `ProductImageApi`. */
+    val imageFileName: String?,
     val isArchived: Boolean,
     val createdAt: Long,
     val updatedAt: Long
@@ -92,6 +94,8 @@ data class ProductServerStateDto(
     val salePriceMinor: Long,
     val minStockMilli: Long,
     val expiryDate: Long? = null,
+    /** Absent tant que le serveur n'a pas la colonne (migration 014) ou qu'aucune photo n'a été envoyée. */
+    val imageFileName: String? = null,
     /** `0`/`1`, PAS `Boolean`. */
     val isArchived: Int = 0,
     val createdAt: Long,

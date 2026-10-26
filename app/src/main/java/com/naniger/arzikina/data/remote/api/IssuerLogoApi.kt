@@ -2,22 +2,15 @@ package com.naniger.arzikina.data.remote.api
 
 import com.naniger.arzikina.data.remote.RemoteConfig
 import com.naniger.arzikina.data.remote.SyncHttpClient
-import kotlinx.coroutines.suspendCancellableCoroutine
-import okhttp3.Call
-import okhttp3.Callback
 import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.MultipartBody
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.asRequestBody
-import okhttp3.Response
 import java.io.File
-import java.io.IOException
 import javax.inject.Inject
 import javax.inject.Singleton
-import kotlin.coroutines.resume
-import kotlin.coroutines.resumeWithException
 
 /**
  * Transport des images de logo d'émetteur (`server/api/issuer/upload_logo.php` et `get_logo.php`) — le
@@ -60,31 +53,7 @@ class IssuerLogoApi @Inject constructor(
     }
 
     private suspend fun <T> execute(request: Request, transform: (Int, ByteArray) -> T): T =
-        suspendCancellableCoroutine { continuation ->
-            val call = client.newCall(request)
-            continuation.invokeOnCancellation { call.cancel() }
-            call.enqueue(object : Callback {
-                override fun onFailure(call: Call, e: IOException) {
-                    continuation.resumeWithException(e)
-                }
-
-                override fun onResponse(call: Call, response: Response) {
-                    response.use {
-                        if (!it.isSuccessful) {
-                            continuation.resumeWithException(HttpFailureException(it.code, it.message))
-                            return
-                        }
-                        // Garde-fou mémoire : le serveur plafonne à 2 Mo, au-delà ce n'est pas un logo.
-                        if ((it.body?.contentLength() ?: 0L) > MAX_RESPONSE_BYTES) {
-                            continuation.resumeWithException(HttpFailureException(413, "Réponse trop volumineuse"))
-                            return
-                        }
-                        val bytes = it.body?.bytes() ?: ByteArray(0)
-                        continuation.resume(transform(it.code, bytes))
-                    }
-                }
-            })
-        }
+        client.awaitBytes(request, MAX_RESPONSE_BYTES, transform)
 
     private companion object {
         const val MAX_RESPONSE_BYTES = 5_000_000L

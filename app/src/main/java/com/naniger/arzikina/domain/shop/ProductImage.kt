@@ -56,6 +56,26 @@ object ProductImagePolicy {
     fun isRestorableImage(bytes: ByteArray): Boolean =
         bytes.isNotEmpty() && bytes.size <= MAX_BACKUP_IMAGE_BYTES && detectMimeType(bytes) == "image/jpeg"
 
+    /** Taille maximale d'une photo transférée : miroir du plafond serveur (`PRODUCT_IMAGE_MAX_BYTES`, 2 Mo). */
+    const val MAX_SYNC_BYTES: Int = 2_000_000
+
+    /** Une photo reçue du serveur n'est écrite que si son nom est sûr et si c'est un vrai JPEG de taille raisonnable. */
+    fun isValidSyncedImage(name: String, bytes: ByteArray): Boolean =
+        isSafeFileName(name) && bytes.isNotEmpty() && bytes.size <= MAX_SYNC_BYTES && detectMimeType(bytes) == "image/jpeg"
+
+    /**
+     * Nom de photo retenu à la réception d'un produit.
+     * - Le serveur en cite un (et il est sûr) : on l'adopte ; la photo sera téléchargée si elle manque.
+     * - Le serveur n'en cite aucun : si [serverAuthoritative] (les photos de cet appareil ont déjà été envoyées),
+     *   la photo a été retirée ailleurs ; sinon (appareil mis à jour avant son premier envoi de photos) on garde
+     *   la photo locale, qui n'existe peut-être pas encore côté serveur.
+     */
+    fun resolveReceivedName(serverName: String?, localName: String?, serverAuthoritative: Boolean): String? = when {
+        serverName != null -> serverName.takeIf(::isSafeFileName) ?: localName
+        serverAuthoritative -> null
+        else -> localName
+    }
+
     private val safeFileName = Regex("^[A-Za-z0-9-]{1,64}\\.jpg$")
 
     /** Nom simple généré par l'application : jamais de `/`, `..` ni d'extension inattendue. */

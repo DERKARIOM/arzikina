@@ -11,6 +11,7 @@ import com.naniger.arzikina.data.local.dao.SalePaymentDao
 import com.naniger.arzikina.data.local.dao.ShopDao
 import com.naniger.arzikina.data.local.dao.StockMovementDao
 import com.naniger.arzikina.data.local.dao.TransactionDao
+import com.naniger.arzikina.data.local.dao.UserServerLinkDao
 import com.naniger.arzikina.data.local.database.ArzikinaDatabase
 import com.naniger.arzikina.data.remote.dto.ProductCategoryServerStateDto
 import com.naniger.arzikina.data.remote.dto.ProductServerStateDto
@@ -19,6 +20,8 @@ import com.naniger.arzikina.data.remote.dto.SalePaymentServerStateDto
 import com.naniger.arzikina.data.remote.dto.SaleServerStateDto
 import com.naniger.arzikina.data.remote.dto.ShopServerStateDto
 import com.naniger.arzikina.data.remote.dto.StockMovementServerStateDto
+import com.naniger.arzikina.data.shop.ProductImageStore
+import com.naniger.arzikina.data.shop.ShopImageSyncState
 import com.naniger.arzikina.data.shop.ShopSyncMapper
 import com.naniger.arzikina.data.shop.ShopSyncPolicy
 import com.naniger.arzikina.domain.repository.SessionManager
@@ -59,6 +62,9 @@ class ShopSyncHandler @Inject constructor(
     private val issuedReceiptDao: IssuedReceiptDao,
     private val enqueuer: ShopSyncEnqueuer,
     private val sessionManager: SessionManager,
+    private val userServerLinkDao: UserServerLinkDao,
+    private val imageSyncState: ShopImageSyncState,
+    private val imageStore: ProductImageStore,
     private val json: Json
 ) {
 
@@ -81,9 +87,18 @@ class ShopSyncHandler @Inject constructor(
      */
     suspend fun enqueueUnsynced(userId: Long) {
         database.withTransaction {
+            // Rattrapage UNIQUE des photos : relevé AVANT l'envoi des produits jamais synchronisés (qui reçoivent leur
+            // syncId et partent déjà avec leur photo), pour ne pas les mettre deux fois en file. Sans lien serveur
+            // rien n'est enfilé : on ne marque donc rien, le rattrapage aura lieu après la connexion.
+            val linked = userServerLinkDao.getByLocalUserId(userId) != null
+            val backfillImages = !imageSyncState.isBackfilled(userId) && linked
+            val productsWithImage = if (backfillImages) productDao.idsWithImageForSync(userId) else emptyList()
+
             shopDao.getUnsyncedForUser(userId).forEach { enqueuer.enqueueShop(it.id, userId) }
             categoryDao.getUnsyncedForUser(userId).forEach { enqueuer.enqueueCategory(it.id, userId) }
             productDao.getUnsyncedForUser(userId).forEach { enqueuer.enqueueProduct(it.id, userId) }
+            productsWithImage.forEach { enqueuer.enqueueProduct(it, userId) }
+            if (backfillImages) imageSyncState.markBackfilled(userId)
             saleDao.getUnsyncedForUser(userId).forEach { enqueuer.enqueueSale(it.id, userId) }
             saleLineDao.getUnsyncedForUser(userId).forEach { enqueuer.enqueueSaleLine(it.id, userId) }
             movementDao.getUnsyncedForUser(userId).forEach { enqueuer.enqueueMovement(it.id, userId) }
@@ -98,17 +113,21 @@ class ShopSyncHandler @Inject constructor(
      * existe forcément déjà), `true` pour un pull.
      */
     suspend fun apply(entityType: String, element: JsonElement, allowCreate: Boolean) {
+        var replacedImage: String? = null
         database.withTransaction {
             when (entityType) {
                 SHOPS -> applyShop(decode(ShopServerStateDto.serializer(), element), allowCreate)
                 CATEGORIES -> applyCategory(decode(ProductCategoryServerStateDto.serializer(), element), allowCreate)
-                PRODUCTS -> applyProduct(decode(ProductServerStateDto.serializer(), element), allowCreate)
+                PRODUCTS -> replacedImage = applyProduct(decode(ProductServerStateDto.serializer(), element), allowCreate)
                 SALES -> applySale(decode(SaleServerStateDto.serializer(), element), allowCreate)
                 SALE_LINES -> applySaleLine(decode(SaleLineServerStateDto.serializer(), element), allowCreate)
                 SALE_PAYMENTS -> applyPayment(decode(SalePaymentServerStateDto.serializer(), element), allowCreate)
                 STOCK_MOVEMENTS -> applyMovement(decode(StockMovementServerStateDto.serializer(), element), allowCreate)
             }
+            Unit
         }
+        // Fichier de l'ancienne photo supprimé APRÈS la transaction (une suppression de fichier ne s'annule pas).
+        replacedImage?.let(imageStore::delete)
     }
 
     private fun <T> decode(serializer: kotlinx.serialization.KSerializer<T>, element: JsonElement): T =
@@ -135,13 +154,16 @@ class ShopSyncHandler @Inject constructor(
         categoryDao.upsert(ShopSyncMapper.toEntity(s, userId, local, shopId))
     }
 
-    private suspend fun applyProduct(s: ProductServerStateDto, allowCreate: Boolean) {
+    /** @return le nom de l'ANCIENNE photo si elle est remplacée ou retirée (fichier à supprimer), sinon `null`. */
+    private suspend fun applyProduct(s: ProductServerStateDto, allowCreate: Boolean): String? {
         val local = productDao.getBySyncId(s.id)
-        if (!shouldApply(local?.version, s.version, allowCreate, local != null)) return
-        val userId = local?.userId ?: sessionManager.getCurrentUserIdOnce() ?: return
+        if (!shouldApply(local?.version, s.version, allowCreate, local != null)) return null
+        val userId = local?.userId ?: sessionManager.getCurrentUserIdOnce() ?: return null
         val shopId = shopDao.getBySyncId(s.shopSyncId)?.id ?: local?.shopId ?: unresolved(PRODUCTS, s.shopSyncId, s.updatedAt)
         val categoryId = s.categorySyncId?.let { categoryDao.getBySyncId(it)?.id ?: local?.categoryId }
-        productDao.upsert(ShopSyncMapper.toEntity(s, userId, local, shopId, categoryId))
+        val entity = ShopSyncMapper.toEntity(s, userId, local, shopId, categoryId, imageSyncState.isBackfilled(userId))
+        productDao.upsert(entity)
+        return local?.imageFileName?.takeIf { it != entity.imageFileName }
     }
 
     private suspend fun applySale(s: SaleServerStateDto, allowCreate: Boolean) {

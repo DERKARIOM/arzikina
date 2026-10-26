@@ -147,6 +147,13 @@ interface ProductDao {
     @Query("UPDATE products SET purchasePriceMinor = :priceMinor, updatedAt = :now WHERE id = :id AND userId = :userId")
     suspend fun updatePurchasePrice(id: Long, userId: Long, priceMinor: Long, now: Long)
 
+    /** Produits déjà synchronisés qui ont une photo : rattrapage unique de l'envoi des photos (voir `ShopImageSyncState`). */
+    @Query(
+        "SELECT id FROM products WHERE userId = :userId AND syncId IS NOT NULL AND deletedAt IS NULL " +
+            "AND imageFileName IS NOT NULL"
+    )
+    suspend fun idsWithImageForSync(userId: Long): List<Long>
+
     /** Noms des photos référencées par [userId] (nettoyage des fichiers à la suppression du compte). */
     @Query("SELECT imageFileName FROM products WHERE userId = :userId AND imageFileName IS NOT NULL")
     suspend fun imageFileNamesForUser(userId: Long): List<String>

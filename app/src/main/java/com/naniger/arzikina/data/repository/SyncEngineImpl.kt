@@ -144,6 +144,7 @@ class SyncEngineImpl @Inject constructor(
     private val loanSyncEnqueuer: LoanSyncEnqueuer,
     private val issuedReceiptSyncHandler: IssuedReceiptSyncHandler,
     private val shopSyncHandler: ShopSyncHandler,
+    private val productImageSyncHandler: ProductImageSyncHandler,
     private val sessionManager: SessionManager,
     private val legacySavingsGoalMigrator: LegacySavingsGoalMigrator,
     private val json: Json
@@ -197,6 +198,18 @@ class SyncEngineImpl @Inject constructor(
         if (entityType in IssuedReceiptSyncHandler.ENTITY_TYPES) {
             try {
                 issuedReceiptSyncHandler.uploadLogos(entries)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                markFailed(entries, errorMessage = e.message)
+                return 0 to entries.size
+            }
+        }
+
+        // Produits : les photos citées par ce lot partent AVANT le JSON (voir ProductImageSyncHandler.uploadImages).
+        if (entityType == ShopSyncHandler.PRODUCTS) {
+            try {
+                productImageSyncHandler.uploadImages(entries)
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
@@ -297,6 +310,14 @@ class SyncEngineImpl @Inject constructor(
         // jamais bloquant pour les données, retenté au prochain pull.
         try {
             issuedReceiptSyncHandler.downloadMissingLogos()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            // Ignoré : les données sont déjà synchronisées.
+        }
+        // Photos de produits citées par les données reçues et absentes du disque : jamais bloquant, retenté.
+        try {
+            productImageSyncHandler.downloadMissingImages()
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {

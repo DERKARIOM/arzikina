@@ -22,6 +22,7 @@ import com.naniger.arzikina.data.remote.dto.ShopSyncPayload
 import com.naniger.arzikina.data.remote.dto.StockMovementServerStateDto
 import com.naniger.arzikina.data.remote.dto.StockMovementSyncPayload
 import com.naniger.arzikina.domain.model.SyncOperation
+import com.naniger.arzikina.domain.shop.ProductImagePolicy
 import java.util.UUID
 
 /**
@@ -34,9 +35,9 @@ import java.util.UUID
  *  - à la réception, les ids Room locaux correspondants (voir `SYNC-BOUTIQUE-CONTRAT.md`).
  * Ce découpage garde le mapper testable sans base de données.
  *
- * À la réception, les colonnes locales absentes du serveur sont conservées depuis la ligne existante
- * ([ProductEntity.stockMilli], [ProductEntity.imageFileName]) ; le stock est ensuite recalculé depuis les
- * mouvements par l'appelant.
+ * À la réception, le cache de stock ([ProductEntity.stockMilli]) est conservé depuis la ligne existante puis
+ * recalculé depuis les mouvements par l'appelant ; le nom de la photo suit [ProductImagePolicy.resolveReceivedName]
+ * (le fichier lui-même est transféré à part, voir `ProductImageSyncHandler`).
  */
 internal object ShopSyncMapper {
 
@@ -74,7 +75,7 @@ internal object ShopSyncMapper {
         categorySyncId = categorySyncId, name = e.name, description = e.description, sku = e.sku,
         barcode = e.barcode, unit = e.unit, purchasePriceMinor = e.purchasePriceMinor,
         salePriceMinor = e.salePriceMinor, minStockMilli = e.minStockMilli, expiryDate = e.expiryDate,
-        isArchived = e.isArchived, createdAt = e.createdAt, updatedAt = e.updatedAt
+        imageFileName = e.imageFileName, isArchived = e.isArchived, createdAt = e.createdAt, updatedAt = e.updatedAt
     )
 
     fun toPayload(
@@ -132,8 +133,10 @@ internal object ShopSyncMapper {
             deletedAt = s.deletedAt, version = s.version
         )
 
+    /** [serverAuthoritativeImage] : voir [ProductImagePolicy.resolveReceivedName]. */
     fun toEntity(
-        s: ProductServerStateDto, userId: Long, local: ProductEntity?, shopId: Long, categoryId: Long?
+        s: ProductServerStateDto, userId: Long, local: ProductEntity?, shopId: Long, categoryId: Long?,
+        serverAuthoritativeImage: Boolean = false
     ) = ProductEntity(
         id = local?.id ?: 0L, userId = userId, shopId = shopId, categoryId = categoryId, name = s.name,
         description = s.description, sku = s.sku, barcode = s.barcode, unit = s.unit,
@@ -141,7 +144,7 @@ internal object ShopSyncMapper {
         minStockMilli = s.minStockMilli,
         stockMilli = local?.stockMilli ?: 0L,          // cache : recalculé depuis les mouvements
         expiryDate = s.expiryDate,
-        imageFileName = local?.imageFileName,          // photos non synchronisées pour l'instant
+        imageFileName = ProductImagePolicy.resolveReceivedName(s.imageFileName, local?.imageFileName, serverAuthoritativeImage),
         isArchived = s.isArchived != 0,
         createdAt = s.createdAt, updatedAt = s.updatedAt, syncId = s.id,
         deletedAt = s.deletedAt, version = s.version

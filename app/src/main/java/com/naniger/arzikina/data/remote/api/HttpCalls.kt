@@ -11,6 +11,40 @@ import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
 /**
+ * Pont callback OkHttp → coroutine pour les transferts de FICHIERS (logos, photos) : renvoie `transform(code, octets)`.
+ * Réponse non-2xx → [HttpFailureException] (le code permet de distinguer un refus définitif d'une panne
+ * temporaire) ; réponse plus grande que [maxBytes] → [HttpFailureException] 413 (garde-fou mémoire).
+ */
+internal suspend fun <T> OkHttpClient.awaitBytes(
+    request: Request,
+    maxBytes: Long,
+    transform: (Int, ByteArray) -> T
+): T = suspendCancellableCoroutine { continuation ->
+    val call = newCall(request)
+    continuation.invokeOnCancellation { call.cancel() }
+    call.enqueue(object : Callback {
+        override fun onFailure(call: Call, e: IOException) {
+            continuation.resumeWithException(e)
+        }
+
+        override fun onResponse(call: Call, response: Response) {
+            response.use {
+                if (!it.isSuccessful) {
+                    continuation.resumeWithException(HttpFailureException(it.code, it.message))
+                    return
+                }
+                if ((it.body?.contentLength() ?: 0L) > maxBytes) {
+                    continuation.resumeWithException(HttpFailureException(413, "Réponse trop volumineuse"))
+                    return
+                }
+                val bytes = it.body?.bytes() ?: ByteArray(0)
+                continuation.resume(transform(it.code, bytes))
+            }
+        }
+    })
+}
+
+/**
  * Pont callback OkHttp → coroutine, partagé par les clients HTTP de `data/remote/api/`.
  *
  * - Annule l'appel HTTP si la coroutine est annulée.

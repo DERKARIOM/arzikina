@@ -35,15 +35,43 @@ class ShopSyncMapperTest {
     }
 
     @Test
-    fun `payload produit ne transporte ni stock ni image mais les cles etrangeres en syncId`() {
+    fun `payload produit ne transporte pas le stock mais le nom de la photo et les cles etrangeres en syncId`() {
         val p = ShopSyncMapper.toPayload(product, "p-1", SyncOperation.CREATE, "s-1", "c-1")
         assertEquals("s-1", p.shopSyncId)
         assertEquals("c-1", p.categorySyncId)
         assertTrue(p.isArchived)
         val json = JSON.encodeToString(ProductSyncPayload.serializer(), p)
         assertFalse(json.contains("stockMilli"))
-        assertFalse(json.contains("imageFileName"))
+        assertTrue(json.contains("\"imageFileName\":\"a.jpg\""))
         assertTrue(json.contains("\"minStockMilli\""))
+    }
+
+    @Test
+    fun `retrait de la photo est transporte par un null explicite`() {
+        val p = ShopSyncMapper.toPayload(product.copy(imageFileName = null), "p-1", SyncOperation.UPDATE, "s-1", null)
+        assertTrue(JSON.encodeToString(ProductSyncPayload.serializer(), p).contains("\"imageFileName\":null"))
+    }
+
+    @Test
+    fun `reception produit adopte la photo du serveur`() {
+        val state = ProductServerStateDto(
+            id = "p-1", shopSyncId = "s-1", name = "Riz", unit = "kg", salePriceMinor = 600, minStockMilli = 0,
+            imageFileName = "b.jpg", createdAt = 10, updatedAt = 30, version = 5
+        )
+        assertEquals("b.jpg", ShopSyncMapper.toEntity(state, 1, product, shopId = 2, categoryId = null).imageFileName)
+        assertEquals("b.jpg", ShopSyncMapper.toEntity(state, 1, null, shopId = 2, categoryId = null).imageFileName)
+    }
+
+    @Test
+    fun `reception produit sans photo retire la photo locale seulement une fois le rattrapage fait`() {
+        val state = ProductServerStateDto(
+            id = "p-1", shopSyncId = "s-1", name = "Riz", unit = "kg", salePriceMinor = 600,
+            minStockMilli = 0, createdAt = 10, updatedAt = 30, version = 5
+        )
+        val before = ShopSyncMapper.toEntity(state, 1, product, shopId = 2, categoryId = null, serverAuthoritativeImage = false)
+        val after = ShopSyncMapper.toEntity(state, 1, product, shopId = 2, categoryId = null, serverAuthoritativeImage = true)
+        assertEquals("a.jpg", before.imageFileName)
+        assertNull(after.imageFileName)
     }
 
     @Test
