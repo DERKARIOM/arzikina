@@ -27,6 +27,13 @@ android {
     }
 
     buildTypes {
+        debug {
+            // Cohabite avec l'application déjà installée (signée par une autre clé : release / Play Store) au lieu
+            // d'échouer avec INSTALL_FAILED_UPDATE_INCOMPATIBLE. Données locales SÉPARÉES de l'application
+            // installée. Pas de `versionNameSuffix` : la politique de version (VersionGate) lit versionName.
+            // Voir claude/shop/WEB-BOUTIQUE.md (section « Build debug »).
+            applicationIdSuffix = ".debug"
+        }
         release {
             isMinifyEnabled = false
             proguardFiles(
