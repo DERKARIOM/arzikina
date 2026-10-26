@@ -3,6 +3,7 @@ package com.naniger.arzikina.data.local.dao
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.Query
+import androidx.room.Upsert
 import androidx.room.Update
 import com.naniger.arzikina.data.local.entity.ProductEntity
 import kotlinx.coroutines.flow.Flow
@@ -151,6 +152,22 @@ interface ProductDao {
     suspend fun imageFileNamesForUser(userId: Long): List<String>
 
     /** Purge TOUTES les lignes de [userId] (restauration de sauvegarde, suppression du compte). */
+    /** Réservé au gestionnaire de synchronisation (voir `ShopSyncHandler`) : `syncId` est unique tous utilisateurs confondus. */
+    @Query("SELECT * FROM products WHERE syncId = :syncId LIMIT 1")
+    suspend fun getBySyncId(syncId: String): ProductEntity?
+
+    /** Insère (id 0) ou met à jour la ligne telle que reçue du serveur. */
+    @Upsert
+    suspend fun upsert(row: ProductEntity): Long
+
+    /** Rattrapage de la synchronisation : lignes jamais enfilées (voir `ShopSyncHandler.enqueueUnsynced`). */
+    @Query("SELECT * FROM products WHERE userId = :userId AND deletedAt IS NULL AND syncId IS NULL ORDER BY id")
+    suspend fun getUnsyncedForUser(userId: Long): List<ProductEntity>
+
+    /** Attribue l'identité de synchronisation (voir `ShopSyncEnqueuer`) ; sans effet sur `updatedAt`. */
+    @Query("UPDATE products SET syncId = :syncId WHERE id = :id AND userId = :userId")
+    suspend fun setSyncId(id: Long, userId: Long, syncId: String)
+
     @Query("DELETE FROM products WHERE userId = :userId")
     suspend fun deleteAllForUser(userId: Long)
 }

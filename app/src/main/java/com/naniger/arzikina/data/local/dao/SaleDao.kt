@@ -3,6 +3,7 @@ package com.naniger.arzikina.data.local.dao
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.Query
+import androidx.room.Upsert
 import com.naniger.arzikina.data.local.entity.SaleEntity
 import kotlinx.coroutines.flow.Flow
 
@@ -113,6 +114,18 @@ interface SaleDao {
     fun observeDaily(userId: Long, shopId: Long, fromMillis: Long, toMillis: Long, offsetMillis: Long): Flow<List<DailyRevenueRow>>
 
     /** Purge TOUTES les lignes de [userId] (restauration de sauvegarde, suppression du compte). */
+    /** Insère (id 0) ou met à jour la ligne telle que reçue du serveur. */
+    @Upsert
+    suspend fun upsert(row: SaleEntity): Long
+
+    /** Rattrapage de la synchronisation : lignes jamais enfilées (voir `ShopSyncHandler.enqueueUnsynced`). */
+    @Query("SELECT * FROM sales WHERE userId = :userId AND deletedAt IS NULL AND (syncId IS NULL OR id IN (SELECT saleId FROM sale_lines WHERE syncId IS NULL)) ORDER BY id")
+    suspend fun getUnsyncedForUser(userId: Long): List<SaleEntity>
+
+    /** Attribue l'identité de synchronisation (voir `ShopSyncEnqueuer`) ; sans effet sur `updatedAt`. */
+    @Query("UPDATE sales SET syncId = :syncId WHERE id = :id AND userId = :userId")
+    suspend fun setSyncId(id: Long, userId: Long, syncId: String)
+
     @Query("DELETE FROM sales WHERE userId = :userId")
     suspend fun deleteAllForUser(userId: Long)
 }

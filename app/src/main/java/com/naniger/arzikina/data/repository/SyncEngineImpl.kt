@@ -143,6 +143,7 @@ class SyncEngineImpl @Inject constructor(
     private val transactionSyncEnqueuer: TransactionSyncEnqueuer,
     private val loanSyncEnqueuer: LoanSyncEnqueuer,
     private val issuedReceiptSyncHandler: IssuedReceiptSyncHandler,
+    private val shopSyncHandler: ShopSyncHandler,
     private val sessionManager: SessionManager,
     private val legacySavingsGoalMigrator: LegacySavingsGoalMigrator,
     private val json: Json
@@ -367,20 +368,39 @@ class SyncEngineImpl @Inject constructor(
                 break // Échec réseau/serveur/décodage : le curseur n'a pas avancé, rien n'est perdu.
             }
 
+            // Plus ancien `updatedAt` d'une ligne dont le parent n'est pas encore connu (module Boutique) : le
+            // curseur ne dépasse pas cette ligne, elle sera reprise au prochain pull (voir ShopSyncHandler).
+            var earliestDeferred: Long? = null
             response.entities.forEach { element ->
                 received++
-                runCatching { applyServerEntity(entityType, element, allowCreate = true) }.onSuccess { applied++ }
-                // Ligne malformée ignorée silencieusement (voir SyncPullResult.received/applied) :
-                // ne bloque jamais le reste du lot, ni les autres types d'entité.
+                try {
+                    applyServerEntity(entityType, element, allowCreate = true)
+                    applied++
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: ShopSyncHandler.UnresolvedReferenceException) {
+                    if (e.deferrable) earliestDeferred = minOf(earliestDeferred ?: e.updatedAt, e.updatedAt)
+                } catch (e: Exception) {
+                    // Ligne malformée ignorée silencieusement (voir SyncPullResult.received/applied) :
+                    // ne bloque jamais le reste du lot, ni les autres types d'entité.
+                }
             }
 
             val isFullBatch = SyncPullCursor.isFullBatch(response.entities.size)
-            cursor = SyncPullCursor.next(
+            val next = SyncPullCursor.next(
                 current = cursor,
                 updatedAts = response.entities.mapNotNull { it.updatedAtOrNull() },
                 serverTime = response.serverTime,
                 isFull = isFullBatch
             )
+            val deferredAt = earliestDeferred
+            if (deferredAt != null) {
+                // Jamais en arrière, jamais au-delà de la ligne en attente ; on s'arrête là jusqu'au prochain pull.
+                cursor = maxOf(cursor, minOf(next, deferredAt - 1))
+                syncCursorStore.setLastPulledAt(entityType, cursor)
+                break
+            }
+            cursor = next
             syncCursorStore.setLastPulledAt(entityType, cursor)
 
             if (!isFullBatch) break
@@ -429,6 +449,9 @@ class SyncEngineImpl @Inject constructor(
                 issuedReceiptSyncHandler.applyProfile(json.decodeFromJsonElement(IssuerProfileServerStateDto.serializer(), element), allowCreate)
             IssuedReceiptSyncHandler.ENTITY_TYPE_RECEIPT ->
                 issuedReceiptSyncHandler.applyReceipt(json.decodeFromJsonElement(IssuedReceiptServerStateDto.serializer(), element), allowCreate)
+            // Module Boutique : décodage, résolution des références et recalcul du stock dans ShopSyncHandler.
+            in ShopSyncHandler.ENTITY_TYPES ->
+                shopSyncHandler.apply(entityType, element, allowCreate)
         }
     }
 
@@ -562,6 +585,9 @@ class SyncEngineImpl @Inject constructor(
         // Profil émetteur et reçus émis : documents autonomes, aucune référence croisée, ordre libre
         // (voir IssuedReceiptSyncHandler.enqueueUnsynced).
         issuedReceiptSyncHandler.enqueueUnsynced(userId)
+        // Module Boutique, TOUT À LA FIN : ses lignes référencent les comptes, les transactions et les reçus
+        // émis par leur `syncId` (voir ShopSyncHandler.enqueueUnsynced pour l'ordre interne).
+        shopSyncHandler.enqueueUnsynced(userId)
     }
 
     /**
@@ -1543,7 +1569,10 @@ class SyncEngineImpl @Inject constructor(
             "transactions", "loans", "loan_payments", "recurring_transactions",
             "recurring_transaction_occurrences", "financial_plan_items", "user_preferences",
             "transaction_templates", "issuer_profiles", "issued_receipts"
-        )
+        ) +
+            // Module Boutique : APRÈS `accounts`, `transactions` et `issued_receipts` (références des paiements
+            // et des ventes), parents avant enfants — l'ordre est défini par ShopSyncHandler.ENTITY_TYPES.
+            ShopSyncHandler.ENTITY_TYPES
         const val MAX_ERROR_MESSAGE_LENGTH = 200
 
         /** Délai minimal (ms) avant de retenter une entrée `FAILED`, indexé sur `retryCount - 1` —

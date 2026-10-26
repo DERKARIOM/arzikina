@@ -22,14 +22,15 @@ import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 /**
- * Implémentation Room de [ShopRepository]. La boutique est créée sans `syncId` : le gestionnaire de
- * synchronisation du module (étape « Ventes ») rattrape les lignes à `syncId` nul.
+ * Implémentation Room de [ShopRepository]. La création est enfilée pour la synchronisation dans la même
+ * transaction ([ShopSyncEnqueuer], qui attribue le `syncId`).
  */
 class ShopRepositoryImpl @Inject constructor(
     private val database: ArzikinaDatabase,
     private val shopDao: ShopDao,
     private val sessionManager: SessionManager,
     private val preferences: UserPreferencesRepository,
+    private val shopSync: ShopSyncEnqueuer,
     @IoDispatcher private val ioDispatcher: CoroutineDispatcher
 ) : ShopRepository {
 
@@ -54,7 +55,9 @@ class ShopRepositoryImpl @Inject constructor(
                     createdAt = now,
                     updatedAt = now
                 )
-                entity.copy(id = shopDao.insert(entity)).toDomain()
+                val id = shopDao.insert(entity)
+                shopSync.enqueueShop(id, userId)
+                entity.copy(id = id).toDomain()
             }
         }
     }

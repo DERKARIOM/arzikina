@@ -31,12 +31,13 @@ import javax.inject.Inject
 /**
  * Implémentation Room de [StockRepository]. Toutes les règles viennent de [StockMovementPolicy] ; ici
  * seulement : lecture du stock courant, écriture du mouvement et du cache `stockMilli` dans UNE transaction.
- * Les mouvements sont créés sans `syncId` (rattrapage par la synchronisation du module, étape Ventes).
+ * Chaque mouvement est enfilé pour la synchronisation dans la même transaction ([ShopSyncEnqueuer]).
  */
 class StockRepositoryImpl @Inject constructor(
     private val database: ArzikinaDatabase,
     private val productDao: ProductDao,
     private val movementDao: StockMovementDao,
+    private val shopSync: ShopSyncEnqueuer,
     private val sessionManager: SessionManager,
     @IoDispatcher private val ioDispatcher: CoroutineDispatcher
 ) : StockRepository {
@@ -108,7 +109,7 @@ class StockRepositoryImpl @Inject constructor(
             is StockChangePlan.Accepted -> plan.newStockMilli
         }
         val now = System.currentTimeMillis()
-        movementDao.insert(
+        val movementId = movementDao.insert(
             StockMovementEntity(
                 userId = userId,
                 productId = product.id,
@@ -123,10 +124,12 @@ class StockRepositoryImpl @Inject constructor(
                 updatedAt = now
             )
         )
+        shopSync.enqueueMovement(movementId, userId)
         productDao.updateStock(product.id, userId, newStock, now)
         val cost = request.unitCostMinor
         if (request.updatePurchasePrice && request.type == StockMovementType.RESTOCK && cost != null) {
             productDao.updatePurchasePrice(product.id, userId, cost, now)
+            shopSync.enqueueProduct(product.id, userId) // le prix d'achat fait partie des champs synchronisés
         }
         return newStock
     }

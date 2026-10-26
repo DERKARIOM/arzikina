@@ -45,6 +45,7 @@ class ProductRepositoryImpl @Inject constructor(
     private val productDao: ProductDao,
     private val categoryDao: ProductCategoryDao,
     private val movementDao: StockMovementDao,
+    private val shopSync: ShopSyncEnqueuer,
     private val sessionManager: SessionManager,
     private val activeShop: ActiveShopProvider,
     private val imageStore: ProductImageStore,
@@ -166,8 +167,9 @@ class ProductRepositoryImpl @Inject constructor(
                 updatedAt = now
             )
         )
+        shopSync.enqueueProduct(productId, scope.userId)
         if (draft.initialStockMilli != 0L) {
-            movementDao.insert(
+            val movementId = movementDao.insert(
                 StockMovementEntity(
                     userId = scope.userId,
                     productId = productId,
@@ -182,6 +184,7 @@ class ProductRepositoryImpl @Inject constructor(
                     updatedAt = now
                 )
             )
+            shopSync.enqueueMovement(movementId, scope.userId)
         }
         return productId
     }
@@ -212,6 +215,7 @@ class ProductRepositoryImpl @Inject constructor(
                 updatedAt = now
             )
         )
+        shopSync.enqueueProduct(existing.id, scope.userId)
         val orphan = existing.imageFileName?.takeIf { it != finalImage }
         return SavedProduct(existing.id, orphan)
     }
@@ -222,6 +226,7 @@ class ProductRepositoryImpl @Inject constructor(
             val existing = productDao.getById(id, userId) ?: throw ProductException.NotFound(id)
             if (existing.isArchived != archived) {
                 productDao.update(existing.copy(isArchived = archived, updatedAt = System.currentTimeMillis()))
+                shopSync.enqueueProduct(id, userId)
             }
         }
     }
@@ -240,7 +245,9 @@ class ProductRepositoryImpl @Inject constructor(
                     createdAt = now,
                     updatedAt = now
                 )
-                entity.copy(id = categoryDao.insert(entity)).toDomain()
+                val id = categoryDao.insert(entity)
+                shopSync.enqueueCategory(id, scope.userId)
+                entity.copy(id = id).toDomain()
             }
         }
     }

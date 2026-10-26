@@ -67,8 +67,9 @@ import javax.inject.Inject
  * comme `TransactionRepositoryImpl.saveTransaction`.
  *
  * Idempotence : le `syncId` de la vente est la clé du panier ([SaleRequest.draftKey]).
- * Les lignes/encaissements/mouvements sont créés sans `syncId` (rattrapage par la synchronisation du
- * module, comme le reste du module Boutique).
+ * Vente, lignes, encaissement et mouvements sont enfilés pour la synchronisation dans la MÊME
+ * transaction Room ([ShopSyncEnqueuer], parents avant enfants) ; l'annulation enfile la vente, les mouvements
+ * d'annulation et les encaissements mis à jour.
  */
 class SaleRepositoryImpl @Inject constructor(
     private val database: ArzikinaDatabase,
@@ -83,6 +84,7 @@ class SaleRepositoryImpl @Inject constructor(
     private val categoryDao: CategoryDao,
     private val transactionDao: TransactionDao,
     private val categorySyncEnqueuer: CategorySyncEnqueuer,
+    private val shopSync: ShopSyncEnqueuer,
     private val transactionSyncEnqueuer: TransactionSyncEnqueuer,
     private val sessionManager: SessionManager,
     @IoDispatcher private val ioDispatcher: CoroutineDispatcher
@@ -146,7 +148,11 @@ class SaleRepositoryImpl @Inject constructor(
     override suspend fun linkReceipt(saleId: Long, receiptId: Long, expectedCurrent: Long?): Boolean =
         withContext(ioDispatcher) {
             val userId = sessionManager.getCurrentUserIdOnce() ?: throw SaleException.NoSession()
-            saleDao.linkReceipt(saleId, userId, receiptId, expectedCurrent ?: NO_RECEIPT, System.currentTimeMillis()) > 0
+            database.withTransaction {
+                val linked = saleDao.linkReceipt(saleId, userId, receiptId, expectedCurrent ?: NO_RECEIPT, System.currentTimeMillis()) > 0
+                if (linked) shopSync.enqueueSale(saleId, userId)
+                linked
+            }
         }
 
     override suspend fun cancelSale(id: Long, reason: String?): Sale = withContext(ioDispatcher) {
@@ -165,13 +171,14 @@ class SaleRepositoryImpl @Inject constructor(
         val now = System.currentTimeMillis()
         // La mise à jour conditionnelle est la garde : 0 ligne = déjà annulée (rejeu ou course), rien à refaire.
         if (saleDao.markCancelled(saleId, userId, now, reason) == 0) return emptyList()
+        shopSync.enqueueSale(saleId, userId)
 
         saleLineDao.getForSale(userId, saleId).forEach { line ->
             // Produit supprimé depuis la vente : plus de stock à restaurer.
             val product = productDao.getById(line.productId, userId) ?: return@forEach
             val restored = SaleCancellation.restoredStock(product.stockMilli, line.quantityMilli)
                 ?: throw SaleException.InvalidAmount()
-            movementDao.insert(
+            val movementId = movementDao.insert(
                 StockMovementEntity(
                     userId = userId,
                     productId = product.id,
@@ -186,6 +193,7 @@ class SaleRepositoryImpl @Inject constructor(
                     updatedAt = now
                 )
             )
+            shopSync.enqueueMovement(movementId, userId)
             productDao.updateStock(product.id, userId, restored, now)
         }
 
@@ -213,6 +221,7 @@ class SaleRepositoryImpl @Inject constructor(
             )
             val reversalId = transactionDao.upsert(reversal)
             salePaymentDao.setReversal(payment.id, userId, reversalId, now)
+            shopSync.enqueuePayment(payment.id, userId)
             created += reversal.copy(id = reversalId)
         }
         return created
@@ -244,6 +253,7 @@ class SaleRepositoryImpl @Inject constructor(
         val now = System.currentTimeMillis()
         val reference = newReference(now)
         val saleId = saleDao.insert(saleEntity(userId, shop.id, shop.currencyCode, request.draftKey, reference, now, plan))
+        shopSync.enqueueSale(saleId, userId, created = true)
         saleLineDao.insertAll(plan.lines.map { line ->
             SaleLineEntity(
                 userId = userId,
@@ -258,8 +268,9 @@ class SaleRepositoryImpl @Inject constructor(
                 updatedAt = now
             )
         })
+        shopSync.enqueueSaleLines(saleId, userId)
         plan.lines.forEach { line ->
-            movementDao.insert(
+            val movementId = movementDao.insert(
                 StockMovementEntity(
                     userId = userId,
                     productId = line.productId,
@@ -274,6 +285,7 @@ class SaleRepositoryImpl @Inject constructor(
                     updatedAt = now
                 )
             )
+            shopSync.enqueueMovement(movementId, userId)
             productDao.updateStock(line.productId, userId, line.newStockMilli, now)
         }
 
@@ -296,7 +308,7 @@ class SaleRepositoryImpl @Inject constructor(
             updatedAt = now
         )
         val transactionId = transactionDao.upsert(income)
-        salePaymentDao.insert(
+        val paymentId = salePaymentDao.insert(
             SalePaymentEntity(
                 userId = userId,
                 saleId = saleId,
@@ -310,8 +322,12 @@ class SaleRepositoryImpl @Inject constructor(
                 updatedAt = now
             )
         )
+        shopSync.enqueuePayment(paymentId, userId)
         // Le compte choisi devient le compte proposé par défaut aux prochaines ventes.
-        if (shop.accountId != account.id) shopDao.updateAccount(shop.id, userId, account.id, now)
+        if (shop.accountId != account.id) {
+            shopDao.updateAccount(shop.id, userId, account.id, now)
+            shopSync.enqueueShop(shop.id, userId)
+        }
 
         return Outcome(saleId, income.copy(id = transactionId))
     }
