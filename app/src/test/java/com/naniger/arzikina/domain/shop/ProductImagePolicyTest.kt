@@ -42,4 +42,16 @@ class ProductImagePolicyTest {
         assertFalse(ProductImagePolicy.isSafeFileName(".jpg"))
         assertFalse(ProductImagePolicy.isSafeFileName(""))
     }
+
+    @Test
+    fun `seul un jpeg raisonnable est restaure depuis une sauvegarde`() {
+        val jpeg = byteArrayOf(0xFF.toByte(), 0xD8.toByte(), 0xFF.toByte(), 0xE0.toByte(), 0, 0x10, 0x4A, 0x46)
+        assertTrue(ProductImagePolicy.isRestorableImage(jpeg))
+        assertFalse(ProductImagePolicy.isRestorableImage(ByteArray(0)))
+        assertFalse(ProductImagePolicy.isRestorableImage("pas une image".toByteArray()))
+        val png = byteArrayOf(0x89.toByte(), 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A)
+        assertFalse(ProductImagePolicy.isRestorableImage(png))
+        val tooBig = jpeg + ByteArray(ProductImagePolicy.MAX_BACKUP_IMAGE_BYTES)
+        assertFalse(ProductImagePolicy.isRestorableImage(tooBig))
+    }
 }

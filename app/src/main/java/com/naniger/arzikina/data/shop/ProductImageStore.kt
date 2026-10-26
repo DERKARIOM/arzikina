@@ -84,6 +84,16 @@ class ProductImageStore @Inject constructor(
         }
     }
 
+    /**
+     * Réécrit une photo issue d'une sauvegarde sous un NOUVEAU nom. Seuls des JPEG de taille raisonnable sont
+     * acceptés (ce que [import] produit) : un fichier de sauvegarde n'est pas digne de confiance.
+     * @return le nom du nouveau fichier. @throws ProductImageException si le contenu est refusé.
+     */
+    fun restore(bytes: ByteArray): String {
+        if (!ProductImagePolicy.isRestorableImage(bytes)) throw ProductImageException(Reason.UNSUPPORTED_TYPE)
+        return write(bytes)
+    }
+
     override fun resolve(fileName: String?): File? {
         if (fileName == null || !ProductImagePolicy.isSafeFileName(fileName)) return null
         return File(directory, fileName).takeIf { it.isFile }

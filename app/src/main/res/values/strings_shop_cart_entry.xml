@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Boutique : ajout au panier depuis la liste des produits. -->
+<resources>
+    <string name="shop_add_to_cart">Ajouter au panier</string>
+    <string name="shop_cart_open">Panier</string>
+</resources>

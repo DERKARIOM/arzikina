@@ -2,6 +2,7 @@ package com.naniger.arzikina.presentation.shop.products
 
 import android.os.Bundle
 import android.view.View
+import android.widget.TextView
 import androidx.core.os.bundleOf
 import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.Fragment
@@ -10,6 +11,7 @@ import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -17,6 +19,7 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import com.naniger.arzikina.R
 import com.naniger.arzikina.databinding.FragmentShopProductsBinding
+import com.naniger.arzikina.domain.shop.CartAddResult
 import com.naniger.arzikina.domain.shop.ProductAvailability
 import com.naniger.arzikina.domain.shop.ProductFilter
 import com.naniger.arzikina.domain.shop.ProductSort
@@ -35,6 +38,9 @@ class ShopProductsFragment : Fragment(R.layout.fragment_shop_products) {
     /** Mode « sélection » (ouvert depuis le panier de vente) : un clic renvoie le produit au lieu d'ouvrir sa fiche. */
     private val pickMode: Boolean get() = arguments?.getBoolean(ShopPickResult.ARG_PICK_MODE, false) ?: false
 
+    /** Vrai quand la liste est une page de l'onglet Boutique (son parent n'est pas le NavHost) : pas de flèche retour. */
+    private val embeddedInShopHome: Boolean get() = parentFragment !is NavHostFragment
+
     /** Grille (photos) par défaut ; la bascule liste/grille survit à la rotation. */
     private var gridMode = true
 
@@ -52,8 +58,17 @@ class ShopProductsFragment : Fragment(R.layout.fragment_shop_products) {
         val b = FragmentShopProductsBinding.bind(view)
         binding = b
 
-        b.toolbar.setNavigationOnClickListener { findNavController().navigateUp() }
+        if (embeddedInShopHome) {
+            // Page d'accueil de l'onglet Boutique : pas de retour, on est déjà à la racine.
+            b.toolbar.navigationIcon = null
+            // Le libellé « Produits » est déjà porté par l'onglet : la barre ne garde que les actions.
+            b.toolbar.title = null
+        } else {
+            b.toolbar.setNavigationOnClickListener { findNavController().navigateUp() }
+        }
         b.toolbar.setOnMenuItemClickListener(::onMenuItem)
+        if (!pickMode) adapter.onAddToCart = viewModel::addToCart
+        setUpCartAction(b)
         gridMode = savedInstanceState?.getBoolean(STATE_GRID_MODE, true) ?: true
         applyDisplayMode(b)
         b.productsList.itemAnimator = null
@@ -73,6 +88,8 @@ class ShopProductsFragment : Fragment(R.layout.fragment_shop_products) {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch { viewModel.uiState.collect(::render) }
                 launch { viewModel.filter.collect(::renderFilter) }
+                launch { viewModel.cartCount.collect(::renderCartCount) }
+                launch { viewModel.cartRefusals.collect(::showCartRefusal) }
             }
         }
     }
@@ -80,6 +97,30 @@ class ShopProductsFragment : Fragment(R.layout.fragment_shop_products) {
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         outState.putBoolean(STATE_GRID_MODE, gridMode)
+    }
+
+    /** Icône panier : masquée en mode sélection (on y est déjà dans un panier), sinon ouvre l'écran de vente. */
+    private fun setUpCartAction(b: FragmentShopProductsBinding) {
+        val item = b.toolbar.menu.findItem(R.id.action_shop_cart) ?: return
+        item.isVisible = !pickMode
+        item.actionView?.setOnClickListener { findNavController().navigate(R.id.saleCartFragment) }
+    }
+
+    private fun renderCartCount(count: Int) {
+        val badge = binding?.toolbar?.menu?.findItem(R.id.action_shop_cart)?.actionView
+            ?.findViewById<TextView>(R.id.cartBadge) ?: return
+        badge.visibility = if (count > 0) View.VISIBLE else View.GONE
+        badge.text = if (count > MAX_BADGE) "$MAX_BADGE+" else count.toString()
+    }
+
+    private fun showCartRefusal(result: CartAddResult) {
+        val message = when (result) {
+            CartAddResult.UNAVAILABLE -> R.string.shop_cart_err_unavailable
+            CartAddResult.OUT_OF_STOCK -> R.string.shop_cart_err_out_of_stock
+            CartAddResult.STOCK_LIMIT -> R.string.shop_cart_err_stock_limit
+            CartAddResult.ADDED -> return
+        }
+        binding?.root?.let { Snackbar.make(it, message, Snackbar.LENGTH_SHORT).show() }
     }
 
     /** Applique grille ou liste : les deux modes ont des ViewHolders différents, l'adapter est donc réassigné. */
@@ -192,5 +233,6 @@ class ShopProductsFragment : Fragment(R.layout.fragment_shop_products) {
     private companion object {
         const val STATE_GRID_MODE = "shop_products_grid_mode"
         const val GRID_SPAN_COUNT = 2
+        const val MAX_BADGE = 99
     }
 }

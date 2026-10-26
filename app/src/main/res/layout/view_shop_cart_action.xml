@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Icône panier de la barre d'outils des produits (actionLayout de action_shop_cart) : pictogramme + pastille
+    du nombre de produits, masquée tant que le panier est vide.
+-->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="48dp"
+    android:layout_height="48dp"
+    android:background="?attr/selectableItemBackgroundBorderless"
+    android:clickable="true"
+    android:contentDescription="@string/shop_cart_open"
+    android:focusable="true">
+
+    <ImageView
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:layout_gravity="center"
+        android:importantForAccessibility="no"
+        android:src="@drawable/ic_shopping_cart_24"
+        app:tint="?attr/colorOnSurface" />
+
+    <TextView
+        android:id="@+id/cartBadge"
+        style="@style/TextAppearance.Material3.LabelSmall"
+        android:layout_width="wrap_content"
+        android:layout_height="16dp"
+        android:layout_gravity="top|end"
+        android:layout_marginTop="6dp"
+        android:layout_marginEnd="4dp"
+        android:background="@drawable/bg_cart_badge"
+        android:backgroundTint="?attr/colorPrimary"
+        android:gravity="center"
+        android:minWidth="16dp"
+        android:paddingHorizontal="4dp"
+        android:textColor="?attr/colorOnPrimary"
+        android:textSize="10sp"
+        android:visibility="gone"
+        tools:text="3"
+        tools:visibility="visible" />
+</FrameLayout>

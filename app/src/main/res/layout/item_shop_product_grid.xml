@@ -91,14 +91,35 @@
             android:layout_height="wrap_content"
             android:layout_marginHorizontal="12dp"
             android:layout_marginTop="2dp"
-            android:layout_marginBottom="12dp"
             android:ellipsize="end"
             android:maxLines="1"
             android:textColor="@color/arzikina_on_balance_card_variant"
-            app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/productPrice"
             tools:text="Stock : 24 pce" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/addToCartButton"
+            style="@style/Widget.Material3.Button.TonalButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="8dp"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="8dp"
+            android:insetTop="0dp"
+            android:insetBottom="0dp"
+            android:minHeight="40dp"
+            android:paddingHorizontal="8dp"
+            android:text="@string/shop_add_to_cart"
+            android:textSize="12sp"
+            app:cornerRadius="@dimen/corner_radius_button"
+            app:icon="@drawable/ic_add_shopping_cart_24"
+            app:iconGravity="textStart"
+            app:iconSize="18dp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/productQuantity" />
     </androidx.constraintlayout.widget.ConstraintLayout>
 </com.google.android.material.card.MaterialCardView>

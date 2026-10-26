@@ -2,6 +2,11 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
     <item
+        android:id="@+id/action_shop_cart"
+        android:title="@string/shop_cart_open"
+        app:actionLayout="@layout/view_shop_cart_action"
+        app:showAsAction="always" />
+    <item
         android:id="@+id/action_shop_layout"
         android:icon="@drawable/ic_view_list_24"
         android:title="@string/shop_menu_layout_list"

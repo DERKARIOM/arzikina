@@ -5,17 +5,22 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.naniger.arzikina.domain.repository.ProductRepository
 import com.naniger.arzikina.domain.repository.ShopRepository
+import com.naniger.arzikina.domain.shop.CartAddResult
 import com.naniger.arzikina.domain.shop.ProductAvailability
 import com.naniger.arzikina.domain.shop.ProductCategory
 import com.naniger.arzikina.domain.shop.ProductFilter
 import com.naniger.arzikina.domain.shop.ProductSort
 import com.naniger.arzikina.domain.shop.ProductSummary
+import com.naniger.arzikina.domain.shop.SaleCartStore
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
@@ -49,7 +54,8 @@ sealed interface ProductListUiState {
 class ShopProductsViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val products: ProductRepository,
-    shops: ShopRepository
+    shops: ShopRepository,
+    private val cart: SaleCartStore
 ) : ViewModel() {
 
     private val _filter = MutableStateFlow(
@@ -69,6 +75,22 @@ class ShopProductsViewModel @Inject constructor(
             }.catch { emit(ProductListUiState.Error) }
         }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ProductListUiState.Loading)
+
+    /** Nombre de produits différents dans le panier (pastille de l'icône panier). */
+    val cartCount: StateFlow<Int> = cart.lines
+        .map { it.size }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), cart.lines.value.size)
+
+    private val _cartRefusals = MutableSharedFlow<CartAddResult>(extraBufferCapacity = 4)
+
+    /** Ajouts refusés (épuisé, limite de stock, indisponible) : la présentation les explique. */
+    val cartRefusals: SharedFlow<CartAddResult> = _cartRefusals.asSharedFlow()
+
+    /** Ajoute une unité du produit au panier partagé, selon le stock affiché dans la liste. */
+    fun addToCart(item: ProductSummary) {
+        val result = cart.tryAdd(item.id, item.stockMilli, item.isArchived)
+        if (result != CartAddResult.ADDED) _cartRefusals.tryEmit(result)
+    }
 
     fun onQueryChange(query: String) = _filter.update { it.copy(query = query) }
     fun onAvailabilityChange(availability: ProductAvailability) = _filter.update { it.copy(availability = availability) }

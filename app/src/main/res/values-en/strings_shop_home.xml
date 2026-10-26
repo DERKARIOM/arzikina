@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="shop_tab_products">Products</string>
+    <string name="shop_tab_dashboard">Dashboard</string>
+</resources>

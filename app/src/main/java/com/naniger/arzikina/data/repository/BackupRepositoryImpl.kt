@@ -3,6 +3,7 @@ package com.naniger.arzikina.data.repository
 import androidx.room.withTransaction
 import com.naniger.arzikina.data.backup.BACKUP_SCHEMA_VERSION
 import com.naniger.arzikina.data.backup.BackupPayload
+import com.naniger.arzikina.data.backup.ShopBackupHandler
 import com.naniger.arzikina.data.backup.remapIds
 import com.naniger.arzikina.data.backup.securityQuestionOrDefault
 import com.naniger.arzikina.data.backup.toDomain
@@ -82,6 +83,10 @@ import javax.inject.Inject
  * (`transactionTemplates`) — table simple (aucune ligne ne référence son id, contrairement à
  * `RecurringTransactionEntity`/`FinancialPlanEntity`), voir [com.naniger.arzikina.data.backup.TransactionTemplateDto].
  *
+ * Le module « Boutique » (produits, stock, ventes, paiements, photos) fait aussi partie de la sauvegarde :
+ * voir [ShopBackupHandler]. Il est TOUJOURS purgé à l'import (ses paiements référencent des transactions et
+ * des comptes qui reçoivent de nouveaux ids), puis réinséré après les transactions.
+ *
  * Réattribution des ids (voir la doc de tête de `data/backup/BackupMappers`) : l'import
  * n'insère JAMAIS les `id` du fichier tels quels — chaque table reçoit `id = 0L` (nouvel id
  * généré par SQLite), et les ids générés alimentent des tables de correspondance ancien → nouvel
@@ -108,6 +113,7 @@ class BackupRepositoryImpl @Inject constructor(
     private val receiptDao: ReceiptDao,
     private val receiptFileStorage: ReceiptFileStorage,
     private val transactionTemplateDao: TransactionTemplateDao,
+    private val shopBackup: ShopBackupHandler,
     private val userDao: UserDao,
     private val userPreferencesRepository: UserPreferencesRepository,
     private val sessionManager: SessionManager,
@@ -184,7 +190,8 @@ class BackupRepositoryImpl @Inject constructor(
                     financialPlans = financialPlans.map { it.toDto() },
                     financialPlanItems = financialPlanItems.map { it.toDto() },
                     receipts = receiptDtos,
-                    transactionTemplates = transactionTemplates.map { it.toDto() }
+                    transactionTemplates = transactionTemplates.map { it.toDto() },
+                    shop = shopBackup.export(userId)
                 )
 
                 stream.write(json.encodeToString(payload).encodeToByteArray())
@@ -240,6 +247,8 @@ class BackupRepositoryImpl @Inject constructor(
             // route (fichier corrompu, coupure...) aurait déjà détruit des reçus existants alors
             // même que la base, elle, reste inchangée (rollback Room).
             val oldReceiptFilePaths = receiptDao.observeAllForUser(userId).first().map { it.localPath }
+            // Idem pour les photos de produits (supprimées seulement après le succès de la transaction).
+            val oldProductImages = shopBackup.imageFileNames(userId)
 
             database.withTransaction {
                 // Profil utilisateur : mis à jour EN PLACE (voir la doc de tête de UserDto), pas
@@ -287,6 +296,7 @@ class BackupRepositoryImpl @Inject constructor(
                 // transaction (voir `oldReceiptFilePaths` capturé plus haut et sa suppression après
                 // `database.withTransaction { }` ci-dessous).
                 receiptDao.deleteAllForUser(userId)
+                shopBackup.purge(userId)
 
                 // Ordre d'insertion : les tables référencées d'abord (accounts/categories/persons
                 // avant transactions, transactions avant loans/loan_payments qui y font référence
@@ -419,6 +429,9 @@ class BackupRepositoryImpl @Inject constructor(
                 loanPaymentDao.insertAll(
                     payload.loanPayments.map { it.remapIds(0L, loanIdMap, accountIdMap, transactionIdMap).toEntity(userId) }
                 )
+
+                // Boutique : en dernier, elle dépend des comptes ET des transactions (paiements des ventes).
+                shopBackup.restore(userId, payload.shop, accountIdMap, transactionIdMap)
             }
 
             // Voir `oldReceiptFilePaths` et la doc de tête de cette classe : atteint UNIQUEMENT si
@@ -430,6 +443,7 @@ class BackupRepositoryImpl @Inject constructor(
             // un fichier orphelin invisible reste sur le disque (même trade-off que
             // `ReceiptRepositoryImpl.deleteReceipt`).
             oldReceiptFilePaths.forEach { relativePath -> runCatching { receiptFileStorage.deleteFile(relativePath) } }
+            shopBackup.deleteImages(oldProductImages)
 
             val restoredPreferences = payload.preferences.toDomain()
             userPreferencesRepository.setThemeMode(restoredPreferences.themeMode)

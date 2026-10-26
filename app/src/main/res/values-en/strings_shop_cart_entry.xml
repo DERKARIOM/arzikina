@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Shop: add to cart from the product list. -->
+<resources>
+    <string name="shop_add_to_cart">Add to cart</string>
+    <string name="shop_cart_open">Cart</string>
+</resources>

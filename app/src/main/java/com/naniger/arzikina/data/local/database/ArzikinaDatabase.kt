@@ -14,6 +14,7 @@ import com.naniger.arzikina.data.local.dao.ProductDao
 import com.naniger.arzikina.data.local.dao.SaleDao
 import com.naniger.arzikina.data.local.dao.SaleLineDao
 import com.naniger.arzikina.data.local.dao.SalePaymentDao
+import com.naniger.arzikina.data.local.dao.ShopBackupDao
 import com.naniger.arzikina.data.local.dao.ShopDao
 import com.naniger.arzikina.data.local.dao.StockMovementDao
 import com.naniger.arzikina.data.local.dao.IssuedReceiptDao
@@ -244,5 +245,8 @@ abstract class ArzikinaDatabase : RoomDatabase() {
     abstract fun saleLineDao(): SaleLineDao
     abstract fun salePaymentDao(): SalePaymentDao
     abstract fun shopDao(): ShopDao
+
+    /** Lectures / insertions en bloc de la Boutique pour la sauvegarde (aucune table propre, schéma inchangé). */
+    abstract fun shopBackupDao(): ShopBackupDao
     abstract fun stockMovementDao(): StockMovementDao
 }

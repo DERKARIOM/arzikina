@@ -49,6 +49,13 @@ object ProductImagePolicy {
 
     fun detectMimeType(header: ByteArray): String? = IssuerLogoPolicy.detectMimeType(header)
 
+    /** Taille maximale d'une photo lue dans une sauvegarde (les photos écrites par l'appli en font bien moins). */
+    const val MAX_BACKUP_IMAGE_BYTES: Int = 4 * 1024 * 1024
+
+    /** Une photo de sauvegarde n'est restaurée que si c'est un JPEG non vide de taille raisonnable. */
+    fun isRestorableImage(bytes: ByteArray): Boolean =
+        bytes.isNotEmpty() && bytes.size <= MAX_BACKUP_IMAGE_BYTES && detectMimeType(bytes) == "image/jpeg"
+
     private val safeFileName = Regex("^[A-Za-z0-9-]{1,64}\\.jpg$")
 
     /** Nom simple généré par l'application : jamais de `/`, `..` ni d'extension inattendue. */

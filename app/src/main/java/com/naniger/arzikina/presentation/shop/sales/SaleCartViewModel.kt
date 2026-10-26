@@ -10,9 +10,11 @@ import com.naniger.arzikina.domain.repository.AccountRepository
 import com.naniger.arzikina.domain.repository.ProductRepository
 import com.naniger.arzikina.domain.repository.SaleRepository
 import com.naniger.arzikina.domain.repository.ShopRepository
+import com.naniger.arzikina.domain.shop.CartAddResult
 import com.naniger.arzikina.domain.shop.Product
 import com.naniger.arzikina.domain.shop.ProductUnit
 import com.naniger.arzikina.domain.shop.SaleCalculator
+import com.naniger.arzikina.domain.shop.SaleCartStore
 import com.naniger.arzikina.domain.shop.SaleException
 import com.naniger.arzikina.domain.shop.SaleLineDraft
 import com.naniger.arzikina.domain.shop.SaleLineRequest
@@ -33,9 +35,7 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.util.UUID
 import javax.inject.Inject
 
 /** Problème bloquant sur une ligne du panier. */
@@ -76,13 +76,13 @@ sealed interface SaleCartEvent {
 }
 
 /**
- * Panier de vente. Ne contient que le choix de l'utilisateur (produits + quantités, remise, client,
- * compte) ; prix, stock et totaux sont toujours recalculés depuis les données courantes, et la
- * validation relit tout dans sa transaction. L'état saisi survit à la mort du processus
- * ([SavedStateHandle]).
+ * Écran de vente. Les produits et quantités vivent dans le [SaleCartStore] partagé (alimenté aussi par la
+ * liste des produits) ; la remise, le client et le compte saisis ici survivent à la mort du processus
+ * ([SavedStateHandle]). Prix, stock et totaux sont toujours recalculés depuis les données courantes, et la
+ * validation relit tout dans sa transaction.
  *
- * [draftKey] est généré une seule fois à l'ouverture du panier : valider deux fois le même panier
- * (double clic, nouvelle tentative après une coupure) ne crée jamais deux ventes.
+ * La clé de brouillon ([SaleCartStore.draftKey]) est stable pour un même panier : valider deux fois le même
+ * panier (double clic, nouvelle tentative après une coupure) ne crée jamais deux ventes.
  */
 @HiltViewModel
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -91,15 +91,12 @@ class SaleCartViewModel @Inject constructor(
     private val products: ProductRepository,
     private val shops: ShopRepository,
     accountsRepository: AccountRepository,
-    private val sales: SaleRepository
+    private val sales: SaleRepository,
+    private val store: SaleCartStore
 ) : ViewModel() {
 
-    private val draftKey: String = savedState.get<String>(KEY_DRAFT) ?: UUID.randomUUID().toString().also {
-        savedState[KEY_DRAFT] = it
-    }
-
-    /** Produit -> quantité en milli-unités, dans l'ordre d'ajout. */
-    private val cart = MutableStateFlow(restoreCart())
+    /** Produit -> quantité en milli-unités, dans l'ordre d'ajout (source de vérité : [SaleCartStore]). */
+    private val cart: StateFlow<Map<Long, Long>> = store.lines
     private val discountMode = MutableStateFlow(DiscountMode.entries.getOrElse(savedState.get<Int>(KEY_MODE) ?: 0) { DiscountMode.NONE })
     private val discountInput = MutableStateFlow(savedState.get<String>(KEY_DISCOUNT).orEmpty())
     private val chosenAccountId = MutableStateFlow(savedState.get<Long>(KEY_ACCOUNT))
@@ -143,13 +140,16 @@ class SaleCartViewModel @Inject constructor(
     fun addProduct(productId: Long) {
         viewModelScope.launch {
             val product = products.getProduct(productId)
-            when {
-                product == null || product.isArchived -> fail(SaleCartError.UNAVAILABLE)
-                product.stockMilli <= 0L -> fail(SaleCartError.OUT_OF_STOCK)
-                else -> {
-                    val next = (cart.value[productId] ?: 0L) + StockRules.QUANTITY_UNIT_MILLI
-                    if (next > product.stockMilli) fail(SaleCartError.STOCK_LIMIT) else setQuantity(productId, next)
-                }
+            val result = if (product == null) {
+                CartAddResult.UNAVAILABLE
+            } else {
+                store.tryAdd(productId, product.stockMilli, product.isArchived)
+            }
+            when (result) {
+                CartAddResult.ADDED -> Unit
+                CartAddResult.UNAVAILABLE -> fail(SaleCartError.UNAVAILABLE)
+                CartAddResult.OUT_OF_STOCK -> fail(SaleCartError.OUT_OF_STOCK)
+                CartAddResult.STOCK_LIMIT -> fail(SaleCartError.STOCK_LIMIT)
             }
         }
     }
@@ -166,11 +166,10 @@ class SaleCartViewModel @Inject constructor(
 
     /** Quantité exacte saisie par l'utilisateur ; `<= 0` retire la ligne. Les dépassements de stock restent affichés en erreur. */
     fun setQuantity(productId: Long, quantityMilli: Long) {
-        if (quantityMilli <= 0L) return remove(productId)
-        updateCart { it + (productId to quantityMilli) }
+        store.setQuantity(productId, quantityMilli)
     }
 
-    fun remove(productId: Long) = updateCart { it - productId }
+    fun remove(productId: Long) = store.remove(productId)
 
     fun onDiscountModeChange(mode: DiscountMode) {
         discountMode.value = mode
@@ -203,7 +202,7 @@ class SaleCartViewModel @Inject constructor(
         val discount = (SaleFormParser.parseDiscount(discountMode.value, discountInput.value) as? DiscountParse.Valid)
             ?.discount ?: ReceiptDiscount.None
         val request = SaleRequest(
-            draftKey = draftKey,
+            draftKey = store.draftKey,
             lines = cart.value.map { SaleLineRequest(it.key, it.value) },
             accountId = account.id,
             discount = discount,
@@ -213,6 +212,8 @@ class SaleCartViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 val sale = sales.confirmSale(request)
+                // Vente enregistrée : le panier partagé repart de zéro (nouvelle clé d'idempotence).
+                store.clear()
                 // Volontairement PAS de remise à zéro de `submitting` : le panier est quitté, le bouton
                 // doit rester inactif jusqu'à la navigation (aucun second envoi possible).
                 _events.tryEmit(SaleCartEvent.Confirmed(sale.id))
@@ -231,22 +232,6 @@ class SaleCartViewModel @Inject constructor(
 
     private fun fail(error: SaleCartError) {
         _events.tryEmit(SaleCartEvent.Failed(error))
-    }
-
-    private fun updateCart(transform: (Map<Long, Long>) -> Map<Long, Long>) {
-        cart.update(transform)
-        savedState[KEY_CART] = cart.value.flatMap { listOf(it.key, it.value) }.toLongArray()
-    }
-
-    private fun restoreCart(): Map<Long, Long> {
-        val flat = savedState.get<LongArray>(KEY_CART) ?: return emptyMap()
-        val restored = LinkedHashMap<Long, Long>()
-        var i = 0
-        while (i + 1 < flat.size) {
-            restored[flat[i]] = flat[i + 1]
-            i += 2
-        }
-        return restored
     }
 
     private fun productsFlow(ids: Collection<Long>) =
@@ -333,8 +318,6 @@ class SaleCartViewModel @Inject constructor(
     }
 
     private companion object {
-        const val KEY_DRAFT = "draftKey"
-        const val KEY_CART = "cart"
         const val KEY_MODE = "discountMode"
         const val KEY_DISCOUNT = "discountInput"
         const val KEY_CUSTOMER = "customerName"

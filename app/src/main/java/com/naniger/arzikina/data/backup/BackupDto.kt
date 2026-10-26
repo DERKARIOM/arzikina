@@ -58,7 +58,10 @@ data class BackupPayload(
      * personnelle") : liste vide par défaut pour rester compatible avec les fichiers exportés
      * avant leur existence — un ancien fichier restauré ne recrée simplement aucun modèle, sans
      * erreur (même comportement que les autres listes ajoutées après coup ci-dessus). */
-    val transactionTemplates: List<TransactionTemplateDto> = emptyList()
+    val transactionTemplates: List<TransactionTemplateDto> = emptyList(),
+    /** Ajoutée après coup (module Boutique) : `null` par défaut pour rester compatible avec les fichiers
+     * exportés avant son existence (voir [ShopBackupDto]). */
+    val shop: ShopBackupDto? = null
 )
 
 /**

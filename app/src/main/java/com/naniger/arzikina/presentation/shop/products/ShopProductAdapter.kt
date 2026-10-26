@@ -29,6 +29,12 @@ class ShopProductAdapter(
 
     private var currencyCode: String = ""
 
+    /**
+     * Action « Ajouter au panier ». `null` (valeur par défaut) : le bouton est masqué — alertes du tableau de
+     * bord, liste ouverte en mode sélection. À définir AVANT d'assigner l'adapter au RecyclerView.
+     */
+    var onAddToCart: ((ProductSummary) -> Unit)? = null
+
     init {
         setHasStableIds(true)
     }
@@ -56,13 +62,18 @@ class ShopProductAdapter(
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
         val item = getItem(position)
         when (holder) {
-            is GridHolder -> holder.bind(item, currencyCode, onClick)
-            is ListHolder -> holder.bind(item, currencyCode, onClick)
+            is GridHolder -> holder.bind(item, currencyCode, onClick, onAddToCart)
+            is ListHolder -> holder.bind(item, currencyCode, onClick, onAddToCart)
         }
     }
 
     class ListHolder(private val b: ItemShopProductBinding) : RecyclerView.ViewHolder(b.root) {
-        fun bind(item: ProductSummary, currencyCode: String, onClick: (ProductSummary) -> Unit) {
+        fun bind(
+            item: ProductSummary,
+            currencyCode: String,
+            onClick: (ProductSummary) -> Unit,
+            onAddToCart: ((ProductSummary) -> Unit)?
+        ) {
             val context = b.root.context
             b.productImage.showProductImage(item.imageFile)
             b.productName.text = item.name
@@ -73,11 +84,17 @@ class ShopProductAdapter(
             b.productQuantity.text = ShopFormat.quantity(context, item.stockMilli, item.unit)
             b.productStatus.showStockStatus(item.stockLevel, item.isArchived)
             b.productCard.setOnClickListener { onClick(item) }
+            b.addToCartButton.bindAddToCart(item, onAddToCart)
         }
     }
 
     class GridHolder(private val b: ItemShopProductGridBinding) : RecyclerView.ViewHolder(b.root) {
-        fun bind(item: ProductSummary, currencyCode: String, onClick: (ProductSummary) -> Unit) {
+        fun bind(
+            item: ProductSummary,
+            currencyCode: String,
+            onClick: (ProductSummary) -> Unit,
+            onAddToCart: ((ProductSummary) -> Unit)?
+        ) {
             val context = b.root.context
             b.productImage.showProductImage(item.imageFile)
             b.productName.text = item.name
@@ -85,10 +102,19 @@ class ShopProductAdapter(
             b.productQuantity.text = ShopFormat.quantity(context, item.stockMilli, item.unit)
             b.productStatus.showStockStatus(item.stockLevel, item.isArchived)
             b.productCard.setOnClickListener { onClick(item) }
+            b.addToCartButton.bindAddToCart(item, onAddToCart)
         }
     }
 
     private companion object {
+        /** Bouton visible seulement si l'action est fournie ; inactif pour un produit archivé ou épuisé. */
+        fun View.bindAddToCart(item: ProductSummary, action: ((ProductSummary) -> Unit)?) {
+            visibility = if (action == null) View.GONE else View.VISIBLE
+            isEnabled = !item.isArchived && item.stockMilli > 0L
+            setOnClickListener { action?.invoke(item) }
+        }
+
+
         val DIFF = object : DiffUtil.ItemCallback<ProductSummary>() {
             override fun areItemsTheSame(a: ProductSummary, b: ProductSummary) = a.id == b.id
             override fun areContentsTheSame(a: ProductSummary, b: ProductSummary) = a == b
