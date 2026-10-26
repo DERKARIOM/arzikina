@@ -402,6 +402,7 @@ const ENTITY_CONFIGS = [
             ['db' => 'sale_price_minor', 'payload' => 'salePriceMinor', 'type' => 'int', 'nullable' => false],
             ['db' => 'min_stock_milli', 'payload' => 'minStockMilli', 'type' => 'int', 'nullable' => false],
             ['db' => 'expiry_date', 'payload' => 'expiryDate', 'type' => 'int', 'nullable' => true],
+            ['db' => 'image_file_name', 'payload' => 'imageFileName', 'type' => 'string', 'nullable' => true],
             ['db' => 'is_archived', 'payload' => 'isArchived', 'type' => 'int', 'nullable' => false],
         ],
     ],
