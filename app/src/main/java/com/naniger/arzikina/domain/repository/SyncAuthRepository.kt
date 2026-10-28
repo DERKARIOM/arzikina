@@ -1,6 +1,8 @@
 package com.naniger.arzikina.domain.repository
 
 import com.naniger.arzikina.domain.model.GoogleSyncSession
+import com.naniger.arzikina.domain.model.PasswordChangeResult
+import com.naniger.arzikina.domain.model.PasswordProof
 import com.naniger.arzikina.domain.model.SyncAuthResult
 import com.naniger.arzikina.domain.model.SyncSession
 import kotlinx.coroutines.flow.Flow
@@ -88,6 +90,15 @@ interface SyncAuthRepository {
      * vérification explicite faite AVANT cet appel). Ne touche à aucune donnée locale.
      */
     suspend fun linkGoogleAccount(idToken: String): SyncAuthResult<Unit>
+
+    /**
+     * Définit ou change le mot de passe du compte SERVEUR connecté (voir `server/api/auth/set_password.php`) :
+     * [proof] est vérifiée par le serveur (mot de passe actuel, ou jeton Google lié au compte). Échoue avec
+     * [com.naniger.arzikina.domain.model.PasswordChangeError.NoActiveSession] sans session de synchronisation.
+     * Les autres sessions du compte sont révoquées par le serveur ; ne touche à aucune donnée locale (le
+     * hash local est mis à jour par [UnifiedAuthRepository.changePassword], seul appelant).
+     */
+    suspend fun setPassword(newRawPassword: String, proof: PasswordProof): PasswordChangeResult
 
     /** Pour un futur indicateur de statut de synchronisation / écran Réglages. */
     fun observeActiveSession(): Flow<SyncSession?>

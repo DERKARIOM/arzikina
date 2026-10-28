@@ -223,6 +223,15 @@
     <string name="change_password_title">Change password</string>
     <string name="change_password_submit_action">Update password</string>
     <string name="change_password_success_message">Password updated.</string>
+    <string name="change_password_mode_google_action">I don\'t have a password (Google account)</string>
+    <string name="change_password_mode_current_action">I already have a password</string>
+    <string name="change_password_google_hint">For your security, you will confirm your identity with your Google account. This password will then also let you sign in with your email.</string>
+    <string name="change_password_submit_google_action">Confirm with Google</string>
+    <string name="change_password_error_password_too_long">Password too long</string>
+    <string name="change_password_error_google_mismatch">This Google account is not the one linked to your Arzikina account.</string>
+    <string name="change_password_error_no_session">Sign in again, then retry.</string>
+    <string name="change_password_error_network">Unable to reach the server, check your connection.</string>
+    <string name="change_password_error_server">The server ran into an error, please try again later.</string>
     <string name="update_security_question_title">Security question</string>
     <string name="update_security_question_submit_action">Save</string>
     <string name="update_security_question_success_message">Security question updated.</string>

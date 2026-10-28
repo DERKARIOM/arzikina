@@ -11,6 +11,10 @@ import com.naniger.arzikina.domain.model.AccountDeletionError
 import com.naniger.arzikina.domain.model.AccountDeletionResult
 import com.naniger.arzikina.domain.model.AccountLinkError
 import com.naniger.arzikina.domain.model.AccountLinkResult
+import com.naniger.arzikina.domain.model.PasswordChangeError
+import com.naniger.arzikina.domain.model.PasswordChangeResult
+import com.naniger.arzikina.domain.model.PasswordLimits
+import com.naniger.arzikina.domain.model.PasswordProof
 import com.naniger.arzikina.domain.model.SecurityQuestion
 import com.naniger.arzikina.domain.model.SyncAuthError
 import com.naniger.arzikina.domain.model.SyncAuthResult
@@ -159,6 +163,44 @@ class UnifiedAuthRepositoryImpl @Inject constructor(
             is SyncAuthResult.Success -> AccountLinkResult.Success
             is SyncAuthResult.Failure -> AccountLinkResult.Failure(result.error.toAccountLinkError())
         }
+    }
+
+    /** Voir la KDoc de l'interface pour les trois cas (synchronisé / lié sans session / 100 % local). */
+    override suspend fun changePassword(proof: PasswordProof, newRawPassword: String): PasswordChangeResult =
+        withContext(ioDispatcher) {
+            if (!AuthValidator.isPasswordLongEnough(newRawPassword) || !PasswordLimits.isWithinMax(newRawPassword)) {
+                return@withContext PasswordChangeResult.Failure(PasswordChangeError.InvalidNewPassword)
+            }
+            val userId = sessionManager.getCurrentUserIdOnce()
+                ?: return@withContext PasswordChangeResult.Failure(PasswordChangeError.NoActiveSession)
+
+            if (syncAuthRepository.getActiveSession() != null) {
+                val result = syncAuthRepository.setPassword(newRawPassword, proof)
+                if (result is PasswordChangeResult.Success) {
+                    // Serveur déjà à jour : le hash local suit, pour que la vérification locale du mot de passe
+                    // (ex. « Supprimer mon compte ») accepte le nouveau.
+                    userDao.updatePasswordHash(userId, PasswordHasher.hash(newRawPassword))
+                }
+                return@withContext result
+            }
+
+            if (userServerLinkDao.getByLocalUserId(userId) != null) {
+                return@withContext PasswordChangeResult.Failure(PasswordChangeError.NoActiveSession)
+            }
+            changeLocalPassword(userId, proof, newRawPassword)
+        }
+
+    /** Compte 100 % local : uniquement le mot de passe actuel comme preuve, vérifié sur l'appareil. */
+    private suspend fun changeLocalPassword(userId: Long, proof: PasswordProof, newRawPassword: String): PasswordChangeResult {
+        val currentRaw = (proof as? PasswordProof.CurrentPassword)?.raw
+            ?: return PasswordChangeResult.Failure(PasswordChangeError.NoActiveSession)
+        val localUser = userDao.findById(userId)
+            ?: return PasswordChangeResult.Failure(PasswordChangeError.NoActiveSession)
+        if (!PasswordHasher.verify(currentRaw, localUser.passwordHash)) {
+            return PasswordChangeResult.Failure(PasswordChangeError.IncorrectCurrentPassword)
+        }
+        userDao.updatePasswordHash(userId, PasswordHasher.hash(newRawPassword))
+        return PasswordChangeResult.Success
     }
 
     private fun SyncAuthError.toAccountLinkError(): AccountLinkError = when (this) {

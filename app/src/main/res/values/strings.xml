@@ -364,6 +364,15 @@
     <string name="change_password_title">Changer le mot de passe</string>
     <string name="change_password_submit_action">Mettre à jour le mot de passe</string>
     <string name="change_password_success_message">Mot de passe mis à jour.</string>
+    <string name="change_password_mode_google_action">Je n\'ai pas de mot de passe (compte Google)</string>
+    <string name="change_password_mode_current_action">J\'ai déjà un mot de passe</string>
+    <string name="change_password_google_hint">Pour ta sécurité, tu vas confirmer ton identité avec ton compte Google. Ce mot de passe te permettra ensuite de te connecter aussi avec ton e-mail.</string>
+    <string name="change_password_submit_google_action">Confirmer avec Google</string>
+    <string name="change_password_error_password_too_long">Mot de passe trop long</string>
+    <string name="change_password_error_google_mismatch">Ce compte Google n\'est pas celui associé à ton compte Arzikina.</string>
+    <string name="change_password_error_no_session">Reconnecte-toi, puis réessaie.</string>
+    <string name="change_password_error_network">Impossible de joindre le serveur, vérifie ta connexion.</string>
+    <string name="change_password_error_server">Le serveur a rencontré une erreur, réessaie plus tard.</string>
 
     <string name="update_security_question_title">Question de sécurité</string>
     <string name="update_security_question_submit_action">Enregistrer</string>

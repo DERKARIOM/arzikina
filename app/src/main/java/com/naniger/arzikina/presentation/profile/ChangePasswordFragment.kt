@@ -13,6 +13,7 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import com.naniger.arzikina.R
 import com.naniger.arzikina.databinding.FragmentChangePasswordBinding
+import com.naniger.arzikina.presentation.auth.GoogleSignInLauncher
 import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
@@ -23,6 +24,9 @@ class ChangePasswordFragment : Fragment(R.layout.fragment_change_password) {
 
     private val viewModel: ChangePasswordViewModel by viewModels()
     private var binding: FragmentChangePasswordBinding? = null
+
+    /** Même sélecteur Google que Connexion, Inscription et Paramètres (voir [GoogleSignInLauncher]). */
+    private val googleSignInLauncher by lazy { GoogleSignInLauncher(requireContext()) }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -48,6 +52,13 @@ class ChangePasswordFragment : Fragment(R.layout.fragment_change_password) {
                 false
             }
         }
+        viewBinding.modeToggleButton.setOnClickListener {
+            val next = when (viewModel.formState.value.mode) {
+                ChangePasswordMode.CURRENT_PASSWORD -> ChangePasswordMode.GOOGLE
+                ChangePasswordMode.GOOGLE -> ChangePasswordMode.CURRENT_PASSWORD
+            }
+            viewModel.onModeChange(next)
+        }
         viewBinding.submitButton.setOnClickListener { viewModel.submit() }
 
         viewLifecycleOwner.lifecycleScope.launch {
@@ -65,6 +76,15 @@ class ChangePasswordFragment : Fragment(R.layout.fragment_change_password) {
 
     private fun render(state: ChangePasswordFormState) {
         val binding = binding ?: return
+        val googleMode = state.mode == ChangePasswordMode.GOOGLE
+
+        // Mode Google : pas de mot de passe actuel à saisir, la preuve est la confirmation par Google.
+        binding.currentPasswordCard.visibility = if (googleMode) View.GONE else View.VISIBLE
+        binding.googleHintText.visibility = if (googleMode) View.VISIBLE else View.GONE
+        binding.modeToggleButton.setText(
+            if (googleMode) R.string.change_password_mode_current_action else R.string.change_password_mode_google_action
+        )
+        binding.modeToggleButton.isEnabled = !state.isSubmitting
 
         if (binding.currentPasswordInput.text?.toString() != state.currentPassword) {
             binding.currentPasswordInput.setText(state.currentPassword)
@@ -82,7 +102,11 @@ class ChangePasswordFragment : Fragment(R.layout.fragment_change_password) {
         binding.confirmPasswordLayout.error = state.confirmPasswordError?.let { getString(it) }
 
         binding.submitButton.isEnabled = !state.isSubmitting
-        binding.submitButton.text = if (state.isSubmitting) "" else getString(R.string.change_password_submit_action)
+        binding.submitButton.text = when {
+            state.isSubmitting -> ""
+            googleMode -> getString(R.string.change_password_submit_google_action)
+            else -> getString(R.string.change_password_submit_action)
+        }
         binding.progressIndicator.visibility = if (state.isSubmitting) View.VISIBLE else View.GONE
     }
 
@@ -94,6 +118,18 @@ class ChangePasswordFragment : Fragment(R.layout.fragment_change_password) {
             }
             is ChangePasswordEvent.ShowError -> {
                 binding?.let { Snackbar.make(it.root, event.messageRes, Snackbar.LENGTH_LONG).show() }
+            }
+            ChangePasswordEvent.RequestGoogleConfirmation -> confirmWithGoogle()
+        }
+    }
+
+    /** Fermer la fenêtre Google sans choisir de compte n'est pas une erreur : on reste sur l'écran, rien n'est envoyé. */
+    private fun confirmWithGoogle() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            when (val result = googleSignInLauncher.chooseGoogleAccount()) {
+                is GoogleSignInLauncher.Result.Success -> viewModel.onGoogleIdToken(result.idToken)
+                is GoogleSignInLauncher.Result.Cancelled -> Unit
+                is GoogleSignInLauncher.Result.Error -> viewModel.onGoogleSignInFailed()
             }
         }
     }

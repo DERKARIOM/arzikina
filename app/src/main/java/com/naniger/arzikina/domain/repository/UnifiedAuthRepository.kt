@@ -2,6 +2,8 @@ package com.naniger.arzikina.domain.repository
 
 import com.naniger.arzikina.domain.model.AccountDeletionResult
 import com.naniger.arzikina.domain.model.AccountLinkResult
+import com.naniger.arzikina.domain.model.PasswordChangeResult
+import com.naniger.arzikina.domain.model.PasswordProof
 import com.naniger.arzikina.domain.model.SecurityQuestion
 import com.naniger.arzikina.domain.model.UnifiedAuthResult
 
@@ -122,4 +124,22 @@ interface UnifiedAuthRepository {
      * ne touche à aucune donnée locale, uniquement à l'association côté serveur.
      */
     suspend fun linkGoogleAccount(idToken: String): AccountLinkResult
+
+    /**
+     * Définit ou change le mot de passe du compte connecté (Profil, « Changer le mot de passe »).
+     *
+     * - Compte SYNCHRONISÉ (session serveur active) : changé d'abord sur le SERVEUR ([SyncAuthRepository.setPassword],
+     *   qui vérifie [proof]), puis le hash local est mis à jour avec le même mot de passe — sans quoi la
+     *   connexion sur un autre appareil et « Supprimer mon compte » (qui revérifie le mot de passe côté
+     *   serveur) échoueraient. Le serveur révoque les autres sessions du compte.
+     * - Compte lié au serveur mais SANS session active (expirée, repli hors ligne) : refusé
+     *   ([com.naniger.arzikina.domain.model.PasswordChangeError.NoActiveSession]) — un changement purement local
+     *   ferait diverger les deux mots de passe.
+     * - Compte 100 % local (jamais lié au serveur) : seule la preuve [PasswordProof.CurrentPassword] est possible,
+     *   vérifiée localement ; seul le hash local change.
+     *
+     * Le nouveau mot de passe est validé ici (minimum de [com.naniger.arzikina.util.AuthValidator], maximum de
+     * [com.naniger.arzikina.domain.model.PasswordLimits]) avant tout appel.
+     */
+    suspend fun changePassword(proof: PasswordProof, newRawPassword: String): PasswordChangeResult
 }

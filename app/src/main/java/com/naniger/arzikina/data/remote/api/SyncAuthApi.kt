@@ -8,6 +8,7 @@ import com.naniger.arzikina.data.remote.dto.LinkGoogleAccountRequestDto
 import com.naniger.arzikina.data.remote.dto.LoginRequestDto
 import com.naniger.arzikina.data.remote.dto.LoginResponseDto
 import com.naniger.arzikina.data.remote.dto.RegisterRequestDto
+import com.naniger.arzikina.data.remote.dto.SetPasswordRequestDto
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
@@ -122,6 +123,21 @@ class SyncAuthApi @Inject constructor(
             .toRequestBody(jsonMediaType)
         val httpRequest = Request.Builder()
             .url(RemoteConfig.BASE_URL + "api/auth/link_google_account.php")
+            .header("Authorization", "Bearer $rawToken")
+            .post(body)
+            .build()
+        okHttpClient.awaitBody(httpRequest)
+    }
+
+    /**
+     * Définit ou change le mot de passe du compte du Bearer fourni — voir `server/api/auth/set_password.php`
+     * (preuve : mot de passe actuel OU jeton Google, voir [SetPasswordRequestDto]). Réponse non lue : un code
+     * 2xx suffit ; une erreur remonte en [HttpFailureException] dont le message porte le corps brut.
+     */
+    suspend fun setPassword(rawToken: String, request: SetPasswordRequestDto) {
+        val body = json.encodeToString(SetPasswordRequestDto.serializer(), request).toRequestBody(jsonMediaType)
+        val httpRequest = Request.Builder()
+            .url(RemoteConfig.BASE_URL + "api/auth/set_password.php")
             .header("Authorization", "Bearer $rawToken")
             .post(body)
             .build()

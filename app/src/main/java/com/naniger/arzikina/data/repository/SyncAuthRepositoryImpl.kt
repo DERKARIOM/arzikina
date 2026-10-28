@@ -9,9 +9,13 @@ import com.naniger.arzikina.data.remote.dto.LinkGoogleAccountRequestDto
 import com.naniger.arzikina.data.remote.dto.LoginRequestDto
 import com.naniger.arzikina.data.remote.dto.LoginResponseDto
 import com.naniger.arzikina.data.remote.dto.RegisterRequestDto
+import com.naniger.arzikina.data.remote.dto.SetPasswordRequestDto
 import com.naniger.arzikina.di.ApplicationScope
 import com.naniger.arzikina.di.IoDispatcher
 import com.naniger.arzikina.domain.model.GoogleSyncSession
+import com.naniger.arzikina.domain.model.PasswordChangeError
+import com.naniger.arzikina.domain.model.PasswordChangeResult
+import com.naniger.arzikina.domain.model.PasswordProof
 import com.naniger.arzikina.domain.model.SyncAuthError
 import com.naniger.arzikina.domain.model.SyncAuthResult
 import com.naniger.arzikina.domain.model.SyncSession
@@ -194,6 +198,34 @@ class SyncAuthRepositoryImpl @Inject constructor(
             SyncAuthResult.Failure(SyncAuthError.Unknown(e))
         }
     }
+
+    /**
+     * Voir la KDoc de l'interface. Le jeton de session vient de [SyncAuthStore.getValidRawToken] (garde
+     * explicite : pas de session valide, pas d'appel réseau) ; la traduction des erreurs serveur est isolée
+     * dans [PasswordChangeErrorMapper] (testée sans Android).
+     */
+    override suspend fun setPassword(newRawPassword: String, proof: PasswordProof): PasswordChangeResult =
+        withContext(ioDispatcher) {
+            val rawToken = store.getValidRawToken()
+                ?: return@withContext PasswordChangeResult.Failure(PasswordChangeError.NoActiveSession)
+            val request = SetPasswordRequestDto(
+                newPassword = newRawPassword,
+                currentPassword = (proof as? PasswordProof.CurrentPassword)?.raw,
+                idToken = (proof as? PasswordProof.GoogleIdToken)?.token
+            )
+            try {
+                authApi.setPassword(rawToken, request)
+                PasswordChangeResult.Success
+            } catch (e: HttpFailureException) {
+                PasswordChangeResult.Failure(
+                    PasswordChangeErrorMapper.map(e.code, e.message, usedGoogleProof = proof is PasswordProof.GoogleIdToken)
+                )
+            } catch (e: IOException) {
+                PasswordChangeResult.Failure(PasswordChangeError.NetworkUnavailable)
+            } catch (e: Exception) {
+                PasswordChangeResult.Failure(PasswordChangeError.Unknown(e))
+            }
+        }
 
     override suspend fun getActiveSession(): SyncSession? = store.getActiveSession()
 
