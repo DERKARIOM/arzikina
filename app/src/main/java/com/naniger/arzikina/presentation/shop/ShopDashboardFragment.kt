@@ -25,7 +25,7 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 
 /**
- * Page « Tableau de bord » de l'onglet Boutique (hébergée par [ShopFragment]). Les indicateurs viennent de requêtes d'agrégation SQL (aucun calcul
+ * Écran « Tableau de bord » de la boutique, ouvert depuis l'icône de la barre d'outils des produits. Les indicateurs viennent de requêtes d'agrégation SQL (aucun calcul
  * sur la liste en mémoire). Les valeurs absentes sont affichées comme telles (« — »), jamais inventées.
  */
 @AndroidEntryPoint
@@ -41,6 +41,7 @@ class ShopDashboardFragment : Fragment(R.layout.fragment_shop) {
         val b = FragmentShopBinding.bind(view)
         binding = b
 
+        b.toolbar.setNavigationOnClickListener { findNavController().navigateUp() }
         b.alertsList.layoutManager = LinearLayoutManager(requireContext())
         b.alertsList.adapter = alertsAdapter
         b.alertsList.itemAnimator = null

@@ -1,26 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    Onglet Boutique (voir ShopFragment) : deux pages — Produits (affichée en premier) et Tableau de bord —
-    hébergées comme fragments enfants dans shopPageContainer.
+    Onglet Boutique (voir ShopFragment) : la page « Produits » occupe tout l'écran. Le tableau de bord est
+    un écran à part, ouvert depuis l'icône de la barre d'outils.
 -->
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
+<androidx.fragment.app.FragmentContainerView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/shopPageContainer"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="?attr/colorSurface"
-    android:orientation="vertical">
-
-    <com.google.android.material.tabs.TabLayout
-        android:id="@+id/shopTabs"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:background="?attr/colorSurface"
-        app:tabGravity="fill"
-        app:tabMode="fixed" />
-
-    <androidx.fragment.app.FragmentContainerView
-        android:id="@+id/shopPageContainer"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1" />
-</LinearLayout>
+    android:background="?attr/colorSurface" />

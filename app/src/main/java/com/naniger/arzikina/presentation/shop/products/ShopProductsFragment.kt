@@ -61,8 +61,7 @@ class ShopProductsFragment : Fragment(R.layout.fragment_shop_products) {
         if (embeddedInShopHome) {
             // Page d'accueil de l'onglet Boutique : pas de retour, on est déjà à la racine.
             b.toolbar.navigationIcon = null
-            // Le libellé « Produits » est déjà porté par l'onglet : la barre ne garde que les actions.
-            b.toolbar.title = null
+            b.toolbar.setTitle(R.string.nav_shop)
         } else {
             b.toolbar.setNavigationOnClickListener { findNavController().navigateUp() }
         }
@@ -78,6 +77,7 @@ class ShopProductsFragment : Fragment(R.layout.fragment_shop_products) {
             // Sélection pour une vente : pas de création de produit ni de menu d'archives.
             b.toolbar.setTitle(R.string.shop_cart_pick_title)
             b.toolbar.menu.findItem(R.id.action_shop_archived)?.isVisible = false
+            b.toolbar.menu.findItem(R.id.action_shop_dashboard)?.isVisible = false
         }
         b.searchInput.doAfterTextChanged { viewModel.onQueryChange(it?.toString().orEmpty()) }
         b.availabilityChips.setOnCheckedStateChangeListener { _, checkedIds ->
@@ -163,6 +163,7 @@ class ShopProductsFragment : Fragment(R.layout.fragment_shop_products) {
             gridMode = !gridMode
             binding?.let(::applyDisplayMode)
         }
+        R.id.action_shop_dashboard -> true.also { findNavController().navigate(R.id.shopDashboardFragment) }
         R.id.action_shop_sort -> true.also { showSortDialog() }
         R.id.action_shop_category -> true.also { showCategoryDialog() }
         R.id.action_shop_archived -> true.also { viewModel.onArchivedChange(!item.isChecked) }

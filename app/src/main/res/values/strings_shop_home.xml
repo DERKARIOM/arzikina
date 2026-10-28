@@ -1,5 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="shop_tab_products">Produits</string>
-    <string name="shop_tab_dashboard">Tableau de bord</string>
+    <string name="shop_dashboard_open">Tableau de bord de la boutique</string>
 </resources>

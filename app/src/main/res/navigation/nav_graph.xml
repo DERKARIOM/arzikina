@@ -670,6 +670,13 @@
         android:id="@+id/shopFragment"
         android:name="com.naniger.arzikina.presentation.shop.ShopFragment"
         android:label="@string/nav_shop"
+        tools:layout="@layout/fragment_shop_home" />
+
+    <!-- Tableau de bord : écran secondaire ouvert par l'icône de la barre d'outils des produits. -->
+    <fragment
+        android:id="@+id/shopDashboardFragment"
+        android:name="com.naniger.arzikina.presentation.shop.ShopDashboardFragment"
+        android:label="@string/shop_dashboard_title"
         tools:layout="@layout/fragment_shop" />
 
     <!-- availability : code de ProductAvailability (0 tous, 1 en stock, 2 faible, 3 épuisé). -->
