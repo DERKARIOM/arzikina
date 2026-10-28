@@ -5,6 +5,7 @@ import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
 import com.naniger.arzikina.domain.model.SecurityQuestion
+import com.naniger.arzikina.domain.model.UsageMode
 
 /**
  * Représentation Room d'un utilisateur. Contrairement aux autres entités,
@@ -43,5 +44,10 @@ data class UserEntity(
     val securityQuestion: SecurityQuestion,
     /** Jamais la réponse en clair — même hachage que [passwordHash] (voir `util/PasswordHasher`). */
     val securityAnswerHash: String,
-    val createdAt: Long
+    val createdAt: Long,
+    /**
+     * Mode d'utilisation choisi à l'inscription (voir [UsageMode]) ; `null` pour les utilisateurs antérieurs à
+     * ce choix. Stocké par son nom (TEXT) : ne jamais renommer une entrée de l'enum.
+     */
+    val usageMode: UsageMode? = null
 )

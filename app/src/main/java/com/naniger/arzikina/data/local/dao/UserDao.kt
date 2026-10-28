@@ -5,6 +5,7 @@ import androidx.room.Insert
 import androidx.room.Query
 import com.naniger.arzikina.data.local.entity.UserEntity
 import com.naniger.arzikina.domain.model.SecurityQuestion
+import com.naniger.arzikina.domain.model.UsageMode
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -56,6 +57,13 @@ interface UserDao {
         phoneNumber: String?,
         profilePhotoUri: String?
     )
+
+    /**
+     * Renseigne le mode d'utilisation UNIQUEMENT s'il est encore inconnu localement (`IS NULL`) : un choix déjà
+     * enregistré n'est jamais écrasé. Sert à retrouver le choix du serveur après une reconnexion.
+     */
+    @Query("UPDATE users SET usageMode = :usageMode WHERE id = :userId AND usageMode IS NULL")
+    suspend fun backfillUsageMode(userId: Long, usageMode: UsageMode)
 
     @Query("UPDATE users SET passwordHash = :passwordHash WHERE id = :userId")
     suspend fun updatePasswordHash(userId: Long, passwordHash: String)

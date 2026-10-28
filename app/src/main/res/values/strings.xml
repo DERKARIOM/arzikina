@@ -1354,6 +1354,7 @@
     <string name="account_default_mobile_money">Mobile Money</string>
     <string name="account_default_savings">Épargne</string>
     <string name="account_default_wallet">Wallet</string>
+    <string name="account_default_shop">Caisse boutique</string>
 
     <!-- Noms des devises (voir SupportedCurrency.nameRes) : le code ISO et le symbole restent
          dans le domaine, ils ne dépendent d'aucune langue. -->

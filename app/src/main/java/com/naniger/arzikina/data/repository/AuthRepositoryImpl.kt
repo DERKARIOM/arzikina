@@ -1,9 +1,6 @@
 package com.naniger.arzikina.data.repository
 
-import android.database.sqlite.SQLiteConstraintException
 import com.naniger.arzikina.data.local.dao.UserDao
-import com.naniger.arzikina.data.local.database.NewUserDefaultDataSeeder
-import com.naniger.arzikina.data.local.entity.UserEntity
 import com.naniger.arzikina.data.mapper.toDomain
 import com.naniger.arzikina.di.IoDispatcher
 import com.naniger.arzikina.domain.model.AuthError
@@ -26,65 +23,13 @@ import javax.inject.Inject
  * Chaque méthode revalide le FORMAT via [AuthValidator] même si la
  * présentation est censée l'avoir déjà fait (défense en profondeur — cette
  * classe ne doit jamais faire confiance aveuglément à son appelant), puis
- * s'appuie sur les index UNIQUE de `users` (voir [UserEntity]) comme garde-fou
+ * s'appuie sur les index UNIQUE de `users` (voir `UserEntity`) comme garde-fou
  * ultime contre une course entre deux vérifications et l'insertion réelle.
  */
 class AuthRepositoryImpl @Inject constructor(
     private val userDao: UserDao,
-    private val newUserDefaultDataSeeder: NewUserDefaultDataSeeder,
     @IoDispatcher private val ioDispatcher: CoroutineDispatcher
 ) : AuthRepository {
-
-    override suspend fun register(
-        fullName: String,
-        username: String,
-        email: String,
-        phoneNumber: String?,
-        rawPassword: String,
-        profilePhotoUri: String?,
-        securityQuestion: SecurityQuestion,
-        securityAnswer: String
-    ): AuthResult<User> = withContext(ioDispatcher) {
-        validateRegistrationFormat(fullName, username, email, rawPassword, securityAnswer)
-            ?.let { return@withContext it }
-
-        if (userDao.findByUsername(username.trim()) != null) {
-            return@withContext AuthResult.Failure(AuthError.UsernameAlreadyExists)
-        }
-        if (userDao.findByEmail(email.trim()) != null) {
-            return@withContext AuthResult.Failure(AuthError.EmailAlreadyExists)
-        }
-
-        val entity = UserEntity(
-            fullName = fullName.trim(),
-            username = username.trim(),
-            email = email.trim(),
-            phoneNumber = phoneNumber?.trim()?.ifBlank { null },
-            passwordHash = PasswordHasher.hash(rawPassword),
-            profilePhotoUri = profilePhotoUri,
-            securityQuestion = securityQuestion,
-            securityAnswerHash = PasswordHasher.hash(AuthValidator.normalizeSecurityAnswer(securityAnswer)),
-            createdAt = System.currentTimeMillis()
-        )
-        try {
-            val id = userDao.insert(entity)
-            // Comptes/catégories par défaut (voir NewUserDefaultDataSeeder) : ce
-            // peuplement se faisait auparavant à la création de la base, avant
-            // l'authentification — il n'a de sens que maintenant qu'un userId existe.
-            newUserDefaultDataSeeder.seed(id)
-            AuthResult.Success(entity.copy(id = id).toDomain())
-        } catch (e: SQLiteConstraintException) {
-            // Course rarissime entre la vérification ci-dessus et l'insertion :
-            // l'index UNIQUE a tranché à notre place, on ne sait juste plus lequel
-            // des deux champs est en cause sans une nouvelle lecture.
-            val error = if (userDao.findByUsername(username.trim()) != null) {
-                AuthError.UsernameAlreadyExists
-            } else {
-                AuthError.EmailAlreadyExists
-            }
-            AuthResult.Failure(error)
-        }
-    }
 
     override suspend fun login(identifier: String, rawPassword: String): AuthResult<User> =
         withContext(ioDispatcher) {
@@ -202,34 +147,5 @@ class AuthRepositoryImpl @Inject constructor(
         val normalizedAnswer = AuthValidator.normalizeSecurityAnswer(securityAnswer)
         userDao.updateSecurityQuestion(userId, securityQuestion, PasswordHasher.hash(normalizedAnswer))
         AuthResult.Success(Unit)
-    }
-
-    private fun validateRegistrationFormat(
-        fullName: String,
-        username: String,
-        email: String,
-        rawPassword: String,
-        securityAnswer: String
-    ): AuthResult.Failure? {
-        if (fullName.isBlank() || username.isBlank() || email.isBlank() ||
-            rawPassword.isBlank() || securityAnswer.isBlank()
-        ) {
-            return AuthResult.Failure(AuthError.ValidationFailed(AuthError.ValidationReason.REQUIRED_FIELD_MISSING))
-        }
-        if (!AuthValidator.isValidUsername(username)) {
-            return AuthResult.Failure(AuthError.ValidationFailed(AuthError.ValidationReason.INVALID_USERNAME_FORMAT))
-        }
-        if (!AuthValidator.isValidEmail(email)) {
-            return AuthResult.Failure(AuthError.ValidationFailed(AuthError.ValidationReason.INVALID_EMAIL_FORMAT))
-        }
-        if (!AuthValidator.isPasswordLongEnough(rawPassword)) {
-            return AuthResult.Failure(AuthError.ValidationFailed(AuthError.ValidationReason.PASSWORD_TOO_SHORT))
-        }
-        if (!AuthValidator.isSecurityAnswerLongEnough(securityAnswer)) {
-            return AuthResult.Failure(
-                AuthError.ValidationFailed(AuthError.ValidationReason.SECURITY_ANSWER_TOO_SHORT)
-            )
-        }
-        return null
     }
 }

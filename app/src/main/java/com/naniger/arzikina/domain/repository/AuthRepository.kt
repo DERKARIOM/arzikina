@@ -29,23 +29,8 @@ import kotlinx.coroutines.flow.Flow
  */
 interface AuthRepository {
 
-    /**
-     * Crée un nouveau compte. Revalide les règles de format (voir
-     * [com.naniger.arzikina.util.AuthValidator]) par sécurité même si la
-     * présentation les a déjà vérifiées, et vérifie l'unicité du nom
-     * d'utilisateur et de l'e-mail (voir [AuthError][com.naniger.arzikina.domain.model.AuthError.UsernameAlreadyExists]
-     * / [EmailAlreadyExists][com.naniger.arzikina.domain.model.AuthError.EmailAlreadyExists]).
-     */
-    suspend fun register(
-        fullName: String,
-        username: String,
-        email: String,
-        phoneNumber: String?,
-        rawPassword: String,
-        profilePhotoUri: String?,
-        securityQuestion: SecurityQuestion,
-        securityAnswer: String
-    ): AuthResult<User>
+    // L'inscription n'existe plus ici : elle passe EXCLUSIVEMENT par [UnifiedAuthRepository.register]
+    // (serveur + local, avec le mode d'utilisation choisi et les comptes par défaut correspondants).
 
     /** [identifier] : e-mail OU nom d'utilisateur, au choix de l'utilisateur. */
     suspend fun login(identifier: String, rawPassword: String): AuthResult<User>

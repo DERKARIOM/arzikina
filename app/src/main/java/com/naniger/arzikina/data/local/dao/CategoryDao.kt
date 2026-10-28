@@ -28,6 +28,10 @@ interface CategoryDao {
     @Query("SELECT * FROM categories WHERE type = :type AND userId = :userId AND deletedAt IS NULL ORDER BY name ASC")
     fun observeByTypeForUser(type: TransactionType, userId: Long): Flow<List<CategoryEntity>>
 
+    /** Nombre de catégories de l'utilisateur, supprimées comprises (le semis par défaut ne se rejoue jamais). */
+    @Query("SELECT COUNT(*) FROM categories WHERE userId = :userId")
+    suspend fun countForUser(userId: Long): Int
+
     @Query("SELECT * FROM categories WHERE id = :id AND userId = :userId AND deletedAt IS NULL")
     suspend fun getById(id: Long, userId: Long): CategoryEntity?
 

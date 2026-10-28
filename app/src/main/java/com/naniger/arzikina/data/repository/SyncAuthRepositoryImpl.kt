@@ -10,6 +10,7 @@ import com.naniger.arzikina.data.remote.dto.LoginRequestDto
 import com.naniger.arzikina.data.remote.dto.LoginResponseDto
 import com.naniger.arzikina.data.remote.dto.RegisterRequestDto
 import com.naniger.arzikina.data.remote.dto.SetPasswordRequestDto
+import com.naniger.arzikina.data.remote.dto.SetUsageModeRequestDto
 import com.naniger.arzikina.di.ApplicationScope
 import com.naniger.arzikina.di.IoDispatcher
 import com.naniger.arzikina.domain.model.GoogleSyncSession
@@ -19,6 +20,8 @@ import com.naniger.arzikina.domain.model.PasswordProof
 import com.naniger.arzikina.domain.model.SyncAuthError
 import com.naniger.arzikina.domain.model.SyncAuthResult
 import com.naniger.arzikina.domain.model.SyncSession
+import com.naniger.arzikina.domain.model.UsageMode
+import com.naniger.arzikina.domain.model.UsageModeSelection
 import com.naniger.arzikina.domain.repository.PushRegistrationRepository
 import com.naniger.arzikina.domain.repository.SyncAuthRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -84,7 +87,8 @@ class SyncAuthRepositoryImpl @Inject constructor(
         phoneNumber: String?,
         securityQuestion: String?,
         securityAnswer: String?,
-        deviceLabel: String?
+        deviceLabel: String?,
+        usageMode: UsageMode?
     ): SyncAuthResult<SyncSession> = withContext(ioDispatcher) {
         runCatchingAuthCall {
             authApi.register(
@@ -97,7 +101,8 @@ class SyncAuthRepositoryImpl @Inject constructor(
                     securityQuestion = securityQuestion,
                     securityAnswer = securityAnswer,
                     deviceId = androidDeviceId(),
-                    deviceLabel = deviceLabel
+                    deviceLabel = deviceLabel,
+                    usageMode = usageMode?.name
                 )
             )
         }
@@ -124,7 +129,13 @@ class SyncAuthRepositoryImpl @Inject constructor(
             // retarde pas la connexion et réessaie seul hors ligne.
             pushRegistrationRepository.requestRegistration()
             SyncAuthResult.Success(
-                SyncSession(serverUserId = response.userId, expiresAt = response.expiresAt, fullName = response.fullName)
+                SyncSession(
+                    serverUserId = response.userId,
+                    expiresAt = response.expiresAt,
+                    fullName = response.fullName,
+                    usageMode = UsageMode.fromCode(response.usageMode),
+                    hasServerAccounts = response.hasAccounts
+                )
             )
         } catch (e: HttpFailureException) {
             when (e.code) {
@@ -227,6 +238,24 @@ class SyncAuthRepositoryImpl @Inject constructor(
             }
         }
 
+    override suspend fun setUsageMode(mode: UsageMode): SyncAuthResult<UsageModeSelection> = withContext(ioDispatcher) {
+        val rawToken = store.getValidRawToken()
+            ?: return@withContext SyncAuthResult.Failure(SyncAuthError.InvalidCredentials)
+        try {
+            val response = authApi.setUsageMode(rawToken, SetUsageModeRequestDto(mode.name))
+            // Le serveur fait foi : un choix déjà enregistré (autre appareil, nouvelle tentative) est renvoyé tel quel.
+            val confirmed = UsageMode.fromCode(response.usageMode)
+                ?: return@withContext SyncAuthResult.Failure(SyncAuthError.ServerError(null))
+            SyncAuthResult.Success(UsageModeSelection(confirmed, response.hasAccounts))
+        } catch (e: HttpFailureException) {
+            SyncAuthResult.Failure(if (e.code == 401) SyncAuthError.InvalidCredentials else SyncAuthError.ServerError(e.message))
+        } catch (e: IOException) {
+            SyncAuthResult.Failure(SyncAuthError.NetworkUnavailable)
+        } catch (e: Exception) {
+            SyncAuthResult.Failure(SyncAuthError.Unknown(e))
+        }
+    }
+
     override suspend fun getActiveSession(): SyncSession? = store.getActiveSession()
 
     override fun observeActiveSession(): Flow<SyncSession?> = store.observeActiveSession()
@@ -251,7 +280,13 @@ class SyncAuthRepositoryImpl @Inject constructor(
                 pushRegistrationRepository.requestRegistration()
                 SyncAuthResult.Success(
                     GoogleSyncSession(
-                        session = SyncSession(serverUserId = response.userId, expiresAt = response.expiresAt, fullName = response.fullName),
+                        session = SyncSession(
+                            serverUserId = response.userId,
+                            expiresAt = response.expiresAt,
+                            fullName = response.fullName,
+                            usageMode = UsageMode.fromCode(response.usageMode),
+                            hasServerAccounts = response.hasAccounts
+                        ),
                         email = response.email,
                         isNewAccount = response.isNewAccount
                     )

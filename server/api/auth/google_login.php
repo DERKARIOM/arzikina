@@ -5,6 +5,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../utils/json_response.php';
 require_once __DIR__ . '/../utils/version_policy.php';
+require_once __DIR__ . '/../utils/usage_profile.php';
 require_once __DIR__ . '/../utils/uuid.php';
 require_once __DIR__ . '/../utils/google_token_verifier.php';
 
@@ -177,6 +178,8 @@ function issueGoogleSession(PDO $pdo, string $userId, string $fullName, string $
         'expires_at' => $expiresAtMillis,
     ]);
 
+    $profile = fetchUsageProfile($pdo, $userId);
+
     sendJson([
         'token' => $rawToken,
         'userId' => $userId,
@@ -184,6 +187,9 @@ function issueGoogleSession(PDO $pdo, string $userId, string $fullName, string $
         'fullName' => $fullName,
         'email' => $email,
         'isNewAccount' => $isNewAccount,
+        // Voir utils/usage_profile.php : mode d'utilisation (null pour un nouveau compte Google) et « a déjà des comptes ».
+        'usageMode' => $profile['usageMode'],
+        'hasAccounts' => $profile['hasAccounts'],
     ]);
 }
 

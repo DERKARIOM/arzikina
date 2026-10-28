@@ -6,6 +6,8 @@ import com.naniger.arzikina.domain.model.PasswordChangeResult
 import com.naniger.arzikina.domain.model.PasswordProof
 import com.naniger.arzikina.domain.model.SecurityQuestion
 import com.naniger.arzikina.domain.model.UnifiedAuthResult
+import com.naniger.arzikina.domain.model.UsageMode
+import com.naniger.arzikina.domain.model.UsageModeSelectionResult
 
 /**
  * Point d'entrée UNIQUE d'authentification pour l'app mobile — cahier des charges "audit auth +
@@ -60,8 +62,23 @@ interface UnifiedAuthRepository {
         rawPassword: String,
         profilePhotoUri: String?,
         securityQuestion: SecurityQuestion,
-        securityAnswer: String
+        securityAnswer: String,
+        /**
+         * Mode d'utilisation choisi à l'inscription (voir [UsageMode]) : envoyé au serveur, enregistré sur
+         * l'utilisateur local et déterminant les comptes créés par défaut, le tout dans une seule transaction
+         * locale. Obligatoire : aucune inscription ne se fait sans ce choix.
+         */
+        usageMode: UsageMode
     ): UnifiedAuthResult
+
+    /**
+     * Finalise le choix du mode d'utilisation d'un utilisateur déjà authentifié (compte Google sans mode) : enregistre
+     * [mode] sur le serveur (le choix déjà existant fait foi, voir `set_usage_mode.php`), le conserve sur
+     * l'utilisateur local [localUserId], puis crée les comptes par défaut du mode UNIQUEMENT si le serveur n'en
+     * détient aucun — le tout idempotent (nouvel appui, nouvelle tentative : aucun doublon). La session de l'appli
+     * n'est pas touchée : c'est à l'appelant de la démarrer ensuite.
+     */
+    suspend fun completeUsageModeSelection(localUserId: Long, mode: UsageMode): UsageModeSelectionResult
 
     /**
      * Déconnexion complète de l'utilisateur (Profil, écran de verrouillage biométrique) : session

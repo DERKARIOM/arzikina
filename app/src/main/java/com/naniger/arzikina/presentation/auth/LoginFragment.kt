@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.text.InputType
 import android.view.View
 import android.view.inputmethod.EditorInfo
+import androidx.core.os.bundleOf
 import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
@@ -12,6 +13,8 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.NavOptions
 import androidx.navigation.fragment.findNavController
+import com.google.android.material.snackbar.Snackbar
+import com.google.android.material.textfield.TextInputLayout
 import com.naniger.arzikina.R
 import com.naniger.arzikina.databinding.FragmentLoginBinding
 import com.naniger.arzikina.presentation.components.NavAnimations
@@ -19,8 +22,6 @@ import com.naniger.arzikina.presentation.components.animateElevationOnFocus
 import com.naniger.arzikina.presentation.components.playEntranceAnimation
 import com.naniger.arzikina.presentation.components.playPressScaleFeedback
 import com.naniger.arzikina.presentation.components.setVisibleAnimated
-import com.google.android.material.snackbar.Snackbar
-import com.google.android.material.textfield.TextInputLayout
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 
@@ -212,6 +213,8 @@ class LoginFragment : Fragment(R.layout.fragment_login) {
                     .build()
                 findNavController().navigate(R.id.dashboardFragment, null, options)
             }
+            is LoginEvent.UsageModeRequired ->
+                findNavController().navigate(R.id.usageModeFragment, bundleOf("localUserId" to event.localUserId))
         }
     }
 }

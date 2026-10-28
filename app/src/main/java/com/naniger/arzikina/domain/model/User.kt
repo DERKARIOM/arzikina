@@ -24,5 +24,10 @@ data class User(
     val phoneNumber: String?,
     /** URI locale (voir Storage Access Framework) de la photo de profil, ou `null`. */
     val profilePhotoUri: String?,
-    val createdAt: Long
+    val createdAt: Long,
+    /**
+     * Mode d'utilisation choisi à l'inscription ; `null` = jamais demandé (utilisateur antérieur à ce choix,
+     * rien ne lui est imposé). Voir [UsageMode].
+     */
+    val usageMode: UsageMode? = null
 )

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="usage_mode_title">Comment souhaitez-vous utiliser Arsikina ?</string>
+    <string name="usage_mode_subtitle">Choisissez le mode qui correspond à vos besoins. Arsikina adaptera votre configuration de départ en fonction de votre choix.</string>
+    <string name="usage_mode_shop_title">Gestion de boutique</string>
+    <string name="usage_mode_shop_description">Gérez vos produits, vos stocks, vos ventes et vos recettes commerciales.</string>
+    <string name="usage_mode_personal_title">Finances personnelles</string>
+    <string name="usage_mode_personal_description">Gérez vos revenus, vos dépenses, vos budgets et votre argent au quotidien.</string>
+    <string name="usage_mode_both_title">Boutique et finances personnelles</string>
+    <string name="usage_mode_both_description">Gérez votre activité commerciale et vos finances personnelles dans une seule application.</string>
+    <string name="usage_mode_continue">Continuer</string>
+    <string name="usage_mode_footnote">Vous pourrez toujours ajouter d\'autres comptes plus tard.</string>
+</resources>

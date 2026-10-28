@@ -39,6 +39,19 @@
         android:label="@string/register_title"
         tools:layout="@layout/fragment_register" />
 
+    <!-- Choix du mode d'utilisation d'un compte Google (voir UsageModeFragment) ; argument : id local de l'utilisateur. -->
+    <fragment
+        android:id="@+id/usageModeFragment"
+        android:name="com.naniger.arzikina.presentation.auth.usage.UsageModeFragment"
+        android:label="@string/usage_mode_title"
+        tools:layout="@layout/fragment_usage_mode">
+
+        <argument
+            android:name="localUserId"
+            app:argType="long" />
+
+    </fragment>
+
     <fragment
         android:id="@+id/forgotPasswordFragment"
         android:name="com.naniger.arzikina.presentation.auth.ForgotPasswordFragment"

@@ -599,6 +599,7 @@ class MainActivity : AppCompatActivity() {
         val AUTH_DESTINATION_IDS = setOf(
             R.id.loginFragment,
             R.id.registerFragment,
+            R.id.usageModeFragment,
             R.id.forgotPasswordFragment,
             R.id.biometricLockFragment,
             // Écran de blocage de version : aucune donnée protégée, Bottom Navigation masquée,

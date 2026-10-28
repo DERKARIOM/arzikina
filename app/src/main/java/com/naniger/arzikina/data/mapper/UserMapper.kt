@@ -17,5 +17,6 @@ fun UserEntity.toDomain(): User = User(
     email = email,
     phoneNumber = phoneNumber,
     profilePhotoUri = profilePhotoUri,
-    createdAt = createdAt
+    createdAt = createdAt,
+    usageMode = usageMode
 )

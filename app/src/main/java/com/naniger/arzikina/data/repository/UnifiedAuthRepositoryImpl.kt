@@ -3,6 +3,8 @@ package com.naniger.arzikina.data.repository
 import com.naniger.arzikina.data.local.dao.UserDao
 import com.naniger.arzikina.data.local.dao.UserServerLinkDao
 import com.naniger.arzikina.data.local.database.AccountDataWiper
+import androidx.room.withTransaction
+import com.naniger.arzikina.data.local.database.ArzikinaDatabase
 import com.naniger.arzikina.data.local.database.NewUserDefaultDataSeeder
 import com.naniger.arzikina.data.local.entity.UserEntity
 import com.naniger.arzikina.data.local.entity.UserServerLinkEntity
@@ -11,16 +13,20 @@ import com.naniger.arzikina.domain.model.AccountDeletionError
 import com.naniger.arzikina.domain.model.AccountDeletionResult
 import com.naniger.arzikina.domain.model.AccountLinkError
 import com.naniger.arzikina.domain.model.AccountLinkResult
+import com.naniger.arzikina.domain.model.OnboardingSeedingPolicy
 import com.naniger.arzikina.domain.model.PasswordChangeError
 import com.naniger.arzikina.domain.model.PasswordChangeResult
 import com.naniger.arzikina.domain.model.PasswordLimits
 import com.naniger.arzikina.domain.model.PasswordProof
 import com.naniger.arzikina.domain.model.SecurityQuestion
+import com.naniger.arzikina.domain.model.SeedDecision
 import com.naniger.arzikina.domain.model.SyncAuthError
 import com.naniger.arzikina.domain.model.SyncAuthResult
 import com.naniger.arzikina.domain.model.SyncSession
 import com.naniger.arzikina.domain.model.UnifiedAuthError
 import com.naniger.arzikina.domain.model.UnifiedAuthResult
+import com.naniger.arzikina.domain.model.UsageMode
+import com.naniger.arzikina.domain.model.UsageModeSelectionResult
 import com.naniger.arzikina.domain.repository.SessionManager
 import com.naniger.arzikina.domain.repository.SyncAuthRepository
 import com.naniger.arzikina.domain.repository.UnifiedAuthRepository
@@ -64,7 +70,8 @@ class UnifiedAuthRepositoryImpl @Inject constructor(
     private val newUserDefaultDataSeeder: NewUserDefaultDataSeeder,
     @IoDispatcher private val ioDispatcher: CoroutineDispatcher,
     private val sessionManager: SessionManager,
-    private val accountDataWiper: AccountDataWiper
+    private val accountDataWiper: AccountDataWiper,
+    private val database: ArzikinaDatabase
 ) : UnifiedAuthRepository {
 
     /** Ordre volontaire : serveur d'abord (effacement local immédiat du token, voir
@@ -130,12 +137,18 @@ class UnifiedAuthRepositoryImpl @Inject constructor(
                     fullName = googleSession.session.fullName,
                     email = googleSession.email,
                     rawPassword = null,
-                    // Seule une Cas B réelle (compte serveur VENANT d'être créé, voir
-                    // [GoogleSyncSession.isNewAccount]) déclenche le semis - même raisonnement que
-                    // [register]/la KDoc de tête, anti-doublon.
-                    seedDefaultsIfNewLocalUser = googleSession.isNewAccount
+                    // Plus de semis ici, même pour un nouveau compte : le mode n'est pas encore choisi. Les comptes
+                    // par défaut sont créés par [completeUsageModeSelection] APRÈS le choix (écran dédié), jamais
+                    // avant — et jamais pour un appareil qui rejoint un compte déjà configuré.
+                    seedDefaultsIfNewLocalUser = false,
+                    sessionUsageMode = googleSession.session.usageMode,
+                    hasServerAccounts = googleSession.session.hasServerAccounts
                 )
-                UnifiedAuthResult.Success(localUserId, usedLocalFallback = false)
+                // Choix à faire : nouveau compte, ou compte jamais configuré (aucun mode connu et aucun compte
+                // côté serveur — par exemple inscription Google interrompue avant le choix).
+                val needsChoice = googleSession.session.usageMode == null &&
+                    (googleSession.isNewAccount || !googleSession.session.hasServerAccounts)
+                UnifiedAuthResult.Success(localUserId, usedLocalFallback = false, needsUsageModeChoice = needsChoice)
             }
 
             is SyncAuthResult.Failure -> when (result.error) {
@@ -152,6 +165,40 @@ class UnifiedAuthRepositoryImpl @Inject constructor(
             }
         }
     }
+
+    override suspend fun completeUsageModeSelection(localUserId: Long, mode: UsageMode): UsageModeSelectionResult =
+        withContext(ioDispatcher) {
+            when (val result = syncAuthRepository.setUsageMode(mode)) {
+                is SyncAuthResult.Failure -> UsageModeSelectionResult.Failure(
+                    when (val error = result.error) {
+                        SyncAuthError.NetworkUnavailable -> UnifiedAuthError.NetworkUnavailableNoLocalFallback
+                        is SyncAuthError.ServerError -> UnifiedAuthError.ServerError(error.message)
+                        is SyncAuthError.Unknown -> UnifiedAuthError.Unknown(error.cause)
+                        else -> UnifiedAuthError.ServerError(null)
+                    }
+                )
+
+                is SyncAuthResult.Success -> {
+                    val selection = result.data
+                    // Une seule transaction locale : mode + comptes ensemble ou rien. Le mode du serveur fait foi.
+                    database.withTransaction {
+                        userDao.backfillUsageMode(localUserId, selection.mode)
+                        when (
+                            val decision = OnboardingSeedingPolicy.decide(
+                                isRegistration = false,
+                                registrationMode = null,
+                                sessionMode = selection.mode,
+                                hasServerAccounts = selection.hasServerAccounts
+                            )
+                        ) {
+                            is SeedDecision.ForMode -> newUserDefaultDataSeeder.seed(localUserId, decision.mode)
+                            SeedDecision.None -> Unit
+                        }
+                    }
+                    UsageModeSelectionResult.Success
+                }
+            }
+        }
 
     /** Voir la KDoc de l'interface. Vérifie la session active AVANT tout appel réseau - défense en
      *  profondeur en plus de la même garde côté [SyncAuthRepositoryImpl.linkGoogleAccount]. */
@@ -245,7 +292,8 @@ class UnifiedAuthRepositoryImpl @Inject constructor(
         rawPassword: String,
         profilePhotoUri: String?,
         securityQuestion: SecurityQuestion,
-        securityAnswer: String
+        securityAnswer: String,
+        usageMode: UsageMode
     ): UnifiedAuthResult = withContext(ioDispatcher) {
         val trimmedEmail = email.trim()
         val trimmedFullName = fullName.trim()
@@ -267,6 +315,7 @@ class UnifiedAuthRepositoryImpl @Inject constructor(
             phoneNumber = phoneNumber,
             securityQuestion = securityQuestion,
             securityAnswer = trimmedSecurityAnswer,
+            usageMode = usageMode,
             // Nom CHOISI par l'utilisateur (formulaire complet, contrairement à la migration
             // silencieuse ci-dessous) : jamais de retentative silencieuse sous un autre nom, voir
             // [UnifiedAuthError.UsernameAlreadyExists].
@@ -285,7 +334,8 @@ class UnifiedAuthRepositoryImpl @Inject constructor(
                         phoneNumber = phoneNumber,
                         profilePhotoUri = profilePhotoUri,
                         securityQuestion = securityQuestion,
-                        securityAnswer = trimmedSecurityAnswer
+                        securityAnswer = trimmedSecurityAnswer,
+                        registrationMode = usageMode
                     )
 
                 is SyncAuthResult.Failure -> when (result.error) {
@@ -311,7 +361,8 @@ class UnifiedAuthRepositoryImpl @Inject constructor(
         phoneNumber: String? = null,
         profilePhotoUri: String? = null,
         securityQuestion: SecurityQuestion? = null,
-        securityAnswer: String? = null
+        securityAnswer: String? = null,
+        registrationMode: UsageMode? = null
     ): UnifiedAuthResult {
         val localUserId = resolveOrCreateLocalUser(
             serverUserId = session.serverUserId,
@@ -323,7 +374,10 @@ class UnifiedAuthRepositoryImpl @Inject constructor(
             phoneNumber = phoneNumber,
             profilePhotoUri = profilePhotoUri,
             securityQuestion = securityQuestion,
-            securityAnswer = securityAnswer
+            securityAnswer = securityAnswer,
+            registrationMode = registrationMode,
+            sessionUsageMode = session.usageMode,
+            hasServerAccounts = session.hasServerAccounts
         )
         return UnifiedAuthResult.Success(localUserId, usedLocalFallback = false)
     }
@@ -410,12 +464,24 @@ class UnifiedAuthRepositoryImpl @Inject constructor(
         phoneNumber: String? = null,
         profilePhotoUri: String? = null,
         securityQuestion: SecurityQuestion? = null,
-        securityAnswer: String? = null
-    ): Long {
-        userServerLinkDao.getByServerUserId(serverUserId)?.let { return it.localUserId }
+        securityAnswer: String? = null,
+        // Mode choisi à l'inscription (null hors inscription), mode connu du serveur et « le serveur a déjà des
+        // comptes » : voir [OnboardingSeedingPolicy] pour la décision de création.
+        registrationMode: UsageMode? = null,
+        sessionUsageMode: UsageMode? = null,
+        hasServerAccounts: Boolean = true
+    ): Long = database.withTransaction {
+        // UNE transaction locale : utilisateur, mode, comptes par défaut et lien serveur sont créés ensemble ou
+        // pas du tout (jamais un utilisateur local à moitié configuré).
+        val effectiveMode = OnboardingSeedingPolicy.effectiveMode(registrationMode, sessionUsageMode)
+        userServerLinkDao.getByServerUserId(serverUserId)?.let { link ->
+            effectiveMode?.let { userDao.backfillUsageMode(link.localUserId, it) }
+            return@withTransaction link.localUserId
+        }
 
         val existingLocal = userDao.findByEmail(email)
         val localUserId = if (existingLocal != null) {
+            effectiveMode?.let { userDao.backfillUsageMode(existingLocal.id, it) }
             existingLocal.id
         } else {
             val entity = UserEntity(
@@ -443,17 +509,28 @@ class UnifiedAuthRepositoryImpl @Inject constructor(
                 securityQuestion = securityQuestion ?: SecurityQuestion.entries.first(),
                 securityAnswerHash = securityAnswer?.let { PasswordHasher.hash(it) }
                     ?: PasswordHasher.hash(UUID.randomUUID().toString()),
-                createdAt = System.currentTimeMillis()
+                createdAt = System.currentTimeMillis(),
+                usageMode = effectiveMode
             )
             val id = userDao.insert(entity)
-            if (seedDefaultsIfNewLocalUser) newUserDefaultDataSeeder.seed(id)
+            when (
+                val decision = OnboardingSeedingPolicy.decide(
+                    isRegistration = seedDefaultsIfNewLocalUser,
+                    registrationMode = registrationMode,
+                    sessionMode = sessionUsageMode,
+                    hasServerAccounts = hasServerAccounts
+                )
+            ) {
+                SeedDecision.None -> Unit
+                is SeedDecision.ForMode -> newUserDefaultDataSeeder.seed(id, decision.mode)
+            }
             id
         }
 
         userServerLinkDao.upsert(
             UserServerLinkEntity(localUserId = localUserId, serverUserId = serverUserId, linkedAt = System.currentTimeMillis())
         )
-        return localUserId
+        localUserId
     }
 
     /**
@@ -476,6 +553,7 @@ class UnifiedAuthRepositoryImpl @Inject constructor(
         phoneNumber: String? = null,
         securityQuestion: SecurityQuestion? = null,
         securityAnswer: String? = null,
+        usageMode: UsageMode? = null,
         allowUsernameRetry: Boolean,
         attempt: Int = 0
     ): SyncAuthResult<SyncSession> {
@@ -487,13 +565,14 @@ class UnifiedAuthRepositoryImpl @Inject constructor(
             rawPassword = rawPassword,
             phoneNumber = phoneNumber,
             securityQuestion = securityQuestion?.name,
-            securityAnswer = securityAnswer
+            securityAnswer = securityAnswer,
+            usageMode = usageMode
         )
         val isUsernameConflict = result is SyncAuthResult.Failure && result.error == SyncAuthError.UsernameTaken
         return if (allowUsernameRetry && isUsernameConflict && attempt < MAX_USERNAME_RETRY_ATTEMPTS) {
             registerOnServerWithUsernameRetry(
                 fullName, preferredUsername, email, rawPassword, phoneNumber, securityQuestion, securityAnswer,
-                allowUsernameRetry, attempt + 1
+                usageMode, allowUsernameRetry, attempt + 1
             )
         } else {
             result

@@ -15,7 +15,8 @@ require_once __DIR__ . '/../utils/uuid.php';
  *     "fullName": "...", "username": "...", "email": "...", "phoneNumber": "..." (optionnel),
  *     "password": "...",
  *     "securityQuestion": "MOTHER_MAIDEN_NAME" (optionnel), "securityAnswer": "..." (optionnel),
- *     "deviceId": "...", "deviceLabel": "..." (optionnels, voir login.php)
+ *     "deviceId": "...", "deviceLabel": "..." (optionnels, voir login.php),
+ *     "usageMode": "SHOP" | "PERSONAL" | "BOTH" (optionnel : mode d'utilisation choisi à l'inscription)
  *   }
  *
  * Étape D du chantier "audit auth + sync + doublons" — jusqu'ici PAS d'endpoint d'inscription côté
@@ -66,6 +67,13 @@ $securityQuestion = isset($body['securityQuestion']) ? trim((string) $body['secu
 $securityAnswer = isset($body['securityAnswer']) ? (string) $body['securityAnswer'] : null;
 $deviceId = isset($body['deviceId']) ? (string) $body['deviceId'] : null;
 $deviceLabel = isset($body['deviceLabel']) ? (string) $body['deviceLabel'] : null;
+// Mode d'utilisation (voir database/migrations/013_users_usage_mode.sql) : OPTIONNEL, pour que les clients
+// plus anciens (et le web) continuent de s'inscrire sans changement. Valeur inconnue = erreur explicite.
+$knownUsageModes = ['SHOP', 'PERSONAL', 'BOTH'];
+$usageMode = isset($body['usageMode']) && $body['usageMode'] !== '' ? trim((string) $body['usageMode']) : null;
+if ($usageMode !== null && !in_array($usageMode, $knownUsageModes, true)) {
+    sendError('invalid_usage_mode', "Mode d'utilisation inconnu.", 400);
+}
 
 if ($fullName === '' || $username === '' || $email === '' || $password === '') {
     sendError('invalid_body', 'fullName, username, email et password sont obligatoires.', 400);
@@ -127,7 +135,7 @@ try {
          VALUES
             (:id, :full_name, :username, :email, :phone_number, :password_hash, :security_question, :security_answer_hash, :created_at, :updated_at, NULL, 1)'
     );
-    $insertUser->execute([
+    $userParams = [
         'id' => $userId,
         'full_name' => $fullName,
         'username' => $username,
@@ -138,7 +146,15 @@ try {
         'security_answer_hash' => $storedSecurityAnswerHash,
         'created_at' => $nowMillis,
         'updated_at' => $nowMillis,
-    ]);
+    ];
+    $insertUser->execute($userParams);
+
+    // La colonne `usage_mode` n'est écrite QUE si le client l'a envoyée : l'inscription reste ainsi possible
+    // même si la migration 013 n'est pas encore appliquée, tant qu'aucun client ne l'utilise.
+    if ($usageMode !== null) {
+        $setUsageMode = $pdo->prepare('UPDATE users SET usage_mode = :usage_mode WHERE id = :id');
+        $setUsageMode->execute(['usage_mode' => $usageMode, 'id' => $userId]);
+    }
 
     // Émission immédiate d'un token de session — même logique que login.php (aucune duplication de
     // requête SQL : ce bloc est volontairement identique, une extraction commune serait prématurée

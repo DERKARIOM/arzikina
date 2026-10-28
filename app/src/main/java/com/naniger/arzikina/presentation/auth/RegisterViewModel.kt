@@ -7,6 +7,7 @@ import com.naniger.arzikina.R
 import com.naniger.arzikina.domain.model.SecurityQuestion
 import com.naniger.arzikina.domain.model.UnifiedAuthError
 import com.naniger.arzikina.domain.model.UnifiedAuthResult
+import com.naniger.arzikina.domain.model.UsageMode
 import com.naniger.arzikina.domain.repository.SessionManager
 import com.naniger.arzikina.domain.repository.UnifiedAuthRepository
 import com.naniger.arzikina.util.AuthValidator
@@ -29,6 +30,9 @@ import javax.inject.Inject
  * qu'affichées génériquement : l'utilisateur doit voir immédiatement QUEL
  * champ corriger.
  */
+/** Étape de l'inscription : le formulaire, puis le choix du mode d'utilisation (l'appel serveur n'a lieu qu'à la fin). */
+enum class RegisterStep { FORM, USAGE_MODE }
+
 data class RegisterFormState(
     val fullName: String = "",
     val username: String = "",
@@ -40,6 +44,9 @@ data class RegisterFormState(
     /** Toujours une valeur valide (liste FERMÉE, voir [SecurityQuestion]) : jamais "non choisie". */
     val securityQuestion: SecurityQuestion = SecurityQuestion.FIRST_PET_NAME,
     val securityAnswer: String = "",
+    /** Mode d'utilisation choisi (étape dédiée) ; `null` tant que le choix n'est pas proposé. */
+    val usageMode: UsageMode? = null,
+    val step: RegisterStep = RegisterStep.FORM,
     @StringRes val fullNameError: Int? = null,
     @StringRes val usernameError: Int? = null,
     @StringRes val emailError: Int? = null,
@@ -47,10 +54,18 @@ data class RegisterFormState(
     @StringRes val confirmPasswordError: Int? = null,
     @StringRes val securityAnswerError: Int? = null,
     val isSubmitting: Boolean = false
-)
+) {
+    /** Au moins un champ du formulaire est en erreur (le serveur peut en signaler après l'étape de choix). */
+    val hasFieldError: Boolean
+        get() = listOf(fullNameError, usernameError, emailError, passwordError, confirmPasswordError, securityAnswerError)
+            .any { it != null }
+}
 
 sealed interface RegisterEvent {
     data object Registered : RegisterEvent
+
+    /** Compte Google à configurer : afficher l'écran de choix du mode AVANT de démarrer la session. */
+    data class UsageModeRequired(val localUserId: Long) : RegisterEvent
     data class ShowError(@StringRes val messageRes: Int) : RegisterEvent
 }
 
@@ -98,6 +113,10 @@ class RegisterViewModel @Inject constructor(
         _formState.update { it.copy(securityQuestion = value) }
     }
 
+    fun onUsageModeChange(value: UsageMode) {
+        _formState.update { it.copy(usageMode = value) }
+    }
+
     fun onSecurityAnswerChange(value: String) {
         _formState.update { it.copy(securityAnswer = value, securityAnswerError = null) }
     }
@@ -113,8 +132,25 @@ class RegisterViewModel @Inject constructor(
     fun submit() {
         if (_formState.value.isSubmitting) return
         if (!validateFormat()) return
+        // Formulaire valide : on passe au choix du mode d'utilisation. Rien n'est envoyé au serveur avant ce choix,
+        // pour créer le compte ET sa configuration en une seule opération (voir [confirmUsageMode]).
+        _formState.update { it.copy(step = RegisterStep.USAGE_MODE) }
+    }
 
+    /** Retour du choix du mode vers le formulaire (impossible pendant l'envoi). */
+    fun backToForm() {
+        if (_formState.value.isSubmitting) return
+        _formState.update { it.copy(step = RegisterStep.FORM) }
+    }
+
+    /**
+     * « Continuer » de l'étape de choix : crée le compte avec le mode choisi. Protégé contre les doubles appuis
+     * ([RegisterFormState.isSubmitting]) ; refuse d'avancer tant qu'aucun choix valide n'est fait.
+     */
+    fun confirmUsageMode() {
         val state = _formState.value
+        val usageMode = state.usageMode
+        if (state.isSubmitting || usageMode == null) return
         _formState.update { it.copy(isSubmitting = true) }
         viewModelScope.launch {
             val result = unifiedAuthRepository.register(
@@ -125,7 +161,8 @@ class RegisterViewModel @Inject constructor(
                 rawPassword = state.password,
                 profilePhotoUri = state.profilePhotoUri,
                 securityQuestion = state.securityQuestion,
-                securityAnswer = state.securityAnswer.trim()
+                securityAnswer = state.securityAnswer.trim(),
+                usageMode = usageMode
             )
             when (result) {
                 is UnifiedAuthResult.Success -> {
@@ -136,6 +173,9 @@ class RegisterViewModel @Inject constructor(
                 is UnifiedAuthResult.Failure -> {
                     _formState.update { it.copy(isSubmitting = false) }
                     handleFailure(result.error)
+                    // Nom d'utilisateur / e-mail refusé par le serveur : retour au formulaire pour le corriger.
+                    // Une erreur réseau ou serveur laisse au contraire l'utilisateur sur l'étape de choix (réessayer).
+                    _formState.update { if (it.hasFieldError) it.copy(step = RegisterStep.FORM) else it }
                 }
             }
         }
@@ -155,7 +195,11 @@ class RegisterViewModel @Inject constructor(
         _formState.update { it.copy(isSubmitting = true) }
         viewModelScope.launch {
             when (val result = unifiedAuthRepository.loginWithGoogle(idToken)) {
-                is UnifiedAuthResult.Success -> {
+                is UnifiedAuthResult.Success -> if (result.needsUsageModeChoice) {
+                    // Pas de session tant que le mode n'est pas choisi (voir UsageModeViewModel).
+                    _formState.update { it.copy(isSubmitting = false) }
+                    _events.emit(RegisterEvent.UsageModeRequired(result.localUserId))
+                } else {
                     sessionManager.startSession(result.localUserId)
                     _formState.update { it.copy(isSubmitting = false) }
                     _events.emit(RegisterEvent.Registered)

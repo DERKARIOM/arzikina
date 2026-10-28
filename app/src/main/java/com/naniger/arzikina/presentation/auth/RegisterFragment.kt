@@ -4,7 +4,9 @@ import android.os.Bundle
 import android.text.InputType
 import android.view.View
 import android.view.inputmethod.EditorInfo
+import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.os.bundleOf
 import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
@@ -14,15 +16,16 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.NavOptions
 import androidx.navigation.fragment.findNavController
 import coil3.load
+import com.google.android.material.snackbar.Snackbar
+import com.google.android.material.textfield.TextInputLayout
 import com.naniger.arzikina.R
 import com.naniger.arzikina.databinding.FragmentRegisterBinding
 import com.naniger.arzikina.domain.model.SecurityQuestion
+import com.naniger.arzikina.presentation.auth.usage.UsageModePageController
 import com.naniger.arzikina.presentation.components.animateElevationOnFocus
 import com.naniger.arzikina.presentation.components.elevateOnFocusOf
 import com.naniger.arzikina.presentation.components.playEntranceAnimation
 import com.naniger.arzikina.presentation.components.playPressScaleFeedback
-import com.google.android.material.snackbar.Snackbar
-import com.google.android.material.textfield.TextInputLayout
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 
@@ -48,6 +51,7 @@ class RegisterFragment : Fragment(R.layout.fragment_register) {
 
     private val viewModel: RegisterViewModel by viewModels()
     private var binding: FragmentRegisterBinding? = null
+    private var usageModeController: UsageModePageController? = null
 
     /** Voir [LoginFragment] — même raisonnement, instancié paresseusement avec le contexte de
      *  l'Activity, jamais avant [onViewCreated]. */
@@ -95,6 +99,27 @@ class RegisterFragment : Fragment(R.layout.fragment_register) {
         viewBinding.registerButton.playPressScaleFeedback()
         viewBinding.registerButton.setOnClickListener { viewModel.submit() }
         viewBinding.googleSignInButton.setOnClickListener { onGoogleSignInClicked(viewBinding) }
+        usageModeController = UsageModePageController(
+            binding = viewBinding.usageModePage,
+            onModeSelected = viewModel::onUsageModeChange,
+            onContinue = viewModel::confirmUsageMode,
+            onBack = viewModel::backToForm
+        )
+        // Retour système : depuis l'étape de choix, on revient au formulaire plutôt que de quitter l'inscription.
+        val backFromUsageMode = object : OnBackPressedCallback(false) {
+            override fun handleOnBackPressed() = viewModel.backToForm()
+        }
+        requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner, backFromUsageMode)
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.formState.collect { state ->
+                    val onUsageStep = state.step == RegisterStep.USAGE_MODE
+                    viewBinding.usageModePage.root.visibility = if (onUsageStep) View.VISIBLE else View.GONE
+                    backFromUsageMode.isEnabled = onUsageStep && !state.isSubmitting
+                    usageModeController?.render(state.usageMode, state.isSubmitting)
+                }
+            }
+        }
 
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -106,6 +131,7 @@ class RegisterFragment : Fragment(R.layout.fragment_register) {
 
     override fun onDestroyView() {
         super.onDestroyView()
+        usageModeController = null
         binding = null
     }
 
@@ -309,6 +335,8 @@ class RegisterFragment : Fragment(R.layout.fragment_register) {
                     .build()
                 findNavController().navigate(R.id.dashboardFragment, null, options)
             }
+            is RegisterEvent.UsageModeRequired ->
+                findNavController().navigate(R.id.usageModeFragment, bundleOf("localUserId" to event.localUserId))
             is RegisterEvent.ShowError -> {
                 binding?.let { Snackbar.make(it.root, event.messageRes, Snackbar.LENGTH_LONG).show() }
             }

@@ -132,7 +132,7 @@ class AccountRepositoryImpl @Inject constructor(
                 if (current.displayOrder == newOrder) return@forEachIndexed
 
                 // Un compte jamais encore synchronisé (ex. compte par défaut semé à l'inscription,
-                // voir DefaultAccounts.seed) n'a pas encore de syncId — même rattrapage que
+                // voir DefaultAccounts.seedFor) n'a pas encore de syncId — même rattrapage que
                 // saveAccount ci-dessus : enqueueAccountSync exige un syncId non nul. @Upsert
                 // complet dans ce cas (PAS la requête étroite updateDisplayOrder, qui ne touche
                 // jamais syncId) : le nouvel id doit être réellement persisté, pas seulement porté

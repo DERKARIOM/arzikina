@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Écran de choix du mode pour un compte Google (voir UsageModeFragment) : simple hôte de view_usage_mode_page. -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <include
+        android:id="@+id/page"
+        layout="@layout/view_usage_mode_page" />
+</FrameLayout>

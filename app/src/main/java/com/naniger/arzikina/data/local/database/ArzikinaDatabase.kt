@@ -185,6 +185,8 @@ import com.naniger.arzikina.data.local.entity.UserServerLinkEntity
  * - 37 : Panier de vente persistant — tables `cart_drafts` et `cart_lines` (voir [MIGRATION_36_37],
  *   [CartDraftEntity], [CartLineEntity]). Données locales uniquement (ni synchronisées ni sauvegardées) ;
  *   migration purement additive, aucune `ForeignKey`.
+ * - 38 : Mode d'utilisation choisi à l'inscription — colonne nullable `usageMode` sur `users` (voir
+ *   [MIGRATION_37_38] et `UsageMode`). Migration purement additive, sans backfill (`NULL` = jamais demandé).
  */
 @Database(
     entities = [
@@ -220,7 +222,7 @@ import com.naniger.arzikina.data.local.entity.UserServerLinkEntity
         CartDraftEntity::class,
         CartLineEntity::class
     ],
-    version = 37,
+    version = 38,
     exportSchema = true
 )
 @TypeConverters(Converters::class)

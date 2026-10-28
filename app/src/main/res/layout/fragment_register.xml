@@ -313,4 +313,12 @@
 
     </androidx.core.widget.NestedScrollView>
 
+    <!-- Étape « mode d'utilisation » : recouvre le formulaire une fois celui-ci validé (voir RegisterViewModel.step). -->
+    <include
+        android:id="@+id/usageModePage"
+        layout="@layout/view_usage_mode_page"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="gone" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>

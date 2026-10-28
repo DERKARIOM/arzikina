@@ -45,6 +45,10 @@ interface AccountDao {
      * `applyAccountServerState` après confirmation de la synchronisation, jamais localement). */
     /** Plus grande position utilisée (`null` sans aucun compte) — voir `LegacySavingsGoalMigrator`,
      * qui ajoute les objectifs convertis APRÈS tous les comptes existants, trous compris. */
+    /** Types des comptes ACTIFS de l'utilisateur (voir `DefaultAccountPlan` : l'idempotence se décide par type). */
+    @Query("SELECT DISTINCT type FROM accounts WHERE userId = :userId AND deletedAt IS NULL")
+    suspend fun activeTypesForUser(userId: Long): List<AccountType>
+
     @Query("SELECT MAX(displayOrder) FROM accounts WHERE userId = :userId AND deletedAt IS NULL")
     suspend fun maxDisplayOrder(userId: Long): Long?
 

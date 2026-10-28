@@ -17,5 +17,9 @@ data class SyncSession(
     /** Nom complet réel (`users.full_name` côté serveur) — utile à
      *  [com.naniger.arzikina.data.repository.UnifiedAuthRepositoryImpl] pour créer/afficher le profil
      *  LOCAL correspondant, sans avoir à rappeler le serveur une seconde fois pour l'obtenir. */
-    val fullName: String
+    val fullName: String,
+    /** Mode d'utilisation connu du serveur ; `null` = jamais demandé. */
+    val usageMode: UsageMode? = null,
+    /** Le serveur détient déjà des comptes pour cet utilisateur (voir `OnboardingSeedingPolicy`). */
+    val hasServerAccounts: Boolean = true
 )

@@ -11,7 +11,10 @@ enum class DefaultAccountKey(val canonicalName: String) {
     BANK("Banque"),
     MOBILE_MONEY("Mobile Money"),
     SAVINGS("Épargne"),
-    WALLET("Wallet");
+    WALLET("Wallet"),
+
+    /** Compte Boutique créé à l'inscription pour les modes [UsageMode.SHOP] et [UsageMode.BOTH]. */
+    SHOP("Caisse boutique");
 
     companion object {
         fun of(name: String): DefaultAccountKey? = entries.firstOrNull { it.canonicalName == name }

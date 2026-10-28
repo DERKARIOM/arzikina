@@ -61,6 +61,9 @@ data class LoginFormState(
 
 sealed interface LoginEvent {
     data object LoggedIn : LoginEvent
+
+    /** Compte Google à configurer : afficher l'écran de choix du mode AVANT de démarrer la session. */
+    data class UsageModeRequired(val localUserId: Long) : LoginEvent
 }
 
 @HiltViewModel
@@ -136,7 +139,13 @@ class LoginViewModel @Inject constructor(
     fun submitWithGoogle(idToken: String) {
         viewModelScope.launch {
             when (val result = unifiedAuthRepository.loginWithGoogle(idToken)) {
-                is UnifiedAuthResult.Success -> onLoginSuccess(result)
+                is UnifiedAuthResult.Success -> if (result.needsUsageModeChoice) {
+                    // Pas de session ni de synchronisation tant que le mode n'est pas choisi (voir UsageModeViewModel).
+                    _formState.update { it.copy(stage = LoginStage.IDLE) }
+                    _events.emit(LoginEvent.UsageModeRequired(result.localUserId))
+                } else {
+                    onLoginSuccess(result)
+                }
                 is UnifiedAuthResult.Failure -> {
                     _formState.update { it.copy(stage = LoginStage.IDLE) }
                     handleFailure(result.error)

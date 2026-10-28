@@ -23,5 +23,9 @@ data class GoogleLoginResponseDto(
     val expiresAt: Long,
     val fullName: String,
     val email: String,
-    val isNewAccount: Boolean
+    val isNewAccount: Boolean,
+    /** Voir [LoginResponseDto.usageMode]. */
+    val usageMode: String? = null,
+    /** Voir [LoginResponseDto.hasAccounts]. */
+    val hasAccounts: Boolean = true
 )

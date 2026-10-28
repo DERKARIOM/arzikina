@@ -5,6 +5,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../utils/json_response.php';
 require_once __DIR__ . '/../utils/version_policy.php';
+require_once __DIR__ . '/../utils/usage_profile.php';
 
 /**
  * POST /api/auth/login.php
@@ -99,6 +100,8 @@ try {
         'expires_at' => $expiresAtMillis,
     ]);
 
+    $profile = fetchUsageProfile($pdo, (string) $user['id']);
+
     sendJson([
         'token' => $rawToken,
         'userId' => $user['id'],
@@ -112,6 +115,9 @@ try {
         // ce repli, kotlinx.serialization plante au décodage et la connexion échoue avec une erreur
         // générique trompeuse côté mobile).
         'fullName' => $user['full_name'] ?? '',
+        // Mode d'utilisation choisi à l'inscription + « a déjà des comptes » (voir utils/usage_profile.php).
+        'usageMode' => $profile['usageMode'],
+        'hasAccounts' => $profile['hasAccounts'],
     ]);
 } catch (Throwable $e) {
     error_log('Arzikina API — echec connexion : ' . $e->getMessage());

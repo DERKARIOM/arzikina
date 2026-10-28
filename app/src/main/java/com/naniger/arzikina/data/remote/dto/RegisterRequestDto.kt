@@ -23,5 +23,7 @@ data class RegisterRequestDto(
     val securityQuestion: String? = null,
     val securityAnswer: String? = null,
     val deviceId: String? = null,
-    val deviceLabel: String? = null
+    val deviceLabel: String? = null,
+    /** Mode d'utilisation choisi (`SHOP`/`PERSONAL`/`BOTH`) ; `null` pour les parcours sans choix. */
+    val usageMode: String? = null
 )

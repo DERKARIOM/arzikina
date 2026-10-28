@@ -15,7 +15,16 @@ sealed class UnifiedAuthResult {
      * de synchronisation automatique (aucune session serveur valide) et adapter le message affiché
      * ("Connecté hors-ligne" plutôt que "Synchronisation terminée").
      */
-    data class Success(val localUserId: Long, val usedLocalFallback: Boolean) : UnifiedAuthResult()
+    data class Success(
+        val localUserId: Long,
+        val usedLocalFallback: Boolean,
+        /**
+         * `true` pour un compte Google qui n'a pas encore choisi son mode d'utilisation (nouveau compte, ou
+         * compte jamais configuré) : l'appelant doit afficher l'écran de choix AVANT de démarrer la session, puis
+         * appeler `completeUsageModeSelection`.
+         */
+        val needsUsageModeChoice: Boolean = false
+    ) : UnifiedAuthResult()
 
     data class Failure(val error: UnifiedAuthError) : UnifiedAuthResult()
 }

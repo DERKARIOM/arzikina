@@ -69,6 +69,7 @@ val DefaultAccountKey.labelRes: Int
         DefaultAccountKey.MOBILE_MONEY -> R.string.account_default_mobile_money
         DefaultAccountKey.SAVINGS -> R.string.account_default_savings
         DefaultAccountKey.WALLET -> R.string.account_default_wallet
+        DefaultAccountKey.SHOP -> R.string.account_default_shop
     }
 
 @get:StringRes

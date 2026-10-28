@@ -19,5 +19,9 @@ data class LoginResponseDto(
     val token: String,
     val userId: String,
     val expiresAt: Long,
-    val fullName: String
+    val fullName: String,
+    /** Mode d'utilisation (`SHOP`/`PERSONAL`/`BOTH`) ; absent/`null` = jamais demandé ou serveur plus ancien. */
+    val usageMode: String? = null,
+    /** `true` si le serveur détient déjà des comptes pour cet utilisateur. Défaut `true` : prudence (rien n'est créé). */
+    val hasAccounts: Boolean = true
 )

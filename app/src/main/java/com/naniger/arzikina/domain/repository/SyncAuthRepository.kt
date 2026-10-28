@@ -5,6 +5,8 @@ import com.naniger.arzikina.domain.model.PasswordChangeResult
 import com.naniger.arzikina.domain.model.PasswordProof
 import com.naniger.arzikina.domain.model.SyncAuthResult
 import com.naniger.arzikina.domain.model.SyncSession
+import com.naniger.arzikina.domain.model.UsageMode
+import com.naniger.arzikina.domain.model.UsageModeSelection
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -41,7 +43,8 @@ interface SyncAuthRepository {
         phoneNumber: String? = null,
         securityQuestion: String? = null,
         securityAnswer: String? = null,
-        deviceLabel: String? = null
+        deviceLabel: String? = null,
+        usageMode: UsageMode? = null
     ): SyncAuthResult<SyncSession>
 
     /** Supprime la session serveur stockée sur cet appareil (immédiatement, même hors ligne), puis
@@ -99,6 +102,13 @@ interface SyncAuthRepository {
      * hash local est mis à jour par [UnifiedAuthRepository.changePassword], seul appelant).
      */
     suspend fun setPassword(newRawPassword: String, proof: PasswordProof): PasswordChangeResult
+
+    /**
+     * Enregistre [mode] sur le serveur pour l'utilisateur de la session active (idempotent, voir
+     * `set_usage_mode.php`) : le serveur conserve un choix déjà existant et le renvoie.
+     * [SyncAuthError.InvalidCredentials] si aucune session valide n'est disponible.
+     */
+    suspend fun setUsageMode(mode: UsageMode): SyncAuthResult<UsageModeSelection>
 
     /** Pour un futur indicateur de statut de synchronisation / écran Réglages. */
     fun observeActiveSession(): Flow<SyncSession?>
