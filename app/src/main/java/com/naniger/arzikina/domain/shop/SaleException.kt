@@ -22,6 +22,9 @@ sealed class SaleException(message: String) : Exception(message) {
 
     class AccountUnavailable : SaleException("Compte d'encaissement indisponible")
 
+    /** Seul un compte de type Boutique peut encaisser une vente (voir [ShopAccountPolicy]). */
+    class NotShopAccount : SaleException("Seul un compte de type Boutique peut encaisser une vente")
+
     class CurrencyMismatch : SaleException("Devise du compte différente de celle de la boutique")
 
     class ShopNotReady : SaleException("Boutique non initialisée")

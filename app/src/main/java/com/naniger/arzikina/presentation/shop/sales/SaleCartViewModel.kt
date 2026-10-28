@@ -4,13 +4,15 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.naniger.arzikina.domain.model.Account
-import com.naniger.arzikina.domain.model.AccountType
 import com.naniger.arzikina.domain.model.ReceiptDiscount
 import com.naniger.arzikina.domain.repository.AccountRepository
 import com.naniger.arzikina.domain.repository.ProductRepository
 import com.naniger.arzikina.domain.repository.SaleRepository
 import com.naniger.arzikina.domain.repository.ShopRepository
 import com.naniger.arzikina.domain.shop.CartAddResult
+import com.naniger.arzikina.domain.shop.CreateShopAccountError
+import com.naniger.arzikina.domain.shop.CreateShopAccountResult
+import com.naniger.arzikina.domain.shop.CreateShopAccountUseCase
 import com.naniger.arzikina.domain.shop.Product
 import com.naniger.arzikina.domain.shop.ProductUnit
 import com.naniger.arzikina.domain.shop.SaleCalculator
@@ -19,9 +21,11 @@ import com.naniger.arzikina.domain.shop.SaleException
 import com.naniger.arzikina.domain.shop.SaleLineDraft
 import com.naniger.arzikina.domain.shop.SaleLineRequest
 import com.naniger.arzikina.domain.shop.SaleRequest
+import com.naniger.arzikina.domain.shop.ShopAccountPolicy
 import com.naniger.arzikina.domain.shop.StockMovementType
 import com.naniger.arzikina.domain.shop.StockRules
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -29,6 +33,7 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
@@ -63,16 +68,24 @@ data class SaleCartUiState(
     val discountInvalid: Boolean = false,
     val accounts: List<Account> = emptyList(),
     val selectedAccount: Account? = null,
+    /** Aucun compte Boutique éligible : l'écran propose d'en créer un (voir [SaleCartViewModel.createShopAccount]). */
+    val needsShopAccount: Boolean = false,
     val canConfirm: Boolean = false,
     val submitting: Boolean = false
 )
 
 /** Raison d'un refus ou d'un échec, traduite en texte par le Fragment (le ViewModel ne connaît pas `Context`). */
-enum class SaleCartError { UNAVAILABLE, OUT_OF_STOCK, STOCK_LIMIT, INSUFFICIENT_STOCK, QUANTITY, AMOUNT, ZERO_TOTAL, ACCOUNT, CURRENCY, SHOP, GENERIC }
+enum class SaleCartError { UNAVAILABLE, OUT_OF_STOCK, STOCK_LIMIT, INSUFFICIENT_STOCK, QUANTITY, AMOUNT, ZERO_TOTAL, ACCOUNT, ACCOUNT_TYPE, CURRENCY, SHOP, GENERIC }
 
 sealed interface SaleCartEvent {
     data class Confirmed(val saleId: Long) : SaleCartEvent
     data class Failed(val error: SaleCartError) : SaleCartEvent
+
+    /** Compte Boutique créé depuis l'écran de vente (déjà sélectionné pour l'encaissement). */
+    data class ShopAccountCreated(val name: String) : SaleCartEvent
+
+    /** Création refusée : le nom est à corriger ([CreateShopAccountError]). */
+    data class ShopAccountRejected(val error: CreateShopAccountError) : SaleCartEvent
 }
 
 /**
@@ -80,6 +93,9 @@ sealed interface SaleCartEvent {
  * liste des produits) ; la remise, le client et le compte saisis ici survivent à la mort du processus
  * ([SavedStateHandle]). Prix, stock et totaux sont toujours recalculés depuis les données courantes, et la
  * validation relit tout dans sa transaction.
+ *
+ * Seul un compte de type Boutique encaisse une vente ([ShopAccountPolicy]) : sans compte éligible, l'écran propose
+ * d'en créer un sur place ([createShopAccount]) et la validation reste impossible.
  *
  * La clé de brouillon ([SaleCartStore.draftKey]) est stable pour un même panier : valider deux fois le même
  * panier (double clic, nouvelle tentative après une coupure) ne crée jamais deux ventes.
@@ -92,7 +108,8 @@ class SaleCartViewModel @Inject constructor(
     private val shops: ShopRepository,
     accountsRepository: AccountRepository,
     private val sales: SaleRepository,
-    private val store: SaleCartStore
+    private val store: SaleCartStore,
+    private val createShopAccountUseCase: CreateShopAccountUseCase
 ) : ViewModel() {
 
     /** Produit -> quantité en milli-unités, dans l'ordre d'ajout (source de vérité : [SaleCartStore]). */
@@ -101,6 +118,10 @@ class SaleCartViewModel @Inject constructor(
     private val discountInput = MutableStateFlow(savedState.get<String>(KEY_DISCOUNT).orEmpty())
     private val chosenAccountId = MutableStateFlow(savedState.get<Long>(KEY_ACCOUNT))
     private val submitting = MutableStateFlow(false)
+    private val creatingAccount = MutableStateFlow(false)
+
+    /** Vrai pendant la création d'un compte Boutique (le bouton de la fenêtre est alors inactif). */
+    val isCreatingAccount: StateFlow<Boolean> = creatingAccount.asStateFlow()
 
     /** Valeurs initiales des champs texte (le Fragment les écrit une seule fois, sans les réinjecter ensuite). */
     val initialDiscountInput: String get() = savedState.get<String>(KEY_DISCOUNT).orEmpty()
@@ -194,6 +215,31 @@ class SaleCartViewModel @Inject constructor(
         savedState[KEY_ACCOUNT] = accountId
     }
 
+    /**
+     * Crée le compte Boutique qui recevra les ventes, puis le sélectionne. Un seul envoi à la fois (double clic) ;
+     * un nom refusé est signalé par [SaleCartEvent.ShopAccountRejected] et le panier n'est pas touché.
+     */
+    fun createShopAccount(name: String) {
+        if (!creatingAccount.compareAndSet(expect = false, update = true)) return
+        viewModelScope.launch {
+            try {
+                when (val result = createShopAccountUseCase(name)) {
+                    is CreateShopAccountResult.Created -> {
+                        onAccountChosen(result.accountId)
+                        _events.tryEmit(SaleCartEvent.ShopAccountCreated(result.name))
+                    }
+                    is CreateShopAccountResult.Rejected -> _events.tryEmit(SaleCartEvent.ShopAccountRejected(result.error))
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _events.tryEmit(SaleCartEvent.ShopAccountRejected(CreateShopAccountError.FAILED))
+            } finally {
+                creatingAccount.value = false
+            }
+        }
+    }
+
     fun confirm() {
         val state = uiState.value
         val account = state.selectedAccount
@@ -256,13 +302,9 @@ class SaleCartViewModel @Inject constructor(
         val discount = (parsed as? DiscountParse.Valid)?.discount ?: ReceiptDiscount.None
         val totals = SaleCalculator.totalsOrNull(drafts, discount)
 
-        val accounts = allAccounts.filter {
-            it.currencyCode == currencyCode && it.type != AccountType.SAVINGS_GOAL && it.type != AccountType.CREDIT_CARD
-        }
-        val selected = accounts.firstOrNull { it.id == draft.accountId }
-            ?: accounts.firstOrNull { it.id == shopAccountId }
-            ?: accounts.firstOrNull { it.type == AccountType.BOUTIQUE }
-            ?: accounts.firstOrNull()
+        // Seuls les comptes Boutique de la devise de la boutique encaissent (ShopAccountPolicy, règle unique).
+        val accounts = ShopAccountPolicy.eligibleAccounts(allAccounts, currencyCode)
+        val selected = ShopAccountPolicy.pickDefault(accounts, draft.accountId, shopAccountId)
 
         val canConfirm = lines.isNotEmpty() && lines.all { it.problem == null } && parsed is DiscountParse.Valid &&
             totals != null && totals.totalMinor > 0L && selected != null && !draft.submitting
@@ -277,6 +319,7 @@ class SaleCartViewModel @Inject constructor(
             discountInvalid = parsed is DiscountParse.Invalid,
             accounts = accounts,
             selectedAccount = selected,
+            needsShopAccount = accounts.isEmpty(),
             canConfirm = canConfirm,
             submitting = draft.submitting
         )
@@ -310,6 +353,7 @@ class SaleCartViewModel @Inject constructor(
         is SaleException.InvalidAmount -> SaleCartError.AMOUNT
         is SaleException.ZeroTotal -> SaleCartError.ZERO_TOTAL
         is SaleException.AccountUnavailable -> SaleCartError.ACCOUNT
+        is SaleException.NotShopAccount -> SaleCartError.ACCOUNT_TYPE
         is SaleException.CurrencyMismatch -> SaleCartError.CURRENCY
         is SaleException.ShopNotReady -> SaleCartError.SHOP
         is SaleException.NotFound, is SaleException.NoSession,

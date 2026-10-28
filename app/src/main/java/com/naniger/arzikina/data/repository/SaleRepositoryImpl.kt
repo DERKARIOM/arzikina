@@ -38,6 +38,7 @@ import com.naniger.arzikina.domain.shop.SaleProductSnapshot
 import com.naniger.arzikina.domain.shop.SaleReference
 import com.naniger.arzikina.domain.shop.SaleRequest
 import com.naniger.arzikina.domain.shop.SaleStatus
+import com.naniger.arzikina.domain.shop.ShopAccountPolicy
 import com.naniger.arzikina.domain.shop.ProductUnit
 import com.naniger.arzikina.domain.shop.StockMovementType
 import kotlinx.coroutines.CoroutineDispatcher
@@ -234,6 +235,8 @@ class SaleRepositoryImpl @Inject constructor(
 
         val shop = shopDao.getFirstForUser(userId) ?: throw SaleException.ShopNotReady()
         val account = accountDao.getById(request.accountId, userId) ?: throw SaleException.AccountUnavailable()
+        // Règle métier garantie ICI, pas seulement par l'écran : seul un compte Boutique encaisse une vente.
+        if (!ShopAccountPolicy.canCollectSales(account.type)) throw SaleException.NotShopAccount()
         if (account.currencyCode != shop.currencyCode) throw SaleException.CurrencyMismatch()
 
         val ids = SalePlanner.mergeLines(request.lines).map { it.productId }

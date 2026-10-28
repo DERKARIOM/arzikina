@@ -36,6 +36,43 @@
             android:orientation="vertical"
             android:padding="@dimen/spacing_m">
 
+            <!-- Aucun compte Boutique : seul ce type de compte encaisse une vente, on propose d'en créer un ici. -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/noAccountGroup"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="@dimen/spacing_m"
+                android:visibility="gone"
+                app:cardElevation="0dp"
+                app:strokeColor="@color/shop_stock_out"
+                app:strokeWidth="1dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="@dimen/spacing_m">
+
+                    <TextView
+                        android:id="@+id/noAccountText"
+                        style="@style/TextAppearance.Material3.BodyMedium"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/shop_cart_no_account"
+                        android:textColor="?attr/colorOnSurface" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/createShopAccountButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/spacing_s"
+                        android:background="@drawable/forme_radius_10dp"
+                        android:text="@string/shop_cart_create_account"
+                        android:textColor="@color/white"
+                        app:icon="@drawable/ic_add_24" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/addProductButton"
                 android:layout_width="match_parent"
@@ -245,16 +282,6 @@
                             app:tint="@color/arzikina_on_balance_card_variant" />
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
-
-                <TextView
-                    android:id="@+id/noAccountText"
-                    style="@style/TextAppearance.Material3.BodySmall"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="@dimen/spacing_xs"
-                    android:text="@string/shop_cart_no_account"
-                    android:textColor="@color/shop_stock_out"
-                    android:visibility="gone" />
             </LinearLayout>
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>

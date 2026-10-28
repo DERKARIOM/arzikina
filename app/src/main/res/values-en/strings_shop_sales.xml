@@ -30,7 +30,19 @@
     <string name="shop_cart_customer_phone">Phone</string>
 
     <string name="shop_cart_account">Paid into account</string>
-    <string name="shop_cart_no_account">No account in the shop currency. Create a Shop account to collect your sales.</string>
+    <string name="shop_cart_no_account">To collect a sale you need a Shop account in the shop currency. Create one here in a few seconds.</string>
+    <string name="shop_cart_create_account">Create a Shop account</string>
+    <string name="shop_account_dialog_title">New Shop account</string>
+    <string name="shop_account_dialog_message">This account receives the money from your sales. Its starting balance is 0.</string>
+    <string name="shop_account_dialog_hint">Account name</string>
+    <string name="shop_account_default_name">Shop till</string>
+    <string name="shop_account_create">Create</string>
+    <string name="shop_account_err_name_required">Give the account a name.</string>
+    <string name="shop_account_err_name_too_long">Name too long (40 characters maximum).</string>
+    <string name="shop_account_err_name_duplicate">An account already has this name.</string>
+    <string name="shop_account_err_failed">Could not create the account, try again.</string>
+    <string name="shop_account_created">Account %1$s created and selected.</string>
+    <string name="shop_cart_err_account_type">Only a Shop account can collect a sale.</string>
 
     <string name="shop_cart_subtotal">Subtotal</string>
     <string name="shop_cart_total">Total</string>

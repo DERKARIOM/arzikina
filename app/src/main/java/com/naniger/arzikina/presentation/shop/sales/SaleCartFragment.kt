@@ -1,10 +1,12 @@
 package com.naniger.arzikina.presentation.shop.sales
 
+import android.content.DialogInterface
 import android.os.Bundle
 import android.text.InputType
 import android.view.View
 import android.widget.EditText
 import android.widget.FrameLayout
+import androidx.appcompat.app.AlertDialog
 import androidx.core.os.bundleOf
 import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.Fragment
@@ -18,8 +20,11 @@ import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
+import com.google.android.material.textfield.TextInputEditText
+import com.google.android.material.textfield.TextInputLayout
 import com.naniger.arzikina.R
 import com.naniger.arzikina.databinding.FragmentShopSaleCartBinding
+import com.naniger.arzikina.domain.shop.CreateShopAccountError
 import com.naniger.arzikina.domain.shop.ProductQuantityFormat
 import com.naniger.arzikina.presentation.components.displayName
 import com.naniger.arzikina.presentation.shop.ShopFormat
@@ -36,6 +41,10 @@ class SaleCartFragment : Fragment(R.layout.fragment_shop_sale_cart), CartLineAct
     private val viewModel: SaleCartViewModel by viewModels()
     private var binding: FragmentShopSaleCartBinding? = null
     private val adapter = SaleCartAdapter(this)
+
+    /** Fenêtre « Nouveau compte Boutique » en cours d'affichage, et son champ (pour y afficher une erreur de nom). */
+    private var createAccountDialog: AlertDialog? = null
+    private var accountNameLayout: TextInputLayout? = null
 
     private val chipToMode by lazy {
         mapOf(
@@ -66,6 +75,7 @@ class SaleCartFragment : Fragment(R.layout.fragment_shop_sale_cart), CartLineAct
             checkedIds.firstOrNull()?.let { id -> chipToMode[id]?.let(viewModel::onDiscountModeChange) }
         }
         b.accountCard.setOnClickListener { chooseAccount() }
+        b.createShopAccountButton.setOnClickListener { showCreateAccountDialog() }
         b.confirmButton.setOnClickListener { viewModel.confirm() }
 
         setFragmentResultListener(ShopPickResult.REQUEST_KEY) { _, result ->
@@ -77,12 +87,20 @@ class SaleCartFragment : Fragment(R.layout.fragment_shop_sale_cart), CartLineAct
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch { viewModel.uiState.collect(::render) }
                 launch { viewModel.events.collect(::handleEvent) }
+                launch {
+                    viewModel.isCreatingAccount.collect { creating ->
+                        createAccountDialog?.getButton(DialogInterface.BUTTON_POSITIVE)?.isEnabled = !creating
+                    }
+                }
             }
         }
     }
 
     override fun onDestroyView() {
         super.onDestroyView()
+        createAccountDialog?.dismiss()
+        createAccountDialog = null
+        accountNameLayout = null
         binding?.linesList?.adapter = null
         binding = null
     }
@@ -162,7 +180,8 @@ class SaleCartFragment : Fragment(R.layout.fragment_shop_sale_cart), CartLineAct
 
         b.accountName.text = state.selectedAccount?.displayName(requireContext()).orEmpty()
         b.accountCard.visibility = if (state.selectedAccount != null) View.VISIBLE else View.GONE
-        b.noAccountText.visibility = if (state.ready && state.selectedAccount == null) View.VISIBLE else View.GONE
+        // Aucun compte Boutique éligible : on propose d'en créer un ici même (seul un compte Boutique encaisse).
+        b.noAccountGroup.visibility = if (state.ready && state.needsShopAccount) View.VISIBLE else View.GONE
 
         b.subtotalValue.text = ShopFormat.money(state.subtotalMinor, currency)
         val hasDiscount = state.discountMinor > 0L
@@ -181,7 +200,62 @@ class SaleCartFragment : Fragment(R.layout.fragment_shop_sale_cart), CartLineAct
                 findNavController().navigate(R.id.shopSaleDetailFragment, bundleOf("saleId" to event.saleId, "autoReceipt" to true), options)
             }
             is SaleCartEvent.Failed -> showError(event.error)
+            is SaleCartEvent.ShopAccountCreated -> {
+                createAccountDialog?.dismiss()
+                binding?.let { Snackbar.make(it.root, getString(R.string.shop_account_created, event.name), Snackbar.LENGTH_LONG).show() }
+            }
+            is SaleCartEvent.ShopAccountRejected -> showAccountNameError(event.error)
         }
+    }
+
+    /** Fenêtre de création du compte Boutique : nom pré-rempli, erreur de nom affichée dans le champ sans fermer la fenêtre. */
+    private fun showCreateAccountDialog() {
+        if (createAccountDialog?.isShowing == true) return
+        val context = requireContext()
+        val layout = TextInputLayout(context).apply { hint = getString(R.string.shop_account_dialog_hint) }
+        val input = TextInputEditText(layout.context).apply {
+            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_CAP_SENTENCES
+            setText(R.string.shop_account_default_name)
+            setSelection(text?.length ?: 0)
+            doAfterTextChanged { layout.error = null }
+        }
+        layout.addView(input)
+        val padding = resources.getDimensionPixelSize(R.dimen.spacing_m)
+        val container = FrameLayout(context).apply { setPadding(padding, padding / 2, padding, 0); addView(layout) }
+        val dialog = MaterialAlertDialogBuilder(context)
+            .setTitle(R.string.shop_account_dialog_title)
+            .setMessage(R.string.shop_account_dialog_message)
+            .setView(container)
+            .setPositiveButton(R.string.shop_account_create, null)
+            .setNegativeButton(R.string.action_cancel, null)
+            .setOnDismissListener {
+                createAccountDialog = null
+                accountNameLayout = null
+            }
+            .create()
+        // Écouteur posé APRÈS l'affichage : sinon le bouton ferme la fenêtre avant que le nom soit validé.
+        dialog.setOnShowListener {
+            dialog.getButton(DialogInterface.BUTTON_POSITIVE).setOnClickListener {
+                viewModel.createShopAccount(input.text?.toString().orEmpty())
+            }
+        }
+        createAccountDialog = dialog
+        accountNameLayout = layout
+        dialog.show()
+    }
+
+    private fun showAccountNameError(error: CreateShopAccountError) {
+        val message = getString(
+            when (error) {
+                CreateShopAccountError.NAME_REQUIRED -> R.string.shop_account_err_name_required
+                CreateShopAccountError.NAME_TOO_LONG -> R.string.shop_account_err_name_too_long
+                CreateShopAccountError.NAME_DUPLICATE -> R.string.shop_account_err_name_duplicate
+                CreateShopAccountError.SHOP_NOT_READY -> R.string.shop_cart_err_shop
+                CreateShopAccountError.FAILED -> R.string.shop_account_err_failed
+            }
+        )
+        val layout = accountNameLayout
+        if (layout != null) layout.error = message else binding?.let { Snackbar.make(it.root, message, Snackbar.LENGTH_LONG).show() }
     }
 
     private fun showError(error: SaleCartError) {
@@ -195,6 +269,7 @@ class SaleCartFragment : Fragment(R.layout.fragment_shop_sale_cart), CartLineAct
             SaleCartError.AMOUNT -> R.string.shop_cart_err_amount
             SaleCartError.ZERO_TOTAL -> R.string.shop_cart_err_zero_total
             SaleCartError.ACCOUNT -> R.string.shop_cart_err_account
+            SaleCartError.ACCOUNT_TYPE -> R.string.shop_cart_err_account_type
             SaleCartError.CURRENCY -> R.string.shop_cart_err_currency
             SaleCartError.SHOP -> R.string.shop_cart_err_shop
             SaleCartError.GENERIC -> R.string.shop_cart_err_generic

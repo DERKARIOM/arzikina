@@ -31,7 +31,19 @@
     <string name="shop_cart_customer_phone">Téléphone</string>
 
     <string name="shop_cart_account">Encaissé sur le compte</string>
-    <string name="shop_cart_no_account">Aucun compte dans la devise de la boutique. Crée un compte de type Boutique pour encaisser tes ventes.</string>
+    <string name="shop_cart_no_account">Pour encaisser une vente, il te faut un compte de type Boutique dans la devise de la boutique. Crée-le ici en quelques secondes.</string>
+    <string name="shop_cart_create_account">Créer un compte Boutique</string>
+    <string name="shop_account_dialog_title">Nouveau compte Boutique</string>
+    <string name="shop_account_dialog_message">Ce compte reçoit l\'argent de tes ventes. Son solde de départ est de 0.</string>
+    <string name="shop_account_dialog_hint">Nom du compte</string>
+    <string name="shop_account_default_name">Caisse boutique</string>
+    <string name="shop_account_create">Créer</string>
+    <string name="shop_account_err_name_required">Donne un nom au compte.</string>
+    <string name="shop_account_err_name_too_long">Nom trop long (40 caractères maximum).</string>
+    <string name="shop_account_err_name_duplicate">Un compte porte déjà ce nom.</string>
+    <string name="shop_account_err_failed">Création impossible, réessaie.</string>
+    <string name="shop_account_created">Compte « %1$s » créé et sélectionné.</string>
+    <string name="shop_cart_err_account_type">Seul un compte de type Boutique peut encaisser une vente.</string>
 
     <string name="shop_cart_subtotal">Sous-total</string>
     <string name="shop_cart_total">Total</string>
