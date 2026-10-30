@@ -7,6 +7,7 @@ import com.naniger.arzikina.domain.model.Account
 import com.naniger.arzikina.domain.model.AccountIcon
 import com.naniger.arzikina.domain.model.AccountType
 import com.naniger.arzikina.domain.repository.AccountRepository
+import com.naniger.arzikina.domain.repository.UserPreferencesRepository
 import com.naniger.arzikina.presentation.components.DefaultNameLocalizer
 import com.naniger.arzikina.util.Money
 import com.naniger.arzikina.util.external.ExternalAppLauncher
@@ -40,6 +41,7 @@ class AccountFormViewModelSavingsGoalTest {
     private val accountRepository: AccountRepository = mockk(relaxed = true)
     private val externalAppLauncher: ExternalAppLauncher = mockk(relaxed = true)
     private val defaultNameLocalizer: DefaultNameLocalizer = mockk()
+    private val userPreferencesRepository: UserPreferencesRepository = mockk()
     private val saved = slot<Account>()
 
     private val franc = Money.MINOR_UNITS_PER_MAJOR.toLong()
@@ -64,6 +66,7 @@ class AccountFormViewModelSavingsGoalTest {
 
     @Before
     fun setUp() {
+        coEvery { userPreferencesRepository.getCurrencyCode() } returns "XOF"
         every { defaultNameLocalizer.displayName(any<Account>()) } answers { firstArg<Account>().name }
         every { defaultNameLocalizer.canonicalAccountName(any()) } answers { firstArg() }
         coEvery { accountRepository.saveAccount(capture(saved)) } answers { saved.captured.id.takeIf { it != 0L } ?: 99L }
@@ -74,7 +77,8 @@ class AccountFormViewModelSavingsGoalTest {
         accountRepository = accountRepository,
         externalAppLauncher = externalAppLauncher,
         ioDispatcher = testDispatcher,
-        defaultNameLocalizer = defaultNameLocalizer
+        defaultNameLocalizer = defaultNameLocalizer,
+        userPreferencesRepository = userPreferencesRepository
     )
 
     @Test

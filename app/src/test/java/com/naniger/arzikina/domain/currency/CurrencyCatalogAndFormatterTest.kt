@@ -4,8 +4,8 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class CurrencyCatalogAndFormatterTest {
-    @Test fun xofFormat() { assertEquals("10 000 FCFA", CurrencyFormatter.format(1_000_000, "XOF")) }
-    @Test fun eurWithCents() { assertEquals("1 234,50 €", CurrencyFormatter.format(123_450, "EUR")) }
+    @Test fun xofFormat() { assertEquals("10\u202f000 FCFA", CurrencyFormatter.format(1_000_000, "XOF")) }
+    @Test fun eurWithCents() { assertEquals("1\u202f234,50 €", CurrencyFormatter.format(123_450, "EUR")) }
     @Test fun negative() { assertEquals("-500 FCFA", CurrencyFormatter.format(-50_000, "XOF")) }
     @Test fun unknownFallsBackToCode() { assertEquals("5 ZZZ", CurrencyFormatter.format(500, "zzz")) }
     @Test fun noDuplicateCodes() { assertEquals(CurrencyCatalog.all.size, CurrencyCatalog.all.map { it.code }.toSet().size) }

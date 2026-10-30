@@ -11,7 +11,8 @@ import java.util.Locale
  * - [minorUnits] est le montant STOCKÉ (unités mineures, facteur fixe [MINOR_UNITS_PER_MAJOR]) ;
  *   le formatage ne le modifie jamais et ne convertit jamais de devise.
  * - Séparateur de milliers : espace, séparateur décimal : virgule, quelle que soit la langue de
- *   l'interface ([AMOUNT_LOCALE]) — un montant ne change pas d'apparence avec la langue.
+ *   l'interface ([AMOUNT_LOCALE]) — un montant ne change pas d'apparence avec la langue. Les espaces
+ *   insécables de la locale (U+202F) sont conservés tels quels : c'est le format partagé avec le web.
  * - Les décimales ne sont affichées que si elles sont réellement non nulles : aucune information
  *   n'est perdue, y compris pour XOF/XAF/GNF si un montant a des centimes hérités.
  * - Le symbole est placé en suffixe, séparé par une espace.
@@ -31,7 +32,7 @@ object CurrencyFormatter {
             maximumFractionDigits = if (hasCents) 2 else 0
         }
         val major = BigDecimal(minorUnits).divide(BigDecimal(MINOR_UNITS_PER_MAJOR))
-        return format.format(major).normalizeSpaces()
+        return format.format(major)
     }
 
     /** Montant avec le symbole de [currencyCode] (« 10 000 FCFA »). */
@@ -40,9 +41,6 @@ object CurrencyFormatter {
 
     /** Symbole d'affichage, ou code ISO si la devise est inconnue. */
     fun symbolOf(currencyCode: String): String = CatalogLookup.symbol(currencyCode)
-
-    /** Les formateurs de locale utilisent des espaces insécables (U+202F/U+00A0) : on les ramène à une espace normale. */
-    private fun String.normalizeSpaces(): String = replace(' ', ' ').replace(' ', ' ')
 
     private object CatalogLookup {
         fun symbol(code: String): String = CurrencyCatalog.infoOrFallback(code).symbol
