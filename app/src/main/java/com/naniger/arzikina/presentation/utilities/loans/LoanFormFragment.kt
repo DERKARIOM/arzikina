@@ -19,7 +19,6 @@ import com.naniger.arzikina.domain.model.Account
 import com.naniger.arzikina.domain.model.CurrencyAmount
 import com.naniger.arzikina.domain.model.LoanType
 import com.naniger.arzikina.domain.model.Person
-import com.naniger.arzikina.domain.model.SupportedCurrency
 import com.naniger.arzikina.presentation.accounts.AccountIconMapper
 import com.naniger.arzikina.presentation.components.AccountPickerDialog
 import com.naniger.arzikina.presentation.components.TimePickerHelper
@@ -304,7 +303,7 @@ class LoanFormFragment : Fragment(R.layout.fragment_loan_form) {
     }
 
     private fun currencySymbol(currencyCode: String): String =
-        SupportedCurrency.entries.firstOrNull { it.code == currencyCode }?.symbol ?: currencyCode
+        Money.symbolOf(currencyCode)
 
     /** Format horaire de l'appareil (24 h en français), comme partout ailleurs dans l'app. */
     private fun formatTime(millis: Long): String {

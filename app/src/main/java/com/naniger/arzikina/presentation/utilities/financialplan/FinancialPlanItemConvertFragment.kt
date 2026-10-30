@@ -7,6 +7,8 @@ import androidx.core.content.ContextCompat
 import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import androidx.fragment.app.activityViewModels
+import com.naniger.arzikina.presentation.components.PreferredCurrencyViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
@@ -23,7 +25,6 @@ import com.naniger.arzikina.presentation.components.CategoryPickerDialog
 import com.naniger.arzikina.presentation.components.DateTimeRowFormatter
 import com.naniger.arzikina.presentation.components.TimePickerHelper
 import com.naniger.arzikina.presentation.components.displayName
-import com.naniger.arzikina.util.Constants
 import com.naniger.arzikina.util.Money
 import com.naniger.arzikina.util.MoneyInputFormatter
 import com.google.android.material.datepicker.MaterialDatePicker
@@ -48,6 +49,7 @@ import java.time.ZoneOffset
 class FinancialPlanItemConvertFragment : Fragment(R.layout.fragment_financial_plan_item_convert) {
 
     private val viewModel: FinancialPlanItemConvertViewModel by viewModels()
+    private val currencyViewModel: PreferredCurrencyViewModel by activityViewModels()
     private var binding: FragmentFinancialPlanItemConvertBinding? = null
 
     /** Voir `LoanPaymentFormFragment.latestAccounts`/`latestAccountBalances` pour le même
@@ -176,7 +178,7 @@ class FinancialPlanItemConvertFragment : Fragment(R.layout.fragment_financial_pl
         binding.saveButton.isEnabled = state.isLoaded && !state.isSaving
         if (!state.isLoaded) return
 
-        val plannedLabel = Money.format(CurrencyAmount(Constants.DEFAULT_CURRENCY_CODE, state.plannedAmount))
+        val plannedLabel = Money.format(CurrencyAmount(currencyViewModel.currencyCode.value, state.plannedAmount))
         binding.itemContextLabel.text = getString(R.string.financial_plan_item_convert_context, state.itemName, plannedLabel)
 
         val selectedAccount = latestAccounts.firstOrNull { it.id == state.accountId }

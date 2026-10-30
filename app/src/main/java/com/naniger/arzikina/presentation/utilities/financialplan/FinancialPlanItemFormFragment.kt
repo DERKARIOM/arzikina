@@ -7,6 +7,8 @@ import androidx.core.content.ContextCompat
 import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import androidx.fragment.app.activityViewModels
+import com.naniger.arzikina.presentation.components.PreferredCurrencyViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
@@ -22,7 +24,6 @@ import com.naniger.arzikina.presentation.components.CategoryPickerDialog
 import com.naniger.arzikina.presentation.components.NavAnimations
 import com.naniger.arzikina.presentation.components.displayName
 import com.naniger.arzikina.util.AppDateFormats
-import com.naniger.arzikina.util.Constants
 import com.naniger.arzikina.util.Money
 import com.naniger.arzikina.util.MoneyInputFormatter
 import com.google.android.material.datepicker.MaterialDatePicker
@@ -44,6 +45,7 @@ import java.time.ZoneOffset
 class FinancialPlanItemFormFragment : Fragment(R.layout.fragment_financial_plan_item_form) {
 
     private val viewModel: FinancialPlanItemFormViewModel by viewModels()
+    private val currencyViewModel: PreferredCurrencyViewModel by activityViewModels()
     private var binding: FragmentFinancialPlanItemFormBinding? = null
 
     private var latestCategories: List<Category> = emptyList()
@@ -181,12 +183,12 @@ class FinancialPlanItemFormFragment : Fragment(R.layout.fragment_financial_plan_
             // reste (hors dépense en cours d'édition, voir FinancialPlanItemFormViewModel.init) est
             // déjà négatif, texte neutre sinon.
             if (state.planRemainingAmount < 0L) {
-                val overspentLabel = Money.format(CurrencyAmount(Constants.DEFAULT_CURRENCY_CODE, -state.planRemainingAmount))
+                val overspentLabel = Money.format(CurrencyAmount(currencyViewModel.currencyCode.value, -state.planRemainingAmount))
                 binding.planContextLabel.text =
                     getString(R.string.financial_plan_item_form_context_overbudget, state.planName, overspentLabel)
                 binding.planContextLabel.setTextColor(ContextCompat.getColor(requireContext(), R.color.expense_red))
             } else {
-                val remainingLabel = Money.format(CurrencyAmount(Constants.DEFAULT_CURRENCY_CODE, state.planRemainingAmount))
+                val remainingLabel = Money.format(CurrencyAmount(currencyViewModel.currencyCode.value, state.planRemainingAmount))
                 binding.planContextLabel.text = getString(R.string.financial_plan_item_form_context, state.planName, remainingLabel)
                 binding.planContextLabel.setTextColor(ContextCompat.getColor(requireContext(), R.color.arzikina_on_surface_variant))
             }
@@ -197,7 +199,7 @@ class FinancialPlanItemFormFragment : Fragment(R.layout.fragment_financial_plan_
             val exceedsRemaining = amountMinor != null && amountMinor > state.planRemainingAmount
             binding.amountExceedsWarningText.visibility = if (exceedsRemaining) View.VISIBLE else View.GONE
             if (exceedsRemaining) {
-                val remainingLabel = Money.format(CurrencyAmount(Constants.DEFAULT_CURRENCY_CODE, state.planRemainingAmount))
+                val remainingLabel = Money.format(CurrencyAmount(currencyViewModel.currencyCode.value, state.planRemainingAmount))
                 binding.amountExceedsWarningText.text =
                     getString(R.string.financial_plan_item_form_amount_exceeds_warning, remainingLabel)
             }

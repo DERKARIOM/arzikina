@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_currency_change_title">Change currency?</string>
+    <string name="settings_currency_change_message">Your main currency will change from %1$s to %2$s.\n\nOnly how amounts are displayed is affected: no saved amount is converted or modified, and your existing accounts keep their own currency. Amounts in different currencies are never added together.</string>
+    <string name="settings_currency_change_confirm">Change currency</string>
+</resources>

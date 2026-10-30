@@ -21,7 +21,9 @@ import com.google.android.material.textfield.TextInputLayout
 import com.naniger.arzikina.R
 import com.naniger.arzikina.databinding.FragmentRegisterBinding
 import com.naniger.arzikina.domain.model.SecurityQuestion
+import com.naniger.arzikina.presentation.auth.currency.CurrencyPageController
 import com.naniger.arzikina.presentation.auth.usage.UsageModePageController
+import java.util.Locale
 import com.naniger.arzikina.presentation.components.animateElevationOnFocus
 import com.naniger.arzikina.presentation.components.elevateOnFocusOf
 import com.naniger.arzikina.presentation.components.playEntranceAnimation
@@ -52,6 +54,7 @@ class RegisterFragment : Fragment(R.layout.fragment_register) {
     private val viewModel: RegisterViewModel by viewModels()
     private var binding: FragmentRegisterBinding? = null
     private var usageModeController: UsageModePageController? = null
+    private var currencyController: CurrencyPageController? = null
 
     /** Voir [LoginFragment] — même raisonnement, instancié paresseusement avec le contexte de
      *  l'Activity, jamais avant [onViewCreated]. */
@@ -102,21 +105,32 @@ class RegisterFragment : Fragment(R.layout.fragment_register) {
         usageModeController = UsageModePageController(
             binding = viewBinding.usageModePage,
             onModeSelected = viewModel::onUsageModeChange,
-            onContinue = viewModel::confirmUsageMode,
-            onBack = viewModel::backToForm
+            onContinue = viewModel::continueFromUsageMode,
+            onBack = viewModel::back
         )
-        // Retour système : depuis l'étape de choix, on revient au formulaire plutôt que de quitter l'inscription.
+        currencyController = CurrencyPageController(
+            binding = viewBinding.currencyPage,
+            onSelected = viewModel::onCurrencySelected,
+            onQueryChange = viewModel::onCurrencyQueryChange,
+            onContinue = viewModel::confirmCurrency,
+            onBack = viewModel::back
+        )
+        viewModel.onRegionDetected(Locale.getDefault().country)
+        // Retour système : depuis les étapes de choix, on revient à l'étape précédente plutôt que de quitter l'inscription.
         val backFromUsageMode = object : OnBackPressedCallback(false) {
-            override fun handleOnBackPressed() = viewModel.backToForm()
+            override fun handleOnBackPressed() = viewModel.back()
         }
         requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner, backFromUsageMode)
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.formState.collect { state ->
                     val onUsageStep = state.step == RegisterStep.USAGE_MODE
+                    val onCurrencyStep = state.step == RegisterStep.CURRENCY
                     viewBinding.usageModePage.root.visibility = if (onUsageStep) View.VISIBLE else View.GONE
-                    backFromUsageMode.isEnabled = onUsageStep && !state.isSubmitting
+                    viewBinding.currencyPage.root.visibility = if (onCurrencyStep) View.VISIBLE else View.GONE
+                    backFromUsageMode.isEnabled = (onUsageStep || onCurrencyStep) && !state.isSubmitting
                     usageModeController?.render(state.usageMode, state.isSubmitting)
+                    currencyController?.render(state.currency, state.isSubmitting)
                 }
             }
         }
@@ -132,6 +146,7 @@ class RegisterFragment : Fragment(R.layout.fragment_register) {
     override fun onDestroyView() {
         super.onDestroyView()
         usageModeController = null
+        currencyController = null
         binding = null
     }
 

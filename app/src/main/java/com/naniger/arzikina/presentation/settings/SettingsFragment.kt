@@ -20,10 +20,9 @@ import com.naniger.arzikina.databinding.FragmentSettingsBinding
 import com.naniger.arzikina.databinding.ItemSettingsRowBinding
 import com.naniger.arzikina.domain.model.AppLanguage
 import com.naniger.arzikina.domain.model.ThemeMode
-import com.naniger.arzikina.domain.model.SupportedCurrency
+import com.naniger.arzikina.domain.currency.CurrencyFormatter
 import com.naniger.arzikina.presentation.components.NavAnimations
 import com.naniger.arzikina.presentation.components.SyncButtonEvent
-import com.naniger.arzikina.presentation.components.pickerLabel
 import com.naniger.arzikina.presentation.components.syncResultMessage
 import com.naniger.arzikina.presentation.components.SyncIndicatorLevel
 import com.naniger.arzikina.presentation.components.SyncIndicatorUiState
@@ -473,27 +472,18 @@ class SettingsFragment : Fragment(R.layout.fragment_settings) {
             binding.profileAvatar.setImageDrawable(null)
         }
 
-        binding.currencyRow.rowValue.text = state.currencyCode
+        binding.currencyRow.rowValue.text = CurrencyFormatter.symbolOf(state.currencyCode).let {
+            if (it == state.currencyCode) it else "${state.currencyCode} · $it"
+        }
         binding.themeRow.rowValue.text = getString(state.themeMode.displayTextRes())
     }
 
-    /** Liste FERMÉE (voir `SupportedCurrency`, même source que le formulaire de compte) — une
-     * seule sélection à la fois, ferme le dialogue immédiatement (pas de bouton "Valider" séparé,
-     * cohérent avec le comportement d'un réglage instantané). */
-    private fun showCurrencyPicker() {
-        val currencies = SupportedCurrency.entries
-        val labels = currencies.map { it.pickerLabel(requireContext()) }.toTypedArray()
-        val currentIndex = currencies.indexOfFirst { it.code == viewModel.uiState.value.currencyCode }.coerceAtLeast(0)
-
-        MaterialAlertDialogBuilder(requireContext())
-            .setTitle(R.string.settings_dialog_currency_title)
-            .setSingleChoiceItems(labels, currentIndex) { dialog, position ->
-                viewModel.onCurrencyChange(currencies[position].code)
-                dialog.dismiss()
-            }
-            .setNegativeButton(R.string.action_cancel, null)
-            .show()
-    }
+    /**
+     * Sélecteur de devise avec recherche, suivi d'un avertissement avant application (voir [showCurrencyChangeFlow]) :
+     * seul l'affichage change, aucun montant enregistré n'est converti.
+     */
+    private fun showCurrencyPicker() =
+        showCurrencyChangeFlow(viewModel.uiState.value.currencyCode, viewModel::onCurrencyChange)
 
     private fun showThemePicker() {
         val modes = ThemeMode.entries

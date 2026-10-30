@@ -13,10 +13,10 @@ import com.naniger.arzikina.R
 import com.naniger.arzikina.databinding.FragmentBudgetFormBinding
 import com.naniger.arzikina.domain.model.BudgetPeriod
 import com.naniger.arzikina.domain.model.Category
-import com.naniger.arzikina.domain.model.SupportedCurrency
+import com.naniger.arzikina.domain.currency.CurrencyCatalog
 import com.naniger.arzikina.presentation.components.ConfirmDialogs
 import com.naniger.arzikina.presentation.components.displayName
-import com.naniger.arzikina.presentation.components.pickerLabel
+import com.naniger.arzikina.presentation.auth.currency.pickerLabel
 import com.naniger.arzikina.util.AppDateFormats
 import com.naniger.arzikina.util.MoneyInputFormatter
 import com.naniger.arzikina.util.QuickDateRange
@@ -106,10 +106,10 @@ class BudgetFormFragment : Fragment(R.layout.fragment_budget_form) {
 
     private fun setUpCurrencyDropdown(binding: FragmentBudgetFormBinding) {
         binding.currencyField.dropdownLayout.hint = getString(R.string.account_form_currency_label)
-        val labels = SupportedCurrency.entries.map { it.pickerLabel(requireContext()) }
+        val labels = CurrencyCatalog.all.map { it.pickerLabel(requireContext()) }
         binding.currencyField.dropdownInput.setSimpleItems(labels.toTypedArray())
         binding.currencyField.dropdownInput.setOnItemClickListener { _, _, position, _ ->
-            viewModel.onCurrencyChange(SupportedCurrency.entries[position].code)
+            viewModel.onCurrencyChange(CurrencyCatalog.all[position].code)
         }
     }
 
@@ -227,7 +227,7 @@ class BudgetFormFragment : Fragment(R.layout.fragment_budget_form) {
         }
         binding.limitLayout.error = state.limitError?.let { getString(it) }
 
-        val currencyLabel = SupportedCurrency.entries.firstOrNull { it.code == state.currencyCode }
+        val currencyLabel = CurrencyCatalog.find(state.currencyCode)
             ?.pickerLabel(requireContext())
             .orEmpty()
         if (binding.currencyField.dropdownInput.text?.toString() != currencyLabel) {

@@ -16,6 +16,7 @@ import com.naniger.arzikina.util.Constants
 import com.naniger.arzikina.util.Money
 import com.naniger.arzikina.util.external.ExternalAppInfo
 import com.naniger.arzikina.util.external.ExternalAppLauncher
+import com.naniger.arzikina.domain.repository.UserPreferencesRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.util.Locale
 import kotlinx.coroutines.CoroutineDispatcher
@@ -131,7 +132,8 @@ class AccountFormViewModel @Inject constructor(
     private val accountRepository: AccountRepository,
     private val externalAppLauncher: ExternalAppLauncher,
     @IoDispatcher private val ioDispatcher: CoroutineDispatcher,
-    private val defaultNameLocalizer: DefaultNameLocalizer
+    private val defaultNameLocalizer: DefaultNameLocalizer,
+    private val userPreferencesRepository: UserPreferencesRepository
 ) : ViewModel() {
 
     private val args = AccountFormFragmentArgs.fromSavedStateHandle(savedStateHandle)
@@ -156,7 +158,19 @@ class AccountFormViewModel @Inject constructor(
     private val _events = MutableSharedFlow<AccountFormEvent>()
     val events: SharedFlow<AccountFormEvent> = _events.asSharedFlow()
 
+    /**
+     * À la CRÉATION, la devise proposée est la devise principale de l'utilisateur (et non plus XOF en dur) ; elle reste
+     * modifiable. Ne remplace que la valeur par défaut initiale : un choix déjà fait par l'utilisateur est conservé.
+     */
+    private fun applyPreferredCurrency() {
+        viewModelScope.launch {
+            val preferred = userPreferencesRepository.getCurrencyCode()
+            _formState.update { if (it.currencyCode == Constants.DEFAULT_CURRENCY_CODE) it.copy(currencyCode = preferred) else it }
+        }
+    }
+
     init {
+        if (!isEditMode) applyPreferredCurrency()
         if (isEditMode) {
             viewModelScope.launch {
                 accountRepository.getAccount(accountId)?.let { account ->

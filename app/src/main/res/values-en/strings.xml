@@ -882,7 +882,6 @@
     <string name="account_default_savings">Savings</string>
     <string name="account_default_wallet">Wallet</string>
     <string name="account_default_shop">Shop till</string>
-    <string name="currency_name_xof">CFA franc (WAEMU)</string>
     <string name="currency_name_ngn">Nigerian naira</string>
     <string name="currency_name_ghs">Ghanaian cedi</string>
     <string name="currency_name_eur">Euro</string>

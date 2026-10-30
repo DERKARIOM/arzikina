@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Page « Choisissez votre devise » (voir CurrencyPageController). Réutilisée en superposition dans
+    fragment_register.xml (inscription classique) et fragment_usage_mode.xml (compte Google). Opaque et cliquable
+    pour intercepter les touches ; la liste défile, la recherche et le bouton « Continuer » restent ancrés.
+-->
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/currencyPageRoot"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="?attr/colorSurface"
+    android:clickable="true"
+    android:focusable="true">
+
+    <com.google.android.material.appbar.MaterialToolbar
+        android:id="@+id/currencyToolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:background="?attr/colorSurface"
+        app:layout_constraintTop_toTopOf="parent"
+        app:navigationContentDescription="@string/action_back"
+        app:navigationIcon="@drawable/ic_arrow_back_24" />
+
+    <LinearLayout
+        android:id="@+id/currencyHeader"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingHorizontal="@dimen/spacing_l"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/currencyToolbar">
+
+        <TextView
+            style="@style/TextAppearance.Material3.HeadlineSmall"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/spacing_s"
+            android:text="@string/currency_title"
+            android:textColor="?attr/colorOnSurface"
+            android:textStyle="bold" />
+
+        <TextView
+            style="@style/TextAppearance.Material3.BodyMedium"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/spacing_s"
+            android:text="@string/currency_subtitle"
+            android:textColor="?attr/colorOnSurfaceVariant" />
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/currencySearchLayout"
+            style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/spacing_m"
+            android:hint="@string/currency_search_hint"
+            app:startIconDrawable="@drawable/ic_search_24"
+            app:startIconContentDescription="@string/currency_search_hint">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/currencySearchInput"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:imeOptions="actionSearch"
+                android:inputType="text"
+                android:maxLines="1" />
+        </com.google.android.material.textfield.TextInputLayout>
+    </LinearLayout>
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/currencyList"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:clipToPadding="false"
+        android:paddingHorizontal="@dimen/spacing_l"
+        android:paddingBottom="@dimen/spacing_m"
+        app:layout_constraintBottom_toTopOf="@id/currencyFooter"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/currencyHeader" />
+
+    <TextView
+        android:id="@+id/currencyEmpty"
+        style="@style/TextAppearance.Material3.BodyMedium"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:padding="@dimen/spacing_l"
+        android:text="@string/currency_empty"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        android:visibility="gone"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/currencyHeader" />
+
+    <FrameLayout
+        android:id="@+id/currencyFooter"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:background="?attr/colorSurface"
+        android:paddingHorizontal="@dimen/spacing_l"
+        android:paddingVertical="@dimen/spacing_m"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/currencyContinueButton"
+            style="@style/Widget.Arzikina.Button.Pill"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/currency_continue" />
+
+        <com.google.android.material.progressindicator.CircularProgressIndicator
+            android:id="@+id/currencyProgress"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:layout_gravity="center"
+            android:indeterminate="true"
+            android:visibility="gone"
+            app:indicatorColor="?attr/colorOnPrimary"
+            app:trackColor="@android:color/transparent" />
+    </FrameLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>

@@ -24,7 +24,6 @@ import com.naniger.arzikina.domain.model.CurrencyAmount
 import com.naniger.arzikina.domain.model.FeeType
 import com.naniger.arzikina.domain.model.LoanType
 import com.naniger.arzikina.domain.model.PaymentMethod
-import com.naniger.arzikina.domain.model.SupportedCurrency
 import com.naniger.arzikina.domain.model.TransactionType
 import com.naniger.arzikina.presentation.accounts.AccountIconMapper
 import com.naniger.arzikina.presentation.categories.CategoryFormFragmentArgs
@@ -525,7 +524,7 @@ class TransactionFormFragment : Fragment(R.layout.fragment_transaction_form) {
 
         val selectedAccount = accounts.firstOrNull { it.id == state.accountId }
         binding.amountCurrencyBadge.text = selectedAccount?.let {
-            SupportedCurrency.entries.firstOrNull { currency -> currency.code == it.currencyCode }?.symbol ?: it.currencyCode
+            Money.symbolOf(it.currencyCode)
         }.orEmpty()
     }
 

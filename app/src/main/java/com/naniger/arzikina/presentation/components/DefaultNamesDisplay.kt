@@ -6,7 +6,6 @@ import com.naniger.arzikina.R
 import com.naniger.arzikina.domain.model.Account
 import com.naniger.arzikina.domain.model.Category
 import com.naniger.arzikina.domain.model.DefaultAccountKey
-import com.naniger.arzikina.domain.model.SupportedCurrency
 import com.naniger.arzikina.domain.model.SystemCategoryKey
 import com.naniger.arzikina.domain.model.TransactionType
 
@@ -31,9 +30,6 @@ fun Account.displayName(context: Context): String =
 /** Pour les écrans qui n'ont que le nom et le type d'une catégorie (ex. modèles de transaction). */
 fun Context.categoryDisplayName(name: String, type: TransactionType): String =
     SystemCategoryKey.of(name, type)?.let { getString(it.labelRes) } ?: name
-
-/** « Franc CFA (UEMOA) (F CFA) » — libellé des sélecteurs de devise (4 écrans). */
-fun SupportedCurrency.pickerLabel(context: Context): String = "${context.getString(nameRes)} ($symbol)"
 
 @get:StringRes
 val SystemCategoryKey.labelRes: Int
@@ -70,14 +66,4 @@ val DefaultAccountKey.labelRes: Int
         DefaultAccountKey.SAVINGS -> R.string.account_default_savings
         DefaultAccountKey.WALLET -> R.string.account_default_wallet
         DefaultAccountKey.SHOP -> R.string.account_default_shop
-    }
-
-@get:StringRes
-val SupportedCurrency.nameRes: Int
-    get() = when (this) {
-        SupportedCurrency.XOF -> R.string.currency_name_xof
-        SupportedCurrency.NGN -> R.string.currency_name_ngn
-        SupportedCurrency.GHS -> R.string.currency_name_ghs
-        SupportedCurrency.EUR -> R.string.currency_name_eur
-        SupportedCurrency.USD -> R.string.currency_name_usd
     }

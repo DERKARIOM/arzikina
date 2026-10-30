@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="currency_title">Choose your currency</string>
+    <string name="currency_subtitle">Select the currency you want to use to manage your finances.</string>
+    <string name="currency_search_hint">Search for a currency</string>
+    <string name="currency_continue">Continue</string>
+    <string name="currency_empty">No currency matches your search.</string>
+    <string name="currency_name_xof">CFA franc BCEAO</string>
+    <string name="currency_name_xaf">CFA franc BEAC</string>
+</resources>

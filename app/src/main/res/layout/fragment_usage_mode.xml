@@ -7,4 +7,12 @@
     <include
         android:id="@+id/page"
         layout="@layout/view_usage_mode_page" />
+
+    <!-- Étape « devise » : recouvre le choix du mode une fois celui-ci validé (voir UsageModeViewModel.step). -->
+    <include
+        android:id="@+id/currencyPage"
+        layout="@layout/view_currency_page"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="gone" />
 </FrameLayout>

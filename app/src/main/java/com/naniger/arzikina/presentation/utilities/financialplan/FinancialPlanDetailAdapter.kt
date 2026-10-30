@@ -19,7 +19,7 @@ import com.naniger.arzikina.domain.model.FinancialPlanItem
 import com.naniger.arzikina.domain.model.PlanItemStatus
 import com.naniger.arzikina.presentation.categories.CategoryIconMapper
 import com.naniger.arzikina.util.AppDateFormats
-import com.naniger.arzikina.util.Constants
+import com.naniger.arzikina.domain.currency.CurrencyCatalog
 import com.naniger.arzikina.util.DatePeriods
 import com.naniger.arzikina.util.Money
 
@@ -35,6 +35,15 @@ class FinancialPlanDetailAdapter(
     private val onClickItem: (FinancialPlanItem) -> Unit,
     private val onDeleteItem: (FinancialPlanItem) -> Unit
 ) : ListAdapter<FinancialPlanDetailListRow, RecyclerView.ViewHolder>(DIFF_CALLBACK) {
+
+    /** Devise d'affichage (devise principale de l'utilisateur) ; un changement rafraîchit la liste. */
+    var currencyCode: String = CurrencyCatalog.DEFAULT_CODE
+        set(value) {
+            if (field != value) {
+                field = value
+                notifyDataSetChanged()
+            }
+        }
 
     override fun getItemViewType(position: Int): Int = when (getItem(position)) {
         is FinancialPlanDetailListRow.Header -> VIEW_TYPE_HEADER
@@ -52,7 +61,7 @@ class FinancialPlanDetailAdapter(
 
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
         when (val row = getItem(position)) {
-            is FinancialPlanDetailListRow.Header -> (holder as HeaderViewHolder).bind(row.uiState)
+            is FinancialPlanDetailListRow.Header -> (holder as HeaderViewHolder).bind(row.uiState, currencyCode)
             is FinancialPlanDetailListRow.ItemRow -> {
                 // categoriesById ne vit que sur le Header (voir sa doc) : toujours en position 0,
                 // seule ligne de ce type dans la liste — même principe que
@@ -60,14 +69,14 @@ class FinancialPlanDetailAdapter(
                 // résumé nécessaires aux lignes suivantes.
                 val categoriesById = (getItem(0) as? FinancialPlanDetailListRow.Header)?.uiState?.categoriesById.orEmpty()
                 val category = row.item.categoryId?.let { categoriesById[it] }
-                (holder as ItemViewHolder).bind(row.item, category, row.isFirst, row.isLast, onClickItem, onDeleteItem)
+                (holder as ItemViewHolder).bind(row.item, category, row.isFirst, row.isLast, onClickItem, onDeleteItem, currencyCode)
             }
         }
     }
 
     class HeaderViewHolder(private val binding: ItemFinancialPlanDetailHeaderBinding) :
         RecyclerView.ViewHolder(binding.root) {
-        fun bind(uiState: FinancialPlanDetailUiState) {
+        fun bind(uiState: FinancialPlanDetailUiState, currencyCode: String) {
             val context = binding.root.context
             val plan = uiState.plan
 
@@ -75,8 +84,8 @@ class FinancialPlanDetailAdapter(
             // sa doc) : ni icône, ni couleur de progression par plan — tous les textes restent
             // blancs, le libellé "Reste"/"Dépassement" suffit à signaler un dépassement.
             binding.planName.text = plan.name
-            binding.availableValue.text = Money.format(CurrencyAmount(Constants.DEFAULT_CURRENCY_CODE, plan.availableAmount))
-            binding.plannedValue.text = Money.format(CurrencyAmount(Constants.DEFAULT_CURRENCY_CODE, uiState.totalPlanned))
+            binding.availableValue.text = Money.format(CurrencyAmount(currencyCode, plan.availableAmount))
+            binding.plannedValue.text = Money.format(CurrencyAmount(currencyCode, uiState.totalPlanned))
             binding.progressBar.progress = uiState.progressPercent
             binding.percentUsedLabel.text = context.getString(R.string.financial_plan_card_percent_used, uiState.progressPercent)
             bindProgressHead(uiState.progressPercent)
@@ -84,11 +93,11 @@ class FinancialPlanDetailAdapter(
             if (uiState.isOverBudget) {
                 binding.remainingLabel.text = context.getString(R.string.financial_plan_card_overbudget_label)
                 binding.remainingValue.text =
-                    Money.format(CurrencyAmount(Constants.DEFAULT_CURRENCY_CODE, -uiState.remainingAmount))
+                    Money.format(CurrencyAmount(currencyCode, -uiState.remainingAmount))
             } else {
                 binding.remainingLabel.text = context.getString(R.string.financial_plan_card_remaining_label)
                 binding.remainingValue.text =
-                    Money.format(CurrencyAmount(Constants.DEFAULT_CURRENCY_CODE, uiState.remainingAmount))
+                    Money.format(CurrencyAmount(currencyCode, uiState.remainingAmount))
             }
 
             binding.itemsSectionTitle.text =
@@ -112,7 +121,8 @@ class FinancialPlanDetailAdapter(
             isFirst: Boolean,
             isLast: Boolean,
             onClickItem: (FinancialPlanItem) -> Unit,
-            onDeleteItem: (FinancialPlanItem) -> Unit
+            onDeleteItem: (FinancialPlanItem) -> Unit,
+            currencyCode: String
         ) {
             val context = binding.root.context
 
@@ -140,7 +150,7 @@ class FinancialPlanDetailAdapter(
             }
 
             binding.itemName.text = item.name
-            binding.itemAmount.text = Money.format(CurrencyAmount(Constants.DEFAULT_CURRENCY_CODE, item.amount))
+            binding.itemAmount.text = Money.format(CurrencyAmount(currencyCode, item.amount))
             // Voir la doc de item_financial_plan_row.xml/itemConvertedIcon (Étape 6).
             binding.itemConvertedIcon.visibility = if (item.transactionId != null) View.VISIBLE else View.GONE
 

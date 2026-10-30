@@ -4,6 +4,8 @@ import android.os.Bundle
 import android.view.View
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import androidx.fragment.app.activityViewModels
+import com.naniger.arzikina.presentation.components.PreferredCurrencyViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
@@ -16,7 +18,6 @@ import com.naniger.arzikina.domain.model.FinancialPlanItem
 import com.naniger.arzikina.presentation.components.ConfirmDialogs
 import com.naniger.arzikina.presentation.components.NavAnimations
 import com.naniger.arzikina.util.AppResult
-import com.naniger.arzikina.util.Constants
 import com.naniger.arzikina.util.Money
 import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
@@ -37,6 +38,7 @@ import kotlinx.coroutines.launch
 class FinancialPlanDetailFragment : Fragment(R.layout.fragment_financial_plan_detail) {
 
     private val viewModel: FinancialPlanDetailViewModel by viewModels()
+    private val currencyViewModel: PreferredCurrencyViewModel by activityViewModels()
     private var binding: FragmentFinancialPlanDetailBinding? = null
     private val adapter = FinancialPlanDetailAdapter(
         onClickItem = { item -> navigateToItemForm(itemId = item.id) },
@@ -58,7 +60,8 @@ class FinancialPlanDetailFragment : Fragment(R.layout.fragment_financial_plan_de
 
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.uiState.collect { state -> render(state) }
+                launch { currencyViewModel.currencyCode.collect { adapter.currencyCode = it } }
+                launch { viewModel.uiState.collect { state -> render(state) } }
             }
         }
     }
@@ -129,7 +132,7 @@ class FinancialPlanDetailFragment : Fragment(R.layout.fragment_financial_plan_de
     }
 
     private fun confirmDeleteItem(item: FinancialPlanItem) {
-        val amountLabel = Money.format(CurrencyAmount(Constants.DEFAULT_CURRENCY_CODE, item.amount))
+        val amountLabel = Money.format(CurrencyAmount(currencyViewModel.currencyCode.value, item.amount))
         ConfirmDialogs.confirm(
             context = requireContext(),
             title = getString(R.string.financial_plan_item_delete_title),

@@ -40,7 +40,8 @@ internal object DefaultAccounts {
         userId: Long,
         keys: List<DefaultAccountKey>,
         firstDisplayOrder: Long = 0L,
-        excludeShopFromStatistics: Boolean = false
+        excludeShopFromStatistics: Boolean = false,
+        currencyCode: String = Constants.DEFAULT_CURRENCY_CODE
     ): List<AccountEntity> {
         return keys.mapIndexed { index, key ->
             val order = firstDisplayOrder + index
@@ -51,7 +52,7 @@ internal object DefaultAccounts {
                     icon = AccountIcon.CASH,
                     type = AccountType.CASH,
                     colorArgb = CASH_COLOR_ARGB,
-                    currencyCode = Constants.DEFAULT_CURRENCY_CODE,
+                    currencyCode = currencyCode,
                     initialBalanceMinor = 0L,
                     createdAt = now,
                     displayOrder = order
@@ -62,7 +63,7 @@ internal object DefaultAccounts {
                     icon = AccountIcon.WALLET,
                     type = AccountType.BOUTIQUE,
                     colorArgb = SHOP_COLOR_ARGB,
-                    currencyCode = Constants.DEFAULT_CURRENCY_CODE,
+                    currencyCode = currencyCode,
                     initialBalanceMinor = 0L,
                     createdAt = now,
                     displayOrder = order,

@@ -6,6 +6,7 @@ require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../../utils/admin_auth.php';
 require_once __DIR__ . '/../../utils/admin_http.php';
 require_once __DIR__ . '/../../utils/audit_log.php';
+require_once __DIR__ . '/../../utils/version_policy.php';
 
 /**
  * GET /api/admin/users/detail.php?id=<userId> — permission `users.view`.
@@ -75,6 +76,38 @@ try {
         error_log('Arzikina API — admin/users/detail (reçus émis) : ' . $e->getMessage());
     }
 
+    // Application utilisée lors de la DERNIÈRE activité (session la plus récemment utilisée) : plateforme et
+    // version. `null` si les colonnes n'existent pas encore (migration 015) ou si aucune session n'existe ;
+    // une plateforme ou une version inconnue reste `null` champ par champ.
+    $lastClient = null;
+    try {
+        $clientStmt = $pdo->prepare(
+            'SELECT client_platform, client_version_code FROM auth_tokens WHERE user_id = :id
+             ORDER BY COALESCE(last_used_at, created_at) DESC, id DESC LIMIT 1'
+        );
+        $clientStmt->execute(['id' => $id]);
+        $clientRow = $clientStmt->fetch();
+        if ($clientRow !== false) {
+            $platform = $clientRow['client_platform'];
+            $versionCode = $clientRow['client_version_code'] !== null ? (int) $clientRow['client_version_code'] : null;
+            $versionName = null;
+            if ($platform === 'android' && $versionCode !== null) {
+                try {
+                    $versionName = loadVersionNameByCode($pdo, $versionCode);
+                } catch (Throwable $e) {
+                    error_log('Arzikina API — admin/users/detail (nom de version) : ' . $e->getMessage());
+                }
+            }
+            $lastClient = [
+                'platform' => $platform !== null ? (string) $platform : null,
+                'versionCode' => $versionCode,
+                'versionName' => $versionName,
+            ];
+        }
+    } catch (Throwable $e) {
+        error_log('Arzikina API — admin/users/detail (application utilisée) : ' . $e->getMessage());
+    }
+
     recordAdminAudit($pdo, $admin, 'user.viewed', 'user', $id);
 } catch (Throwable $e) {
     error_log('Arzikina API — admin/users/detail : ' . $e->getMessage());
@@ -100,4 +133,5 @@ sendJson([
         'transfer' => $byType['TRANSFER'],
     ],
     'issuedReceipts' => $issuedReceipts,
+    'lastClient' => $lastClient,
 ]);

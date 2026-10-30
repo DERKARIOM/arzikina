@@ -30,8 +30,8 @@ import com.naniger.arzikina.domain.issuedreceipt.pdf.ReceiptAmountFormatter
 import com.naniger.arzikina.domain.issuedreceipt.pdf.ReceiptPdfContentBuilder
 import com.naniger.arzikina.domain.model.PaymentMethod
 import com.naniger.arzikina.domain.model.ReceiptLine
-import com.naniger.arzikina.domain.model.SupportedCurrency
-import com.naniger.arzikina.presentation.components.pickerLabel
+import com.naniger.arzikina.domain.currency.CurrencyCatalog
+import com.naniger.arzikina.presentation.auth.currency.pickerLabel
 import com.naniger.arzikina.presentation.transactions.displayTextRes
 import com.naniger.arzikina.presentation.utilities.issuedreceipts.preview.PreviewLogoLoader
 import com.naniger.arzikina.presentation.utilities.issuedreceipts.preview.PreviewLogoSource
@@ -148,7 +148,7 @@ class IssuedReceiptFormFragment : Fragment(R.layout.fragment_issued_receipt_form
         MoneyInputFormatter.attach(b.amountField.postcardInput) { formatted -> viewModel.onAmountChange(formatted) }
 
         // Devise et mode de paiement : listes déroulantes.
-        val currencies = SupportedCurrency.entries
+        val currencies = CurrencyCatalog.all
         b.currencyField.dropdownLayout.hint = getString(R.string.issued_receipt_currency_label)
         b.currencyField.dropdownInput.setSimpleItems(currencies.map { it.pickerLabel(requireContext()) }.toTypedArray())
         b.currencyField.dropdownInput.setOnItemClickListener { _, _, position, _ -> viewModel.onCurrencyChange(currencies[position].code) }
@@ -293,7 +293,7 @@ class IssuedReceiptFormFragment : Fragment(R.layout.fragment_issued_receipt_form
         b.dateField.dateFieldValue.text = Instant.ofEpochMilli(input.issuedAt).atZone(ZoneId.systemDefault()).toLocalDate()
             .format(AppDateFormats.longDate(requireContext()))
 
-        val currency = SupportedCurrency.entries.firstOrNull { it.code == input.currencyCode }
+        val currency = CurrencyCatalog.find(input.currencyCode)
         val currencyLabel = currency?.pickerLabel(requireContext()) ?: input.currencyCode
         if (b.currencyField.dropdownInput.text?.toString() != currencyLabel) b.currencyField.dropdownInput.setText(currencyLabel, false)
         val methodLabel = getString(input.paymentMethod.displayTextRes())

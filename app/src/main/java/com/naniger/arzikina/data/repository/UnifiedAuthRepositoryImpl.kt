@@ -13,6 +13,7 @@ import com.naniger.arzikina.domain.model.AccountDeletionError
 import com.naniger.arzikina.domain.model.AccountDeletionResult
 import com.naniger.arzikina.domain.model.AccountLinkError
 import com.naniger.arzikina.domain.model.AccountLinkResult
+import com.naniger.arzikina.domain.currency.CurrencyCatalog
 import com.naniger.arzikina.domain.model.OnboardingSeedingPolicy
 import com.naniger.arzikina.domain.model.PasswordChangeError
 import com.naniger.arzikina.domain.model.PasswordChangeResult
@@ -28,6 +29,7 @@ import com.naniger.arzikina.domain.model.UnifiedAuthResult
 import com.naniger.arzikina.domain.model.UsageMode
 import com.naniger.arzikina.domain.model.UsageModeSelectionResult
 import com.naniger.arzikina.domain.repository.SessionManager
+import com.naniger.arzikina.domain.repository.UserPreferencesRepository
 import com.naniger.arzikina.domain.repository.SyncAuthRepository
 import com.naniger.arzikina.domain.repository.UnifiedAuthRepository
 import com.naniger.arzikina.util.AuthValidator
@@ -71,7 +73,8 @@ class UnifiedAuthRepositoryImpl @Inject constructor(
     @IoDispatcher private val ioDispatcher: CoroutineDispatcher,
     private val sessionManager: SessionManager,
     private val accountDataWiper: AccountDataWiper,
-    private val database: ArzikinaDatabase
+    private val database: ArzikinaDatabase,
+    private val userPreferencesRepository: UserPreferencesRepository
 ) : UnifiedAuthRepository {
 
     /** Ordre volontaire : serveur d'abord (effacement local immédiat du token, voir
@@ -166,7 +169,11 @@ class UnifiedAuthRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun completeUsageModeSelection(localUserId: Long, mode: UsageMode): UsageModeSelectionResult =
+    override suspend fun completeUsageModeSelection(
+        localUserId: Long,
+        mode: UsageMode,
+        currencyCode: String?
+    ): UsageModeSelectionResult =
         withContext(ioDispatcher) {
             when (val result = syncAuthRepository.setUsageMode(mode)) {
                 is SyncAuthResult.Failure -> UsageModeSelectionResult.Failure(
@@ -191,9 +198,15 @@ class UnifiedAuthRepositoryImpl @Inject constructor(
                                 hasServerAccounts = selection.hasServerAccounts
                             )
                         ) {
-                            is SeedDecision.ForMode -> newUserDefaultDataSeeder.seed(localUserId, decision.mode)
+                            is SeedDecision.ForMode -> newUserDefaultDataSeeder.seed(
+                                localUserId,
+                                decision.mode,
+                                CurrencyCatalog.sanitize(currencyCode)
+                            )
                             SeedDecision.None -> Unit
                         }
+                        // Choix explicite de l'utilisateur : persisté (et synchronisé) dans la même transaction locale.
+                        currencyCode?.let { userPreferencesRepository.setCurrencyCodeForUser(localUserId, CurrencyCatalog.sanitize(it)) }
                     }
                     UsageModeSelectionResult.Success
                 }
@@ -293,7 +306,8 @@ class UnifiedAuthRepositoryImpl @Inject constructor(
         profilePhotoUri: String?,
         securityQuestion: SecurityQuestion,
         securityAnswer: String,
-        usageMode: UsageMode
+        usageMode: UsageMode,
+        currencyCode: String?
     ): UnifiedAuthResult = withContext(ioDispatcher) {
         val trimmedEmail = email.trim()
         val trimmedFullName = fullName.trim()
@@ -335,7 +349,8 @@ class UnifiedAuthRepositoryImpl @Inject constructor(
                         profilePhotoUri = profilePhotoUri,
                         securityQuestion = securityQuestion,
                         securityAnswer = trimmedSecurityAnswer,
-                        registrationMode = usageMode
+                        registrationMode = usageMode,
+                        registrationCurrency = currencyCode
                     )
 
                 is SyncAuthResult.Failure -> when (result.error) {
@@ -362,7 +377,8 @@ class UnifiedAuthRepositoryImpl @Inject constructor(
         profilePhotoUri: String? = null,
         securityQuestion: SecurityQuestion? = null,
         securityAnswer: String? = null,
-        registrationMode: UsageMode? = null
+        registrationMode: UsageMode? = null,
+        registrationCurrency: String? = null
     ): UnifiedAuthResult {
         val localUserId = resolveOrCreateLocalUser(
             serverUserId = session.serverUserId,
@@ -376,6 +392,7 @@ class UnifiedAuthRepositoryImpl @Inject constructor(
             securityQuestion = securityQuestion,
             securityAnswer = securityAnswer,
             registrationMode = registrationMode,
+            registrationCurrency = registrationCurrency,
             sessionUsageMode = session.usageMode,
             hasServerAccounts = session.hasServerAccounts
         )
@@ -468,6 +485,8 @@ class UnifiedAuthRepositoryImpl @Inject constructor(
         // Mode choisi à l'inscription (null hors inscription), mode connu du serveur et « le serveur a déjà des
         // comptes » : voir [OnboardingSeedingPolicy] pour la décision de création.
         registrationMode: UsageMode? = null,
+        // Devise choisie à l'inscription (null hors inscription ou sans choix explicite).
+        registrationCurrency: String? = null,
         sessionUsageMode: UsageMode? = null,
         hasServerAccounts: Boolean = true
     ): Long = database.withTransaction {
@@ -522,7 +541,16 @@ class UnifiedAuthRepositoryImpl @Inject constructor(
                 )
             ) {
                 SeedDecision.None -> Unit
-                is SeedDecision.ForMode -> newUserDefaultDataSeeder.seed(id, decision.mode)
+                is SeedDecision.ForMode -> newUserDefaultDataSeeder.seed(
+                    id,
+                    decision.mode,
+                    CurrencyCatalog.sanitize(registrationCurrency)
+                )
+            }
+            // Inscription avec choix explicite : devise écrite dans les préférences du NOUVEL utilisateur (même
+            // transaction locale que sa création et ses comptes) ; la synchronisation la propage aux autres appareils.
+            if (seedDefaultsIfNewLocalUser && registrationCurrency != null) {
+                userPreferencesRepository.setCurrencyCodeForUser(id, CurrencyCatalog.sanitize(registrationCurrency))
             }
             id
         }

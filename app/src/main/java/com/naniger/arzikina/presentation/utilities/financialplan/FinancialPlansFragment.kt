@@ -4,6 +4,8 @@ import android.os.Bundle
 import android.view.View
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import androidx.fragment.app.activityViewModels
+import com.naniger.arzikina.presentation.components.PreferredCurrencyViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
@@ -36,6 +38,7 @@ import kotlinx.coroutines.launch
 class FinancialPlansFragment : Fragment(R.layout.fragment_financial_plans) {
 
     private val viewModel: FinancialPlansViewModel by viewModels()
+    private val currencyViewModel: PreferredCurrencyViewModel by activityViewModels()
     private var binding: FragmentFinancialPlansBinding? = null
     private val adapter = FinancialPlansAdapter(
         onClick = { item -> navigateToDetail(item.plan.id) }
@@ -52,7 +55,8 @@ class FinancialPlansFragment : Fragment(R.layout.fragment_financial_plans) {
 
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.uiState.collect { state -> render(state) }
+                launch { currencyViewModel.currencyCode.collect { adapter.currencyCode = it } }
+                launch { viewModel.uiState.collect { state -> render(state) } }
             }
         }
     }

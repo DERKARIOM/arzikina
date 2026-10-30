@@ -68,7 +68,13 @@ interface UnifiedAuthRepository {
          * l'utilisateur local et déterminant les comptes créés par défaut, le tout dans une seule transaction
          * locale. Obligatoire : aucune inscription ne se fait sans ce choix.
          */
-        usageMode: UsageMode
+        usageMode: UsageMode,
+        /**
+         * Devise principale choisie à l'inscription (code ISO 4217 du catalogue), ou `null` si aucun choix explicite :
+         * [com.naniger.arzikina.domain.currency.CurrencyCatalog.DEFAULT_CODE] est alors utilisée pour les comptes par
+         * défaut et AUCUNE préférence n'est écrite. Enregistrée dans les préférences de l'utilisateur (donc synchronisée).
+         */
+        currencyCode: String? = null
     ): UnifiedAuthResult
 
     /**
@@ -78,7 +84,11 @@ interface UnifiedAuthRepository {
      * détient aucun — le tout idempotent (nouvel appui, nouvelle tentative : aucun doublon). La session de l'appli
      * n'est pas touchée : c'est à l'appelant de la démarrer ensuite.
      */
-    suspend fun completeUsageModeSelection(localUserId: Long, mode: UsageMode): UsageModeSelectionResult
+    suspend fun completeUsageModeSelection(
+        localUserId: Long,
+        mode: UsageMode,
+        currencyCode: String? = null
+    ): UsageModeSelectionResult
 
     /**
      * Déconnexion complète de l'utilisateur (Profil, écran de verrouillage biométrique) : session

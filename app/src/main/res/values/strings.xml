@@ -1358,7 +1358,6 @@
 
     <!-- Noms des devises (voir SupportedCurrency.nameRes) : le code ISO et le symbole restent
          dans le domaine, ils ne dépendent d'aucune langue. -->
-    <string name="currency_name_xof">Franc CFA (UEMOA)</string>
     <string name="currency_name_ngn">Naira nigérian</string>
     <string name="currency_name_ghs">Cedi ghanéen</string>
     <string name="currency_name_eur">Euro</string>

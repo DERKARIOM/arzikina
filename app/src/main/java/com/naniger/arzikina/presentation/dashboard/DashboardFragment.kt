@@ -11,6 +11,8 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updatePadding
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import androidx.fragment.app.activityViewModels
+import com.naniger.arzikina.presentation.components.PreferredCurrencyViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
@@ -48,6 +50,7 @@ import java.util.Locale
 class DashboardFragment : Fragment(R.layout.fragment_dashboard) {
 
     private val viewModel: DashboardViewModel by viewModels()
+    private val currencyViewModel: PreferredCurrencyViewModel by activityViewModels()
     private var binding: FragmentDashboardBinding? = null
     private val recentTransactionsAdapter = RecentTransactionsAdapter()
 
@@ -326,7 +329,7 @@ class DashboardFragment : Fragment(R.layout.fragment_dashboard) {
 
         val currencyCode = income.firstOrNull()?.currencyCode
             ?: expense.firstOrNull()?.currencyCode
-            ?: Constants.DEFAULT_CURRENCY_CODE
+            ?: currencyViewModel.currencyCode.value
         val difference = incomeAmount - expenseAmount
         binding.differenceValue.text = Money.format(CurrencyAmount(currencyCode, difference))
         binding.differenceValue.setTextColor(

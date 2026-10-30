@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_currency_change_title">Changer la devise ?</string>
+    <string name="settings_currency_change_message">Votre devise principale passera de %1$s à %2$s.\n\nSeul l\'affichage des montants est concerné : aucun montant enregistré n\'est converti ni modifié, et vos comptes existants conservent leur propre devise. Les montants de devises différentes ne sont jamais additionnés.</string>
+    <string name="settings_currency_change_confirm">Changer la devise</string>
+</resources>

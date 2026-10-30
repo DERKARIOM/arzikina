@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="currency_title">Choisissez votre devise</string>
+    <string name="currency_subtitle">Sélectionnez la devise que vous souhaitez utiliser pour gérer vos finances.</string>
+    <string name="currency_search_hint">Rechercher une devise</string>
+    <string name="currency_continue">Continuer</string>
+    <string name="currency_empty">Aucune devise ne correspond à votre recherche.</string>
+    <string name="currency_name_xof">Franc CFA BCEAO</string>
+    <string name="currency_name_xaf">Franc CFA BEAC</string>
+</resources>

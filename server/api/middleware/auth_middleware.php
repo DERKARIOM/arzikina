@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../utils/json_response.php';
 require_once __DIR__ . '/../utils/version_policy.php';
+require_once __DIR__ . '/../utils/client_info.php';
 
 /**
  * Vérifie l'en-tête `Authorization: Bearer <token>` et retourne l'utilisateur authentifié.
@@ -58,8 +59,28 @@ function requireAuthenticatedUser(PDO $pdo, bool $enforceVersionPolicy = true): 
         enforceClientVersionPolicy($pdo);
     }
 
-    $update = $pdo->prepare('UPDATE auth_tokens SET last_used_at = :now WHERE id = :id');
-    $update->execute(['now' => $nowMillis, 'id' => $row['id']]);
+    // Dernière activité + application utilisée (plateforme et versionCode, voir utils/client_info.php et la
+    // migration 015) dans UNE seule écriture. `COALESCE` : une requête sans en-tête n'efface jamais une valeur
+    // déjà connue. Tolérant : si les colonnes n'existent pas encore (migration non exécutée), on retombe sur
+    // l'ancienne écriture — l'API ne doit jamais tomber pour une information d'affichage.
+    try {
+        $update = $pdo->prepare(
+            'UPDATE auth_tokens
+             SET last_used_at = :now,
+                 client_platform = COALESCE(:platform, client_platform),
+                 client_version_code = COALESCE(:version_code, client_version_code)
+             WHERE id = :id'
+        );
+        $update->execute([
+            'now' => $nowMillis,
+            'platform' => detectClientPlatform($_SERVER),
+            'version_code' => readClientVersionCode(),
+            'id' => $row['id'],
+        ]);
+    } catch (PDOException $e) {
+        $update = $pdo->prepare('UPDATE auth_tokens SET last_used_at = :now WHERE id = :id');
+        $update->execute(['now' => $nowMillis, 'id' => $row['id']]);
+    }
 
     // `tokenId` = identifiant de la SESSION (ligne `auth_tokens`), jamais le token lui-même :
     // utilisé pour rattacher un appareil push à sa session et pour la déconnexion

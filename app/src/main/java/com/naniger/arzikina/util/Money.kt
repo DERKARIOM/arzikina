@@ -1,35 +1,32 @@
 package com.naniger.arzikina.util
 
 import com.naniger.arzikina.domain.model.CurrencyAmount
-import com.naniger.arzikina.domain.model.SupportedCurrency
+import com.naniger.arzikina.domain.currency.CurrencyFormatter
 import java.math.BigDecimal
 import java.math.RoundingMode
-import java.text.NumberFormat
 import java.util.Locale
 
 /**
  * Conversion entre la saisie utilisateur (unité majeure, ex. "1500.50") et le
  * stockage interne en unité mineure ([Long], voir [com.naniger.arzikina.domain.model.Account]).
  *
- * Simplification actuelle : un facteur fixe de 100 est utilisé pour toutes
- * les devises, y compris celles sans sous-unité usuelle (ex. XOF). Ce sera
- * affiné avec la gestion complète des devises à l'étape "Paramètres" —
- * l'unité de stockage ([Long]) n'aura pas besoin de changer, seul ce
- * convertisseur évoluera.
+ * Le FORMATAGE d'affichage est délégué à [CurrencyFormatter] (domain/currency), unique source de
+ * vérité ; cet objet ne garde que la saisie/conversion. Un facteur fixe de 100 est utilisé pour
+ * toutes les devises (y compris XOF, sans sous-unité usuelle) : l'unité de stockage ne change jamais.
  */
 object Money {
     /** Facteur unité majeure → mineure (voir la doc de la classe). Public pour les rares
      *  affichages qui partent d'un montant en unités majeures (ex. raccourcis « +1 000 »). */
-    const val MINOR_UNITS_PER_MAJOR = 100
+    const val MINOR_UNITS_PER_MAJOR = CurrencyFormatter.MINOR_UNITS_PER_MAJOR
 
     /**
      * Locale de formatage de TOUS les montants, quelle que soit la langue de l'interface (décision
-     * produit, chantier i18n) : « 10 000 F CFA » en français comme en anglais. Un montant ne doit
+     * produit, chantier i18n) : « 10 000 FCFA » en français comme en anglais. Un montant ne doit
      * jamais changer d'apparence avec la langue, et [parseToMinorUnits] lit la virgule comme
      * séparateur décimal : « 10,000 » y serait compris comme dix. Seule cette constante est à
      * modifier si Arzikina adopte un jour un format de montant par langue.
      */
-    val AMOUNT_LOCALE: Locale = Locale.FRENCH
+    val AMOUNT_LOCALE: Locale = CurrencyFormatter.AMOUNT_LOCALE
 
 
     /**
@@ -121,15 +118,14 @@ object Money {
     fun toMajorDouble(minorUnits: Long): Double = minorUnits.toDouble() / MINOR_UNITS_PER_MAJOR
 
     /** Formate un [CurrencyAmount] pour l'AFFICHAGE, avec le symbole de sa devise
-     * et un séparateur de milliers (ex. "10 000 F CFA", ou "10 000,50 F CFA" si le
+     * et un séparateur de milliers (ex. "10 000 FCFA", ou "10 000,50 FCFA" si le
      * montant a réellement des centimes — voir [formatAmount]). */
     fun format(amount: CurrencyAmount): String =
-        "${formatAmount(amount.amountMinor)} ${symbolOf(amount.currencyCode)}"
+        CurrencyFormatter.format(amount.amountMinor, amount.currencyCode)
 
-    /** Symbole d'affichage d'une devise (« F CFA », « € »…), ou son code ISO si elle ne fait pas
-     * partie de [SupportedCurrency]. Sert aussi de suffixe aux champs de saisie de montant. */
-    fun symbolOf(currencyCode: String): String =
-        SupportedCurrency.entries.firstOrNull { it.code == currencyCode }?.symbol ?: currencyCode
+    /** Symbole d'affichage d'une devise (« FCFA », « € »…), ou son code ISO si elle ne fait pas
+     * partie de [com.naniger.arzikina.domain.currency.CurrencyCatalog]. Sert aussi de suffixe aux champs de saisie de montant. */
+    fun symbolOf(currencyCode: String): String = CurrencyFormatter.symbolOf(currencyCode)
 
     /**
      * Formate un montant pour l'AFFICHAGE, sans devise : séparateur de milliers
@@ -141,13 +137,5 @@ object Money {
      * courant. Utilisé par [format] ; exposé aussi pour les rares affichages
      * sans devise résolue (voir TransactionItemBinder).
      */
-    fun formatAmount(minorUnits: Long): String {
-        val hasCents = minorUnits % MINOR_UNITS_PER_MAJOR != 0L
-        val numberFormat = NumberFormat.getNumberInstance(AMOUNT_LOCALE).apply {
-            minimumFractionDigits = if (hasCents) 2 else 0
-            maximumFractionDigits = if (hasCents) 2 else 0
-        }
-        val major = BigDecimal(minorUnits).divide(BigDecimal(MINOR_UNITS_PER_MAJOR))
-        return numberFormat.format(major)
-    }
+    fun formatAmount(minorUnits: Long): String = CurrencyFormatter.formatNumber(minorUnits)
 }

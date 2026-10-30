@@ -13,8 +13,10 @@ import androidx.navigation.fragment.findNavController
 import com.google.android.material.snackbar.Snackbar
 import com.naniger.arzikina.R
 import com.naniger.arzikina.databinding.FragmentUsageModeBinding
+import com.naniger.arzikina.presentation.auth.currency.CurrencyPageController
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
+import java.util.Locale
 
 /**
  * Choix du mode d'utilisation après une authentification Google (voir [UsageModeViewModel]). Pas de flèche retour
@@ -27,6 +29,7 @@ class UsageModeFragment : Fragment(R.layout.fragment_usage_mode) {
     private val viewModel: UsageModeViewModel by viewModels()
     private var binding: FragmentUsageModeBinding? = null
     private var controller: UsageModePageController? = null
+    private var currencyController: CurrencyPageController? = null
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -35,17 +38,34 @@ class UsageModeFragment : Fragment(R.layout.fragment_usage_mode) {
         val pageController = UsageModePageController(
             binding = viewBinding.page,
             onModeSelected = viewModel::onModeSelected,
-            onContinue = viewModel::confirm,
+            onContinue = viewModel::continueToCurrency,
             onBack = null
         )
         controller = pageController
+        val pageCurrencyController = CurrencyPageController(
+            binding = viewBinding.currencyPage,
+            onSelected = viewModel::onCurrencySelected,
+            onQueryChange = viewModel::onCurrencyQueryChange,
+            onContinue = viewModel::confirm,
+            onBack = viewModel::back
+        )
+        currencyController = pageCurrencyController
+        viewModel.onRegionDetected(Locale.getDefault().country)
+        // Retour système : depuis la devise, retour au mode ; depuis le mode, on ne quitte pas (voir la doc de classe).
         requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner, object : OnBackPressedCallback(true) {
-            override fun handleOnBackPressed() = Unit
+            override fun handleOnBackPressed() = viewModel.back()
         })
 
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                launch { viewModel.state.collect { pageController.render(it.selected, it.isSubmitting) } }
+                launch {
+                    viewModel.state.collect {
+                        viewBinding.currencyPage.root.visibility =
+                            if (it.step == UsageModeStep.CURRENCY) View.VISIBLE else View.GONE
+                        pageController.render(it.selected, it.isSubmitting)
+                        pageCurrencyController.render(it.currency, it.isSubmitting)
+                    }
+                }
                 launch { viewModel.events.collect(::handleEvent) }
             }
         }
@@ -54,6 +74,7 @@ class UsageModeFragment : Fragment(R.layout.fragment_usage_mode) {
     override fun onDestroyView() {
         super.onDestroyView()
         controller = null
+        currencyController = null
         binding = null
     }
 

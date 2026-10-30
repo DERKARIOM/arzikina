@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.naniger.arzikina.R
 import com.naniger.arzikina.domain.model.AccountLinkError
 import com.naniger.arzikina.domain.model.AccountLinkResult
+import com.naniger.arzikina.domain.currency.CurrencyCatalog
 import com.naniger.arzikina.domain.model.AppLanguage
 import com.naniger.arzikina.domain.model.ThemeMode
 import com.naniger.arzikina.domain.repository.AppLanguageRepository
@@ -197,7 +198,7 @@ class SettingsViewModel @Inject constructor(
     }
 
     fun onCurrencyChange(currencyCode: String) {
-        viewModelScope.launch { userPreferencesRepository.setCurrencyCode(currencyCode) }
+        viewModelScope.launch { userPreferencesRepository.setCurrencyCode(CurrencyCatalog.sanitize(currencyCode)) }
     }
 
     /** Voir [com.naniger.arzikina.presentation.profile.ProfileViewModel.onBiometricLockToggle] : même

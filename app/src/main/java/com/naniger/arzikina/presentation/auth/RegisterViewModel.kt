@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.naniger.arzikina.R
 import com.naniger.arzikina.domain.model.SecurityQuestion
 import com.naniger.arzikina.domain.model.UnifiedAuthError
+import com.naniger.arzikina.presentation.auth.currency.CurrencySelection
 import com.naniger.arzikina.domain.model.UnifiedAuthResult
 import com.naniger.arzikina.domain.model.UsageMode
 import com.naniger.arzikina.domain.repository.SessionManager
@@ -30,8 +31,8 @@ import javax.inject.Inject
  * qu'affichées génériquement : l'utilisateur doit voir immédiatement QUEL
  * champ corriger.
  */
-/** Étape de l'inscription : le formulaire, puis le choix du mode d'utilisation (l'appel serveur n'a lieu qu'à la fin). */
-enum class RegisterStep { FORM, USAGE_MODE }
+/** Étape de l'inscription : le formulaire, le mode d'utilisation, puis la devise (l'appel serveur n'a lieu qu'à la fin). */
+enum class RegisterStep { FORM, USAGE_MODE, CURRENCY }
 
 data class RegisterFormState(
     val fullName: String = "",
@@ -46,6 +47,8 @@ data class RegisterFormState(
     val securityAnswer: String = "",
     /** Mode d'utilisation choisi (étape dédiée) ; `null` tant que le choix n'est pas proposé. */
     val usageMode: UsageMode? = null,
+    /** Devise principale (étape dédiée, après le mode) : présélection selon la région, modifiable. */
+    val currency: CurrencySelection = CurrencySelection(),
     val step: RegisterStep = RegisterStep.FORM,
     @StringRes val fullNameError: Int? = null,
     @StringRes val usernameError: Int? = null,
@@ -133,21 +136,50 @@ class RegisterViewModel @Inject constructor(
         if (_formState.value.isSubmitting) return
         if (!validateFormat()) return
         // Formulaire valide : on passe au choix du mode d'utilisation. Rien n'est envoyé au serveur avant ce choix,
-        // pour créer le compte ET sa configuration en une seule opération (voir [confirmUsageMode]).
+        // pour créer le compte ET sa configuration en une seule opération (voir [confirmCurrency]).
         _formState.update { it.copy(step = RegisterStep.USAGE_MODE) }
     }
 
-    /** Retour du choix du mode vers le formulaire (impossible pendant l'envoi). */
-    fun backToForm() {
+    /**
+     * Retour d'une étape (devise → mode → formulaire), sans rien perdre de ce qui est saisi ou choisi ; impossible
+     * pendant l'envoi.
+     */
+    fun back() {
         if (_formState.value.isSubmitting) return
-        _formState.update { it.copy(step = RegisterStep.FORM) }
+        _formState.update {
+            when (it.step) {
+                RegisterStep.CURRENCY -> it.copy(step = RegisterStep.USAGE_MODE)
+                else -> it.copy(step = RegisterStep.FORM)
+            }
+        }
+    }
+
+    /** « Continuer » de l'étape du mode : passe au choix de la devise (refuse tant qu'aucun mode n'est choisi). */
+    fun continueFromUsageMode() {
+        val state = _formState.value
+        if (state.isSubmitting || state.usageMode == null) return
+        _formState.update { it.copy(step = RegisterStep.CURRENCY) }
+    }
+
+    /** Pays de l'appareil (jamais la langue) : fixe la présélection tant que l'utilisateur n'a pas choisi lui-même. */
+    fun onRegionDetected(countryCode: String?) {
+        _formState.update { it.copy(currency = it.currency.withRegionDefault(countryCode)) }
+    }
+
+    fun onCurrencySelected(code: String) {
+        if (_formState.value.isSubmitting) return
+        _formState.update { it.copy(currency = it.currency.select(code)) }
+    }
+
+    fun onCurrencyQueryChange(query: String) {
+        _formState.update { it.copy(currency = it.currency.search(query)) }
     }
 
     /**
-     * « Continuer » de l'étape de choix : crée le compte avec le mode choisi. Protégé contre les doubles appuis
-     * ([RegisterFormState.isSubmitting]) ; refuse d'avancer tant qu'aucun choix valide n'est fait.
+     * « Continuer » de l'étape de la devise : crée le compte avec le mode et la devise choisis. Protégé contre les
+     * doubles appuis ([RegisterFormState.isSubmitting]) ; refuse d'avancer tant qu'aucun mode valide n'est choisi.
      */
-    fun confirmUsageMode() {
+    fun confirmCurrency() {
         val state = _formState.value
         val usageMode = state.usageMode
         if (state.isSubmitting || usageMode == null) return
@@ -162,7 +194,8 @@ class RegisterViewModel @Inject constructor(
                 profilePhotoUri = state.profilePhotoUri,
                 securityQuestion = state.securityQuestion,
                 securityAnswer = state.securityAnswer.trim(),
-                usageMode = usageMode
+                usageMode = usageMode,
+                currencyCode = state.currency.code
             )
             when (result) {
                 is UnifiedAuthResult.Success -> {

@@ -9,7 +9,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.naniger.arzikina.R
 import com.naniger.arzikina.databinding.ItemFinancialPlanBinding
 import com.naniger.arzikina.domain.model.CurrencyAmount
-import com.naniger.arzikina.util.Constants
+import com.naniger.arzikina.domain.currency.CurrencyCatalog
 import com.naniger.arzikina.util.Money
 
 /**
@@ -29,23 +29,32 @@ class FinancialPlansAdapter(
     private val onClick: (FinancialPlanUiItem) -> Unit
 ) : ListAdapter<FinancialPlanUiItem, FinancialPlansAdapter.ViewHolder>(DIFF_CALLBACK) {
 
+    /** Devise d'affichage (devise principale de l'utilisateur) ; un changement rafraîchit la liste. */
+    var currencyCode: String = CurrencyCatalog.DEFAULT_CODE
+        set(value) {
+            if (field != value) {
+                field = value
+                notifyDataSetChanged()
+            }
+        }
+
     override fun onCreateViewHolder(parent: ViewGroup, position: Int): ViewHolder {
         val binding = ItemFinancialPlanBinding.inflate(LayoutInflater.from(parent.context), parent, false)
         return ViewHolder(binding)
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        holder.bind(getItem(position), onClick)
+        holder.bind(getItem(position), onClick, currencyCode)
     }
 
     class ViewHolder(private val binding: ItemFinancialPlanBinding) : RecyclerView.ViewHolder(binding.root) {
-        fun bind(item: FinancialPlanUiItem, onClick: (FinancialPlanUiItem) -> Unit) {
+        fun bind(item: FinancialPlanUiItem, onClick: (FinancialPlanUiItem) -> Unit, currencyCode: String) {
             val context = binding.root.context
             val plan = item.plan
 
             binding.planName.text = plan.name
-            binding.availableValue.text = Money.format(CurrencyAmount(Constants.DEFAULT_CURRENCY_CODE, plan.availableAmount))
-            binding.plannedValue.text = Money.format(CurrencyAmount(Constants.DEFAULT_CURRENCY_CODE, item.totalPlanned))
+            binding.availableValue.text = Money.format(CurrencyAmount(currencyCode, plan.availableAmount))
+            binding.plannedValue.text = Money.format(CurrencyAmount(currencyCode, item.totalPlanned))
             binding.progressBar.progress = item.progressPercent
             binding.percentUsedLabel.text = context.getString(R.string.financial_plan_card_percent_used, item.progressPercent)
             bindProgressHead(item.progressPercent)
@@ -58,11 +67,11 @@ class FinancialPlansAdapter(
             if (item.isOverBudget) {
                 binding.remainingLabel.text = context.getString(R.string.financial_plan_card_overbudget_label)
                 binding.remainingValue.text =
-                    Money.format(CurrencyAmount(Constants.DEFAULT_CURRENCY_CODE, -item.remainingAmount))
+                    Money.format(CurrencyAmount(currencyCode, -item.remainingAmount))
             } else {
                 binding.remainingLabel.text = context.getString(R.string.financial_plan_card_remaining_label)
                 binding.remainingValue.text =
-                    Money.format(CurrencyAmount(Constants.DEFAULT_CURRENCY_CODE, item.remainingAmount))
+                    Money.format(CurrencyAmount(currencyCode, item.remainingAmount))
             }
 
             binding.root.setOnClickListener { onClick(item) }

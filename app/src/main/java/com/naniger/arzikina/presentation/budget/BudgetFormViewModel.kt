@@ -16,6 +16,7 @@ import com.naniger.arzikina.util.Constants
 import com.naniger.arzikina.util.DatePeriods
 import com.naniger.arzikina.util.Money
 import com.naniger.arzikina.util.QuickDateRange
+import com.naniger.arzikina.domain.repository.UserPreferencesRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -67,7 +68,8 @@ sealed interface BudgetFormEvent {
 class BudgetFormViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val budgetRepository: BudgetRepository,
-    categoryRepository: CategoryRepository
+    categoryRepository: CategoryRepository,
+    private val userPreferencesRepository: UserPreferencesRepository
 ) : ViewModel() {
 
     private val budgetId: Long = BudgetFormFragmentArgs.fromSavedStateHandle(savedStateHandle).budgetId
@@ -99,7 +101,19 @@ class BudgetFormViewModel @Inject constructor(
         categories.filter { it.id !in blockedCategoryIds }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
+    /**
+     * À la CRÉATION, la devise proposée est la devise principale de l'utilisateur (et non plus XOF en dur) ; elle reste
+     * modifiable. Ne remplace que la valeur par défaut initiale : un choix déjà fait par l'utilisateur est conservé.
+     */
+    private fun applyPreferredCurrency() {
+        viewModelScope.launch {
+            val preferred = userPreferencesRepository.getCurrencyCode()
+            _formState.update { if (it.currencyCode == Constants.DEFAULT_CURRENCY_CODE) it.copy(currencyCode = preferred) else it }
+        }
+    }
+
     init {
+        if (!isEditMode) applyPreferredCurrency()
         if (isEditMode) {
             viewModelScope.launch {
                 budgetRepository.getBudget(budgetId)?.let { budget ->

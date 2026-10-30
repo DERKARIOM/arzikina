@@ -9,6 +9,7 @@ import com.naniger.arzikina.domain.model.UnifiedAuthError
 import com.naniger.arzikina.domain.model.UsageMode
 import com.naniger.arzikina.domain.model.UsageModeSelectionResult
 import com.naniger.arzikina.domain.repository.SessionManager
+import com.naniger.arzikina.presentation.auth.currency.CurrencySelection
 import com.naniger.arzikina.domain.repository.UnifiedAuthRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -21,8 +22,13 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+/** Étape de la configuration d'un compte Google : le mode, puis la devise. */
+enum class UsageModeStep { MODE, CURRENCY }
+
 data class UsageModeUiState(
     val selected: UsageMode? = null,
+    val step: UsageModeStep = UsageModeStep.MODE,
+    val currency: CurrencySelection = CurrencySelection(),
     val isSubmitting: Boolean = false
 )
 
@@ -58,6 +64,32 @@ class UsageModeViewModel @Inject constructor(
         _state.update { it.copy(selected = mode) }
     }
 
+    /** « Continuer » de l'étape du mode : passe au choix de la devise. */
+    fun continueToCurrency() {
+        val current = _state.value
+        if (current.isSubmitting || current.selected == null) return
+        _state.update { it.copy(step = UsageModeStep.CURRENCY) }
+    }
+
+    /** Retour de la devise vers le mode (le mode choisi est conservé) ; sans effet pendant l'envoi. */
+    fun back() {
+        if (_state.value.isSubmitting) return
+        _state.update { it.copy(step = UsageModeStep.MODE) }
+    }
+
+    fun onRegionDetected(countryCode: String?) {
+        _state.update { it.copy(currency = it.currency.withRegionDefault(countryCode)) }
+    }
+
+    fun onCurrencySelected(code: String) {
+        if (_state.value.isSubmitting) return
+        _state.update { it.copy(currency = it.currency.select(code)) }
+    }
+
+    fun onCurrencyQueryChange(query: String) {
+        _state.update { it.copy(currency = it.currency.search(query)) }
+    }
+
     /** Anti double appui : tant qu'un envoi est en cours, tout nouvel appel est ignoré. */
     fun confirm() {
         val current = _state.value
@@ -65,7 +97,7 @@ class UsageModeViewModel @Inject constructor(
         if (current.isSubmitting || localUserId == 0L) return
         _state.update { it.copy(isSubmitting = true) }
         viewModelScope.launch {
-            when (val result = unifiedAuthRepository.completeUsageModeSelection(localUserId, mode)) {
+            when (val result = unifiedAuthRepository.completeUsageModeSelection(localUserId, mode, current.currency.code)) {
                 UsageModeSelectionResult.Success -> {
                     sessionManager.startSession(localUserId)
                     _state.update { it.copy(isSubmitting = false) }

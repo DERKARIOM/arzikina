@@ -16,12 +16,12 @@ import com.naniger.arzikina.R
 import com.naniger.arzikina.databinding.FragmentAccountFormBinding
 import com.naniger.arzikina.domain.model.AccountIcon
 import com.naniger.arzikina.domain.model.AccountType
-import com.naniger.arzikina.domain.model.SupportedCurrency
+import com.naniger.arzikina.domain.currency.CurrencyCatalog
 import com.naniger.arzikina.presentation.components.ColorPickerAdapter
 import com.naniger.arzikina.presentation.components.ConfirmDialogs
 import com.naniger.arzikina.presentation.components.ExternalAppPickerDialog
 import com.naniger.arzikina.presentation.components.IconPickerAdapter
-import com.naniger.arzikina.presentation.components.pickerLabel
+import com.naniger.arzikina.presentation.auth.currency.pickerLabel
 import com.naniger.arzikina.util.MoneyInputFormatter
 import com.naniger.arzikina.util.external.ExternalAppInfo
 import dagger.hilt.android.AndroidEntryPoint
@@ -118,10 +118,10 @@ class AccountFormFragment : Fragment(R.layout.fragment_account_form) {
 
     private fun setUpCurrencyDropdown(binding: FragmentAccountFormBinding) {
         binding.currencyField.dropdownLayout.hint = getString(R.string.account_form_currency_label)
-        val labels = SupportedCurrency.entries.map { it.pickerLabel(requireContext()) }
+        val labels = CurrencyCatalog.all.map { it.pickerLabel(requireContext()) }
         binding.currencyField.dropdownInput.setSimpleItems(labels.toTypedArray())
         binding.currencyField.dropdownInput.setOnItemClickListener { _, _, position, _ ->
-            viewModel.onCurrencyChange(SupportedCurrency.entries[position].code)
+            viewModel.onCurrencyChange(CurrencyCatalog.all[position].code)
         }
     }
 
@@ -170,7 +170,7 @@ class AccountFormFragment : Fragment(R.layout.fragment_account_form) {
         }
         binding.balanceLayout.error = state.balanceError?.let { getString(it) }
 
-        val currencyLabel = SupportedCurrency.entries.firstOrNull { it.code == state.currencyCode }
+        val currencyLabel = CurrencyCatalog.find(state.currencyCode)
             ?.pickerLabel(requireContext())
             .orEmpty()
         if (binding.currencyField.dropdownInput.text?.toString() != currencyLabel) {

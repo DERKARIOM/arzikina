@@ -3,8 +3,10 @@ package com.naniger.arzikina.data.local.database
 import androidx.room.withTransaction
 import com.naniger.arzikina.data.local.dao.AccountDao
 import com.naniger.arzikina.data.local.dao.CategoryDao
+import com.naniger.arzikina.domain.currency.CurrencyCatalog
 import com.naniger.arzikina.domain.model.DefaultAccountPlan
 import com.naniger.arzikina.domain.model.UsageMode
+import com.naniger.arzikina.util.Constants
 import javax.inject.Inject
 
 /**
@@ -31,7 +33,11 @@ class NewUserDefaultDataSeeder @Inject constructor(
      * @param usageMode mode choisi par l'utilisateur : détermine EXACTEMENT les comptes créés (voir
      * [DefaultAccountPlan]). Obligatoire : aucun parcours ne crée plus de comptes sans ce choix.
      */
-    suspend fun seed(userId: Long, usageMode: UsageMode) {
+    suspend fun seed(
+        userId: Long,
+        usageMode: UsageMode,
+        currencyCode: String = Constants.DEFAULT_CURRENCY_CODE
+    ) {
         database.withTransaction {
             val now = System.currentTimeMillis()
             val missing = DefaultAccountPlan.missingKeys(usageMode, accountDao.activeTypesForUser(userId).toSet())
@@ -43,7 +49,8 @@ class NewUserDefaultDataSeeder @Inject constructor(
                         userId = userId,
                         keys = missing,
                         firstDisplayOrder = firstOrder,
-                        excludeShopFromStatistics = DefaultAccountPlan.excludesShopFromStatistics(usageMode)
+                        excludeShopFromStatistics = DefaultAccountPlan.excludesShopFromStatistics(usageMode),
+                        currencyCode = CurrencyCatalog.sanitize(currencyCode)
                     )
                 )
             }

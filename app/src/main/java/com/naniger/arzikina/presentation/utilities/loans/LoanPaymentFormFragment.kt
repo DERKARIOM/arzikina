@@ -16,7 +16,6 @@ import com.naniger.arzikina.databinding.FragmentLoanPaymentFormBinding
 import com.naniger.arzikina.domain.model.Account
 import com.naniger.arzikina.domain.model.CurrencyAmount
 import com.naniger.arzikina.domain.model.LoanType
-import com.naniger.arzikina.domain.model.SupportedCurrency
 import com.naniger.arzikina.presentation.accounts.AccountIconMapper
 import com.naniger.arzikina.presentation.components.AccountPickerDialog
 import com.naniger.arzikina.presentation.components.ConfirmDialogs
@@ -258,7 +257,7 @@ class LoanPaymentFormFragment : Fragment(R.layout.fragment_loan_payment_form) {
     }
 
     private fun currencySymbol(currencyCode: String): String =
-        SupportedCurrency.entries.firstOrNull { it.code == currencyCode }?.symbol ?: currencyCode
+        Money.symbolOf(currencyCode)
 
     private fun formatDate(millis: Long): String =
         Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault()).toLocalDate().format(AppDateFormats.NUMERIC_DATE)

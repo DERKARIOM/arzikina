@@ -110,6 +110,10 @@ class UserPreferencesRepositoryImpl @Inject constructor(
         upsertPreferences(currencyCode = currencyCode)
     }
 
+    override suspend fun setCurrencyCodeForUser(userId: Long, currencyCode: String) = withContext(ioDispatcher) {
+        upsertPreferencesFor(userId, currencyCode = currencyCode)
+    }
+
     override suspend fun setBiometricLockEnabled(enabled: Boolean) {
         dataStore.edit { it[Keys.BIOMETRIC_LOCK_ENABLED] = enabled }
     }
@@ -127,6 +131,10 @@ class UserPreferencesRepositoryImpl @Inject constructor(
      */
     private suspend fun upsertPreferences(themeMode: ThemeMode? = null, currencyCode: String? = null) {
         val userId = sessionManager.getCurrentUserIdOnce() ?: return
+        upsertPreferencesFor(userId, themeMode, currencyCode)
+    }
+
+    private suspend fun upsertPreferencesFor(userId: Long, themeMode: ThemeMode? = null, currencyCode: String? = null) {
         val existing = userPreferencesDao.getForUser(userId)
         // Lu seulement si [existing] est `null` (une seule fois par utilisateur au maximum, voir la
         // KDoc de tête) : pas besoin de payer le coût d'une lecture DataStore à chaque écriture.
